@@ -17,6 +17,7 @@ import {
 import {
   aggregateCollection,
   alignReleasedFilters,
+  browseChecklist,
   buildInvestmentLines,
   extensionValue,
   computeProgress,
@@ -255,6 +256,17 @@ const englishMissing = filterPrintings(
   filters({ set: "wtmc-en", language: "en", collection: "missing" }),
 );
 assert.deepEqual(englishMissing.map((item) => item.id), ["extra"]);
+// Cards screen: beta and retail are listed separately; a beta copy never marks the retail card owned.
+const englishBrowse = browseChecklist(mergedPrintings, "wtmc-en") ?? [];
+assert.deepEqual(englishBrowse.map((item) => item.id).sort(), ["beta", "extra", "retail"]);
+const browseOwned = filterPrintings(
+  mergedPrintings,
+  mergedCards,
+  ownedBeta,
+  filters({ set: "wtmc-en", language: "en", collection: "owned" }),
+  englishBrowse,
+);
+assert.deepEqual(browseOwned.map((item) => item.id), ["beta"]);
 const promoOnly = aggregateCollection([
   item({ id: "promo-only", printingId: "promo", quantity: 2 }),
 ]);

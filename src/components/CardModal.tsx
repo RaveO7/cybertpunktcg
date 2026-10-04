@@ -506,7 +506,8 @@ export function CardModal({
               </div>
             )}
 
-            {market != null ? (
+            {/* Sans prix ni historique Cardmarket, le bloc n'a rien à montrer. */}
+            {market != null || priceHistory.length > 0 ? (
             <section
               className={`hud-panel order-7 grid overflow-hidden md:order-none ${showValue ? "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" : ""}`}
               aria-labelledby={`${titleId}-market`}

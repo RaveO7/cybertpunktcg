@@ -10,6 +10,7 @@ import { cardIdsInBox, VirtualCardGrid, type CardGridLayout } from "@/components
 import {
   aggregateCollection,
   alignReleasedFilters,
+  browseChecklist,
   languageOptions,
   setForLanguage,
   buildFacets,
@@ -18,11 +19,9 @@ import {
   formatInt,
   ownershipOf,
   parseFilters,
-  releasedChecklist,
   sealedBrowseFilters,
   serializeFilters,
   sortPrintings,
-  viewOwnership,
 } from "@/lib/logic";
 import {
   ALL_SETS_ID,
@@ -162,11 +161,8 @@ export function CardsExplorer({
   const cardsById = useMemo(() => new Map(catalog?.cards.map((card) => [card.id, card]) ?? []), [catalog]);
   const setsByCode = useMemo(() => new Map(catalog?.sets.map((set) => [set.code, set]) ?? []), [catalog]);
   const activeFilters = useMemo(() => alignReleasedFilters(filters), [filters]);
-  const agg = useMemo(() => {
-    const raw = aggregateCollection(items);
-    if (!catalog) return raw;
-    return viewOwnership(activeFilters.set, catalog.printings, raw);
-  }, [activeFilters.set, catalog, items]);
+  // Each printing keeps its own ownership: a beta copy must not mark the retail card as owned.
+  const agg = useMemo(() => aggregateCollection(items), [items]);
 
   useEffect(() => {
     const params = serializeFilters(activeFilters, true, filterDefaults);
@@ -187,7 +183,7 @@ export function CardsExplorer({
     if (activeFilters.set === ALL_SETS_ID) {
       return catalog.printings.filter((printing) => !isSealedSetCode(printing.setCode));
     }
-    const checklist = releasedChecklist(catalog.printings, activeFilters.set);
+    const checklist = browseChecklist(catalog.printings, activeFilters.set);
     if (checklist) return checklist;
     return catalog.printings.filter((printing) => printing.setCode === activeFilters.set);
   }, [activeFilters.set, catalog]);
@@ -217,7 +213,13 @@ export function CardsExplorer({
 
   const filtered = useMemo(() => {
     if (!catalog) return [];
-    const matched = filterPrintings(catalog.printings, cardsById, agg, activeFilters);
+    const matched = filterPrintings(
+      catalog.printings,
+      cardsById,
+      agg,
+      activeFilters,
+      browseChecklist(catalog.printings, activeFilters.set),
+    );
     return sortPrintings(matched, cardsById, agg, setsByCode, activeFilters.sort);
   }, [catalog, cardsById, agg, activeFilters, setsByCode]);
 
@@ -433,8 +435,7 @@ export function CardsExplorer({
     selectedIndex >= 0 && selectedIndex < filtered.length - 1
       ? filtered[selectedIndex + 1]?.id ?? null
       : null;
-  // The modal lists each printing separately, so use the raw collection rather than the
-  // merged beta/retail ownership of the released views.
+  // The modal lists each printing separately, beta and retail included.
   const ownedIds = useMemo(
     () => new Set(items.filter((item) => item.quantity > 0).map((item) => item.printingId)),
     [items],

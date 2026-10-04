@@ -85,6 +85,20 @@ export function releasedChecklist(printings: PrintingDTO[], setId: string) {
   return null;
 }
 
+/**
+ * Liste de l'écran Cartes : beta et retail y sont des cartes distinctes, chacune avec sa
+ * propre possession (le résumé fusionné de `releasedChecklist` reste pour les stats).
+ */
+export function browseChecklist(printings: PrintingDTO[], setId: string) {
+  if (setId === ENGLISH_SET_ID) {
+    return printings.filter(
+      (printing) =>
+        (printing.setCode === MAIN_SET_CODE || printing.setCode === BETA_SET_CODE) && printing.language === "en",
+    );
+  }
+  return releasedChecklist(printings, setId);
+}
+
 export function equivalentPrintingIds(printing: Pick<PrintingDTO, "cardId" | "collectorNumber" | "language">, all: PrintingDTO[]) {
   const key = printingIdentity(printing);
   return all.filter((item) => printingIdentity(item) === key).map((item) => item.id);
@@ -482,8 +496,8 @@ export function filterPrintings(
   cards: Map<string, CardDTO>,
   agg: Map<string, Ownership>,
   filters: Filters,
+  checklist = releasedChecklist(printings, filters.set),
 ) {
-  const checklist = releasedChecklist(printings, filters.set);
   const allowed = checklist ? new Set(checklist.map((printing) => printing.id)) : null;
   const source = checklist ?? printings;
   return source.filter((printing) => {

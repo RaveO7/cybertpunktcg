@@ -24,9 +24,7 @@ import {
   ALL_SETS_ID,
   BETA_SET_CODE,
   BLOCKS,
-  ENGLISH_SET_ID,
   isSealedSetCode,
-  MAIN_SET_CODE,
   MIN_EXTENSION_CARDS,
   partitionCatalogSets,
 } from "@/lib/reference-data";
@@ -224,12 +222,9 @@ function buildBlocks(extensions: Extension[], agg: Map<string, Ownership>, unsor
     });
 }
 
-/** Lien Cartes d'un bloc : son unique set, la vue Welcome to Night City anglaise, sinon tout. */
+/** Lien Cartes d'un bloc : son unique set, sinon toutes les extensions. */
 function blockBrowseSet(list: Extension[]) {
-  if (list.length === 1) return list[0].browseSet;
-  const codes = list.flatMap((extension) => extension.codes);
-  if (codes.every((code) => code === BETA_SET_CODE || code === MAIN_SET_CODE)) return ENGLISH_SET_ID;
-  return ALL_SETS_ID;
+  return list.length === 1 ? list[0].browseSet : ALL_SETS_ID;
 }
 
 function sortScopes<T extends Scope>(list: T[], sort: SortKey) {
