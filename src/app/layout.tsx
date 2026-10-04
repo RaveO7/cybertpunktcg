@@ -30,6 +30,11 @@ export const metadata: Metadata = {
   title: "Collection Cyberpunk TCG",
   description: "Consultez les cartes officielles et gérez votre collection Cyberpunk TCG.",
   applicationName: "Collection Cyberpunk TCG",
+  appleWebApp: {
+    capable: true,
+    title: "CPTCG",
+    statusBarStyle: "black",
+  },
 };
 
 export const viewport: Viewport = {
