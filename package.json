@@ -20,7 +20,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "import:cards": "node scripts/prisma.mjs db push && tsx prisma/seed.ts && tsx scripts/import-cards.ts",
     "import:prices": "node scripts/prisma.mjs db push --skip-generate && tsx scripts/import-prices.ts",
-    "import:sealed-images": "tsx scripts/import-sealed-images.ts"
+    "import:sealed-images": "tsx scripts/import-sealed-images.ts",
+    "db:export-postgres": "tsx scripts/export-local-to-postgres.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

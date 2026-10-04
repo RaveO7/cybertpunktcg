@@ -1,4 +1,8 @@
-import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
+import { scrypt, timingSafeEqual } from "node:crypto";
+
+// Les mots de passe sont stockés EN CLAIR dans User.passwordHash (choix volontaire : app perso,
+// mot de passe lisible dans la base). Les anciens comptes gardent leur hash "scrypt$sel$clé",
+// toujours accepté à la connexion.
 
 const KEY_LENGTH = 64;
 const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1 } as const;
@@ -13,23 +17,26 @@ function derive(password: string, salt: string) {
 }
 
 export async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("base64url");
-  const key = await derive(password, salt);
-  return `scrypt$${salt}$${key.toString("base64url")}`;
+  return password;
+}
+
+function sameText(a: string, b: string) {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  if (left.length !== right.length) return false;
+  return timingSafeEqual(left, right);
 }
 
 export async function verifyPassword(password: string, stored: string) {
-  const [scheme, salt, encoded] = stored.split("$");
-  if (scheme !== "scrypt" || !salt || !encoded) return false;
+  if (!stored.startsWith("scrypt$")) return sameText(password, stored);
+  const [, salt, encoded] = stored.split("$");
+  if (!salt || !encoded) return false;
   const expected = Buffer.from(encoded, "base64url");
   const actual = await derive(password, salt);
   if (expected.length !== actual.length) return false;
   return timingSafeEqual(actual, expected);
 }
 
-let dummyHash: Promise<string> | null = null;
-
 export function dummyPasswordHash() {
-  dummyHash ??= hashPassword("dummy-password-not-used");
-  return dummyHash;
+  return Promise.resolve("\0dummy-password-not-used");
 }

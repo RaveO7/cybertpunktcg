@@ -1,3 +1,4 @@
+import { randomBytes, scryptSync } from "node:crypto";
 import { prisma } from "../src/lib/prisma";
 import { authenticate, registerAccount } from "../src/lib/auth";
 import { hashPassword, verifyPassword } from "../src/lib/password";
@@ -8,10 +9,14 @@ async function main() {
   const password = "motdepasse";
   const local = await prisma.user.create({ data: { displayName: "Collection locale" } });
   const roundtrip = await hashPassword(password);
-  if (roundtrip.includes(password) || !(await verifyPassword(password, roundtrip))) {
-    throw new Error("password hash");
+  if (roundtrip !== password || !(await verifyPassword(password, roundtrip))) {
+    throw new Error("password stored in clear");
   }
   if (await verifyPassword("autre-mot", roundtrip)) throw new Error("password mismatch accepted");
+  const salt = randomBytes(16).toString("base64url");
+  const legacy = `scrypt$${salt}$${scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 }).toString("base64url")}`;
+  if (!(await verifyPassword(password, legacy))) throw new Error("legacy scrypt hash rejected");
+  if (await verifyPassword("autre-mot", legacy)) throw new Error("legacy mismatch accepted");
 
   try {
     const claimed = await registerAccount({
@@ -42,6 +47,11 @@ async function main() {
     if (logged?.id !== claimed.id) throw new Error("login");
     if (await authenticate(email, "mauvaisxx")) throw new Error("bad password accepted");
     if (await authenticate(`absent-${stamp}@example.com`, password)) throw new Error("unknown accepted");
+
+    await prisma.user.update({ where: { id: claimed.id }, data: { passwordHash: legacy } });
+    if ((await authenticate(email, password))?.id !== claimed.id) throw new Error("legacy login");
+    const upgraded = await prisma.user.findUnique({ where: { id: claimed.id } });
+    if (upgraded?.passwordHash !== password) throw new Error("legacy hash not replaced by clear password");
 
     await prisma.session.deleteMany({ where: { userId: claimed.id } });
     await prisma.user.delete({ where: { id: claimed.id } }).catch(() => undefined);

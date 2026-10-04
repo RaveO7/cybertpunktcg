@@ -38,6 +38,13 @@ export function normalizePassword(value: unknown) {
   return value;
 }
 
+// Connexion : pas de longueur minimale, le hash décide (seule l'inscription impose 8 caractères).
+export function normalizeLoginPassword(value: unknown) {
+  if (typeof value !== "string") return null;
+  if (value.length < 1 || value.length > 128) return null;
+  return value;
+}
+
 export function normalizeDisplayName(value: unknown) {
   if (typeof value !== "string") return null;
   const name = value.trim().replace(/\s+/g, " ");
@@ -194,5 +201,11 @@ export async function authenticate(email: string, password: string) {
   const stored = user?.passwordHash;
   const ok = await verifyPassword(password, stored ?? (await dummyPasswordHash()));
   if (!user?.passwordHash || !user.email || !ok) return null;
+  // Ancien hash scrypt : on le remplace par le mot de passe en clair à la première connexion.
+  if (user.passwordHash !== password) {
+    const passwordHash = await hashPassword(password);
+    await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+    return { ...user, passwordHash };
+  }
   return user;
 }

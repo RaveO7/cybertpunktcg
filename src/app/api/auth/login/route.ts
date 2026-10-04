@@ -4,7 +4,7 @@ import {
   authenticate,
   createSession,
   normalizeEmail,
-  normalizePassword,
+  normalizeLoginPassword,
   toPublicUser,
 } from "@/lib/auth";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   if (!body) return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
 
   const email = normalizeEmail(body.email);
-  const password = normalizePassword(body.password);
+  const password = normalizeLoginPassword(body.password);
   if (!email || !password) {
     return NextResponse.json({ error: "Adresse e-mail ou mot de passe incorrect." }, { status: 401 });
   }
