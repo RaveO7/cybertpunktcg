@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "node scripts/prisma.mjs generate",
     "dev": "next dev",
-    "build": "node scripts/prisma.mjs generate && next build",
+    "build": "node scripts/prisma.mjs generate && node scripts/vercel-db-push.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "test:account": "tsx scripts/verify-account.ts",
@@ -21,7 +21,8 @@
     "import:cards": "node scripts/prisma.mjs db push && tsx prisma/seed.ts && tsx scripts/import-cards.ts",
     "import:prices": "node scripts/prisma.mjs db push --skip-generate && tsx scripts/import-prices.ts",
     "import:sealed-images": "tsx scripts/import-sealed-images.ts",
-    "db:export-postgres": "tsx scripts/export-local-to-postgres.ts"
+    "db:export-postgres": "tsx scripts/export-local-to-postgres.ts",
+    "db:sync-prod": "tsx scripts/sync-local-to-prod.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
