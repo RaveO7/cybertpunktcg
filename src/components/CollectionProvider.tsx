@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
 
 const LOCAL_USER_KEY = "cptcg-user-id";
@@ -63,6 +63,10 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [catalog, setCatalog] = useState<CatalogDTO | null>(null);
   const [items, setItems] = useState<CollectionItemDTO[]>([]);
+  const itemsRef = useRef(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -212,8 +216,27 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
           return [...current.filter((item) => !incoming.has(item.id)), ...incoming.values()];
         });
       },
-      patchLine: (id, input) =>
-        request(`/api/collection/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+      patchLine: async (id, input) => {
+        // Mise à jour optimiste : l'interface reflète la modification sans attendre le serveur.
+        // Un changement d'état peut fusionner deux lignes, on laisse alors le serveur trancher.
+        const previous = itemsRef.current.find((item) => item.id === id);
+        const optimistic = previous && input.conditionCode === undefined;
+        if (optimistic) {
+          setItems((current) =>
+            input.quantity != null && input.quantity <= 0
+              ? current.filter((item) => item.id !== id)
+              : current.map((item) => (item.id === id ? { ...item, ...input } : item)),
+          );
+        }
+        try {
+          await request(`/api/collection/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+        } catch (error) {
+          if (optimistic) {
+            setItems((current) => [...current.filter((item) => item.id !== id), previous]);
+          }
+          throw error;
+        }
+      },
       deleteLine: (id) => request(`/api/collection/${id}`, { method: "DELETE" }),
     }),
     // Les fonctions ferment sur user ; ready, catalog et items sont l'état public.

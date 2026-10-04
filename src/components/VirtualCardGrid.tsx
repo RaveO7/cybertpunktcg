@@ -100,7 +100,11 @@ function rowGapWithFilters() {
   return 28;
 }
 
+/** Téléphone : deux colonnes serrées pour garder des cartes lisibles. */
+const COMPACT_WIDTH = 480;
+
 function layoutFor(width: number, filtersCollapsed: boolean) {
+  if (width < COMPACT_WIDTH) return { cols: 2, gap: 12, gapY: 16 };
   if (filtersCollapsed) {
     const cols = columnsOfficial(width);
     const gap = gapOfficial(cols);
@@ -213,9 +217,9 @@ export function VirtualCardGrid({
     virtualizer.measure();
   }, [rowHeight, cols, virtualizer]);
 
-  let gridClass = filtersCollapsed ? "grid grid-cols-2 gap-x-4" : "grid grid-cols-2 gap-x-5";
-  if (cols === 3) gridClass = filtersCollapsed ? "grid grid-cols-3 gap-x-4" : "grid grid-cols-3 gap-x-6";
-  if (cols === 4) gridClass = filtersCollapsed ? "grid grid-cols-4 gap-x-5" : "grid grid-cols-4 gap-x-6";
+  let gridClass = "grid grid-cols-2";
+  if (cols === 3) gridClass = "grid grid-cols-3";
+  if (cols === 4) gridClass = "grid grid-cols-4";
 
   return (
     <div
@@ -238,6 +242,7 @@ export function VirtualCardGrid({
               top: `${virtualRow.start - scrollMargin}px`,
               left: 0,
               width: "100%",
+              columnGap: gap,
               paddingBottom: gapY,
             }}
           >

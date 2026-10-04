@@ -44,6 +44,10 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  // Plein écran sur iPhone (encoche, barre d'accueil) : les marges viennent de env(safe-area-inset-*).
+  viewportFit: "cover",
+  // Android : le clavier réduit la mise en page au lieu de recouvrir les formulaires.
+  interactiveWidget: "resizes-content",
 };
 
 const themeBootScript = `(function(){try{var raw=localStorage.getItem(${JSON.stringify(PREFERENCES_STORAGE_KEY)});var theme="dark";if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.theme==="light")theme="light";}document.documentElement.setAttribute("data-theme",theme);document.documentElement.style.colorScheme=theme;}catch(e){}})();`;

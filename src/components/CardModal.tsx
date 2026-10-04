@@ -7,8 +7,9 @@ import { RulesText } from "@/components/RulesText";
 import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
 import { useI18n } from "@/components/LocaleProvider";
 import { usePreferences } from "@/components/PreferencesProvider";
+import { conditionOptionLabel } from "@/lib/condition-label";
 import type { CardDTO, CollectionItemDTO, ConditionDTO, PrintingDTO } from "@/lib/types";
-import { baseCollectorNumber, formatMoney, formatPercent, priceMovement, printingTitle, resolveRulesText } from "@/lib/logic";
+import { baseCollectorNumber, formatInt, formatMoney, formatPercent, priceMovement, printingTitle, resolveRulesText } from "@/lib/logic";
 import { CURRENCIES } from "@/lib/parse";
 
 const fieldClass =
@@ -22,7 +23,7 @@ const headerBtnClass =
 
 const fieldLabelClass = "block font-mono text-[10px] uppercase tracking-[0.14em] text-muted";
 
-const chipClass = "inline-flex h-8 items-center gap-2 border border-line/80 px-3 text-[13px]";
+const chipClass = "inline-flex h-6 items-center gap-1 border border-line/80 px-1.5 text-[11px]";
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -83,6 +84,7 @@ export function CardModal({
   nextId,
   onFilterArtist,
   onFilterRarity,
+  onFilterSet,
   readOnly = false,
   onSave,
   onPatch,
@@ -100,6 +102,7 @@ export function CardModal({
   nextId?: string | null;
   onFilterArtist?: (artist: string) => void;
   onFilterRarity?: (rarity: string) => void;
+  onFilterSet?: (set: string) => void;
   readOnly?: boolean;
   onSave?: (input: {
     conditionCode: string;
@@ -115,7 +118,6 @@ export function CardModal({
   const { prefs } = usePreferences();
   const closeRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
-  const descId = useId();
   const formErrorId = useId();
   const [conditionCode, setConditionCode] = useState(prefs.condition);
   const [quantity, setQuantity] = useState(1);
@@ -126,6 +128,8 @@ export function CardModal({
   const [pending, setPending] = useState(false);
   const [priceHistory, setPriceHistory] = useState<ChartPoint[]>([]);
   const [showMoreFields, setShowMoreFields] = useState(false);
+  const [costHintOpen, setCostHintOpen] = useState(false);
+  const swipeRef = useRef<{ x: number; y: number } | null>(null);
   const title = printingTitle(card, printing);
   const total = items.reduce((sum, item) => sum + item.quantity, 0);
   const rules = resolveRulesText(card, printing, siblings, locale);
@@ -137,8 +141,7 @@ export function CardModal({
   const marketDelta = market != null && previous != null ? market - previous : null;
   const marketDeltaPct = marketDelta != null && previous ? (marketDelta / previous) * 100 : null;
 
-  // Value of the copies owned for this printing; purchase cost only counts EUR prices.
-  const currentValue = market != null && total > 0 ? market * total : null;
+  // Gain/loss on the copies with a purchase price (EUR only), valued at the market price.
   let purchaseCost = 0;
   let pricedCopies = 0;
   for (const item of items) {
@@ -147,9 +150,7 @@ export function CardModal({
     purchaseCost += unit * item.quantity;
     pricedCopies += item.quantity;
   }
-  const costComplete = total > 0 && pricedCopies === total;
-  const profit = currentValue != null && costComplete ? currentValue - purchaseCost : null;
-  const showValue = total > 0 || !readOnly;
+  const profit = market != null && pricedCopies > 0 ? market * pricedCopies - purchaseCost : null;
 
   // Selected printing first, then the same artwork (same number across beta/retail/languages,
   // then same artist and rarity), then the other printings.
@@ -253,30 +254,51 @@ export function CardModal({
 
   const canEdit = !readOnly && onPatch && onDelete;
 
+  // Téléphone : balayer la fiche vers la gauche/droite passe à la carte suivante/précédente.
+  function onTouchStart(event: React.TouchEvent) {
+    const target = event.target;
+    if (event.touches.length !== 1 || isTypingTarget(target)) {
+      swipeRef.current = null;
+      return;
+    }
+    if (target instanceof Element && target.closest("[data-no-swipe]")) {
+      swipeRef.current = null;
+      return;
+    }
+    swipeRef.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  }
+
+  function onTouchEnd(event: React.TouchEvent) {
+    const start = swipeRef.current;
+    swipeRef.current = null;
+    if (!start) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0 && nextId) onOpen(nextId);
+    else if (dx > 0 && prevId) onOpen(prevId);
+  }
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 p-0 sm:p-5" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/80 p-0 sm:p-5"
+      onClick={onClose}
+    >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        aria-describedby={descId}
-        className="min-h-full bg-panel sm:mx-auto sm:min-h-0 sm:max-w-6xl sm:border sm:border-line sm:shadow-[0_30px_90px_rgba(0,0,0,0.6)]"
+        className="px-safe pt-safe flex min-h-full flex-col bg-panel sm:mx-auto sm:block sm:min-h-0 sm:max-w-6xl sm:border sm:border-line sm:shadow-[0_30px_90px_rgba(0,0,0,0.6)]"
         onClick={(event) => event.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
-        <header className="flex items-center gap-3 border-b border-line px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-panel px-4 py-2.5 sm:static sm:gap-4 sm:px-6 sm:py-4">
           <div className="min-w-0 flex-1">
-            <p id={descId} className="flex min-w-0 items-center gap-2 font-mono text-[11px] tracking-[0.16em] text-muted">
-              <span className="shrink-0">{t.modal.eyebrow}</span>
-              <span className="h-1 w-1 shrink-0 bg-cyan" aria-hidden="true" />
-              <span className="shrink-0 text-cyan">#{printing.collectorNumber}</span>
-              <span className="hidden truncate sm:inline">
-                <span className="text-muted/50" aria-hidden="true">/ </span>
-                {printing.setName}
-              </span>
-            </p>
             <h2
               id={titleId}
-              className="mt-1 truncate text-2xl font-bold leading-tight tracking-[-0.02em] text-yellow sm:text-[2rem]"
+              className="truncate text-xl font-bold leading-tight tracking-[-0.02em] text-yellow sm:text-[2rem]"
             >
               {card.subname && !printing.localizedName ? (
                 <>
@@ -287,18 +309,6 @@ export function CardModal({
               )}
             </h2>
           </div>
-          {total > 0 ? (
-            <span
-              className="inline-flex h-9 shrink-0 items-center gap-2 border border-yellow/50 bg-yellow/10 px-3 font-mono text-sm tabular-nums text-yellow"
-              aria-label={t.modal.copiesOwned(String(total))}
-            >
-              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M3 8.5 6.5 12 13 4.5" />
-              </svg>
-              ×{total}
-              <span className="hidden md:inline">{t.modal.inCollection}</span>
-            </span>
-          ) : null}
           {(prevId || nextId) && (
             <div className="flex shrink-0 items-center gap-1">
               <button
@@ -342,10 +352,10 @@ export function CardModal({
         </header>
 
         {/* Mobile: aside + main column flatten (`contents`) so `order-*` can interleave them like the mockup. */}
-        <div className="flex flex-col gap-5 p-4 sm:p-6 md:grid md:grid-cols-[300px_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-8">
+        <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6 md:grid md:grid-cols-[240px_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
           <aside className="contents md:sticky md:top-4 md:flex md:flex-col md:gap-5">
             <figure
-              className="order-1 mx-auto w-full max-w-[270px] overflow-hidden rounded-2xl border bg-black p-2 md:order-none md:max-w-none"
+              className="order-1 mx-auto w-full max-w-[210px] overflow-hidden rounded-2xl border bg-black p-2 md:order-none md:max-w-none"
               style={
                 {
                   borderColor: `color-mix(in srgb, ${accent} 40%, transparent)`,
@@ -367,48 +377,74 @@ export function CardModal({
               )}
             </figure>
 
-            {printing.rarity || printing.setName ? (
-              <div className="order-2 flex flex-wrap gap-2 md:order-none">
+            {(printing.rarity || card.color || card.cardType || stats.length > 0 || card.tags.length > 0 || card.isEddiable != null) && (
+              <div className="order-3 flex flex-wrap items-center gap-1 md:order-none" aria-label={t.modal.details}>
+                {card.color ? (
+                  <span className={chipClass}>
+                    <span className={`h-2 w-2 rounded-full ${colorDotClass(card.color)}`} aria-hidden="true" />
+                    {card.color}
+                  </span>
+                ) : null}
+                {card.cardType ? <span className={chipClass}>{card.cardType}</span> : null}
                 {printing.rarity ? (
                   onFilterRarity ? (
                     <button
                       type="button"
-                      className="inline-flex h-8 items-center border border-cyan/40 bg-cyan/10 px-3 font-mono text-xs uppercase tracking-[0.06em] text-cyan transition hover:bg-cyan/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
+                      className="inline-flex h-6 items-center border border-cyan/40 bg-cyan/10 px-1.5 font-mono text-[10px] uppercase tracking-[0.04em] text-cyan transition hover:bg-cyan/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
                       onClick={() => onFilterRarity(printing.rarity!)}
                       aria-label={t.modal.viewRarity(printing.rarity)}
                     >
                       {printing.rarity}
                     </button>
                   ) : (
-                    <span className="inline-flex h-8 items-center border border-cyan/40 bg-cyan/10 px-3 font-mono text-xs uppercase tracking-[0.06em] text-cyan">
+                    <span className="inline-flex h-6 items-center border border-cyan/40 bg-cyan/10 px-1.5 font-mono text-[10px] uppercase tracking-[0.04em] text-cyan">
                       {printing.rarity}
                     </span>
                   )
                 ) : null}
-                {printing.setName ? (
-                  <span className="hidden h-8 items-center border border-line/80 px-3 text-xs text-foreground/80 md:inline-flex">
-                    {printing.setName}
+                {stats.map((stat) => (
+                  <span key={stat.label} className={chipClass}>
+                    <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted">{stat.label}</span>
+                    <span className="font-mono text-xs font-semibold tabular-nums text-cyan">{stat.value}</span>
+                  </span>
+                ))}
+                {card.tags.map((tag) => (
+                  <span key={tag} className={`${chipClass} font-mono text-[10px] uppercase tracking-[0.04em] text-muted`}>
+                    {tag}
+                  </span>
+                ))}
+                {card.isEddiable != null ? (
+                  <span
+                    className={
+                      card.isEddiable
+                        ? "inline-flex h-6 items-center gap-1 border border-gain/45 bg-gain/10 px-1.5 text-[11px] text-gain"
+                        : `${chipClass} text-muted`
+                    }
+                  >
+                    {card.isEddiable ? (
+                      <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 8.5 6.5 12 13 4.5" />
+                      </svg>
+                    ) : null}
+                    {card.isEddiable ? t.modal.eddiesSellable : t.modal.eddiesNotSellable}
                   </span>
                 ) : null}
               </div>
-            ) : null}
+            )}
 
             {siblings.length > 0 ? (
               <section aria-labelledby={`${titleId}-printings`} className="order-9 flex min-w-0 flex-col gap-3 md:order-none">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 id={`${titleId}-printings`} className="hud-label text-muted">
-                    {t.modal.printings} · {allPrintings.length}
-                  </h3>
-                  <span className="text-xs text-muted">{t.modal.trend}</span>
-                </div>
-                <ul className="scrollbar-hud -mx-4 flex gap-2.5 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 md:mx-0 md:px-0">
+                <h3 id={`${titleId}-printings`} className="hud-label text-muted">
+                  {t.modal.printings} · {allPrintings.length}
+                </h3>
+                <ul data-no-swipe="" className="scrollbar-hud -mx-4 flex gap-2.5 overflow-x-auto overscroll-x-contain px-4 pb-2 sm:-mx-6 sm:px-6 md:mx-0 md:px-0">
                   {allPrintings.map((entry) => {
                     const label = `#${entry.collectorNumber} · ${entry.setName}`;
                     const current = entry.id === printing.id;
                     const owned = ownedIds.has(entry.id);
                     const entryPrice = toAmount(entry.marketPrice);
                     return (
-                      <li key={entry.id} className="w-[82px] shrink-0 md:w-[92px]">
+                      <li key={entry.id} className="w-[66px] shrink-0 md:w-[74px]">
                         <button
                           type="button"
                           className={`group relative block w-full border text-left transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70 ${
@@ -467,130 +503,76 @@ export function CardModal({
           </aside>
 
           <div className="contents md:flex md:min-w-0 md:flex-col md:gap-5">
-            {(card.color || card.cardType || stats.length > 0 || card.tags.length > 0 || card.isEddiable != null) && (
-              <div className="order-3 flex flex-wrap items-center gap-2 md:order-none" aria-label={t.modal.details}>
-                {card.color ? (
-                  <span className={chipClass}>
-                    <span className={`h-2.5 w-2.5 rounded-full ${colorDotClass(card.color)}`} aria-hidden="true" />
-                    {card.color}
-                  </span>
-                ) : null}
-                {card.cardType ? <span className={chipClass}>{card.cardType}</span> : null}
-                {stats.map((stat) => (
-                  <span key={stat.label} className={`${chipClass} gap-1.5`}>
-                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">{stat.label}</span>
-                    <span className="font-mono text-sm font-semibold tabular-nums text-cyan">{stat.value}</span>
-                  </span>
-                ))}
-                {card.tags.map((tag) => (
-                  <span key={tag} className={`${chipClass} font-mono text-xs uppercase tracking-[0.06em] text-muted`}>
-                    {tag}
-                  </span>
-                ))}
-                {card.isEddiable != null ? (
-                  <span
-                    className={
-                      card.isEddiable
-                        ? "inline-flex h-8 items-center gap-1.5 border border-gain/45 bg-gain/10 px-3 text-[13px] text-gain"
-                        : `${chipClass} text-muted`
-                    }
-                  >
-                    {card.isEddiable ? (
-                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 8.5 6.5 12 13 4.5" />
-                      </svg>
-                    ) : null}
-                    {card.isEddiable ? t.modal.eddiesSellable : t.modal.eddiesNotSellable}
-                  </span>
-                ) : null}
-              </div>
-            )}
-
             {/* Sans prix ni historique Cardmarket, le bloc n'a rien à montrer. */}
             {market != null || priceHistory.length > 0 ? (
-            <section
-              className={`hud-panel order-7 grid overflow-hidden md:order-none ${showValue ? "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" : ""}`}
-              aria-labelledby={`${titleId}-market`}
-            >
-              <div className={`flex min-w-0 flex-col gap-3 p-4 sm:p-5 ${showValue ? "lg:border-r lg:border-cyan/15" : ""}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <h3 id={`${titleId}-market`} className="hud-label text-cyan">
-                    {t.modal.marketPrice}
-                  </h3>
-                  <span className="text-[11px] text-muted">{t.modal.trend}</span>
-                </div>
-                <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
-                  <p className="font-mono text-[34px] font-semibold leading-none tabular-nums sm:text-[40px]" aria-live="polite">
-                    {market != null ? formatMoney(market) : "—"}
-                  </p>
-                  {movement !== "none" ? (
-                    <span className="text-[13px]">
+            <section data-no-swipe="" className="hud-panel order-7 overflow-hidden md:order-none" aria-labelledby={`${titleId}-market`}>
+              <div className="flex min-w-0 flex-col gap-2.5 p-4">
+                <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+                  <div className="min-w-0">
+                    <h3 id={`${titleId}-market`} className="hud-label text-cyan">
+                      {t.modal.marketPrice}
+                    </h3>
+                    <p className="mt-1 font-mono text-[26px] font-semibold leading-none tabular-nums" aria-live="polite">
+                      {market != null ? formatMoney(market) : "—"}
+                    </p>
+                  </div>
+                  {movement === "up" || movement === "down" ? (
+                    <p className="text-[13px]" title={t.modal.trend}>
                       <TrendBadge delta={movement} amount={marketDelta} />
-                      {marketDeltaPct != null && movement !== "flat" ? (
+                      {marketDeltaPct != null ? (
                         <span className={`font-mono ${movement === "up" ? "text-gain" : "text-danger"}`}>
                           {" · "}
                           {formatSignedPercent(marketDeltaPct)}
                         </span>
                       ) : null}
-                    </span>
+                    </p>
                   ) : null}
                 </div>
                 <PriceChart
                   points={priceHistory}
                   label={t.modal.chartLabel}
-                  height={96}
+                  height={80}
                   compact
                   emptyHint={t.modal.chartEmpty}
                 />
               </div>
 
-              {showValue ? (
-                <div className="mx-4 flex flex-col gap-3 border-t border-cyan/15 py-4 sm:mx-5 lg:mx-0 lg:border-t-0 lg:p-5">
-                  <h3 className="hud-label hidden text-yellow lg:block">{t.modal.myValue}</h3>
-                  {total > 0 ? (
-                    <dl className="grid grid-cols-3 gap-2 lg:flex lg:flex-col lg:gap-2.5">
-                      <div className="flex flex-col gap-0.5 lg:flex-row lg:items-baseline lg:justify-between lg:gap-3">
-                        <dt className="text-[11px] text-muted lg:text-[13px]">
-                          <span className="lg:hidden">{t.modal.myValue}</span>
-                          <span className="hidden lg:inline">{t.modal.currentValue}</span>
-                        </dt>
-                        <dd className="font-mono text-[15px] font-semibold tabular-nums lg:text-xl">
-                          {currentValue != null ? formatMoney(currentValue) : "—"}
-                        </dd>
-                      </div>
-                      <div className="flex flex-col gap-0.5 lg:flex-row lg:items-baseline lg:justify-between lg:gap-3">
-                        <dt className="text-[11px] text-muted lg:text-[13px]">{t.modal.purchaseCost}</dt>
-                        <dd className="font-mono text-[15px] tabular-nums text-foreground/80 lg:text-sm">
-                          {pricedCopies > 0 ? formatMoney(purchaseCost) : "—"}
-                        </dd>
-                      </div>
-                      <div className="hidden h-px bg-line lg:block" aria-hidden="true" />
-                      <div className="flex flex-col gap-0.5 lg:flex-row lg:items-baseline lg:justify-between lg:gap-3">
-                        <dt className="text-[11px] text-muted lg:text-[13px]">{t.modal.profitLoss}</dt>
-                        <dd
-                          className={`font-mono text-[15px] tabular-nums lg:text-sm ${
-                            profit == null || Math.abs(profit) < 0.005
-                              ? "text-muted"
-                              : profit > 0
-                                ? "text-gain"
-                                : "text-danger"
-                          }`}
-                        >
-                          {profit != null ? formatSignedMoney(profit) : "—"}
-                        </dd>
-                      </div>
-                      {!costComplete && !readOnly ? (
-                        <p className="col-span-3 text-xs leading-relaxed text-muted">
-                          {pricedCopies > 0 ? t.modal.partialCost : t.modal.valueHint}
-                        </p>
-                      ) : null}
-                    </dl>
-                  ) : (
-                    <p className="text-[13px] leading-relaxed text-muted">
-                      {t.modal.notInCollection} {t.modal.valueHint}
-                    </p>
-                  )}
-                </div>
+              {/* Seul le gain/perte est ajouté : la valeur et le coût d'achat figurent déjà ailleurs.
+                  Masqué tant qu'aucun prix d'achat (EUR) ne permet de le calculer. */}
+              {profit != null ? (
+              <p className="flex items-baseline justify-between gap-3 border-t border-cyan/15 px-4 py-2.5 sm:px-5">
+                <span className={`${fieldLabelClass} flex items-center gap-1.5`}>
+                  {t.modal.profitLoss}
+                  {total > 0 && pricedCopies < total ? (
+                    <span className="group relative normal-case tracking-normal">
+                      <button
+                        type="button"
+                        className="relative grid h-4 w-4 place-items-center rounded-full border border-line text-[10px] leading-none text-muted transition before:absolute before:-inset-3 before:content-[''] hover:border-cyan hover:text-cyan focus-visible:border-cyan focus-visible:text-cyan focus-visible:outline-none"
+                        aria-label={t.modal.partialCost(formatInt(pricedCopies), formatInt(total))}
+                        aria-expanded={costHintOpen}
+                        // iOS ne donne pas le focus à un bouton touché : l'info-bulle s'ouvre au tap.
+                        onClick={() => setCostHintOpen((value) => !value)}
+                        onBlur={() => setCostHintOpen(false)}
+                      >
+                        ?
+                      </button>
+                      <span
+                        role="tooltip"
+                        className={`pointer-events-none absolute bottom-full left-0 z-10 mb-2 w-56 ${costHintOpen ? "block" : "hidden"} border border-cyan/50 bg-black/95 px-2.5 py-1.5 font-sans text-xs leading-relaxed text-foreground shadow-[0_8px_24px_rgba(0,0,0,0.55)] group-focus-within:block group-hover:block`}
+                      >
+                        {t.modal.partialCost(formatInt(pricedCopies), formatInt(total))}
+                      </span>
+                    </span>
+                  ) : null}
+                </span>
+                <span
+                  className={`font-mono text-sm tabular-nums ${
+                    Math.abs(profit) < 0.005 ? "text-muted" : profit > 0 ? "text-gain" : "text-danger"
+                  }`}
+                >
+                  {formatSignedMoney(profit)}
+                </span>
+              </p>
               ) : null}
             </section>
             ) : null}
@@ -613,16 +595,7 @@ export function CardModal({
                 <h3 id={`${titleId}-collection`} className="hud-label text-cyan">
                   {readOnly ? t.filters.collection : t.modal.myCollection}
                 </h3>
-                <p className="text-xs text-muted">
-                  {items.length === 0
-                    ? t.modal.notInCollection
-                    : t.modal.collectionSummary(
-                        String(items.length),
-                        t.common.lines(items.length),
-                        String(total),
-                        t.common.copies(total),
-                      )}
-                </p>
+                {items.length === 0 ? <p className="text-xs text-muted">{t.modal.notInCollection}</p> : null}
               </div>
 
               {items.length > 0 ? (
@@ -642,7 +615,7 @@ export function CardModal({
                   <ul className="flex flex-col">
                     {items.map((item) => (
                       <li
-                        key={`${item.id}:${item.quantity}:${item.conditionCode}:${item.notes ?? ""}:${item.purchasePrice ?? ""}:${item.purchaseCurrency ?? ""}`}
+                        key={`${item.id}:${item.conditionCode}:${item.notes ?? ""}:${item.purchasePrice ?? ""}:${item.purchaseCurrency ?? ""}`}
                         className="border-t border-line/50 py-2.5 first:border-t-0 md:first:border-t"
                       >
                         {canEdit ? (
@@ -658,119 +631,109 @@ export function CardModal({
 
               {!readOnly && onSave ? (
                 <form
-                  className="m-4 hidden flex-col gap-3.5 border border-cyan/15 bg-cyan/[0.03] p-4 md:flex"
+                  className="hidden px-4 pb-3 pt-2 sm:px-5 md:block"
                   onSubmit={(event) => {
                     event.preventDefault();
                     void add();
                   }}
+                  aria-labelledby={`${titleId}-add`}
                   aria-describedby={message ? formErrorId : undefined}
                 >
-                  <p className="text-sm font-semibold">{t.modal.addCopy}</p>
-                  <div className="flex flex-col gap-1.5">
-                    <span id={`${titleId}-condition`} className={fieldLabelClass}>
-                      {t.modal.condition}
-                    </span>
+                  <h3 id={`${titleId}-add`} className="py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-cyan">
+                    {t.modal.addCopy}
+                  </h3>
+                  {items.length === 0 ? (
                     <div
-                      role="group"
-                      aria-labelledby={`${titleId}-condition`}
-                      className="grid border border-line"
-                      style={{ gridTemplateColumns: `repeat(${Math.max(conditions.length, 1)}, minmax(0, 1fr))` }}
+                      className="grid grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_minmax(0,1fr)_2.75rem] gap-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted"
+                      aria-hidden="true"
                     >
-                      {conditions.map((condition, index) => {
-                        const active = condition.code === conditionCode;
-                        return (
-                          <button
-                            key={condition.code}
-                            type="button"
-                            aria-pressed={active}
-                            title={condition.name}
-                            onClick={() => setConditionCode(condition.code)}
-                            className={`h-11 font-mono text-[13px] transition focus-visible:relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/70 ${
-                              index > 0 ? "border-l border-line" : ""
-                            } ${active ? "bg-yellow font-semibold text-black" : "text-muted hover:bg-panel-2 hover:text-foreground"}`}
-                          >
-                            {condition.code}
-                          </button>
-                        );
-                      })}
+                      <span>{t.modal.condition}</span>
+                      <span>{t.modal.quantity}</span>
+                      <span>{t.modal.unitPurchasePrice}</span>
+                      <span>{t.modal.notes}</span>
+                      <span />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-[8.5rem_11rem_minmax(0,1fr)_auto] sm:items-end">
-                    <div className="flex flex-col gap-1.5">
-                      <span className={fieldLabelClass} aria-hidden="true">
-                        {t.modal.quantity}
-                      </span>
-                      <div className="flex h-11 items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
-                        <button
-                          type="button"
-                          className={`${iconBtnClass} w-10 text-base`}
-                          aria-label={t.modal.decreaseQty}
-                          onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-                        >
-                          −
-                        </button>
-                        <input
-                          className="min-w-0 flex-1 bg-transparent text-center font-mono text-[15px] outline-none"
-                          inputMode="numeric"
-                          aria-label={t.modal.quantity}
-                          value={quantity}
-                          onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))}
-                        />
-                        <button
-                          type="button"
-                          className={`${iconBtnClass} w-10 text-base`}
-                          aria-label={t.modal.increaseQty}
-                          onClick={() => setQuantity((current) => current + 1)}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor={`${titleId}-price`} className={fieldLabelClass}>
-                        {t.modal.unitPurchasePrice}
-                      </label>
-                      <div className="flex h-11 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
-                        <input
-                          id={`${titleId}-price`}
-                          className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-[15px] outline-none"
-                          inputMode="decimal"
-                          placeholder="—"
-                          value={price}
-                          onChange={(event) => setPrice(event.target.value)}
-                        />
-                        <select
-                          className="shrink-0 border-l border-line bg-panel px-2 font-mono text-xs text-foreground/80 outline-none"
-                          value={currency}
-                          onChange={(event) => setCurrency(event.target.value)}
-                          aria-label={t.modal.currency}
-                        >
-                          {CURRENCIES.map((code) => (
-                            <option key={code} value={code}>
-                              {code}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <label className="col-span-2 flex flex-col gap-1.5 sm:col-span-1">
-                      <span className={fieldLabelClass}>{t.modal.notes}</span>
+                  ) : null}
+                  <div className="grid grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_minmax(0,1fr)_2.75rem] items-center gap-3 border-t border-line/50 py-2.5">
+                    <span className="relative flex h-10 items-center">
+                      <span className={`pointer-events-none absolute left-2 top-1/2 z-10 h-2 w-2 -translate-y-1/2 ${conditionDot(conditionCode)}`} aria-hidden="true" />
+                      <select
+                        className="h-full w-full min-w-0 border border-line bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan/70"
+                        value={conditionCode}
+                        onChange={(event) => setConditionCode(event.target.value)}
+                        aria-label={t.modal.condition}
+                      >
+                        {conditions.map((condition) => (
+                          <option key={condition.code} value={condition.code} className="font-mono" title={condition.name}>
+                            {conditionOptionLabel(condition, conditions)}
+                          </option>
+                        ))}
+                      </select>
+                    </span>
+                    <div className="inline-flex h-10 w-full items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+                      <button
+                        type="button"
+                        className={iconBtnClass}
+                        aria-label={t.modal.decreaseQty}
+                        onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                      >
+                        −
+                      </button>
                       <input
-                        className={`${fieldClass} h-11`}
-                        placeholder={t.modal.notesPlaceholder}
-                        value={notes}
-                        onChange={(event) => setNotes(event.target.value)}
+                        className="min-w-0 flex-1 bg-transparent text-center font-mono text-sm outline-none"
+                        inputMode="numeric"
+                        aria-label={t.modal.quantity}
+                        value={quantity}
+                        onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))}
                       />
-                    </label>
+                      <button
+                        type="button"
+                        className={iconBtnClass}
+                        aria-label={t.modal.increaseQty}
+                        onClick={() => setQuantity((current) => current + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+                      <input
+                        className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
+                        inputMode="decimal"
+                        placeholder="—"
+                        aria-label={t.modal.unitPurchasePrice}
+                        value={price}
+                        onChange={(event) => setPrice(event.target.value)}
+                      />
+                      <select
+                        className="shrink-0 border-l border-line bg-panel px-1.5 font-mono text-xs text-foreground/80 outline-none"
+                        value={currency}
+                        onChange={(event) => setCurrency(event.target.value)}
+                        aria-label={t.modal.currency}
+                      >
+                        {CURRENCIES.map((code) => (
+                          <option key={code} value={code}>
+                            {code}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <input
+                      className={fieldClass}
+                      placeholder={t.modal.notesPlaceholder}
+                      aria-label={t.modal.notes}
+                      value={notes}
+                      onChange={(event) => setNotes(event.target.value)}
+                    />
                     <button
                       type="submit"
                       disabled={pending}
-                      className="col-span-2 inline-flex h-11 items-center justify-center gap-2 bg-yellow px-5 text-sm font-semibold tracking-wide text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80 focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60 sm:col-span-1"
+                      className="inline-flex h-10 items-center justify-center bg-yellow text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80 disabled:opacity-60"
+                      aria-label={pending ? t.modal.adding : t.modal.add}
+                      title={t.modal.add}
                     >
                       <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M8 3v10M3 8h10" />
                       </svg>
-                      {pending ? t.modal.adding : t.modal.add}
                     </button>
                   </div>
                   {message ? (
@@ -807,7 +770,19 @@ export function CardModal({
               ) : null}
               {printing.setName ? (
                 <span>
-                  {t.modal.set} · <span className="text-foreground">{printing.setName}</span>
+                  {t.modal.set} ·{" "}
+                  {onFilterSet ? (
+                    <button
+                      type="button"
+                      className="text-cyan underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
+                      onClick={() => onFilterSet(printing.setCode)}
+                      aria-label={t.modal.viewSet(printing.setName)}
+                    >
+                      {printing.setName}
+                    </button>
+                  ) : (
+                    <span className="text-foreground">{printing.setName}</span>
+                  )}
                 </span>
               ) : null}
               <span>
@@ -819,7 +794,7 @@ export function CardModal({
 
         {!readOnly && onSave ? (
           <form
-            className="sticky bottom-0 z-10 flex flex-col gap-2.5 border-t border-line bg-panel-2 px-4 pb-5 pt-3 md:hidden"
+            className="sticky bottom-0 z-10 flex flex-col gap-2.5 border-t border-line bg-panel-2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 md:hidden"
             onSubmit={(event) => {
               event.preventDefault();
               void add();
@@ -974,7 +949,40 @@ function LineEditor({
   onDelete: (id: string) => Promise<void>;
 }) {
   const { t } = useI18n();
-  const [draft, setDraft] = useState(String(item.quantity));
+  // Quantité saisie mais pas encore envoyée : affichée tout de suite, envoyée en un seul PATCH
+  // une fois les clics terminés. null = on affiche la valeur de la collection.
+  const [pendingQty, setPendingQty] = useState<number | null>(null);
+  const [draft, setDraft] = useState<string | null>(null);
+  const pendingRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onPatchRef = useRef(onPatch);
+  useEffect(() => {
+    onPatchRef.current = onPatch;
+  }, [onPatch]);
+  const quantity = pendingQty ?? item.quantity;
+
+  function flushQuantity() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+    const value = pendingRef.current;
+    if (value == null) return;
+    pendingRef.current = null;
+    setPendingQty(null);
+    // En cas d'échec, le provider restaure la ligne : l'affichage revient à la valeur serveur.
+    onPatchRef.current(item.id, { quantity: value }).catch(() => {});
+  }
+
+  function setQuantity(next: number) {
+    pendingRef.current = next;
+    setPendingQty(next);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (next <= 0) flushQuantity();
+    else timerRef.current = setTimeout(flushQuantity, 350);
+  }
+
+  // Fermer la fenêtre pendant le délai ne doit pas perdre la dernière quantité.
+  useEffect(() => () => flushQuantity(), []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [notes, setNotes] = useState(item.notes ?? "");
   const [price, setPrice] = useState(item.purchasePrice ?? "");
   const [editing, setEditing] = useState(false);
@@ -990,7 +998,7 @@ function LineEditor({
         <span className={`px-1.5 py-0.5 font-mono text-xs ${conditionTone(item.conditionCode)}`}>{item.conditionCode}</span>
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-sm">
-            ×{item.quantity}
+            ×{quantity}
             {unitLabel ? ` · ${unitLabel}` : ""}
           </span>
           {item.notes ? <span className="truncate text-xs text-muted">{item.notes}</span> : null}
@@ -1020,17 +1028,17 @@ function LineEditor({
     >
       <label className="block">
         <span className={labelClass}>{t.modal.condition}</span>
-        <span className="flex h-10 items-center gap-2 border border-line bg-background pl-2 focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
-          <span className={`h-2 w-2 shrink-0 ${conditionDot(item.conditionCode)}`} aria-hidden="true" />
+        <span className="relative flex h-10 items-center">
+          <span className={`pointer-events-none absolute left-2 top-1/2 z-10 h-2 w-2 -translate-y-1/2 ${conditionDot(item.conditionCode)}`} aria-hidden="true" />
           <select
-            className="h-full min-w-0 flex-1 bg-transparent pr-1 font-mono text-sm outline-none"
+            className="h-full w-full min-w-0 border border-line bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan/70"
             value={item.conditionCode}
             onChange={(event) => void onPatch(item.id, { conditionCode: event.target.value })}
             title={conditionName ? `${item.conditionCode} — ${conditionName}` : t.modal.condition}
           >
             {conditions.map((condition) => (
-              <option key={condition.code} value={condition.code} title={condition.name}>
-                {condition.code} — {condition.name}
+              <option key={condition.code} value={condition.code} className="font-mono" title={condition.name}>
+                {conditionOptionLabel(condition, conditions)}
               </option>
             ))}
           </select>
@@ -1046,7 +1054,7 @@ function LineEditor({
             type="button"
             className={iconBtnClass}
             aria-label={t.modal.decreaseQty}
-            onClick={() => void onPatch(item.id, { quantity: item.quantity - 1 })}
+            onClick={() => setQuantity(quantity - 1)}
           >
             −
           </button>
@@ -1054,23 +1062,20 @@ function LineEditor({
             aria-label={t.modal.quantity}
             inputMode="numeric"
             className="min-w-0 flex-1 bg-transparent text-center font-mono text-sm outline-none"
-            value={draft}
+            value={draft ?? String(quantity)}
             onChange={(event) => setDraft(event.target.value)}
             onBlur={() => {
-              if (draft.trim() === "") {
-                setDraft(String(item.quantity));
-                return;
-              }
+              if (draft == null) return;
+              setDraft(null);
               const next = Number(draft);
-              if (Number.isInteger(next) && next !== item.quantity) void onPatch(item.id, { quantity: next });
-              else setDraft(String(item.quantity));
+              if (draft.trim() !== "" && Number.isInteger(next) && next !== quantity) setQuantity(next);
             }}
           />
           <button
             type="button"
             className={iconBtnClass}
             aria-label={t.modal.increaseQty}
-            onClick={() => void onPatch(item.id, { quantity: item.quantity + 1 })}
+            onClick={() => setQuantity(quantity + 1)}
           >
             +
           </button>

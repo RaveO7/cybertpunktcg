@@ -510,7 +510,7 @@ export function Dashboard() {
             </form>
           </div>
         </div>
-        <div className="grid border-t border-line/60 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 border-t border-line/60 xl:grid-cols-4">
           <GlobalStat label={isSealed ? t.dashboard.uniqueSealed : t.dashboard.uniqueCards}>
             <span className="font-mono text-2xl text-yellow sm:text-3xl">{formatInt(heroProgress.uniqueOwned)}</span>
             <span className="font-mono text-sm text-muted">/ {formatInt(heroProgress.total)}</span>
@@ -541,7 +541,7 @@ export function Dashboard() {
           <GlobalStat label={isSealed ? t.dashboard.sealedTrendValue : t.dashboard.trendValue} last>
             {view.hasPrices && heroValue && heroValue.pricedCopies > 0 ? (
               <>
-                <span className="font-mono text-2xl text-yellow sm:text-3xl">{formatMoney(heroValue.marketTotal)}</span>
+                <span className="font-mono text-xl text-yellow sm:text-3xl">{formatMoney(heroValue.marketTotal)}</span>
                 <TrendBadge delta={heroValue.marketDelta} amount={heroValue.marketDeltaAmount} />
               </>
             ) : (
@@ -1051,12 +1051,13 @@ function GlobalStat({
   last?: boolean;
   children: ReactNode;
 }) {
-  const className = `flex flex-col gap-1.5 border-line/60 px-5 py-4 sm:px-7 ${
-    last ? "" : "border-b sm:odd:border-r xl:border-b-0 xl:border-r"
+  // Grille 2×2 (téléphone, tablette) puis 4 colonnes : bordures entre les cases seulement.
+  const className = `flex min-w-0 flex-col gap-1.5 border-line/60 px-4 py-3.5 odd:border-r [&:nth-child(-n+2)]:border-b sm:px-7 sm:py-4 xl:[&:nth-child(-n+2)]:border-b-0 ${
+    last ? "" : "xl:border-r"
   } ${href ? "hover:bg-panel-2/40" : ""}`;
   const body = (
     <>
-      <span className="flex justify-between font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+      <span className="flex flex-wrap justify-between gap-x-2 font-display text-[10px] font-semibold uppercase tracking-[0.12em] text-muted sm:text-[11px] sm:tracking-[0.16em]">
         <span>{label}</span>
         {href && linkLabel ? (
           <span className={tone === "danger" ? "text-danger" : "text-cyan"}>{linkLabel} →</span>

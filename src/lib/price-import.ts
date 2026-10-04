@@ -480,10 +480,11 @@ async function cachedFiles({ cacheDir }: Ctx): Promise<PriceFiles | null> {
     /^products_nonsingles_.*\.json$/i,
   );
   if (products && prices) {
+    // Cache runtime (tmpdir en prod) : empêche Turbopack de tracer tout le projet.
     return {
-      products: path.join(cacheDir, products),
-      prices: path.join(cacheDir, prices),
-      nonsingles: nonsingles ? path.join(cacheDir, nonsingles) : null,
+      products: path.join(/* turbopackIgnore: true */ cacheDir, products),
+      prices: path.join(/* turbopackIgnore: true */ cacheDir, prices),
+      nonsingles: nonsingles ? path.join(/* turbopackIgnore: true */ cacheDir, nonsingles) : null,
     };
   }
   return null;

@@ -78,6 +78,78 @@ textarea {
   font: inherit;
 }
 
+/* --- Webapp mobile ---------------------------------------------------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Pas de « rebond » de toute la page : seul le contenu défile. */
+  overscroll-behavior: none;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  /* Hauteur de la barre d'onglets mobile (0 sur grand écran), utilisée par les barres fixes. */
+  --app-bottom-nav: 0px;
+}
+
+/* La barre d'accueil iPhone recouvre le bas : la barre d'onglets s'en charge quand elle est là. */
+.app-main {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 639.98px) {
+  body[data-bottom-nav="true"] {
+    --app-bottom-nav: calc(3.75rem + env(safe-area-inset-bottom));
+  }
+
+  body[data-bottom-nav="true"] .app-main {
+    padding-bottom: 0;
+  }
+}
+
+/* Supprime le délai de 300 ms et le zoom par double tap sur les commandes. */
+a,
+button,
+select,
+summary,
+label,
+input,
+textarea,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* iOS zoome sur tout champ dont le texte fait moins de 16 px : on l'évite sur écran tactile. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Images de cartes : pas de menu « enregistrer l'image » ni de glisser au toucher prolongé. */
+.no-touch-callout,
+.no-touch-callout img {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.px-safe {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 a,
 button:not(:disabled),
 select:not(:disabled),
@@ -90,6 +162,23 @@ label,
 button:disabled,
 select:disabled {
   cursor: not-allowed;
+}
+
+/* Les selects ont souvent un fond transparent : sans ça, la liste déroulante native
+   s'affiche en blanc avec le texte clair du thème sombre. */
+select option,
+select optgroup {
+  background-color: var(--panel);
+  color: var(--foreground);
+}
+
+select option:checked {
+  background-color: var(--panel-2);
+  color: var(--yellow);
+}
+
+select option:disabled {
+  color: var(--muted);
 }
 
 ::selection {
@@ -169,8 +258,10 @@ select:disabled {
   pointer-events: none;
 }
 
-.group:hover .card-ambilight {
-  opacity: 0.85;
+@media (hover: hover) {
+  .group:hover .card-ambilight {
+    opacity: 0.85;
+  }
 }
 
 /* Bottom spill sits above cards below; sides stay on the -z-10 layer */
@@ -184,35 +275,38 @@ select:disabled {
   content: none;
 }
 
-.group:hover .scanlines::after {
-  content: "";
-  position: absolute;
-  top: -20%;
-  right: -20%;
-  bottom: -20%;
-  left: -20%;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.035),
-    rgba(255, 255, 255, 0.035) 1px,
-    transparent 3px,
-    transparent 6px
-  );
-  mix-blend-mode: overlay;
-  opacity: 0.35;
-}
+/* Sur écran tactile, :hover reste « collé » après un tap : effets réservés à la souris. */
+@media (hover: hover) {
+  .group:hover .scanlines::after {
+    content: "";
+    position: absolute;
+    top: -20%;
+    right: -20%;
+    bottom: -20%;
+    left: -20%;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.035),
+      rgba(255, 255, 255, 0.035) 1px,
+      transparent 3px,
+      transparent 6px
+    );
+    mix-blend-mode: overlay;
+    opacity: 0.35;
+  }
 
-.group:hover .scanbeam::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 40%;
-  top: 0;
-  pointer-events: none;
-  background: linear-gradient(to bottom, transparent 0%, rgba(0, 240, 255, 0.12) 45%, transparent 100%);
-  animation: scanline 2.8s linear 1;
+  .group:hover .scanbeam::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 40%;
+    top: 0;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0, 240, 255, 0.12) 45%, transparent 100%);
+    animation: scanline 2.8s linear 1;
+  }
 }
 
 @keyframes scanline {

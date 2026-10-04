@@ -37,16 +37,19 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
 
   const geometry = useMemo(() => {
     if (points.length === 0 || width <= 0) return null;
-    const padding = compact
-      ? { top: 10, right: 10, bottom: 22, left: 44 }
-      : { top: 16, right: 18, bottom: 30, left: 58 };
-    const innerWidth = Math.max(1, width - padding.left - padding.right);
-    const innerHeight = Math.max(1, resolvedHeight - padding.top - padding.bottom);
     const values = points.map((point) => point.value);
     const minValue = Math.min(...values);
     const maxValue = Math.max(...values);
     const span = Math.max(maxValue - minValue, maxValue * 0.04, 0.05);
     const ticks = niceTicks(Math.max(0, minValue - span * 0.12), maxValue + span * 0.12, compact ? 3 : 5);
+    // Marge gauche dimensionnée sur le libellé d'axe le plus long (police mono ≈ 0.7em par caractère, avec marge).
+    const longestTick = Math.max(...ticks.map((tick) => formatAxisMoney(tick).length));
+    const labelWidth = Math.ceil(longestTick * AXIS_FONT_SIZE[compact ? "compact" : "full"] * 0.7);
+    const padding = compact
+      ? { top: 10, right: 10, bottom: 22, left: Math.max(44, labelWidth + 16) }
+      : { top: 16, right: 18, bottom: 30, left: Math.max(58, labelWidth + 16) };
+    const innerWidth = Math.max(1, width - padding.left - padding.right);
+    const innerHeight = Math.max(1, resolvedHeight - padding.top - padding.bottom);
     const domainMin = ticks[0];
     const domainMax = ticks[ticks.length - 1];
     const xAt = (index: number) =>
@@ -85,10 +88,12 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
   }, [compact, resolvedHeight, points, width]);
 
   if (points.length === 0) {
+    // Compact : le conteneur porte déjà le titre, seule l'explication reste.
+    if (compact) return <p className="text-xs leading-relaxed text-muted">{resolvedEmpty}</p>;
     return (
-      <div className={`border border-line bg-panel text-sm text-muted ${compact ? "px-3 py-3" : "px-4 py-8"}`}>
+      <div className="border border-line bg-panel px-4 py-8 text-sm text-muted">
         <p className="font-mono text-[10px] tracking-[0.14em] text-cyan uppercase">{resolvedLabel}</p>
-        <p className={compact ? "mt-1.5 text-xs leading-relaxed" : "mt-3"}>{resolvedEmpty}</p>
+        <p className="mt-3">{resolvedEmpty}</p>
       </div>
     );
   }
@@ -115,35 +120,36 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
   };
 
   return (
-    <div className={`border border-line bg-panel ${compact ? "p-2.5" : "p-4 sm:p-5"}`}>
-      <div className={`flex flex-wrap items-start justify-between gap-4 ${compact ? "mb-1.5" : "mb-6"}`}>
-        <div className="min-w-0">
-          <p className="font-mono text-[10px] tracking-[0.14em] text-cyan uppercase">{resolvedLabel}</p>
-          <p className={compact ? "mt-0.5 font-mono text-sm text-yellow" : "mt-2.5 font-mono text-lg leading-none text-yellow"}>
-            {formatMoney(active?.value ?? geometry?.last ?? points[points.length - 1].value)}
-          </p>
-          {!compact ? (
+    <div className={compact ? "" : "border border-line bg-panel p-4 sm:p-5"}>
+      {/* Compact : courbe seule, le prix et sa variation sont affichés par le conteneur. */}
+      {!compact ? (
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] tracking-[0.14em] text-cyan uppercase">{resolvedLabel}</p>
+            <p className="mt-2.5 font-mono text-lg leading-none text-yellow">
+              {formatMoney(active?.value ?? geometry?.last ?? points[points.length - 1].value)}
+            </p>
             <p className="mt-2.5 text-xs text-muted">{active ? formatDay(active.day, localeTag, true) : t.chart.period}</p>
-          ) : null}
-        </div>
-        <div className={`flex shrink-0 flex-col items-end ${compact ? "gap-1" : "gap-2"} ${compact ? "text-xs" : "text-sm"}`}>
-          <span
-            className={`inline-flex items-center gap-2 whitespace-nowrap border font-mono leading-none tabular-nums ${compact ? "px-2 py-1" : "px-2.5 py-1.5"} ${deltaClass}`}
-          >
-            <span aria-hidden className="text-[0.7em]">
-              {trend === "up" ? "▲" : trend === "down" ? "▼" : "■"}
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-2 text-sm">
+            <span
+              className={`inline-flex items-center gap-2 whitespace-nowrap border px-2.5 py-1.5 font-mono leading-none tabular-nums ${deltaClass}`}
+            >
+              <span aria-hidden className="text-[0.7em]">
+                {trend === "up" ? "▲" : trend === "down" ? "▼" : "■"}
+              </span>
+              <span>
+                {delta > 0 ? "+" : delta < 0 ? "−" : ""}
+                {formatMoney(Math.abs(delta))}
+              </span>
+              {geometry?.deltaPct != null ? (
+                <span className="opacity-75">({formatPct(geometry.deltaPct, localeTag)})</span>
+              ) : null}
             </span>
-            <span>
-              {delta > 0 ? "+" : delta < 0 ? "−" : ""}
-              {formatMoney(Math.abs(delta))}
-            </span>
-            {geometry?.deltaPct != null ? (
-              <span className="opacity-75">({formatPct(geometry.deltaPct, localeTag)})</span>
-            ) : null}
-          </span>
-          {points.length > 1 ? <span className="text-xs text-muted">{t.chart.days(points.length)}</span> : null}
+            {points.length > 1 ? <span className="text-xs text-muted">{t.chart.days(points.length)}</span> : null}
+          </div>
         </div>
-      </div>
+      ) : null}
       <div ref={setContainer} className="relative w-full" style={{ height: resolvedHeight }}>
         {geometry ? (
           <svg
@@ -188,7 +194,7 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
                     dominantBaseline="middle"
                     textAnchor="end"
                     fill={AXIS_TEXT}
-                    fontSize={compact ? 10 : 11}
+                    fontSize={AXIS_FONT_SIZE[compact ? "compact" : "full"]}
                     className="font-mono"
                   >
                     {formatAxisMoney(tick)}
@@ -280,9 +286,12 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
               width={geometry.innerWidth}
               height={geometry.innerHeight}
               fill="transparent"
+              // Au doigt : glisser horizontalement parcourt la courbe, verticalement fait défiler la page.
+              style={{ touchAction: "pan-y" }}
               onPointerMove={handlePointer}
               onPointerDown={handlePointer}
               onPointerLeave={() => setHover(null)}
+              onPointerCancel={() => setHover(null)}
             />
           </svg>
         ) : null}
@@ -382,6 +391,8 @@ function formatPct(value: number, localeTag: string) {
     signDisplay: "exceptZero",
   }).format(value);
 }
+
+const AXIS_FONT_SIZE = { compact: 10, full: 11 } as const;
 
 function formatAxisMoney(value: number) {
   if (value >= 1000) return `${Math.round(value / 100) / 10}k €`;

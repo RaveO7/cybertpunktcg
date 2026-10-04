@@ -100,7 +100,7 @@ export function CardTile({
       <article
         data-card-id={printing.id}
         onContextMenu={onContextMenu}
-        className={`relative z-0 flex h-full flex-col overflow-hidden hud-panel ${accent}`}
+        className={`no-touch-callout relative z-0 flex h-full flex-col overflow-hidden hud-panel ${accent}`}
       >
         <button type="button" onClick={onClick} className="flex flex-1 flex-col text-left">
           <div
@@ -124,7 +124,7 @@ export function CardTile({
               </div>
             )}
           </div>
-          <div className="flex flex-1 flex-col p-3 md:p-4">
+          <div className="flex flex-1 flex-col p-2.5 sm:p-3 md:p-4">
             <p className="truncate text-sm font-bold text-white md:text-base">{name}</p>
             {subname ? <p className="mt-0.5 truncate text-xs text-muted md:text-sm">{subname}</p> : null}
             {card?.cardType ? (

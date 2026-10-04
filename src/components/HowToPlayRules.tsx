@@ -14,6 +14,7 @@ export function HowToPlayRules() {
   const contentLocale = locale === "fr" ? "fr" : "en";
   const c = howtoPlayContent(contentLocale);
   const rootRef = useRef<HTMLDivElement>(null);
+  const mobileTocRef = useRef<HTMLElement>(null);
   const [activeId, setActiveId] = useState<string>(c.toc[0]?.id ?? "");
 
   useEffect(() => {
@@ -50,8 +51,37 @@ export function HowToPlayRules() {
     };
   }, [c.toc]);
 
+  // Sommaire mobile : garde le chapitre courant visible dans la barre défilante.
+  useEffect(() => {
+    const nav = mobileTocRef.current;
+    const chip = nav?.querySelector<HTMLElement>('[aria-current="location"]');
+    if (!nav || !chip) return;
+    nav.scrollTo({ left: chip.offsetLeft - (nav.clientWidth - chip.offsetWidth) / 2, behavior: "smooth" });
+  }, [activeId]);
+
   return (
-    <div ref={rootRef} className="flex min-w-0 flex-col gap-8 lg:flex-row">
+    <div ref={rootRef} className="flex min-w-0 flex-col gap-6 lg:flex-row lg:gap-8 [&_[id]]:scroll-mt-14 lg:[&_[id]]:scroll-mt-0">
+      <nav
+        ref={mobileTocRef}
+        className="scrollbar-hud sticky top-0 z-10 -mx-3 flex gap-1.5 overflow-x-auto border-b border-line bg-background/95 px-3 py-2 backdrop-blur [scrollbar-width:none] sm:-mx-4 sm:px-4 lg:hidden"
+        aria-label={c.title}
+      >
+        {c.toc.map((item) => {
+          const active = item.id === activeId;
+          return (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              aria-current={active ? "location" : undefined}
+              className={`shrink-0 whitespace-nowrap border px-2.5 py-1.5 text-xs ${
+                active ? "border-yellow bg-yellow/10 text-yellow" : "border-line text-muted"
+              }`}
+            >
+              {item.label}
+            </a>
+          );
+        })}
+      </nav>
       <aside className="hidden w-56 shrink-0 lg:block">
         <nav className="sticky top-0 space-y-1 border border-line bg-panel p-3" aria-label={c.title}>
           <p className="hud-label mb-2 px-2">{c.eyebrow}</p>

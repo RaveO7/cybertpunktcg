@@ -33,6 +33,7 @@ import {
 import type { CatalogDTO, CollectionItemDTO, Filters, PrintingDTO } from "@/lib/types";
 import { useI18n } from "@/components/LocaleProvider";
 import { usePreferences } from "@/components/PreferencesProvider";
+import { conditionOptionLabel } from "@/lib/condition-label";
 import type { Messages } from "@/lib/i18n/messages";
 import { filterDefaultsFrom } from "@/lib/preferences";
 
@@ -78,6 +79,11 @@ function resolveOpenedPrinting(printings: PrintingDTO[], printingId: string | nu
 }
 
 const WELCOME_ORDER = [BETA_SET_CODE, MAIN_SET_CODE];
+
+/** Même seuil que `lg:` : au-dessus, les filtres sont une colonne ; en dessous, un tiroir. */
+function isWideLayout() {
+  return window.matchMedia("(min-width: 1024px)").matches;
+}
 
 function sortOptions(t: Messages): { value: Filters["sort"]; label: string }[] {
   return [
@@ -130,6 +136,8 @@ export function CardsExplorer({
   const SORTS = sortOptions(t);
   const [filters, setFilters] = useState<Filters>(() => parseFilters(searchParams, true, filterDefaultsFrom(prefs)));
   const [filtersVisibility, setFiltersVisibility] = useState<"auto" | "open" | "closed">(prefs.filtersPanel);
+  // Tiroir de filtres sur téléphone/tablette, indépendant de la colonne de bureau.
+  const [filtersDrawer, setFiltersDrawer] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const effectiveAddMode = readOnly ? false : addMode;
   const [addCondition, setAddCondition] = useState(prefs.condition);
@@ -144,6 +152,9 @@ export function CardsExplorer({
   const gridLayoutRef = useRef<CardGridLayout | null>(null);
   const filteredRef = useRef<PrintingDTO[]>([]);
   const urlSyncRef = useRef(searchParams.toString());
+  // Ouvrir une carte ajoute une entrée d'historique : le bouton retour (Android, geste iOS) la ferme.
+  const pushUrlRef = useRef(false);
+  const openedWithPushRef = useRef(false);
   useEffect(() => {
     draftRef.current = draft;
   }, [draft]);
@@ -173,11 +184,28 @@ export function CardsExplorer({
       setCardsLocation({ set: activeFilters.set, language: activeFilters.language }, nextUrl);
     }
     const currentUrl = `${window.location.pathname}${window.location.search}`;
+    const push = pushUrlRef.current;
+    pushUrlRef.current = false;
+    if (!activeFilters.printingId) openedWithPushRef.current = false;
     if (currentUrl !== nextUrl) {
-      // Preserve Next history state so App Router does not ACTION_RESTORE.
-      window.history.replaceState(window.history.state, "", nextUrl);
+      if (push) {
+        window.history.pushState(null, "", nextUrl);
+        openedWithPushRef.current = true;
+      } else {
+        // Preserve Next history state so App Router does not ACTION_RESTORE.
+        window.history.replaceState(window.history.state, "", nextUrl);
+      }
     }
   }, [activeFilters, filterDefaults, setCardsLocation, syncBrowseSelection, urlBase]);
+
+  useEffect(() => {
+    if (!filtersDrawer) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setFiltersDrawer(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [filtersDrawer]);
   const setPrintings = useMemo(() => {
     if (!catalog) return [];
     if (activeFilters.set === ALL_SETS_ID) {
@@ -506,9 +534,38 @@ export function CardsExplorer({
     setAddError(null);
   }
 
+  function openPrinting(printingId: string) {
+    if (!filters.printingId) pushUrlRef.current = true;
+    update({ printingId });
+  }
+
+  function closePrinting() {
+    if (openedWithPushRef.current) {
+      // Revient à l'entrée d'avant l'ouverture : la carte se ferme via la synchro de l'URL.
+      openedWithPushRef.current = false;
+      window.history.back();
+      return;
+    }
+    update({ printingId: null });
+  }
+
+  function openFilters() {
+    if (isWideLayout()) setFiltersVisibility("open");
+    else setFiltersDrawer(true);
+  }
+
+  function closeFilters() {
+    if (filtersDrawer && !isWideLayout()) setFiltersDrawer(false);
+    else setFiltersVisibility("closed");
+  }
+
+  function selectAllFiltered() {
+    selectCards(filtered.map((printing) => printing.id));
+  }
+
   function handleCardClick(event: React.MouseEvent, printingId: string) {
     if (!effectiveAddMode) {
-      update({ printingId });
+      openPrinting(printingId);
       return;
     }
     if (ctrlHandled.current || event.ctrlKey || event.metaKey || event.getModifierState("Control") || ctrlDown.current) {
@@ -604,39 +661,57 @@ export function CardsExplorer({
       }`}
     >
       <div
-        className={
-          filtersVisibility === "closed"
-            ? "hidden"
-            : filtersVisibility === "open"
-              ? "fixed inset-0 z-40 bg-black/70 p-4 lg:static lg:bg-transparent lg:p-0"
-              : "hidden lg:block"
-        }
+        className={`${
+          filtersDrawer
+            ? "fixed inset-0 z-50 bg-black/70 lg:static lg:z-auto lg:bg-transparent"
+            : "hidden"
+        } ${filtersVisibility === "closed" ? "lg:hidden" : "lg:block"}`}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) setFiltersDrawer(false);
+        }}
       >
-        <div className="scrollbar-hud h-full overflow-auto border border-line bg-background p-4 lg:sticky lg:top-0 lg:h-auto lg:max-h-[100cqh] lg:border-0 lg:bg-transparent lg:py-0 lg:pb-4 lg:pl-0 lg:pr-4">
-          <FilterPanel
-            filters={activeFilters}
-            facets={facets}
-            sets={setChoices}
-            conditions={catalog.conditions}
-            onChange={update}
-            onReset={() => update(defaultFilters(true, filterDefaults))}
-            onClose={() => setFiltersVisibility("closed")}
-          />
+        <div
+          className="pt-safe flex h-full w-[min(22rem,88vw)] flex-col border-r border-line bg-background lg:sticky lg:top-0 lg:block lg:h-auto lg:max-h-[100cqh] lg:w-auto lg:overflow-auto lg:border-0 lg:bg-transparent lg:pt-0 lg:pb-4 lg:pr-4 scrollbar-hud"
+          role={filtersDrawer ? "dialog" : undefined}
+          aria-modal={filtersDrawer ? true : undefined}
+          aria-label={filtersDrawer ? t.cards.filters : undefined}
+        >
+          <div className="scrollbar-hud min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 lg:overflow-visible lg:p-0">
+            <FilterPanel
+              filters={activeFilters}
+              facets={facets}
+              sets={setChoices}
+              conditions={catalog.conditions}
+              onChange={update}
+              onReset={() => update(defaultFilters(true, filterDefaults))}
+              onClose={closeFilters}
+            />
+          </div>
+          <div className="pb-safe shrink-0 border-t border-line bg-panel lg:hidden">
+            <div className="p-3">
+              <button
+                type="button"
+                className="h-11 w-full bg-yellow px-4 text-sm font-semibold text-black"
+                onClick={() => setFiltersDrawer(false)}
+              >
+                {filtered.length === 0
+                  ? t.cards.noCards
+                  : t.cards.cardCount(formatInt(filtered.length), t.common.cards(filtered.length))}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       <div>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+        <div className="mb-4 flex flex-wrap gap-2 sm:flex-nowrap sm:gap-3">
           <button
             type="button"
             aria-label={t.cards.filters}
-            className={
-              filtersVisibility === "open"
-                ? "hidden"
-                : filtersVisibility === "closed"
-                  ? "grid h-10 w-10 shrink-0 place-items-center text-cyan"
-                  : "grid h-10 w-10 shrink-0 place-items-center text-cyan lg:hidden"
-            }
-            onClick={() => setFiltersVisibility("open")}
+            aria-expanded={filtersDrawer}
+            className={`grid h-10 w-10 shrink-0 place-items-center border border-line text-cyan sm:border-0 ${
+              filtersVisibility === "closed" ? "" : "lg:hidden"
+            }`}
+            onClick={openFilters}
           >
             <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.75">
               <path d="M3 5h14M3 10h14M3 15h14" strokeLinecap="square" />
@@ -647,11 +722,13 @@ export function CardsExplorer({
             onChange={(event) => update({ q: event.target.value, page: 1 })}
             placeholder={t.cards.searchPlaceholder}
             aria-label={t.common.search}
-            className="h-10 flex-1 border border-line bg-panel px-3 text-sm outline-none focus:border-cyan"
+            type="search"
+            enterKeyHint="search"
+            className="h-10 min-w-0 flex-1 basis-40 border border-line bg-panel px-3 text-sm outline-none focus:border-cyan"
           />
           <select
             aria-label={t.cards.sort}
-            className="h-10 border border-line bg-panel px-3 text-sm"
+            className="h-10 min-w-0 flex-1 border border-line bg-panel px-3 text-sm sm:flex-none"
             value={activeFilters.sort}
             onChange={(event) => update({ sort: event.target.value as Filters["sort"], page: 1 })}
           >
@@ -665,7 +742,7 @@ export function CardsExplorer({
             <button
               type="button"
               aria-pressed={addMode}
-              className={`h-10 px-3 text-sm ${addMode ? "bg-yellow font-semibold text-black" : "border border-yellow text-yellow"}`}
+              className={`h-10 shrink-0 px-3 text-sm ${addMode ? "bg-yellow font-semibold text-black" : "border border-yellow text-yellow"}`}
               onClick={() => {
                 if (addMode) {
                   requestExitAddMode();
@@ -682,7 +759,8 @@ export function CardsExplorer({
         </div>
         {effectiveAddMode ? (
           <div className="mb-3 flex flex-col gap-3 border border-yellow/50 bg-panel p-3">
-            <p className="text-sm text-muted">{t.cards.addModeHelp}</p>
+            <p className="text-sm text-muted pointer-coarse:hidden">{t.cards.addModeHelp}</p>
+            <p className="hidden text-sm text-muted pointer-coarse:block">{t.cards.addModeHelpTouch}</p>
             {rangeAnchor ? (
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-sm text-cyan">
@@ -696,16 +774,24 @@ export function CardsExplorer({
             <div className="flex flex-wrap gap-2">
               <select
                 aria-label={t.cards.addCondition}
-                className="h-10 border border-line bg-panel-2 px-3 text-sm"
+                className="h-10 min-w-0 flex-1 border border-line bg-panel-2 px-3 font-mono text-sm sm:flex-none"
                 value={addCondition}
                 onChange={(event) => setAddCondition(event.target.value)}
               >
                 {catalog.conditions.map((condition) => (
-                  <option key={condition.code} value={condition.code}>
-                    {condition.code} — {condition.name}
+                  <option key={condition.code} value={condition.code} className="font-mono">
+                    {conditionOptionLabel(condition, catalog.conditions)}
                   </option>
                 ))}
               </select>
+              <button
+                type="button"
+                className="h-10 border border-line px-3 text-sm text-cyan disabled:opacity-40"
+                onClick={selectAllFiltered}
+                disabled={filtered.length === 0}
+              >
+                {t.cards.selectAll}
+              </button>
             </div>
           </div>
         ) : null}
@@ -754,13 +840,14 @@ export function CardsExplorer({
           conditions={catalog.conditions}
           ownedIds={ownedIds}
           onOpen={(id) => update({ printingId: id })}
-          onClose={() => update({ printingId: null })}
+          onClose={closePrinting}
           prevId={prevId}
           nextId={nextId}
           onFilterArtist={(artist) =>
             update({ artists: [artist], set: ALL_SETS_ID, printingId: null, page: 1 })
           }
           onFilterRarity={(rarity) => update({ rarity, printingId: null, page: 1 })}
+          onFilterSet={(set) => update({ set, printingId: null, page: 1 })}
           readOnly={readOnly}
           onSave={readOnly ? undefined : (input) => saveLine({ ...input, printingId: selected.id, mode: "add" })}
           onPatch={readOnly ? undefined : patchLine}
@@ -799,9 +886,9 @@ export function CardsExplorer({
         />
       ) : null}
       {effectiveAddMode ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-yellow/60 bg-background/95 px-4 py-3 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-[var(--app-bottom-nav)] z-30 border-t border-yellow/60 bg-background/95 px-4 pt-3 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--app-bottom-nav)))] backdrop-blur">
           <div
-            className={`mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${
+            className={`mx-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${
               filtersVisibility === "closed" ? "max-w-[80rem]" : "max-w-[1600px]"
             }`}
           >
@@ -818,10 +905,10 @@ export function CardsExplorer({
               </p>
               {addError ? <p className="text-sm text-danger">{addError}</p> : null}
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex gap-2">
               <button
                 type="button"
-                className="h-11 border border-line px-4 text-sm disabled:opacity-40"
+                className="h-11 shrink-0 border border-line px-4 text-sm disabled:opacity-40"
                 onClick={clearSelection}
                 disabled={(draftCards === 0 && !rangeAnchor) || adding}
               >

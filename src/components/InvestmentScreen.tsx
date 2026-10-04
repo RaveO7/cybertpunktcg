@@ -227,7 +227,7 @@ export function InvestmentScreen() {
         </div>
       </div>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         <SummaryStat
           label={t.investment.marketValue}
           value={summary.pricedCopies > 0 ? formatMoney(summary.marketTotal) : "—"}
@@ -255,11 +255,11 @@ export function InvestmentScreen() {
         </p>
       ) : null}
 
-      <section className="grid gap-3 border border-line bg-panel p-3 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3 border border-line bg-panel p-3 lg:grid-cols-5">
         <label className="text-sm">
           <span className="mb-1 block text-muted">{t.investment.set}</span>
           <select
-            className="h-10 w-full border border-line bg-background px-3 outline-none focus:border-cyan"
+            className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
             value={setFilter}
             onChange={(event) => setSetFilter(event.target.value)}
           >
@@ -295,7 +295,7 @@ export function InvestmentScreen() {
         <label className="text-sm">
           <span className="mb-1 block text-muted">{t.investment.language}</span>
           <select
-            className="h-10 w-full border border-line bg-background px-3 outline-none focus:border-cyan"
+            className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
             value={language}
             onChange={(event) => setLanguage(event.target.value)}
           >
@@ -307,7 +307,7 @@ export function InvestmentScreen() {
         <label className="text-sm">
           <span className="mb-1 block text-muted">{t.investment.performance}</span>
           <select
-            className="h-10 w-full border border-line bg-background px-3 outline-none focus:border-cyan"
+            className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
             value={performance}
             onChange={(event) => setPerformance(event.target.value as InvestmentPerformance)}
           >
@@ -321,7 +321,7 @@ export function InvestmentScreen() {
         <label className="text-sm">
           <span className="mb-1 block text-muted">{t.investment.range}</span>
           <select
-            className="h-10 w-full border border-line bg-background px-3 outline-none focus:border-cyan"
+            className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
             value={chartRange}
             onChange={(event) => setChartRange(event.target.value as ChartRange)}
           >
@@ -332,12 +332,14 @@ export function InvestmentScreen() {
             ))}
           </select>
         </label>
-        <label className="text-sm">
+        <label className="col-span-2 text-sm lg:col-span-1">
           <span className="mb-1 block text-muted">{t.investment.search}</span>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t.investment.searchPlaceholder}
+            type="search"
+            enterKeyHint="search"
             className="h-10 w-full border border-line bg-background px-3 outline-none focus:border-cyan"
           />
         </label>
@@ -365,8 +367,8 @@ export function InvestmentScreen() {
         {bySet.length === 0 ? (
           <p className="border border-line bg-panel px-4 py-6 text-sm text-muted">{t.investment.emptyFiltered}</p>
         ) : (
-          <div className="border border-line">
-            <table className="w-full text-left text-sm">
+          <div className="scrollbar-hud overflow-x-auto overscroll-x-contain border border-line">
+            <table className="w-full min-w-[40rem] text-left text-sm [&_td]:whitespace-nowrap [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:z-[1] [&_td:first-child]:bg-panel [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:z-[2] [&_th:first-child]:bg-panel-2">
               <thead className="bg-panel-2 text-muted">
                 <tr>
                   <SortableTh
@@ -448,8 +450,8 @@ export function InvestmentScreen() {
         {filtered.length === 0 ? (
           <p className="border border-line bg-panel px-4 py-6 text-sm text-muted">{t.investment.noResults}</p>
         ) : (
-          <div className="border border-line">
-            <table className="w-full text-left text-sm">
+          <div className="scrollbar-hud overflow-x-auto overscroll-x-contain border border-line">
+            <table className="w-full min-w-[46rem] text-left text-sm [&_td]:whitespace-nowrap [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:z-[1] [&_td:first-child]:bg-panel [&_td:first-child]:whitespace-normal [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:z-[2] [&_th:first-child]:bg-panel-2">
               <thead className="bg-panel-2 text-muted">
                 <tr>
                   <SortableTh
@@ -713,10 +715,10 @@ function SummaryStat({
   tone?: "gain" | "loss";
 }) {
   return (
-    <div className="border border-line bg-panel px-4 py-3">
-      <p className="text-xs tracking-[0.14em] text-muted uppercase">{label}</p>
-      <div className="mt-2 flex items-baseline gap-2">
-        <p className={`text-2xl ${tone === "gain" ? "text-gain" : tone === "loss" ? "text-danger" : "text-foreground"}`}>
+    <div className="min-w-0 border border-line bg-panel px-3 py-3 sm:px-4">
+      <p className="text-[11px] tracking-[0.12em] text-muted uppercase sm:text-xs sm:tracking-[0.14em]">{label}</p>
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <p className={`text-xl sm:text-2xl ${tone === "gain" ? "text-gain" : tone === "loss" ? "text-danger" : "text-foreground"}`}>
           {value}
         </p>
         {delta && deltaAmount != null ? <TrendBadge delta={delta} amount={deltaAmount} /> : null}
@@ -728,7 +730,7 @@ function SummaryStat({
 function GroupRow({ label, active, onSelect }: { label: string; active: boolean; onSelect: () => void }) {
   return (
     <tr className={`border-t border-line ${active ? "bg-cyan/10" : "bg-panel-2/60"}`}>
-      <td colSpan={6} className="p-0">
+      <td colSpan={6} className="static! bg-transparent! p-0">
         <button
           type="button"
           aria-pressed={active}
@@ -772,7 +774,7 @@ function LineRow({ line }: { line: InvestmentLine }) {
   return (
     <tr className="border-t border-line hover:bg-white/5">
       <td className="p-0">
-        <Link href={href} className="flex items-center gap-3 px-3 py-2 hover:text-cyan">
+        <Link href={href} className="flex w-44 items-center gap-3 px-3 py-2 hover:text-cyan sm:w-auto sm:min-w-56">
           {line.imagePath ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={line.imagePath} alt="" className="h-12 w-9 bg-black object-contain" loading="lazy" />
