@@ -40,10 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local database and cached card images
+# local database
 /data
-/public/card-images/*
-!/public/card-images/.gitkeep
 
 .vercel
 .env*
