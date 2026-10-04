@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/prisma.mjs generate",
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/prisma.mjs generate && next build",
     "start": "next start",
     "lint": "eslint",
     "test:account": "tsx scripts/verify-account.ts",
@@ -15,10 +16,10 @@
     "test:catalog-cache": "tsx scripts/verify-catalog-cache.ts --build",
     "test:mutations:cache": "tsx scripts/mutate-cache-checks.ts",
     "test:cardmarket": "tsx scripts/verify-logic.ts && tsx scripts/verify-cardmarket.ts",
-    "db:push": "prisma db push",
+    "db:push": "node scripts/prisma.mjs db push",
     "db:seed": "tsx prisma/seed.ts",
-    "import:cards": "prisma db push && tsx prisma/seed.ts && tsx scripts/import-cards.ts",
-    "import:prices": "prisma db push --skip-generate && tsx scripts/import-prices.ts",
+    "import:cards": "node scripts/prisma.mjs db push && tsx prisma/seed.ts && tsx scripts/import-cards.ts",
+    "import:prices": "node scripts/prisma.mjs db push --skip-generate && tsx scripts/import-prices.ts",
     "import:sealed-images": "tsx scripts/import-sealed-images.ts"
   },
   "dependencies": {
