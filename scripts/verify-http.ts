@@ -1,3 +1,5 @@
+import { prisma } from "../src/lib/prisma";
+
 const base = "http://localhost:3000";
 const email = "verify-http@example.com";
 const password = "verify-password";
@@ -147,7 +149,13 @@ async function main() {
   );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    // Le compte de test et ses données (cascade) ne doivent pas rester en base.
+    await prisma.user.deleteMany({ where: { email } });
+    await prisma.$disconnect();
+  });

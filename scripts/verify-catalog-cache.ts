@@ -45,7 +45,7 @@ function ok(label: string) {
 type Catalog = { printings: { id: string; setCode: string; marketPrice: string | null }[]; hasPrices: boolean };
 
 async function main() {
-  run("npx", ["prisma", "db", "push", "--skip-generate", "--accept-data-loss"]);
+  run("node", ["scripts/prisma.mjs", "db", "push", "--skip-generate", "--accept-data-loss"]);
   if (process.argv.includes("--build") || !existsSync(path.join(root, ".next", "BUILD_ID"))) {
     run("npx", ["next", "build"]);
   }

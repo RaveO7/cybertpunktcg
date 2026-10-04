@@ -20,7 +20,7 @@ copyFileSync(sourceDb, dbFile);
 process.env.DATABASE_URL = `file:${dbFile.replace(/\\/g, "/")}`;
 
 // Schéma à jour sur la copie, même si la base de dev est en retard.
-const push = spawnSync("npx", ["prisma", "db", "push", "--skip-generate", "--accept-data-loss"], {
+const push = spawnSync("node", ["scripts/prisma.mjs", "db", "push", "--skip-generate", "--accept-data-loss"], {
   cwd: root,
   env: process.env,
   encoding: "utf8",
