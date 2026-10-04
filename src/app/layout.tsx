@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Chakra_Petch, Geist, Geist_Mono } from "next/font/google";
 import { AppFrame } from "@/components/AppFrame";
 import { BrowseSelectionProvider } from "@/components/BrowseSelection";
@@ -57,6 +59,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </CollectionProvider>
           </PreferencesProvider>
         </LocaleProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
