@@ -14,7 +14,7 @@ export function Header() {
   const sharedMatch = pathname.match(/^\/classeur\/([^/]+)/);
   const isSharedView = Boolean(sharedMatch);
   const shareToken = sharedMatch?.[1] ?? null;
-  const showNav = isSharedView || !ready || Boolean(user);
+  const showNav = isSharedView || (ready && Boolean(user));
 
   const links = isSharedView && shareToken
     ? [

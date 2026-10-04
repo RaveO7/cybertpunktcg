@@ -131,39 +131,7 @@ export function AuthScreen() {
       <h1 className="mt-1 text-3xl text-yellow">{t.auth.title}</h1>
       <p className="mt-2 text-sm text-muted">{t.auth.subtitle}</p>
 
-      {showOAuth ? (
-        <div className="mt-6 flex flex-col gap-2">
-          {oauth.google ? (
-            <button
-              type="button"
-              className={oauthButtonClass}
-              disabled={pending}
-              onClick={() => startOAuth("google")}
-            >
-              <GoogleMark />
-              {t.auth.continueGoogle}
-            </button>
-          ) : null}
-          {oauth.apple ? (
-            <button
-              type="button"
-              className={oauthButtonClass}
-              disabled={pending}
-              onClick={() => startOAuth("apple")}
-            >
-              <AppleMark />
-              {t.auth.continueApple}
-            </button>
-          ) : null}
-          <div className="relative my-2 flex items-center gap-3 text-xs uppercase tracking-[0.16em] text-muted">
-            <span className="h-px flex-1 bg-line" />
-            {t.auth.or}
-            <span className="h-px flex-1 bg-line" />
-          </div>
-        </div>
-      ) : null}
-
-      <div className={`${showOAuth ? "mt-0" : "mt-6"} flex border border-line`} role="tablist" aria-label={t.auth.modeLabel}>
+      <div className="mt-6 flex border border-line" role="tablist" aria-label={t.auth.modeLabel}>
         <button
           type="button"
           role="tab"
@@ -245,6 +213,38 @@ export function AuthScreen() {
           {pending ? t.auth.submitting : mode === "login" ? t.auth.login : t.auth.createAccount}
         </button>
       </form>
+
+      {showOAuth ? (
+        <div className="mt-4 flex flex-col gap-2">
+          <div className="relative my-2 flex items-center gap-3 text-xs uppercase tracking-[0.16em] text-muted">
+            <span className="h-px flex-1 bg-line" />
+            {t.auth.or}
+            <span className="h-px flex-1 bg-line" />
+          </div>
+          {oauth.google ? (
+            <button
+              type="button"
+              className={oauthButtonClass}
+              disabled={pending}
+              onClick={() => startOAuth("google")}
+            >
+              <GoogleMark />
+              {t.auth.continueGoogle}
+            </button>
+          ) : null}
+          {oauth.apple ? (
+            <button
+              type="button"
+              className={oauthButtonClass}
+              disabled={pending}
+              onClick={() => startOAuth("apple")}
+            >
+              <AppleMark />
+              {t.auth.continueApple}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

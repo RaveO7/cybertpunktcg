@@ -254,10 +254,11 @@ export function Dashboard() {
   const [mode, setMode] = useState<CatalogMode>(() => (isSealedSetCode(selection.set) ? "sealed" : "cards"));
   const [language, setLanguage] = useState<Language>(() => languageFor(selection.language));
   const [sort, setSort] = useState<SortKey>("catalog");
-  const [selectedKey, setSelectedKey] = useState<Record<CatalogMode, string>>(() => ({
-    cards: isSealedSetCode(selection.set) ? "" : selection.set,
-    sealed: isSealedSetCode(selection.set) ? selection.set : "",
-  }));
+  // Au chargement, rien n'est sélectionné : l'en-tête cumule tous les blocs.
+  const [selectedKey, setSelectedKey] = useState<Record<CatalogMode, string>>({
+    cards: "",
+    sealed: "",
+  });
   const [pick, setPick] = useState<BlockPick | null>(null);
 
   const view = useMemo(() => {
@@ -342,16 +343,18 @@ export function Dashboard() {
   const gridItems: (Block | Extension)[] = view ? (isSealed ? view.sealedExtensions : view.blocks) : [];
   const wanted = selectedKey[mode];
   const current: Block | Extension | null =
-    (isSealed
-      ? view?.sealedExtensions.find((entry) => entry.key === wanted)
-      : view?.blocks.find(
-          (entry) =>
-            entry.key === wanted ||
-            entry.browseSet === wanted ||
-            entry.extensions.some((extension) => matchesSet(extension, wanted)),
-        )) ??
-    gridItems[0] ??
-    null;
+    (!wanted
+      ? null
+      : isSealed
+        ? view?.sealedExtensions.find((entry) => entry.key === wanted)
+        : view?.blocks.find(
+            (entry) =>
+              entry.key === wanted ||
+              entry.browseSet === wanted ||
+              entry.extensions.some((extension) => matchesSet(extension, wanted)),
+          )) ??
+    // Un seul bloc (grille masquée) : il est forcément sélectionné.
+    (!isSealed && gridItems.length === 1 ? gridItems[0] : null);
   const block = current && "extensions" in current ? current : null;
 
   // Dans un bloc : 1er clic = progression à côté, 2e clic sur la même ligne = page Cartes.
@@ -421,8 +424,12 @@ export function Dashboard() {
           .join(", ")
       : null;
 
+  // Re-cliquer la carte sélectionnée revient à la vue de tous les blocs.
   const selectItem = (entry: Block | Extension) => {
-    setSelectedKey((prev) => ({ ...prev, [mode]: entry.key }));
+    setSelectedKey((prev) => ({
+      ...prev,
+      [mode]: prev[mode] === entry.key ? "" : entry.key,
+    }));
     setPick(null);
   };
   const pickRow = (extension: Extension) => {
@@ -531,7 +538,7 @@ export function Dashboard() {
           >
             <span className="font-mono text-2xl sm:text-3xl">{formatInt(heroProgress.duplicates)}</span>
           </GlobalStat>
-          <GlobalStat label={t.dashboard.trendValue} last>
+          <GlobalStat label={isSealed ? t.dashboard.sealedTrendValue : t.dashboard.trendValue} last>
             {view.hasPrices && heroValue && heroValue.pricedCopies > 0 ? (
               <>
                 <span className="font-mono text-2xl text-yellow sm:text-3xl">{formatMoney(heroValue.marketTotal)}</span>
@@ -571,12 +578,7 @@ export function Dashboard() {
                     key={id}
                     type="button"
                     aria-pressed={sort === id}
-                    onClick={() => {
-                      setSort(id);
-                      // La sélection suit le tri : on se place sur le premier bloc du nouvel ordre.
-                      const first = sortScopes(gridItems, id)[0];
-                      if (first) selectItem(first);
-                    }}
+                    onClick={() => setSort(id)}
                     className={`min-h-10 border-l border-line px-3.5 text-sm ${
                       sort === id ? "bg-panel-2 text-yellow" : "text-muted hover:text-foreground"
                     }`}
