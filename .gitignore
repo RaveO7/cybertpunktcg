@@ -44,3 +44,6 @@ next-env.d.ts
 /data
 /public/card-images/*
 !/public/card-images/.gitkeep
+
+.vercel
+.env*
