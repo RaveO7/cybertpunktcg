@@ -4,12 +4,28 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:account": "tsx scripts/verify-account.ts",
+    "test:account:mutations": "tsx scripts/mutate-account-checks.ts",
+    "test:security": "tsx scripts/verify-security-audit2.ts",
+    "test": "tsx scripts/verify-logic.ts && tsx scripts/verify-cardmarket.ts && tsx scripts/verify-db.ts && tsx scripts/verify-auth.ts && tsx scripts/verify-account.ts && tsx scripts/verify-security-audit2.ts && tsx scripts/verify-history-cache.ts && tsx scripts/mutate-account-checks.ts",
+    "test:history": "tsx scripts/verify-history-cache.ts",
+    "test:catalog-cache": "tsx scripts/verify-catalog-cache.ts --build",
+    "test:mutations:cache": "tsx scripts/mutate-cache-checks.ts",
+    "test:cardmarket": "tsx scripts/verify-logic.ts && tsx scripts/verify-cardmarket.ts",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "import:cards": "prisma db push && tsx prisma/seed.ts && tsx scripts/import-cards.ts",
+    "import:prices": "prisma db push --skip-generate && tsx scripts/import-prices.ts",
+    "import:sealed-images": "tsx scripts/import-sealed-images.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "@tanstack/react-virtual": "^3.14.13",
     "next": "16.3.6",
+    "prisma": "^6.19.3",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -21,6 +37,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

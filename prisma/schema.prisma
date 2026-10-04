@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Compte. La session est un cookie httpOnly renouvelé à chaque ouverture.
+model User {
+  id            String         @id @default(cuid())
+  email         String?        @unique
+  username      String?        @unique
+  displayName   String         @default("Ma collection")
+  passwordHash  String?
+  isPublic      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  items         CollectionItem[]
+  sessions      Session[]
+  oauthAccounts OAuthAccount[]
+  collectionShare CollectionShare?
+  portfolioHistory PortfolioHistoryCache[]
+}
+
+/// Lien secret pour consulter le classeur en lecture seule (sans compte).
+model CollectionShare {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  token     String   @unique
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Identité OAuth (Google, Apple). Un compte peut avoir un mot de passe et/ou des providers.
+model OAuthAccount {
+  id             String   @id @default(cuid())
+  userId         String
+  provider       String
+  providerUserId String
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+/// Jeton de session. Seul son empreinte est stockée. Le cookie dure 400 jours
+/// et est prolongé à chaque ouverture de l'application.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Extension officielle. Le code vient de la base (ex. welcometonightcityretail).
+/// `number` reste vide tant qu'aucun numéro d'extension officiel n'est publié.
+model Set {
+  id           String     @id @default(cuid())
+  code         String     @unique
+  name         String
+  number       Int?
+  releaseDate  DateTime?
+  logoUrl      String?
+  description  String?
+  cardCount    Int        @default(0)
+  status       String     @default("available")
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  printings    Printing[]
+}
+
+/// Identité de jeu. Les tirages physiques sont dans Printing.
+model Card {
+  id                String        @id @default(cuid())
+  externalId        String        @unique
+  code              String        @unique
+  slug              String        @unique
+  name              String
+  subname           String?
+  displayName       String
+  canonicalName     String
+  canonicalBaseName String?
+  rulesText         String?
+  officialRulesText String?
+  flavorText        String?
+  language          String        @default("en")
+  color             String?
+  cardType          String?
+  isEddiable        Boolean?
+  cost              Int?
+  power             Int?
+  ram               Int?
+  legality          String?
+  rulingsJson       String?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  tags              CardTag[]
+  keywords          CardKeyword[]
+  printings         Printing[]
+
+  @@index([color])
+  @@index([cardType])
+}
+
+model CardTag {
+  cardId String
+  tag    String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, tag])
+}
+
+model CardKeyword {
+  cardId  String
+  keyword String
+  card    Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, keyword])
+}
+
+/// Tirage imprimable : set + numéro + langue. externalId sert de clé stable
+/// pour un futur scan. officialFinish est le champ officiel (souvent vide).
+model Printing {
+  id                String           @id @default(cuid())
+  externalId        String           @unique
+  cardId            String
+  setId             String
+  collectorNumber   String
+  rarity            String?
+  imagePath         String?
+  sourceImageUrl    String?
+  artist            String?
+  language          String           @default("en")
+  localizedName     String?
+  printedRulesText  String?
+  officialRulesText String?
+  officialFinish    String?
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  card              Card             @relation(fields: [cardId], references: [id], onDelete: Restrict)
+  set               Set              @relation(fields: [setId], references: [id], onDelete: Restrict)
+  items             CollectionItem[]
+  prices            Price[]
+  snapshots         PriceSnapshot[]
+
+  @@unique([setId, collectorNumber, language])
+  @@index([cardId])
+  @@index([collectorNumber])
+  @@index([rarity])
+}
+
+model Condition {
+  id        String           @id @default(cuid())
+  code      String           @unique
+  name      String
+  sortOrder Int
+  isActive  Boolean          @default(true)
+  items     CollectionItem[]
+  prices    Price[]
+}
+
+model CollectionItem {
+  id               String    @id @default(cuid())
+  userId           String
+  printingId       String
+  conditionId      String
+  quantity         Int
+  notes            String?
+  purchasePrice    Decimal?
+  purchaseCurrency String?
+  addedAt          DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  printing         Printing  @relation(fields: [printingId], references: [id], onDelete: Restrict)
+  condition        Condition @relation(fields: [conditionId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, printingId, conditionId])
+  @@index([userId])
+  @@index([printingId])
+}
+
+model PriceSource {
+  id             String          @id @default(cuid())
+  code           String          @unique
+  name           String
+  /// Date `createdAt` du dernier guide de prix importé (évite d'importer deux fois le même).
+  guideCreatedAt DateTime?
+  prices    Price[]
+  snapshots PriceSnapshot[]
+}
+
+/// Prix de marché importé. `kind` vaut `trend` pour le prix tendance Cardmarket.
+/// `previousAmount` conserve le montant avant le dernier changement (flèches hausse/baisse).
+model Price {
+  id             String      @id @default(cuid())
+  printingId     String
+  conditionId    String?
+  sourceId       String
+  kind           String
+  amount         Decimal
+  previousAmount Decimal?
+  currency       String      @default("EUR")
+  updatedAt      DateTime    @updatedAt
+  printing       Printing    @relation(fields: [printingId], references: [id], onDelete: Cascade)
+  condition      Condition?  @relation(fields: [conditionId], references: [id])
+  source         PriceSource @relation(fields: [sourceId], references: [id])
+
+  @@index([printingId])
+}
+
+/// Point d'historique Cardmarket (un snapshot par jour et par printing).
+model PriceSnapshot {
+  id         String      @id @default(cuid())
+  printingId String
+  sourceId   String
+  kind       String
+  amount     Decimal
+  currency   String      @default("EUR")
+  day        DateTime
+  createdAt  DateTime    @default(now())
+  printing   Printing    @relation(fields: [printingId], references: [id], onDelete: Cascade)
+  source     PriceSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@unique([printingId, sourceId, kind, day])
+  @@index([day])
+  @@index([printingId, day])
+}
+
+/// Courbe de valeur du portefeuille déjà calculée, par utilisateur et par filtre
+/// (`scope` = set|langue). Ne contient que les jours « figés » (<= J-2) ; les jours
+/// récents sont recalculés à chaque lecture. `fingerprint` résume la collection
+/// filtrée : s'il change, tout est recalculé.
+model PortfolioHistoryCache {
+  userId          String
+  scope           String
+  fingerprint     String
+  lastDay         String?
+  lastPricesJson  String
+  pointsJson      String
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, scope])
+}

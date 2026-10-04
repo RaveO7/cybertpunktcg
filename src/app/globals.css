@@ -1,26 +1,382 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #07080d;
+  --foreground: #e8eef7;
+  --panel: #10141c;
+  --panel-2: #171d28;
+  --line: #2c384c;
+  --muted: #93a0b4;
+  --yellow: #f5e642;
+  --cyan: #3ee0ff;
+  --danger: #ff5d6c;
+  --gain: #3ecf8e;
+  --body-glow: rgba(62, 224, 255, 0.08);
+  --hud-panel: #0a0c16;
+  --hud-border: rgba(0, 240, 255, 0.18);
+  --hud-inset: rgba(0, 240, 255, 0.06);
+  --chip-bg: #00000f;
+  --cp-overlay: rgba(0, 0, 15, 0.4);
+  --selection-fg: #ffffff;
+  --scrollbar-track: #171d28;
+  --scrollbar-thumb-border: #10141c;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --background: #e8eef6;
+  --foreground: #121820;
+  --panel: #ffffff;
+  --panel-2: #f1f5fb;
+  --line: #c5d0de;
+  --muted: #5a6a7e;
+  --yellow: #b89200;
+  --cyan: #0b8fa8;
+  --danger: #d63b4c;
+  --gain: #1f9d63;
+  --body-glow: rgba(11, 143, 168, 0.14);
+  --hud-panel: #f7fafc;
+  --hud-border: rgba(11, 143, 168, 0.28);
+  --hud-inset: rgba(11, 143, 168, 0.08);
+  --chip-bg: #121820;
+  --cp-overlay: rgba(18, 24, 32, 0.35);
+  --selection-fg: #121820;
+  --scrollbar-track: #e4ebf4;
+  --scrollbar-thumb-border: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-yellow: var(--yellow);
+  --color-cyan: var(--cyan);
+  --color-danger: var(--danger);
+  --color-gain: var(--gain);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-chakra-petch), var(--font-geist-sans), sans-serif;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -10%, var(--body-glow), transparent 55%),
+    var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a,
+button:not(:disabled),
+select:not(:disabled),
+summary,
+label,
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--yellow) 35%, transparent);
+  color: var(--selection-fg);
+}
+
+.scrollbar-hud {
+  scrollbar-width: thin;
+  scrollbar-color: var(--yellow) var(--scrollbar-track);
+}
+
+.scrollbar-hud::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-hud::-webkit-scrollbar-track {
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+}
+
+.scrollbar-hud::-webkit-scrollbar-thumb {
+  background: var(--yellow);
+  border: 2px solid var(--scrollbar-thumb-border);
+}
+
+.scrollbar-hud::-webkit-scrollbar-thumb:hover {
+  background: var(--cyan);
+}
+
+/* Official Cyberpunk TCG card-database HUD (cyberpunktcg.com/cards) */
+:root {
+  --cp-card-red: #ef4444;
+  --cp-card-blue: #3b82f6;
+  --cp-card-green: #10b981;
+  --cp-card-yellow: #fcee0a;
+}
+
+.hud-panel {
+  background: var(--hud-panel);
+  border: 1px solid var(--hud-border);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--hud-inset);
+}
+
+.hud-panel-owned {
+  border-color: rgba(252, 238, 10, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(252, 238, 10, 0.22);
+}
+
+.hud-panel-active {
+  border-color: rgba(0, 240, 255, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.35);
+}
+
+.aspect-card {
+  aspect-ratio: 2.5 / 3.5;
+}
+
+.bg-overlay {
+  background-color: var(--cp-overlay);
+}
+
+/* Official showcase ambilight (cyberpunktcg.com) — visible on card hover */
+.card-ambilight {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  transform: translate(-50%, -50%) scale(1.08);
+  object-fit: cover;
+  filter: blur(28px) saturate(1.6) brightness(1.3);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.group:hover .card-ambilight {
+  opacity: 0.85;
+}
+
+/* Bottom spill sits above cards below; sides stay on the -z-10 layer */
+.card-ambilight-bottom {
+  clip-path: inset(88% 6% -32% 6%);
+}
+
+/* Scan FX only on hover — avoids N continuous paints in the grid */
+.scanlines::after,
+.scanbeam::before {
+  content: none;
+}
+
+.group:hover .scanlines::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  right: -20%;
+  bottom: -20%;
+  left: -20%;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.035),
+    rgba(255, 255, 255, 0.035) 1px,
+    transparent 3px,
+    transparent 6px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.35;
+}
+
+.group:hover .scanbeam::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 40%;
+  top: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 240, 255, 0.12) 45%, transparent 100%);
+  animation: scanline 2.8s linear 1;
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-40%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.35;
+  }
+  to {
+    transform: translateY(220%);
+    opacity: 0;
+  }
+}
+
+.chip-wrap {
+  --chip-color: var(--cyan);
+  display: inline-flex;
+}
+
+.chip-cyber {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px 4px 8px;
+  background: var(--chip-bg);
+  color: var(--chip-color, var(--cyan));
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  box-shadow: 0 0 0 1.5px var(--chip-color, var(--cyan));
+}
+
+.hud-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Interactive demo: scale with viewport inside .demo-match */
+.demo-match {
+  --dm-card-xs: clamp(3.25rem, 7vh, 5.5rem);
+  --dm-card-sm: clamp(3.75rem, 9vh, 7rem);
+  --dm-card-md: clamp(4.5rem, 11vh, 9.5rem);
+  --dm-card-lg: clamp(5rem, 13vh, 10.5rem);
+  --dm-card-hand: clamp(5.25rem, 16vh, 12rem);
+  --dm-card-rival: clamp(5rem, 14vh, 11rem);
+  --dm-hand-overlap: clamp(2.5rem, 6vh, 4.5rem);
+  --dm-rival-overlap: clamp(1.5rem, 4vh, 3rem);
+  --dm-die: clamp(2.75rem, 6vh, 4rem);
+  --dm-gig: clamp(2rem, 4vh, 3rem);
+  --dm-pile: clamp(2.35rem, 5.5vh, 3.75rem);
+  --dm-deck-h: calc(var(--dm-pile) * 1.4);
+  --dm-deck-w: var(--dm-pile);
+  --dm-gap: clamp(0.45rem, 1.2vh, 0.85rem);
+  --dm-pad: clamp(0.5rem, 1.5vh, 1rem);
+  --dm-label: clamp(0.65rem, 1.2vh, 0.78rem);
+}
+
+.demo-match-table {
+  container-type: size;
+  container-name: playmat;
+}
+
+@container playmat (min-height: 400px) {
+  .demo-match-table {
+    --dm-card-hand: clamp(5.5rem, 22cqh, 13rem);
+    --dm-card-rival: clamp(5rem, 18cqh, 11.5rem);
+    --dm-card-md: clamp(4.75rem, 16cqh, 10rem);
+    --dm-card-sm: clamp(4rem, 13cqh, 8rem);
+    --dm-card-xs: clamp(3.5rem, 10cqh, 6rem);
+  }
+}
+
+.demo-match-hand {
+  display: flex;
+  width: 100%;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.demo-match-hand__slot {
+  flex: 0 0 auto;
+  margin-left: calc(-1 * var(--dm-hand-overlap));
+  transform-origin: bottom center;
+}
+
+.demo-match-hand__slot:first-child {
+  margin-left: 0;
+}
+
+.demo-match-card-row {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.demo-match-card-row--rival {
+  justify-content: flex-start;
+}
+
+.demo-match-card-row__slot {
+  flex: 0 0 auto;
+  margin-left: calc(-1 * var(--dm-row-overlap, 0px));
+  transform-origin: bottom center;
+}
+
+.demo-match-card-row--rival .demo-match-card-row__slot {
+  margin-left: calc(-1 * var(--dm-rival-overlap));
+}
+
+.demo-match-card-row__slot:first-child,
+.demo-match-card-row--rival .demo-match-card-row__slot:first-child {
+  margin-left: 0;
+}
+
+.demo-match-gigs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.demo-match .demo-hud-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: var(--dm-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bg-card-red {
+  background-color: var(--cp-card-red);
+}
+.bg-card-blue {
+  background-color: var(--cp-card-blue);
+}
+.bg-card-green {
+  background-color: var(--cp-card-green);
+}
+.bg-card-yellow {
+  background-color: var(--cp-card-yellow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group:hover .scanbeam::before {
+    animation: none;
+    opacity: 0;
+  }
+
+  .card-ambilight {
+    transition: none;
+  }
 }
