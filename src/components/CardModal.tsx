@@ -888,7 +888,7 @@ export function CardModal({
               <button
                 type="submit"
                 disabled={pending}
-                className="inline-flex h-12 flex-1 items-center justify-center gap-2 bg-yellow px-4 text-[15px] font-semibold text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80 disabled:opacity-60"
+                className="inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap bg-yellow px-3 text-sm font-semibold sm:gap-2 sm:px-4 sm:text-[15px] text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80 disabled:opacity-60"
               >
                 <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M8 3v10M3 8h10" />

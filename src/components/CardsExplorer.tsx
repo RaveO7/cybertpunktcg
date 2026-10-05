@@ -724,7 +724,7 @@ export function CardsExplorer({
             aria-label={t.common.search}
             type="search"
             enterKeyHint="search"
-            className="h-10 min-w-0 flex-1 basis-40 border border-line bg-panel px-3 text-sm outline-none focus:border-cyan"
+            className="h-10 min-w-0 flex-1 basis-[calc(100%-3rem)] border border-line bg-panel px-3 text-sm outline-none focus:border-cyan sm:basis-40"
           />
           <select
             aria-label={t.cards.sort}
@@ -908,7 +908,7 @@ export function CardsExplorer({
             <div className="flex gap-2">
               <button
                 type="button"
-                className="h-11 shrink-0 border border-line px-4 text-sm disabled:opacity-40"
+                className="h-11 shrink-0 whitespace-nowrap border border-line px-3 text-sm disabled:opacity-40 sm:px-4"
                 onClick={clearSelection}
                 disabled={(draftCards === 0 && !rangeAnchor) || adding}
               >
@@ -916,7 +916,7 @@ export function CardsExplorer({
               </button>
               <button
                 type="button"
-                className="h-11 flex-1 bg-yellow px-4 font-semibold text-black disabled:opacity-50 sm:flex-none"
+                className="h-11 min-w-0 flex-1 truncate bg-yellow px-3 text-sm font-semibold text-black disabled:opacity-50 sm:flex-none sm:px-4 sm:text-base"
                 disabled={draftCards === 0 || adding}
                 onClick={() => void commitDraft()}
               >
