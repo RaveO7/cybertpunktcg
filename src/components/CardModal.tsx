@@ -8,9 +8,10 @@ import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
 import { useI18n } from "@/components/LocaleProvider";
 import { usePreferences } from "@/components/PreferencesProvider";
 import { conditionOptionLabel } from "@/lib/condition-label";
-import type { CardDTO, CollectionItemDTO, ConditionDTO, PrintingDTO } from "@/lib/types";
+import type { CardDTO, CollectionItemDTO, ConditionDTO, Filters, PrintingDTO } from "@/lib/types";
 import { baseCollectorNumber, formatInt, formatMoney, formatPercent, priceMovement, printingTitle, resolveRulesText } from "@/lib/logic";
 import { CURRENCIES } from "@/lib/parse";
+import { ICONIC_GRADIENT_SOFT, isIconicRarity, rarityColor } from "@/lib/rarity-color";
 
 const fieldClass =
   "h-10 w-full border border-line bg-background px-2.5 text-sm outline-none transition focus:border-cyan focus-visible:ring-1 focus-visible:ring-cyan/70";
@@ -24,6 +25,56 @@ const headerBtnClass =
 const fieldLabelClass = "block font-mono text-[10px] uppercase tracking-[0.14em] text-muted";
 
 const chipClass = "inline-flex h-6 items-center gap-1 border border-line/80 px-1.5 text-[11px]";
+
+const chipButtonClass =
+  "transition hover:border-cyan/60 hover:bg-cyan/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70";
+
+/** Pastille de détail : un bouton qui filtre le catalogue quand `onClick` est fourni, sinon un simple libellé. */
+function DetailChip({
+  className,
+  style,
+  label,
+  onClick,
+  children,
+}: {
+  className: string;
+  style?: CSSProperties;
+  label: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  if (!onClick) return <span className={className} style={style}>{children}</span>;
+  return (
+    <button
+      type="button"
+      className={`${className} ${chipButtonClass}`}
+      style={style}
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Pastille de rareté teintée selon la rareté (même palette que le tableau de bord). */
+function rarityChipStyle(rarity: string): CSSProperties | undefined {
+  if (isIconicRarity(rarity)) {
+    return {
+      background: ICONIC_GRADIENT_SOFT,
+      borderColor: "color-mix(in srgb, var(--rarity-chrome) 55%, transparent)",
+      color: "var(--foreground)",
+    };
+  }
+  const color = rarityColor(rarity);
+  if (!color) return undefined;
+  return {
+    color,
+    borderColor: `color-mix(in srgb, ${color} 45%, transparent)`,
+    backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)`,
+  };
+}
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -85,6 +136,7 @@ export function CardModal({
   onFilterArtist,
   onFilterRarity,
   onFilterSet,
+  onFilter,
   readOnly = false,
   onSave,
   onPatch,
@@ -103,6 +155,7 @@ export function CardModal({
   onFilterArtist?: (artist: string) => void;
   onFilterRarity?: (rarity: string) => void;
   onFilterSet?: (set: string) => void;
+  onFilter?: (patch: Partial<Filters>) => void;
   readOnly?: boolean;
   onSave?: (input: {
     conditionCode: string;
@@ -247,10 +300,11 @@ export function CardModal({
   }
 
   const stats = [
-    card.cost != null ? { label: t.filters.cost, value: String(card.cost) } : null,
-    card.power != null ? { label: t.filters.power, value: String(card.power) } : null,
-    card.ram != null ? { label: t.filters.ram, value: String(card.ram) } : null,
-  ].filter((entry): entry is { label: string; value: string } => entry != null);
+    card.cost != null ? { key: "costs", label: t.filters.cost, value: String(card.cost) } : null,
+    card.power != null ? { key: "powers", label: t.filters.power, value: String(card.power) } : null,
+    card.ram != null ? { key: "rams", label: t.filters.ram, value: String(card.ram) } : null,
+  ].filter((entry): entry is { key: "costs" | "powers" | "rams"; label: string; value: string } => entry != null);
+  const filterOn = (patch: Partial<Filters>) => (onFilter ? () => onFilter(patch) : undefined);
 
   const canEdit = !readOnly && onPatch && onDelete;
 
@@ -380,41 +434,51 @@ export function CardModal({
             {(printing.rarity || card.color || card.cardType || stats.length > 0 || card.tags.length > 0 || card.isEddiable != null) && (
               <div className="order-3 flex flex-wrap items-center gap-1 md:order-none" aria-label={t.modal.details}>
                 {card.color ? (
-                  <span className={chipClass}>
+                  <DetailChip className={chipClass} label={t.modal.filterBy(card.color)} onClick={filterOn({ colors: [card.color] })}>
                     <span className={`h-2 w-2 rounded-full ${colorDotClass(card.color)}`} aria-hidden="true" />
                     {card.color}
-                  </span>
+                  </DetailChip>
                 ) : null}
-                {card.cardType ? <span className={chipClass}>{card.cardType}</span> : null}
+                {card.cardType ? (
+                  <DetailChip className={chipClass} label={t.modal.filterBy(card.cardType)} onClick={filterOn({ types: [card.cardType] })}>
+                    {card.cardType}
+                  </DetailChip>
+                ) : null}
                 {printing.rarity ? (
-                  onFilterRarity ? (
-                    <button
-                      type="button"
-                      className="inline-flex h-6 items-center border border-cyan/40 bg-cyan/10 px-1.5 font-mono text-[10px] uppercase tracking-[0.04em] text-cyan transition hover:bg-cyan/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
-                      onClick={() => onFilterRarity(printing.rarity!)}
-                      aria-label={t.modal.viewRarity(printing.rarity)}
-                    >
-                      {printing.rarity}
-                    </button>
-                  ) : (
-                    <span className="inline-flex h-6 items-center border border-cyan/40 bg-cyan/10 px-1.5 font-mono text-[10px] uppercase tracking-[0.04em] text-cyan">
-                      {printing.rarity}
-                    </span>
-                  )
+                  <DetailChip
+                    className={`${chipClass} font-mono text-[10px] uppercase tracking-[0.04em] hover:brightness-125`}
+                    style={rarityChipStyle(printing.rarity)}
+                    label={t.modal.viewRarity(printing.rarity)}
+                    onClick={onFilterRarity ? () => onFilterRarity(printing.rarity!) : undefined}
+                  >
+                    {printing.rarity}
+                  </DetailChip>
                 ) : null}
                 {stats.map((stat) => (
-                  <span key={stat.label} className={chipClass}>
+                  <DetailChip
+                    key={stat.key}
+                    className={chipClass}
+                    label={t.modal.filterBy(`${stat.label} ${stat.value}`)}
+                    onClick={filterOn({ [stat.key]: [stat.value] })}
+                  >
                     <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted">{stat.label}</span>
                     <span className="font-mono text-xs font-semibold tabular-nums text-cyan">{stat.value}</span>
-                  </span>
+                  </DetailChip>
                 ))}
                 {card.tags.map((tag) => (
-                  <span key={tag} className={`${chipClass} font-mono text-[10px] uppercase tracking-[0.04em] text-muted`}>
+                  <DetailChip
+                    key={tag}
+                    className={`${chipClass} font-mono text-[10px] uppercase tracking-[0.04em] text-muted`}
+                    label={t.modal.filterBy(tag)}
+                    onClick={filterOn({ tags: [tag] })}
+                  >
                     {tag}
-                  </span>
+                  </DetailChip>
                 ))}
                 {card.isEddiable != null ? (
-                  <span
+                  <DetailChip
+                    label={t.modal.filterBy(card.isEddiable ? t.modal.eddiesSellable : t.modal.eddiesNotSellable)}
+                    onClick={filterOn({ eddiable: card.isEddiable ? "true" : "false" })}
                     className={
                       card.isEddiable
                         ? "inline-flex h-6 items-center gap-1 border border-gain/45 bg-gain/10 px-1.5 text-[11px] text-gain"
@@ -427,7 +491,7 @@ export function CardModal({
                       </svg>
                     ) : null}
                     {card.isEddiable ? t.modal.eddiesSellable : t.modal.eddiesNotSellable}
-                  </span>
+                  </DetailChip>
                 ) : null}
               </div>
             )}

@@ -497,6 +497,26 @@ export function CardsExplorer({
     });
   }
 
+  /** Depuis la fiche : remplace les critères de carte par le seul critère cliqué (extension, langue et tri conservés). */
+  function filterOnly(partial: Partial<Filters>) {
+    update({
+      q: "",
+      colors: [],
+      types: [],
+      tags: [],
+      keywords: [],
+      costs: [],
+      powers: [],
+      rams: [],
+      artists: [],
+      eddiable: "",
+      rarity: "",
+      ...partial,
+      printingId: null,
+      page: 1,
+    });
+  }
+
   function queueCard(id: string) {
     setDraft((current) => ({ ...current, [id]: Math.min(999, (current[id] ?? 0) + 1) }));
     setAddError(null);
@@ -846,8 +866,9 @@ export function CardsExplorer({
           onFilterArtist={(artist) =>
             update({ artists: [artist], set: ALL_SETS_ID, printingId: null, page: 1 })
           }
-          onFilterRarity={(rarity) => update({ rarity, printingId: null, page: 1 })}
+          onFilterRarity={(rarity) => filterOnly({ rarity })}
           onFilterSet={(set) => update({ set, printingId: null, page: 1 })}
+          onFilter={filterOnly}
           readOnly={readOnly}
           onSave={readOnly ? undefined : (input) => saveLine({ ...input, printingId: selected.id, mode: "add" })}
           onPatch={readOnly ? undefined : patchLine}

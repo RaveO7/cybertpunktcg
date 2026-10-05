@@ -71,11 +71,14 @@ body {
   font-family: var(--font-sans), sans-serif;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
+/* En couche `base` : hors couche, cette règle écraserait les utilitaires Tailwind (text-*, font-*). */
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 }
 
 /* --- Webapp mobile ---------------------------------------------------- */
@@ -216,6 +219,26 @@ select option:disabled {
   --cp-card-blue: #3b82f6;
   --cp-card-green: #10b981;
   --cp-card-yellow: #fcee0a;
+}
+
+/* Raretés : palette tirée des cartes (gris du cadre, 4 couleurs de cartes, chrome des Iconic Secret). */
+:root,
+[data-theme="dark"] {
+  --rarity-common: #8b95a5;
+  --rarity-uncommon: var(--cp-card-green);
+  --rarity-rare: var(--cp-card-blue);
+  --rarity-epic: var(--cp-card-red);
+  --rarity-nova: var(--cp-card-yellow);
+  --rarity-chrome: #c9d1dc;
+}
+
+[data-theme="light"] {
+  --rarity-common: #5a6a7e;
+  --rarity-uncommon: #0f8f63;
+  --rarity-rare: #2563eb;
+  --rarity-epic: #dc2626;
+  --rarity-nova: #a88600;
+  --rarity-chrome: #6b7585;
 }
 
 .hud-panel {

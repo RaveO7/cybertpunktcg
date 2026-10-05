@@ -30,6 +30,7 @@ import {
 } from "@/lib/reference-data";
 import { useI18n } from "@/components/LocaleProvider";
 import { intlLocale } from "@/lib/i18n/messages";
+import { rarityFill } from "@/lib/rarity-color";
 import type { CatalogDTO, Ownership, PrintingDTO, Progress } from "@/lib/types";
 
 const LANGUAGES = ["en", "fr"] as const;
@@ -852,18 +853,8 @@ export function Dashboard() {
   );
 }
 
-const RARITY_COLORS: Record<string, string> = {
-  Common: "var(--muted)",
-  Uncommon: "var(--gain)",
-  Rare: "var(--cp-card-blue)",
-  Epic: "#a855f7",
-  "Nova Rare": "var(--danger)",
-  Secret: "var(--yellow)",
-};
-
 function rarityColor(rarity: string) {
-  if (RARITY_COLORS[rarity]) return RARITY_COLORS[rarity];
-  return rarity.startsWith("Iconic") ? "var(--cyan)" : "var(--line)";
+  return rarityFill(rarity) ?? "var(--line)";
 }
 
 function GridCard({
