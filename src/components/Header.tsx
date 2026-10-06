@@ -43,6 +43,9 @@ function useNavigation() {
 
 export function Header() {
   const { pathname, user, t, isSharedView, shareToken, showNav, links } = useNavigation();
+  // Page d'où l'on a ouvert les paramètres : un second clic sur le bouton y ramène.
+  const [settingsReturn, setSettingsReturn] = useState("/");
+  const inSettings = pathname === "/parametres";
 
   const actionClass =
     "inline-flex size-10 shrink-0 items-center justify-center border border-line text-muted hover:border-cyan hover:text-foreground";
@@ -73,11 +76,14 @@ export function Header() {
         ) : null}
         {user && !isSharedView ? (
           <Link
-            href="/parametres"
-            className={`${actionClass} ml-auto sm:ml-0 ${pathname === "/parametres" ? "border-yellow bg-yellow text-black hover:border-yellow hover:text-black" : ""}`}
+            href={inSettings ? settingsReturn : "/parametres"}
+            onClick={() => {
+              if (!inSettings) setSettingsReturn(window.location.pathname + window.location.search);
+            }}
+            className={`${actionClass} ml-auto sm:ml-0 ${inSettings ? "border-yellow bg-yellow text-black hover:border-yellow hover:text-black" : ""}`}
             aria-label={t.common.settings}
             title={t.common.settings}
-            aria-current={pathname === "/parametres" ? "page" : undefined}
+            aria-pressed={inSettings}
           >
             <SettingsIcon />
           </Link>

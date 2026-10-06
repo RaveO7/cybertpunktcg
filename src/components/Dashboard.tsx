@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
@@ -565,7 +565,7 @@ export function Dashboard() {
           action={
             gridItems.length > 1 ? (
               <div role="group" aria-label={t.dashboard.sortGroup} className="flex items-center border border-line">
-                <span className="px-3 font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+                <span className="px-2 font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted sm:px-3">
                   {t.dashboard.sortLabel}
                 </span>
                 {(
@@ -580,7 +580,7 @@ export function Dashboard() {
                     type="button"
                     aria-pressed={sort === id}
                     onClick={() => setSort(id)}
-                    className={`min-h-10 border-l border-line px-3.5 text-sm ${
+                    className={`min-h-10 border-l border-line px-2.5 text-sm sm:px-3.5 ${
                       sort === id ? "bg-panel-2 text-yellow" : "text-muted hover:text-foreground"
                     }`}
                   >
@@ -716,7 +716,7 @@ export function Dashboard() {
                       {t.dashboard.byRarity}
                       {pickedExtension ? <span className="ml-2 text-yellow">· {pickedExtension.shortName}</span> : null}
                     </th>
-                    <th className="w-32">{t.dashboard.uniques}</th>
+                    <th className="w-20 sm:w-32">{t.dashboard.uniques}</th>
                     <th className="w-[45%]">{t.dashboard.progress}</th>
                   </tr>
                 </thead>
@@ -732,7 +732,7 @@ export function Dashboard() {
                         <td className="p-0">
                           <Link
                             href={href}
-                            className="flex items-center gap-2 px-4 py-3 hover:text-cyan"
+                            className="flex items-center gap-2 px-2.5 py-3 hover:text-cyan sm:px-4"
                             aria-label={t.dashboard.viewRarity(row.rarity)}
                           >
                             <span
@@ -744,14 +744,14 @@ export function Dashboard() {
                           </Link>
                         </td>
                         <td className="p-0 font-mono">
-                          <Link href={href} tabIndex={-1} aria-hidden className="block px-4 py-3">
+                          <Link href={href} tabIndex={-1} aria-hidden className="block px-2.5 py-3 whitespace-nowrap sm:px-4">
                             {formatInt(row.uniqueOwned)} / {formatInt(row.total)}
                           </Link>
                         </td>
                         <td className="p-0">
-                          <Link href={href} tabIndex={-1} aria-hidden className="flex items-center gap-2.5 px-4 py-3">
+                          <Link href={href} tabIndex={-1} aria-hidden className="flex items-center gap-2 px-2.5 py-3 sm:gap-2.5 sm:px-4">
                             <Bar percent={row.percent} color={rarityColor(row.rarity)} />
-                            <span className="w-14 text-right font-mono">{formatPercent(row.percent)}</span>
+                            <span className="w-11 text-right font-mono sm:w-14">{formatPercent(row.percent)}</span>
                           </Link>
                         </td>
                       </tr>
@@ -780,76 +780,159 @@ export function Dashboard() {
         {valueRows.length === 0 ? (
           <EmptyPanel>{isSealed ? t.dashboard.emptySealedInvestment : t.dashboard.emptyInvestment}</EmptyPanel>
         ) : (
-          <DataTable minWidth="720px">
-            <thead>
-              <tr>
-                <th>{isSealed ? t.dashboard.sealedCategory : t.dashboard.set}</th>
-                <th className="w-32 text-right">{t.dashboard.copies}</th>
-                <th className="w-32 text-right">{t.dashboard.value}</th>
-                <th className="w-[20%]">{t.dashboard.share}</th>
-                <th className="w-36 text-right">{t.dashboard.marketVar}</th>
-                <th className="w-32 text-right">{t.dashboard.purchasePnL}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {valueRows.map(({ key, name, language: rowLanguage, value: row }) => {
-                const share = valueTotal > 0 ? (row.marketTotal / valueTotal) * 100 : 0;
-                return (
-                  <tr key={key}>
-                    <td className={`px-4 py-3 ${name == null ? "text-muted" : "font-medium"}`}>
-                      {name ?? t.dashboard.otherSets}
+          <>
+            <ul className="hud-panel md:hidden">
+              {valueRows.map(({ key, name, language: rowLanguage, value: row }) => (
+                <ValueItem
+                  key={key}
+                  title={
+                    <>
+                      <span className={name == null ? "text-muted" : "font-medium"}>{name ?? t.dashboard.otherSets}</span>
                       {rowLanguage ? (
-                        <span className="ml-2 text-xs font-normal text-muted">
+                        <span className="ml-2 text-xs text-muted">
                           {rowLanguage === "fr" ? t.common.french : t.common.english}
                         </span>
                       ) : null}
+                    </>
+                  }
+                  value={row}
+                  // Une seule ligne : la part du total vaut 100 %, inutile de l'afficher.
+                  share={valueRows.length > 1 && valueTotal > 0 ? (row.marketTotal / valueTotal) * 100 : null}
+                />
+              ))}
+              {globalValue && valueRows.length > 1 ? (
+                <ValueItem
+                  title={<span className="font-display font-semibold uppercase tracking-[0.08em]">{t.dashboard.total}</span>}
+                  value={globalValue}
+                  share={null}
+                  total
+                />
+              ) : null}
+            </ul>
+            <DataTable minWidth="720px" className="hidden md:block">
+              <thead>
+                <tr>
+                  <th>{isSealed ? t.dashboard.sealedCategory : t.dashboard.set}</th>
+                  <th className="w-32 text-right">{t.dashboard.copies}</th>
+                  <th className="w-32 text-right">{t.dashboard.value}</th>
+                  <th className="w-[20%]">{t.dashboard.share}</th>
+                  <th className="w-36 text-right">{t.dashboard.marketVar}</th>
+                  <th className="w-32 text-right">{t.dashboard.purchasePnL}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {valueRows.map(({ key, name, language: rowLanguage, value: row }) => {
+                  const share = valueTotal > 0 ? (row.marketTotal / valueTotal) * 100 : 0;
+                  return (
+                    <tr key={key}>
+                      <td className={`px-4 py-3 ${name == null ? "text-muted" : "font-medium"}`}>
+                        {name ?? t.dashboard.otherSets}
+                        {rowLanguage ? (
+                          <span className="ml-2 text-xs font-normal text-muted">
+                            {rowLanguage === "fr" ? t.common.french : t.common.english}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono">
+                        {formatInt(row.pricedCopies)} / {formatInt(row.copies)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono">
+                        {row.pricedCopies > 0 ? formatMoney(row.marketTotal) : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="flex items-center gap-2.5">
+                          <Bar percent={share} tone="cyan" />
+                          <span className="w-10 text-right font-mono text-muted">{Math.round(share)} %</span>
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <TrendBadge delta={row.marketDelta} amount={row.marketDeltaAmount} />
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono">
+                        <ProfitText value={row.profitEur} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              {globalValue ? (
+                <tfoot className="border-t border-[var(--hud-border)]">
+                  <tr>
+                    <td className="px-4 py-3 font-display font-semibold uppercase tracking-[0.08em]">
+                      {t.dashboard.total}
                     </td>
                     <td className="px-4 py-3 text-right font-mono">
-                      {formatInt(row.pricedCopies)} / {formatInt(row.copies)}
+                      {formatInt(globalValue.pricedCopies)} / {formatInt(globalValue.copies)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      {row.pricedCopies > 0 ? formatMoney(row.marketTotal) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="flex items-center gap-2.5">
-                        <Bar percent={share} tone="cyan" />
-                        <span className="w-10 text-right font-mono text-muted">{Math.round(share)} %</span>
-                      </span>
-                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-yellow">{formatMoney(globalValue.marketTotal)}</td>
+                    <td />
                     <td className="px-4 py-3 text-right">
-                      <TrendBadge delta={row.marketDelta} amount={row.marketDeltaAmount} />
+                      <TrendBadge delta={globalValue.marketDelta} amount={globalValue.marketDeltaAmount} />
                     </td>
                     <td className="px-4 py-3 text-right font-mono">
-                      <ProfitText value={row.profitEur} />
+                      <ProfitText value={globalValue.profitEur} />
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-            {globalValue ? (
-              <tfoot className="border-t border-[var(--hud-border)]">
-                <tr>
-                  <td className="px-4 py-3 font-display font-semibold uppercase tracking-[0.08em]">
-                    {t.dashboard.total}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono">
-                    {formatInt(globalValue.pricedCopies)} / {formatInt(globalValue.copies)}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono text-yellow">{formatMoney(globalValue.marketTotal)}</td>
-                  <td />
-                  <td className="px-4 py-3 text-right">
-                    <TrendBadge delta={globalValue.marketDelta} amount={globalValue.marketDeltaAmount} />
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono">
-                    <ProfitText value={globalValue.profitEur} />
-                  </td>
-                </tr>
-              </tfoot>
-            ) : null}
-          </DataTable>
+                </tfoot>
+              ) : null}
+            </DataTable>
+          </>
         )}
       </Section>
     </div>
+  );
+}
+
+/** Version mobile d'une ligne de « Valeur par extension » : une information par ligne, libellés en clair. */
+function ValueItem({
+  title,
+  value,
+  share,
+  total = false,
+}: {
+  title: ReactNode;
+  value: ValueSummary;
+  share: number | null;
+  total?: boolean;
+}) {
+  const { t } = useI18n();
+  return (
+    <li className={`px-4 py-3.5 ${total ? "border-t border-[var(--hud-border)]" : "border-t border-line/60 first:border-t-0"}`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="min-w-0">{title}</span>
+        <span className={`shrink-0 font-mono text-base ${total ? "text-yellow" : ""}`}>
+          {value.pricedCopies > 0 ? formatMoney(value.marketTotal) : "—"}
+        </span>
+      </div>
+      {share != null ? (
+        <div className="mt-2 flex items-center gap-2.5 text-xs">
+          <Bar percent={share} tone="cyan" />
+          <span className="shrink-0 text-muted">{t.dashboard.valueShare(`${Math.round(share)} %`)}</span>
+        </div>
+      ) : null}
+      <dl className="mt-2.5 flex flex-col gap-1.5 text-sm">
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-muted">{t.dashboard.valuePricedCopies}</dt>
+          <dd className="font-mono">{t.dashboard.valueCount(formatInt(value.pricedCopies), formatInt(value.copies))}</dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-muted">{t.dashboard.valueMarketChange}</dt>
+          <dd>
+            <TrendBadge delta={value.marketDelta} amount={value.marketDeltaAmount} />
+          </dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-muted">{t.dashboard.valuePurchaseGain}</dt>
+          <dd>
+            {value.profitEur == null ? (
+              <span className="text-xs text-muted">{t.dashboard.valueNoPurchase}</span>
+            ) : (
+              <ProfitText value={value.profitEur} />
+            )}
+          </dd>
+        </div>
+      </dl>
+    </li>
   );
 }
 
@@ -922,22 +1005,22 @@ function PickRow({
       aria-pressed={active}
       title={active ? openLabel : undefined}
       onClick={onClick}
-      className={`group -mx-2 flex min-h-11 items-center gap-3 border px-2 text-left transition-colors focus-visible:border-cyan focus-visible:outline-none ${
+      className={`group -mx-2 flex min-h-11 items-center gap-2 border px-2 sm:gap-3 text-left transition-colors focus-visible:border-cyan focus-visible:outline-none ${
         active ? "border-yellow/70 bg-panel-2" : "border-transparent hover:border-cyan/50 hover:bg-panel-2"
       }`}
     >
-      <span className="w-36 shrink-0 truncate font-display text-sm font-semibold uppercase tracking-[0.08em] text-foreground sm:w-44">
+      <span className="w-24 shrink-0 truncate font-display text-sm font-semibold uppercase tracking-[0.08em] text-foreground sm:w-44">
         {label}
       </span>
       <Bar percent={progress.percent} tone={active ? "yellow" : "cyan"} thick />
-      <span className="w-24 shrink-0 text-right font-mono text-sm text-muted group-hover:text-foreground">
+      <span className="w-20 shrink-0 text-right font-mono text-sm text-muted group-hover:text-foreground sm:w-24">
         <span className="text-foreground">{formatInt(progress.uniqueOwned)}</span> / {formatInt(progress.total)}
       </span>
       <span
         aria-hidden
-        className={`w-14 shrink-0 text-right text-xs text-cyan transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
+        className={`w-4 shrink-0 text-right text-xs text-cyan transition-opacity sm:w-14 ${active ? "opacity-100" : "opacity-0"}`}
       >
-        {openLabel} →
+        <span className="hidden sm:inline">{openLabel} </span>→
       </span>
     </button>
   );
@@ -950,8 +1033,11 @@ function SealedProducts({ extension, items }: { extension: Scope; items: { print
       <thead>
         <tr>
           <th>{t.dashboard.sealedProduct}</th>
-          <th className="w-28">{t.dashboard.copies}</th>
-          <th className="w-32">{t.dashboard.value}</th>
+          <th className="w-14 sm:w-28">
+            <span className="sm:hidden">{t.investment.qty}</span>
+            <span className="hidden sm:inline">{t.dashboard.copies}</span>
+          </th>
+          <th className="w-28 sm:w-32">{t.dashboard.value}</th>
         </tr>
       </thead>
       <tbody>
@@ -971,17 +1057,17 @@ function SealedProducts({ extension, items }: { extension: Scope; items: { print
             return (
               <tr key={printing.id}>
                 <td className="p-0">
-                  <Link href={href} className="block px-4 py-3 hover:text-cyan">
+                  <Link href={href} className="block px-2.5 py-3 hover:text-cyan sm:px-4">
                     {printing.localizedName ?? printing.setName}
                   </Link>
                 </td>
                 <td className="p-0 font-mono">
-                  <Link href={href} tabIndex={-1} aria-hidden className="block px-4 py-3">
+                  <Link href={href} tabIndex={-1} aria-hidden className="block px-2.5 py-3 sm:px-4">
                     {formatInt(owned)}
                   </Link>
                 </td>
                 <td className="p-0 font-mono">
-                  <Link href={href} tabIndex={-1} aria-hidden className="block px-4 py-3">
+                  <Link href={href} tabIndex={-1} aria-hidden className="block px-2.5 py-3 whitespace-nowrap sm:px-4">
                     {unit == null || Number.isNaN(unit)
                       ? "—"
                       : owned > 0
@@ -1199,12 +1285,13 @@ function EmptyPanel({ children }: { children: ReactNode }) {
   return <p className="hud-panel px-4 py-8 text-center text-sm text-muted">{children}</p>;
 }
 
-function DataTable({ minWidth, children }: { minWidth: string; children: ReactNode }) {
+/** Sur mobile la largeur minimale est ignorée : le tableau tient dans l'écran au lieu de défiler. */
+function DataTable({ minWidth, className = "", children }: { minWidth: string; className?: string; children: ReactNode }) {
   return (
-    <div className="hud-panel overflow-x-auto scrollbar-hud">
+    <div className={`hud-panel relative overflow-x-auto scrollbar-hud ${className}`}>
       <table
-        className="w-full text-left text-sm [&_tbody_tr]:border-t [&_tbody_tr]:border-line/60 [&_tbody_tr:first-child]:border-t-0 [&_tbody_tr:hover]:bg-cyan/[0.04] [&_thead]:border-b [&_thead]:border-[var(--hud-border)] [&_th]:whitespace-nowrap [&_th]:px-4 [&_th]:py-3 [&_th]:font-display [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.12em] [&_th]:text-muted"
-        style={{ minWidth }}
+        className="w-full text-left text-sm md:min-w-[var(--table-min)] [&_tbody_tr]:border-t [&_tbody_tr]:border-line/60 [&_tbody_tr:first-child]:border-t-0 [&_tbody_tr:hover]:bg-cyan/[0.04] [&_thead]:border-b [&_thead]:border-[var(--hud-border)] [&_th]:px-2.5 [&_th]:py-3 [&_th]:font-display [&_th]:text-[10px] sm:[&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.04em] [&_th]:text-muted sm:[&_th]:whitespace-nowrap sm:[&_th]:px-4 sm:[&_th]:tracking-[0.12em]"
+        style={{ "--table-min": minWidth } as CSSProperties}
       >
         {children}
       </table>

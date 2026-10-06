@@ -25,9 +25,9 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     }
   }
   return (
-    <div className="flex h-dvh flex-col overflow-clip">
+    <div className="relative flex h-dvh flex-col overflow-clip">
       <Header />
-      <main className="app-main @container/main px-safe flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain [container-type:size]">
+      <main className="app-main @container/main px-safe relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain [container-type:size]">
         {content}
       </main>
       <BottomNav />
