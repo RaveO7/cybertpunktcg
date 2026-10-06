@@ -111,10 +111,16 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
         : "border-line bg-panel-2 text-muted";
   const showDots = geometry != null && points.length <= Math.max(2, geometry.innerWidth / 18);
 
-  const handlePointer = (event: PointerEvent<SVGRectElement>) => {
+  const handlePointer = (event: PointerEvent<HTMLDivElement>) => {
     if (!geometry) return;
+    // Souris : seulement au survol de la zone de tracé. Doigt : partout sur le graphique.
     const rect = event.currentTarget.getBoundingClientRect();
-    const ratio = (event.clientX - rect.left) / Math.max(1, rect.width);
+    const x = event.clientX - rect.left - geometry.padding.left;
+    if (event.pointerType === "mouse" && (x < 0 || x > geometry.innerWidth)) {
+      setHover(null);
+      return;
+    }
+    const ratio = x / Math.max(1, geometry.innerWidth);
     const index = points.length === 1 ? 0 : Math.round(ratio * (points.length - 1));
     setHover(Math.min(points.length - 1, Math.max(0, index)));
   };
@@ -150,7 +156,20 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
           </div>
         </div>
       ) : null}
-      <div ref={setContainer} className="relative w-full" style={{ height: resolvedHeight }}>
+      <div
+        ref={setContainer}
+        className="relative w-full select-none"
+        // touch-action est ignoré sur les éléments internes d'un SVG : il doit être porté par ce conteneur.
+        // Au doigt : glisser horizontalement parcourt la courbe, verticalement fait défiler la page.
+        style={{ height: resolvedHeight, touchAction: "pan-y", WebkitTouchCallout: "none" }}
+        onPointerDown={handlePointer}
+        onPointerMove={handlePointer}
+        // Au doigt, le dernier point reste affiché après avoir relâché ; la souris l'efface en sortant.
+        onPointerLeave={(event) => {
+          if (event.pointerType === "mouse") setHover(null);
+        }}
+        onPointerCancel={() => setHover(null)}
+      >
         {geometry ? (
           <svg
             width={width}
@@ -279,20 +298,6 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
                 <circle cx={lastCoord.x} cy={lastCoord.y} r={compact ? 3 : 4} fill={ACCENT} stroke={BACKGROUND} strokeWidth="2" />
               </g>
             ) : null}
-
-            <rect
-              x={geometry.padding.left}
-              y={geometry.padding.top}
-              width={geometry.innerWidth}
-              height={geometry.innerHeight}
-              fill="transparent"
-              // Au doigt : glisser horizontalement parcourt la courbe, verticalement fait défiler la page.
-              style={{ touchAction: "pan-y" }}
-              onPointerMove={handlePointer}
-              onPointerDown={handlePointer}
-              onPointerLeave={() => setHover(null)}
-              onPointerCancel={() => setHover(null)}
-            />
           </svg>
         ) : null}
 

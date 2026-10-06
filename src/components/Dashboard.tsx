@@ -266,9 +266,19 @@ export function Dashboard() {
     if (!catalog) return null;
     const agg = aggregateCollection(items);
     const cardsById = new Map(catalog.cards.map((card) => [card.id, card]));
-    const investmentRows = investmentBySet(buildInvestmentLines(items, catalog.printings, cardsById), catalog.sets);
-    const cardRows = investmentRows.filter((row) => !isSealedSetCode(row.setCode));
-    const sealedRows = investmentRows.filter((row) => isSealedSetCode(row.setCode));
+    const lines = buildInvestmentLines(items, catalog.printings, cardsById);
+    const cardRows = investmentBySet(
+      lines.filter((line) => !isSealedSetCode(line.setCode)),
+      catalog.sets,
+    ).filter((row) => !isSealedSetCode(row.setCode));
+    // Un code scellé couvre toutes les langues : on agrège langue par langue.
+    const sealedLines = lines.filter((line) => isSealedSetCode(line.setCode));
+    const sealedRowsFor = (entry: Language) =>
+      investmentBySet(
+        sealedLines.filter((line) => line.language === entry),
+        catalog.sets,
+      ).filter((row) => isSealedSetCode(row.setCode));
+    const sealedRows = sealedRowsFor(language);
     const sealedRowByCode = new Map(sealedRows.map((row) => [row.setCode, row]));
 
     const cardExtensions = buildCardExtensions(catalog, agg, language, cardRows);
@@ -321,10 +331,12 @@ export function Dashboard() {
         language: null,
         value: otherValue,
       });
-    const sealedValueRows: ValueRow[] = sealedRows.flatMap((row) => {
-      const value = summarizeRows([row]);
-      return value ? [{ key: row.setCode, name: row.setName, language: null, value }] : [];
-    });
+    const sealedValueRows: ValueRow[] = LANGUAGES.flatMap((entry) =>
+      (entry === language ? sealedRows : sealedRowsFor(entry)).flatMap((row) => {
+        const value = summarizeRows([row]);
+        return value ? [{ key: `${row.setCode}|${entry}`, name: row.setName, language: entry, value }] : [];
+      }),
+    );
 
     return {
       agg,
