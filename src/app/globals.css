@@ -591,6 +591,7 @@ select option:disabled {
   transform: perspective(320px) rotateX(58deg);
   transform-origin: top center;
   mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 70%, transparent);
+  z-index: -1;
   animation: dm-grid 6s linear infinite;
 }
 
@@ -601,6 +602,7 @@ select option:disabled {
   height: 30%;
   pointer-events: none;
   background: linear-gradient(to bottom, transparent, rgba(62, 224, 255, 0.06) 50%, transparent);
+  z-index: -1;
   animation: dm-sweep 7s ease-in-out infinite;
 }
 
@@ -776,54 +778,6 @@ select option:disabled {
     box-shadow:
       0 0 0 4px var(--dm-cta-ring, rgba(245, 230, 66, 0.18)),
       0 0 22px var(--dm-cta-glow, rgba(245, 230, 66, 0.6));
-  }
-}
-
-/* Attaque : la carte bondit vers sa cible. */
-.dm-lunge-up {
-  animation: dm-lunge-up 560ms cubic-bezier(0.5, 0, 0.3, 1) both;
-}
-
-.dm-lunge-down {
-  animation: dm-lunge-down 560ms cubic-bezier(0.5, 0, 0.3, 1) both;
-}
-
-@keyframes dm-lunge-up {
-  35% {
-    transform: translateY(-34%) scale(1.15) rotate(-4deg);
-    filter: drop-shadow(0 0 16px rgba(245, 230, 66, 0.9));
-  }
-}
-
-@keyframes dm-lunge-down {
-  35% {
-    transform: translateY(34%) scale(1.15) rotate(4deg);
-    filter: drop-shadow(0 0 16px rgba(255, 93, 108, 0.9));
-  }
-}
-
-/* Impact : le plateau tremble. */
-.dm-shake {
-  animation: dm-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
-
-@keyframes dm-shake {
-  10%,
-  90% {
-    translate: -1px 0;
-  }
-  20%,
-  80% {
-    translate: 3px 1px;
-  }
-  30%,
-  50%,
-  70% {
-    translate: -5px -1px;
-  }
-  40%,
-  60% {
-    translate: 5px 1px;
   }
 }
 
@@ -1041,13 +995,13 @@ select option:disabled {
 
 @keyframes dm-nope {
   25% {
-    translate: -7px 0;
+    transform: translateX(-7px);
   }
   50% {
-    translate: 6px 0;
+    transform: translateX(6px);
   }
   75% {
-    translate: -3px 0;
+    transform: translateX(-3px);
   }
 }
 
@@ -1081,9 +1035,6 @@ select option:disabled {
   .dm-shine::after,
   .dm-cta,
   .dm-cta::after,
-  .dm-lunge-up,
-  .dm-lunge-down,
-  .dm-shake,
   .dm-coach-in,
   .dm-nope,
   .dm-ring,

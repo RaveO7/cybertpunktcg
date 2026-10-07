@@ -99,7 +99,7 @@ export function CoachCallout({
   return createPortal(
     <>
       <div
-        className="pointer-events-none fixed z-[70] rounded-sm ring-2 ring-yellow ring-offset-1 ring-offset-black/80"
+        className="dm-ring pointer-events-none fixed z-[70] rounded-sm ring-2 ring-yellow ring-offset-1 ring-offset-black/80"
         style={{
           left: box.target.left - 2,
           top: box.target.top - 2,
@@ -119,7 +119,7 @@ export function CoachCallout({
         }}
       />
       <div
-        className="pointer-events-none fixed z-[73] w-[min(248px,calc(100vw-16px))] border border-yellow/80 bg-[#0d1118]/95 p-2 shadow-lg backdrop-blur-sm"
+        className="dm-coach-in pointer-events-none fixed z-[73] w-[min(248px,calc(100vw-16px))] border border-yellow/80 bg-[#0d1118]/95 p-2 shadow-lg backdrop-blur-sm"
         style={{ left: box.left, top: box.top }}
         role="status"
       >

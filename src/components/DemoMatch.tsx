@@ -192,7 +192,7 @@ export function DemoMatch({
   // fxSeq rejoue les effets à chaque action ; round redistribue tout au « Rejouer ».
   const [fxSeq, setFxSeq] = useState(0);
   const [round, setRound] = useState(0);
-  const [lunges, setLunges] = useState<{ you: string[]; rival: string[] }>({ you: [], rival: [] });
+  const lunges = useRef<{ you: string[]; rival: string[] }>({ you: [], rival: [] });
   const tableRef = useRef<HTMLDivElement>(null);
   const compact = useSyncExternalStore(subscribeCompact, getCompact, getServerCompact);
 
@@ -216,10 +216,10 @@ export function DemoMatch({
     const next = step.apply(state);
     // Cartes qui viennent d'attaquer / bloquer : elles bondissent vers leur cible.
     const wasSpent = new Set(state.field.filter((c) => c.spent).map((c) => c.id));
-    setLunges({
+    lunges.current = {
       you: next.field.filter((c) => c.spent && !wasSpent.has(c.id)).map((c) => c.id),
       rival: next.rivalAttackerId && next.rivalAttackerId !== state.rivalAttackerId ? [next.rivalAttackerId] : [],
-    });
+    };
     setState({ ...next, flash: next.flash });
     setFxSeq((n) => n + 1);
     setToast(null);
@@ -230,7 +230,7 @@ export function DemoMatch({
     setState(initialMatchState());
     setStepIndex(0);
     setToast(null);
-    setLunges({ you: [], rival: [] });
+    lunges.current = { you: [], rival: [] };
     setRound((n) => n + 1);
   }
 
@@ -238,7 +238,29 @@ export function DemoMatch({
   const fxColor = fx ? FX_COLOR[fx.tone] : FX_COLOR.you;
   const shake = Boolean(fx?.shake);
 
-  // Impact : le plateau tremble (Web Animations, rejouable sans remonter le plateau).
+  // Web Animations : rejouables sans remonter les cartes (qui rejoueraient leur arrivée).
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!table || fxSeq === 0 || prefersReducedMotion()) return;
+    const lunge = (id: string, dir: 1 | -1, glow: string) =>
+      table.querySelector(`[data-fx-id="${id}"]`)?.animate(
+        [
+          { transform: "none" },
+          {
+            transform: `translateY(${dir * 34}%) scale(1.15) rotate(${dir * 4}deg)`,
+            filter: `drop-shadow(0 0 16px ${glow})`,
+            offset: 0.35,
+          },
+          { transform: "none" },
+        ],
+        { duration: 560, easing: "cubic-bezier(0.5, 0, 0.3, 1)" },
+      );
+    lunges.current.you.forEach((id) => lunge(id, -1, "rgba(245, 230, 66, 0.9)"));
+    lunges.current.rival.forEach((id) => lunge(id, 1, "rgba(255, 93, 108, 0.9)"));
+    lunges.current = { you: [], rival: [] };
+  }, [fxSeq]);
+
+  // Impact : le plateau tremble.
   useEffect(() => {
     if (!shake || prefersReducedMotion()) return;
     tableRef.current?.animate(
@@ -383,10 +405,7 @@ export function DemoMatch({
                     : index + 1,
               }}
             >
-              <div
-                key={lunges.rival.includes(c.id) ? `lunge-${fxSeq}` : "idle"}
-                className={lunges.rival.includes(c.id) ? "dm-lunge-down" : "dm-drop-in"}
-              >
+              <div data-fx-id={c.id} className="dm-drop-in">
               <GameCard
                 card={cardOf(c.ref)}
                 size="fluid-rival"
@@ -451,10 +470,7 @@ export function DemoMatch({
             className="demo-match-card-row__slot"
             style={{ zIndex: pulseField(expect, c.ref) ? 50 : index + 1 }}
           >
-            <div
-              key={lunges.you.includes(c.id) ? `lunge-${fxSeq}` : "idle"}
-              className={lunges.you.includes(c.id) ? "dm-lunge-up" : "dm-deal-in"}
-            >
+            <div data-fx-id={c.id} className="dm-deal-in">
             <GameCard
               card={cardOf(c.ref)}
               size="fluid-md"

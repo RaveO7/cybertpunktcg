@@ -53,6 +53,13 @@ export function GameCard({
                   : "w-11 sm:w-12";
 
   const [hover, setHover] = useState(false);
+  // Carte retournée (Legend appelée…) : on rejoue l'animation de flip.
+  const [shownFaceDown, setShownFaceDown] = useState(faceDown);
+  const [flips, setFlips] = useState(0);
+  if (shownFaceDown !== faceDown) {
+    setShownFaceDown(faceDown);
+    setFlips((n) => n + 1);
+  }
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [zoomSize, setZoomSize] = useState({ w: 200, h: 280 });
   const ref = useRef<HTMLButtonElement | null>(null);
@@ -156,7 +163,9 @@ export function GameCard({
           "group no-touch-callout relative shrink-0 text-left transition-transform duration-200",
           width,
           clickable || pulse ? "cursor-pointer" : "cursor-default",
-          pulse ? "z-10 animate-pulse scale-105" : "",
+          pulse ? "dm-target z-10 scale-105" : "",
+          // Dépensée = carte « couchée », comme sur une vraie table.
+          spent && !pulse ? "rotate-6" : "",
           selected ? "scale-110" : "",
           dimmed ? "opacity-45" : "",
           spent ? "opacity-70" : "",
@@ -166,8 +175,10 @@ export function GameCard({
         aria-label={card.name}
       >
         <div
+          key={flips}
           className={[
             "relative overflow-hidden border bg-black shadow-lg transition",
+            flips > 0 ? "dm-flip-in" : "",
             pulse
               ? "border-yellow shadow-[0_0_18px_rgba(245,230,66,0.55)]"
               : selected
@@ -196,7 +207,10 @@ export function GameCard({
             </span>
           ) : null}
           {pulse ? (
-            <span className="pointer-events-none absolute inset-0 ring-2 ring-inset ring-yellow/80" />
+            <>
+              <span className="pointer-events-none absolute inset-0 ring-2 ring-inset ring-yellow/80" />
+              <span className="dm-shine" aria-hidden />
+            </>
           ) : null}
         </div>
         {equipped ? (
