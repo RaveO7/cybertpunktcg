@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { HowToPlayRules } from "@/components/HowToPlayRules";
 import { HowToPlayTutorial } from "@/components/HowToPlayTutorial";
 import { useI18n } from "@/components/LocaleProvider";
@@ -164,34 +165,42 @@ export function HowToPlayScreen() {
         </div>
       )}
 
-      {leaveConfirm ? (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="leave-tutorial-title"
-          onClick={() => setLeaveConfirm(false)}
-        >
-          <div className="w-full max-w-md border border-yellow bg-panel p-5" onClick={(e) => e.stopPropagation()}>
-            <h2 id="leave-tutorial-title" className="text-lg text-yellow">
-              {leaveCopy.title}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted">{leaveCopy.body}</p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button type="button" className="h-10 border border-line px-4 text-sm" onClick={() => setLeaveConfirm(false)}>
-                {leaveCopy.stay}
-              </button>
-              <button
-                type="button"
-                className="h-10 bg-yellow px-4 text-sm font-semibold text-black"
-                onClick={() => switchMode("rules")}
-              >
-                {leaveCopy.leave}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {/* Portail au-dessus du parcours, qui passe lui-même en plein écran (portail z-[60]) sur téléphone. */}
+      {leaveConfirm
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="leave-tutorial-title"
+              onClick={() => setLeaveConfirm(false)}
+            >
+              <div className="w-full max-w-md border border-yellow bg-panel p-5" onClick={(e) => e.stopPropagation()}>
+                <h2 id="leave-tutorial-title" className="text-lg text-yellow">
+                  {leaveCopy.title}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted">{leaveCopy.body}</p>
+                <div className="mt-5 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    className="h-10 border border-line px-4 text-sm"
+                    onClick={() => setLeaveConfirm(false)}
+                  >
+                    {leaveCopy.stay}
+                  </button>
+                  <button
+                    type="button"
+                    className="h-10 bg-yellow px-4 text-sm font-semibold text-black"
+                    onClick={() => switchMode("rules")}
+                  >
+                    {leaveCopy.leave}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
