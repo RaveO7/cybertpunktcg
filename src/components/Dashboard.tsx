@@ -935,7 +935,7 @@ function ValueItem({
         </div>
         {value.profitEur != null ? (
           <div className="flex items-baseline justify-between gap-3">
-            <dt className="text-muted">{t.dashboard.valuePurchaseGain}</dt>
+            <dt className="text-muted">{value.profitEur < 0 ? t.dashboard.valueLoss : t.dashboard.valueGain}</dt>
             <dd>
               <ProfitText value={value.profitEur} />
             </dd>

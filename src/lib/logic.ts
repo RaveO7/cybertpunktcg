@@ -710,6 +710,18 @@ export function formatMoney(amount: number, currency = "EUR") {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(amount);
 }
 
+/** Somme des prix Cardmarket d'une liste d'impressions (un exemplaire chacune). */
+export function printingsPriceTotal(printings: PrintingDTO[]) {
+  let total = 0;
+  let unpriced = 0;
+  for (const printing of printings) {
+    const amount = marketAmount(printing);
+    if (amount == null || amount <= 0) unpriced += 1;
+    else total += amount;
+  }
+  return { total, unpriced };
+}
+
 export function marketValue(printings: PrintingDTO[], agg: Map<string, Ownership>) {
   let total = 0;
   let previousTotal = 0;

@@ -17,7 +17,9 @@ import {
   defaultFilters,
   filterPrintings,
   formatInt,
+  formatMoney,
   ownershipOf,
+  printingsPriceTotal,
   parseFilters,
   sealedBrowseFilters,
   serializeFilters,
@@ -250,6 +252,11 @@ export function CardsExplorer({
     );
     return sortPrintings(matched, cardsById, agg, setsByCode, activeFilters.sort);
   }, [catalog, cardsById, agg, activeFilters, setsByCode]);
+
+  const missingPrice = useMemo(
+    () => (activeFilters.collection === "missing" && catalog?.hasPrices ? printingsPriceTotal(filtered) : null),
+    [activeFilters.collection, catalog?.hasPrices, filtered],
+  );
 
   useEffect(() => {
     filteredRef.current = filtered;
@@ -815,12 +822,19 @@ export function CardsExplorer({
             </div>
           </div>
         ) : null}
-        <div className="mb-3 flex items-center justify-between text-sm text-muted">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm text-muted">
           <p>
             {filtered.length === 0
               ? t.cards.noCards
               : t.cards.cardCount(formatInt(filtered.length), t.common.cards(filtered.length))}
           </p>
+          {missingPrice && filtered.length > 0 ? (
+            <p className="font-mono text-yellow">
+              {missingPrice.unpriced > 0
+                ? t.cards.missingTotalPartial(formatMoney(missingPrice.total), formatInt(missingPrice.unpriced))
+                : t.cards.missingTotal(formatMoney(missingPrice.total))}
+            </p>
+          ) : null}
         </div>
         {filtered.length === 0 ? (
           <p className="border border-line px-4 py-10 text-center text-sm text-muted">{t.cards.noMatch}</p>
