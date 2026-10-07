@@ -108,6 +108,11 @@ function takeFixer(state: MatchState, dieName: string, face: number): MatchState
   return { ...state, fixer, yourGigs: [...state.yourGigs, face], flash: `gig-${face}` };
 }
 
+/** Pioche : la carte quitte le Deck et arrive en main. */
+function draw(state: MatchState, ref: CardRef): MatchState {
+  return { ...state, hand: [...state.hand, ref], deckCount: state.deckCount - 1 };
+}
+
 function removeHand(state: MatchState, ref: CardRef): MatchState {
   const i = state.hand.indexOf(ref);
   if (i < 0) return state;
@@ -226,7 +231,7 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       ),
       anchor: "coach-die-d6",
       expect: { kind: "die", die: "d6" },
-      apply: (s) => takeFixer({ ...s, deckCount: s.deckCount - 1 }, "d6", 6),
+      apply: (s) => takeFixer(draw(s, "unitSmasher"), "d6", 6),
     },
     {
       id: "t1-sell",
@@ -387,7 +392,6 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       apply: (s) => ({
         ...s,
         rivalGigs: [...s.rivalGigs, 8],
-        deckCount: s.deckCount - 1,
         flash: "rival-gig",
       }),
     },
@@ -475,9 +479,8 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
           field: s.field.map((c) => ({ ...c, spent: false })),
           legends: s.legends.map((c) => ({ ...c, spent: false })),
           eddies: s.eddies.map((c) => ({ ...c, spent: false })),
-          deckCount: s.deckCount - 1,
         };
-        return takeFixer(ready, "d8", 8);
+        return takeFixer(draw(ready, "programReaper"), "d8", 8);
       },
     },
     {
@@ -742,9 +745,8 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
           field: s.field.map((c) => ({ ...c, spent: false })),
           legends: s.legends.map((c) => ({ ...c, spent: false })),
           eddies: s.eddies.map((c) => ({ ...c, spent: false })),
-          deckCount: s.deckCount - 1,
         };
-        return takeFixer(ready, "d10", 10);
+        return takeFixer(draw(ready, "eddieFace"), "d10", 10);
       },
     },
     {
@@ -897,6 +899,7 @@ export function demoTableCopy(locale: Locale | DemoLocale) {
     deck: "Deck",
     trash: "Trash",
     spent: "spent",
+    paying: fr ? "À payer" : "Paying",
     wrong: fr ? "Pas maintenant — suis l’élément qui pulse." : "Not now — follow the pulsing target.",
     fx: {
       begin: fr ? "À toi de jouer" : "Your move",

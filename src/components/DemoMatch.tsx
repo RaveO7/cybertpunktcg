@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { CoachCallout } from "@/components/CoachCallout";
+import { playCardMoves, takeFlipSnapshot, type FlipSnapshot } from "@/components/demo-card-moves";
 import { GameCard } from "@/components/GameCard";
 import {
   buildInteractiveSteps,
@@ -65,7 +75,7 @@ function fitOverlap(count: number, card: string, avail: string, min: number): st
 }
 
 function demoDensityVars(state: MatchState, compact: boolean): CSSProperties {
-  const fieldN = state.field.length;
+  const fieldN = state.field.length + (state.pendingPlay ? 1 : 0);
   const rivalN = state.rivalField.length;
   const handN = state.hand.length;
   const gigN = Math.max(state.yourGigs.length, state.rivalGigs.length);
@@ -185,6 +195,7 @@ export function DemoMatch({
   const [round, setRound] = useState(0);
   const lunges = useRef<{ you: string[]; rival: string[] }>({ you: [], rival: [] });
   const tableRef = useRef<HTMLDivElement>(null);
+  const flipSnap = useRef<FlipSnapshot | null>(null);
   const compact = useSyncExternalStore(subscribeCompact, getCompact, getServerCompact);
 
   const step = steps[stepIndex];
@@ -205,6 +216,8 @@ export function DemoMatch({
       return;
     }
     const next = step.apply(state);
+    flipSnap.current =
+      tableRef.current && !prefersReducedMotion() ? takeFlipSnapshot(tableRef.current, state) : null;
     // Cartes qui viennent d'attaquer / bloquer : elles bondissent vers leur cible.
     const wasSpent = new Set(state.field.filter((c) => c.spent).map((c) => c.id));
     lunges.current = {
@@ -218,6 +231,7 @@ export function DemoMatch({
   }
 
   function restart() {
+    flipSnap.current = null;
     setState(initialMatchState());
     setStepIndex(0);
     setToast(null);
@@ -250,6 +264,13 @@ export function DemoMatch({
     lunges.current.rival.forEach((id) => lunge(id, 1, "rgba(255, 93, 108, 0.9)"));
     lunges.current = { you: [], rival: [] };
   }, [fxSeq]);
+
+  // Cartes qui changent de zone : elles volent de l'ancienne position à la nouvelle (avant peinture).
+  useLayoutEffect(() => {
+    const snap = flipSnap.current;
+    flipSnap.current = null;
+    if (snap && tableRef.current) playCardMoves(tableRef.current, snap, state);
+  }, [state]);
 
   // Impact : le plateau tremble.
   useEffect(() => {
@@ -396,7 +417,7 @@ export function DemoMatch({
                     : index + 1,
               }}
             >
-              <div data-fx-id={c.id} className="dm-drop-in">
+              <div data-fx-id={c.id} data-flip={`rival:${c.id}`} className="dm-drop-in">
               <GameCard
                 card={cardOf(c.ref)}
                 size="fluid-rival"
@@ -461,7 +482,7 @@ export function DemoMatch({
             className="demo-match-card-row__slot"
             style={{ zIndex: pulseField(expect, c.ref) ? 50 : index + 1 }}
           >
-            <div data-fx-id={c.id} className="dm-deal-in">
+            <div data-fx-id={c.id} data-flip={`field:${c.id}`} className="dm-deal-in">
             <GameCard
               card={cardOf(c.ref)}
               size="fluid-md"
@@ -480,7 +501,17 @@ export function DemoMatch({
             </div>
           </div>
         ))}
-        {state.field.length === 0 ? <span className="self-center text-sm text-muted">—</span> : null}
+        {state.pendingPlay ? (
+          <div className="demo-match-card-row__slot" style={{ zIndex: state.field.length + 1 }}>
+            <div data-flip="field:pending" className="dm-pending">
+              <GameCard card={cardOf(state.pendingPlay)} size="fluid-md" locale={locale} />
+              <span className="dm-pending__tag">{copy.paying}</span>
+            </div>
+          </div>
+        ) : null}
+        {state.field.length === 0 && !state.pendingPlay ? (
+          <span className="self-center text-sm text-muted">—</span>
+        ) : null}
       </div>
     </div>
   );
@@ -559,15 +590,17 @@ export function DemoMatch({
     >
       <p className="demo-hud-label text-center leading-none">{copy.deck}</p>
       <p className="demo-hud-label text-center leading-none">{copy.trash}</p>
-      <div className="aspect-card flex w-full items-center justify-center border border-cyan/40 bg-[linear-gradient(160deg,#152033,#0a0c16)] font-mono text-xs text-cyan">
+      <div
+        data-flip="deck"
+        className="aspect-card flex w-full items-center justify-center border border-cyan/40 bg-[linear-gradient(160deg,#152033,#0a0c16)] font-mono text-xs text-cyan">
         {state.deckCount}
       </div>
       {lastTrash ? (
-        <div key={`${lastTrash}-${state.trash.length}`} className="dm-drop-in">
+        <div key={`${lastTrash}-${state.trash.length}`} data-flip="trash" className="dm-drop-in">
           <GameCard card={cardOf(lastTrash)} size="fluid-pile" locale={locale} dimmed />
         </div>
       ) : (
-        <div className="aspect-card w-full border border-dashed border-line/40 bg-black/20" aria-hidden />
+        <div data-flip="trash" className="aspect-card w-full border border-dashed border-line/40 bg-black/20" aria-hidden />
       )}
     </div>
   );
@@ -581,7 +614,7 @@ export function DemoMatch({
           const canPay = expect.kind === "eddie" && !c.spent;
           const isAnchor = canPay && state.eddies.find((e) => !e.spent)?.id === c.id;
           return (
-            <div key={c.id} className="dm-flip-in">
+            <div key={c.id} data-flip={`eddie:${c.id}`} className="dm-flip-in">
             <GameCard
               card={cardOf(c.ref)}
               size="fluid-pile"
@@ -620,7 +653,11 @@ export function DemoMatch({
               }}
               className="demo-match-hand__slot"
             >
-              <div className="dm-deal-in" style={{ "--dm-delay": `${250 + index * 90}ms` } as CSSProperties}>
+              <div
+                data-flip={`hand:${ref}`}
+                className="dm-deal-in"
+                style={{ "--dm-delay": `${250 + index * 90}ms` } as CSSProperties}
+              >
               <GameCard
                 card={cardOf(ref)}
                 size="fluid-hand"
@@ -794,14 +831,16 @@ export function DemoMatch({
               <div className="w-full min-w-0">
                 <p className="demo-hud-label mb-1 text-center">{copy.yourField}</p>
                 <div className="demo-match-card-row">
-                  {state.field.length === 0 ? (
+                  {state.field.length === 0 && !state.pendingPlay ? (
                     <span className="text-sm">—</span>
                   ) : (
-                    state.field.map((c) => (
-                      <div key={`ph-${c.id}`} className="demo-match-card-row__slot">
-                        <GameCard card={cardOf(c.ref)} size="fluid-md" locale={locale} dimmed />
-                      </div>
-                    ))
+                    [...state.field.map((c) => c.ref), ...(state.pendingPlay ? [state.pendingPlay] : [])].map(
+                      (ref, i) => (
+                        <div key={`ph-${i}`} className="demo-match-card-row__slot">
+                          <GameCard card={cardOf(ref)} size="fluid-md" locale={locale} dimmed />
+                        </div>
+                      ),
+                    )
                   )}
                 </div>
               </div>

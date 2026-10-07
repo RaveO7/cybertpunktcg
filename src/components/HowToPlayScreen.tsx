@@ -17,6 +17,21 @@ export function HowToPlayScreen() {
   const rulesScrollRef = useRef<HTMLDivElement>(null);
   const [showTop, setShowTop] = useState(false);
   const backToTopLabel = contentLocale === "fr" ? "Remonter en haut" : "Back to top";
+  const [leaveConfirm, setLeaveConfirm] = useState(false);
+  const leaveCopy =
+    contentLocale === "fr"
+      ? {
+          title: "Quitter le parcours débutant ?",
+          body: "Ta progression dans le parcours sera perdue et il faudra le recommencer depuis le début.",
+          stay: "Continuer le parcours",
+          leave: "Quitter",
+        }
+      : {
+          title: "Leave the beginner path?",
+          body: "Your progress in the path will be lost and you will have to start over from the beginning.",
+          stay: "Keep going",
+          leave: "Leave",
+        };
 
   const onProgress = useCallback((step: number, total: number) => {
     setProgress({ step, total });
@@ -26,8 +41,17 @@ export function HowToPlayScreen() {
 
   const switchMode = useCallback((next: Mode) => {
     setMode(next);
+    setLeaveConfirm(false);
     if (next === "learn") setShowTop(false);
+    else setProgress(null);
   }, []);
+
+  // Quitter le parcours le réinitialise : on demande confirmation s'il est commencé et pas terminé.
+  const inProgress = mode === "learn" && progress !== null && progress.step > 1 && progress.step < progress.total;
+  function leaveLearn() {
+    if (inProgress) setLeaveConfirm(true);
+    else switchMode("rules");
+  }
 
   // Téléphone : balayer vers la gauche ouvre le parcours débutant, vers la droite revient aux règles.
   const swipeRef = useRef<{ x: number; y: number } | null>(null);
@@ -50,14 +74,14 @@ export function HowToPlayScreen() {
     const dy = touch.clientY - start.y;
     if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     if (dx < 0 && mode === "rules") switchMode("learn");
-    else if (dx > 0 && mode === "learn") switchMode("rules");
+    else if (dx > 0 && mode === "learn") leaveLearn();
   }
 
   const tabs = (
     <div className="mb-2 flex items-stretch border border-line">
       <button
         type="button"
-        onClick={() => setMode("rules")}
+        onClick={() => (mode === "learn" ? leaveLearn() : undefined)}
         className={`flex-1 px-3 py-2 text-sm sm:flex-none ${
           mode === "rules" ? "bg-yellow text-black" : "text-muted hover:text-foreground"
         }`}
@@ -134,11 +158,40 @@ export function HowToPlayScreen() {
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-3 pb-2 sm:px-4">
           <HowToPlayTutorial
             locale={contentLocale}
-            onOpenRules={() => setMode("rules")}
+            onOpenRules={leaveLearn}
             onProgress={onProgress}
           />
         </div>
       )}
+
+      {leaveConfirm ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="leave-tutorial-title"
+          onClick={() => setLeaveConfirm(false)}
+        >
+          <div className="w-full max-w-md border border-yellow bg-panel p-5" onClick={(e) => e.stopPropagation()}>
+            <h2 id="leave-tutorial-title" className="text-lg text-yellow">
+              {leaveCopy.title}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted">{leaveCopy.body}</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" className="h-10 border border-line px-4 text-sm" onClick={() => setLeaveConfirm(false)}>
+                {leaveCopy.stay}
+              </button>
+              <button
+                type="button"
+                className="h-10 bg-yellow px-4 text-sm font-semibold text-black"
+                onClick={() => switchMode("rules")}
+              >
+                {leaveCopy.leave}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

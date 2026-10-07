@@ -214,7 +214,7 @@ export function GameCard({
           ) : null}
         </div>
         {equipped ? (
-          <div className="pointer-events-none absolute -right-2 -top-3 w-[55%] rotate-12">
+          <div data-equipped className="pointer-events-none absolute -right-2 -top-3 w-[55%] rotate-12">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={equipped.imagePath}
