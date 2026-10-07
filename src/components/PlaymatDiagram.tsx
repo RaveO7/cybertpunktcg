@@ -8,7 +8,7 @@ const ZONE_ORDER: PlaymatZoneId[] = ["fixer", "rivalGig", "gig", "field", "legen
 
 type Box = { left: number; top: number; width: number; height: number };
 
-/** Zone rectangles in % of the official playmat (cyberpunktcg.com/gameplay-guide, 3602×2102). */
+/** Zone rectangles in % of the official playmat (cyberpunktcg.com/gameplay-guide, 3602Ã—2102). */
 const ZONE_BOXES: Record<PlaymatZoneId, Box> = {
   rivalGig: { left: 14.3, top: 1.5, width: 31.8, height: 6.3 },
   gig: { left: 54, top: 1.5, width: 31.6, height: 6.3 },
@@ -175,7 +175,7 @@ export function PlaymatDiagram({
                   <div className="absolute inset-0 translate-x-[6%] translate-y-[4%] border border-line bg-panel-2" />
                   <div className="absolute inset-0 translate-x-[3%] translate-y-[2%] border border-line bg-panel-2" />
                   <div className="absolute inset-0 flex items-center justify-center border border-cyan/40 bg-[linear-gradient(160deg,#152033,#0a0c16)] font-mono text-[0.55rem] text-cyan/70">
-                    40–50
+                    40â€“50
                   </div>
                 </div>
               </div>
@@ -206,7 +206,7 @@ export function PlaymatDiagram({
                 {current.tips.map((tip) => (
                   <li key={tip} className="flex gap-2 border border-line bg-panel-2 px-3 py-2">
                     <span className="shrink-0 text-cyan" aria-hidden="true">
-                      ›
+                      â€º
                     </span>
                     <span className="min-w-0 break-words">{tip}</span>
                   </li>
@@ -217,7 +217,7 @@ export function PlaymatDiagram({
               <p className="border-t border-line pt-3 text-xs text-muted">
                 {ZONE_CARDS[active]!
                   .map((key) => (locale === "fr" ? EXAMPLE_CARDS[key].noteFr : EXAMPLE_CARDS[key].noteEn))
-                  .join(" · ")}
+                  .join(" Â· ")}
               </p>
             ) : null}
           </div>
@@ -227,14 +227,14 @@ export function PlaymatDiagram({
               onClick={() => step(-1)}
               className="flex-1 px-3 py-2 text-sm text-muted hover:bg-white/5 hover:text-foreground"
             >
-              ← {labels.prev}
+              â† {labels.prev}
             </button>
             <button
               type="button"
               onClick={() => step(1)}
               className="flex-1 border-l border-line px-3 py-2 text-sm text-muted hover:bg-white/5 hover:text-foreground"
             >
-              {labels.next} →
+              {labels.next} â†’
             </button>
           </div>
         </aside>
@@ -291,7 +291,7 @@ function ZoneButton({
       </span>
       <span
         className={`absolute -left-2 -top-2 z-20 inline-flex size-5 items-center justify-center rounded-full border font-mono text-[0.6rem] font-bold ${
-          active ? "border-black bg-cyan text-black" : "border-cyan bg-background text-cyan"
+          active ? "border-black bg-cyan text-black" : "border-cyan bg-black/70 text-cyan"
         }`}
       >
         {number}
@@ -339,7 +339,7 @@ function MatCard({
     >
       {faceDown ? (
         <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(145deg,#1a2233_0%,#0a0c16_55%,#12182a_100%)] font-mono text-[0.5rem] tracking-[0.14em] text-cyan/70">
-          €$
+          â‚¬$
         </div>
       ) : (
         // eslint-disable-next-line @next/next/no-img-element

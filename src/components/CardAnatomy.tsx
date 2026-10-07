@@ -15,7 +15,7 @@ type Line = { part: AnatomyPartId; d: string };
 // Same numbered marker as the playmat zones (PlaymatDiagram).
 function markerClass(active: boolean) {
   return `inline-flex size-5 items-center justify-center rounded-full border font-mono text-[0.6rem] font-bold ${
-    active ? "border-black bg-cyan text-black" : "border-cyan bg-background text-cyan"
+    active ? "border-black bg-cyan text-black" : "border-cyan bg-black/70 text-cyan"
   }`;
 }
 

@@ -409,6 +409,108 @@ select option:disabled {
   }
 }
 
+/*
+ * Téléphone : le tutoriel passe en plein écran et tout se dimensionne sur le plateau
+ * (unités cq*, résolues sur les cartes, à l'intérieur de .demo-match-table).
+ * Portrait : rival / ta zone / ressources / main empilés. Paysage : ressources de part et d'autre de ta zone.
+ */
+.demo-match--compact {
+  --dm-card-rival: min(12.5cqh, 24cqw);
+  --dm-card-md: min(12.5cqh, 24cqw);
+  /* Résolue dans .demo-match-hand (conteneur) : la main prend toute la hauteur restante. */
+  --dm-card-hand: min(calc((100cqh - 0.75rem) / 1.4), 30cqw, 9.5rem);
+  --dm-card-xs: min(6.5cqh, 12cqw);
+  --dm-pile: min(5.5cqh, 9cqw);
+  --dm-die: min(5cqh, 8.5cqw);
+  --dm-gig: min(4.2cqh, 7cqw);
+  --dm-gap: clamp(0.25rem, 1cqh, 0.6rem);
+  --dm-pad: clamp(0.3rem, 1cqh, 0.6rem);
+  --dm-label: 0.6rem;
+  /* Largeur laissée au Field à côté de la boîte Gigs. */
+  --dm-field-avail: calc(100cqw - 7rem);
+}
+
+@media (orientation: landscape) {
+  .demo-match--compact {
+    --dm-card-rival: 13cqh;
+    --dm-card-md: 13cqh;
+    --dm-card-hand: min(calc((100cqh - 0.75rem) / 1.4), 14cqw, 8rem);
+    --dm-card-xs: 8.5cqh;
+    --dm-pile: 7cqh;
+    --dm-die: 7cqh;
+    --dm-gig: 5.5cqh;
+    --dm-gap: clamp(0.2rem, 1.2cqh, 0.5rem);
+    --dm-pad: clamp(0.25rem, 1.2cqh, 0.5rem);
+    --dm-label: 0.55rem;
+    --dm-field-avail: calc(100cqw - 15rem);
+  }
+}
+
+.demo-match--compact .demo-match-hand {
+  container-type: size;
+  flex: 1 1 0;
+}
+
+.demo-match-mid {
+  display: grid;
+  gap: var(--dm-gap);
+  grid-template-columns: auto auto;
+  grid-template-areas:
+    "zone zone"
+    "left right";
+  justify-content: space-between;
+  align-items: start;
+  min-width: 0;
+}
+
+.demo-match-mid__zone {
+  grid-area: zone;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--dm-gap);
+  min-width: 0;
+}
+
+.demo-match-mid__zone > .w-full {
+  width: auto;
+  max-width: var(--dm-field-avail);
+}
+
+.demo-match-mid__left {
+  grid-area: left;
+  min-width: 0;
+}
+
+.demo-match-mid__right {
+  grid-area: right;
+  min-width: 0;
+}
+
+.demo-match-dice {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+}
+
+@media (orientation: landscape) {
+  .demo-match-mid {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "left zone right";
+  }
+
+  .demo-match-mid__zone {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .demo-match-dice {
+    display: grid;
+    grid-template-columns: repeat(3, var(--dm-die));
+  }
+}
+
 .demo-match-hand {
   display: flex;
   width: 100%;

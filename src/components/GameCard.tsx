@@ -58,19 +58,40 @@ export function GameCard({
   const ref = useRef<HTMLButtonElement | null>(null);
   const tipId = useId();
 
+  const pressTimer = useRef<number | null>(null);
+  const longPressed = useRef(false);
+
   const updatePos = useCallback(() => {
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const zoomW = Math.min(240, Math.max(176, window.innerWidth * 0.14));
-    const zoomH = zoomW * 1.4;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    // ~96 px de texte sous l'image : le zoom doit tenir dans l'écran (téléphone en paysage).
+    const info = 96;
+    const zoomW = Math.max(110, Math.min(240, Math.max(176, vw * 0.14), (vh - 16 - info) / 1.4));
+    const zoomH = zoomW * 1.4 + info;
     let x = r.left + r.width / 2 - zoomW / 2;
     let y = r.top - zoomH - 12;
-    if (y < 8) y = r.bottom + 12;
-    x = Math.max(8, Math.min(x, window.innerWidth - zoomW - 8));
+    if (y < 8) {
+      y = r.bottom + 12;
+      if (y + zoomH > vh - 8) {
+        // Ni au-dessus ni en dessous : à côté de la carte.
+        y = Math.max(8, Math.min(r.top + r.height / 2 - zoomH / 2, vh - zoomH - 8));
+        x = r.right + 12 + zoomW <= vw - 8 ? r.right + 12 : r.left - zoomW - 12;
+      }
+    }
+    x = Math.max(8, Math.min(x, vw - zoomW - 8));
     setZoomSize({ w: zoomW, h: zoomH });
     setPos({ x, y });
   }, []);
+
+  const clearPress = useCallback(() => {
+    if (pressTimer.current != null) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+  }, []);
+
+  useEffect(() => clearPress, [clearPress]);
 
   useEffect(() => {
     if (!hover) return;
@@ -94,16 +115,45 @@ export function GameCard({
         type="button"
         data-coach-id={coachId}
         disabled={false}
-        onClick={onClick}
-        onMouseEnter={() => {
-          if (!faceDown) {
+        onClick={() => {
+          // Un appui long sert à lire la carte : il ne déclenche pas l'action.
+          if (longPressed.current) {
+            longPressed.current = false;
+            return;
+          }
+          onClick?.();
+        }}
+        onPointerEnter={(e) => {
+          if (e.pointerType === "mouse" && !faceDown) {
             setHover(true);
             updatePos();
           }
         }}
-        onMouseLeave={() => setHover(false)}
+        onPointerLeave={(e) => {
+          if (e.pointerType === "mouse") setHover(false);
+        }}
+        onPointerDown={(e) => {
+          if (e.pointerType === "mouse" || faceDown) return;
+          longPressed.current = false;
+          clearPress();
+          pressTimer.current = window.setTimeout(() => {
+            longPressed.current = true;
+            updatePos();
+            setHover(true);
+          }, 400);
+        }}
+        onPointerUp={(e) => {
+          if (e.pointerType === "mouse") return;
+          clearPress();
+          setHover(false);
+        }}
+        onPointerCancel={() => {
+          clearPress();
+          setHover(false);
+        }}
+        onContextMenu={(e) => e.preventDefault()}
         className={[
-          "group relative shrink-0 text-left transition-transform duration-200",
+          "group no-touch-callout relative shrink-0 text-left transition-transform duration-200",
           width,
           clickable || pulse ? "cursor-pointer" : "cursor-default",
           pulse ? "z-10 animate-pulse scale-105" : "",
@@ -168,7 +218,7 @@ export function GameCard({
               id={tipId}
               role="tooltip"
               className="pointer-events-none fixed z-[80]"
-              style={{ left: pos.x, top: pos.y, width: zoomSize.w }}
+              style={{ left: pos.x, top: pos.y, width: zoomSize.w, maxHeight: zoomSize.h }}
             >
               <div className="overflow-hidden border border-cyan/50 bg-black shadow-[0_20px_50px_rgba(0,0,0,0.65)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

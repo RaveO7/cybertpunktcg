@@ -293,6 +293,7 @@ const fr = {
     sortDesc: "Tri décroissant",
     sortLabel: "Trier par",
     sortBy: (column: string, direction: string) => `Trier par ${column} (${direction})`,
+    clearSet: (set: string) => `Retirer le filtre : ${set}`,
   },
   filters: {
     title: "Filtres",
@@ -726,6 +727,7 @@ const en: MessagesShape = {
     sortDesc: "Descending",
     sortLabel: "Sort by",
     sortBy: (column: string, direction: string) => `Sort by ${column} (${direction})`,
+    clearSet: (set: string) => `Remove filter: ${set}`,
   },
   filters: {
     title: "Filters",
@@ -1150,6 +1152,7 @@ const de: MessagesShape = {
     sortDesc: "Absteigend",
     sortLabel: "Sortieren nach",
     sortBy: (column: string, direction: string) => `Nach ${column} sortieren (${direction})`,
+    clearSet: (set: string) => `Filter entfernen: ${set}`,
   },
   filters: {
     title: "Filter",
@@ -1574,6 +1577,7 @@ const es: MessagesShape = {
     sortDesc: "Descendente",
     sortLabel: "Ordenar por",
     sortBy: (column: string, direction: string) => `Ordenar por ${column} (${direction})`,
+    clearSet: (set: string) => `Quitar el filtro: ${set}`,
   },
   filters: {
     title: "Filtros",
@@ -1998,6 +2002,7 @@ const it: MessagesShape = {
     sortDesc: "Decrescente",
     sortLabel: "Ordina per",
     sortBy: (column: string, direction: string) => `Ordina per ${column} (${direction})`,
+    clearSet: (set: string) => `Rimuovi il filtro: ${set}`,
   },
   filters: {
     title: "Filtri",

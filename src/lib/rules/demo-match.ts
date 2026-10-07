@@ -182,8 +182,8 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       ...t(
         "Bienvenue à la table",
         "Welcome to the table",
-        "Tu joues en second. Objectif : 7 Gigs au début de ton tour. Survole les cartes pour lire leur texte. Ensuite on verra les types de cartes et les zones.",
-        "You go second. Goal: 7 Gigs at the start of your turn. Hover cards to read their text. Next we’ll cover card types and zones.",
+        "Tu joues en second. Objectif : 7 Gigs au début de ton tour. Survole les cartes (appui long sur mobile) pour lire leur texte. Ensuite on verra les types de cartes et les zones.",
+        "You go second. Goal: 7 Gigs at the start of your turn. Hover cards (long-press on mobile) to read their text. Next we’ll cover card types and zones.",
       ),
       anchor: "coach-begin",
       expect: { kind: "begin" },
@@ -876,8 +876,8 @@ export function demoTableCopy(locale: Locale | DemoLocale) {
     eyebrow: fr ? "DUEL DÉMO" : "DEMO DUEL",
     title: fr ? "Ta première partie" : "Your first match",
     subtitle: fr
-      ? "Survole une carte pour zoomer. Clique les éléments qui pulsent — comme en ligne."
-      : "Hover a card to zoom. Click pulsing targets — like an online client.",
+      ? "Survole une carte (appui long sur mobile) pour zoomer. Clique les éléments qui pulsent — comme en ligne."
+      : "Hover a card (long-press on mobile) to zoom. Click pulsing targets — like an online client.",
     tipLabel: fr ? "Coach" : "Coach",
     yourHand: fr ? "Main" : "Hand",
     endTurn: fr ? "Fin du tour" : "End turn",
@@ -886,6 +886,7 @@ export function demoTableCopy(locale: Locale | DemoLocale) {
     rivalPhase: fr ? "Tour du Rival" : "Rival’s turn",
     restart: fr ? "Rejouer" : "Replay",
     openRules: fr ? "Règles détaillées" : "Detailed rules",
+    exit: fr ? "Quitter le tutoriel" : "Exit tutorial",
     fixer: "Fixer",
     yourGigs: fr ? "Tes Gigs" : "Your Gigs",
     rivalGigs: fr ? "Gigs Rival" : "Rival Gigs",

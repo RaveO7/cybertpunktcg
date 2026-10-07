@@ -17,11 +17,14 @@ export function CoachCallout({
   title,
   body,
   stepLabel,
+  ringOnly = false,
 }: {
   anchorId: string;
-  title: string;
-  body: string;
-  stepLabel: string;
+  title?: string;
+  body?: string;
+  stepLabel?: string;
+  /** Surligne seulement la cible (le texte est affiché ailleurs, ex. panneau mobile). */
+  ringOnly?: boolean;
 }) {
   const [box, setBox] = useState<{
     left: number;
@@ -105,6 +108,8 @@ export function CoachCallout({
           boxShadow: "0 0 0 1px rgba(245,230,66,0.35)",
         }}
       />
+      {ringOnly ? null : (
+        <>
       <div
         className="pointer-events-none fixed z-[72] size-0 border-l-[6px] border-r-[6px] border-b-[8px] border-l-transparent border-r-transparent border-b-yellow"
         style={{
@@ -122,6 +127,8 @@ export function CoachCallout({
         <p className="mt-0.5 text-xs font-medium leading-snug text-foreground">{title}</p>
         <p className="mt-1 line-clamp-3 text-[0.68rem] leading-snug text-muted">{body}</p>
       </div>
+        </>
+      )}
     </>,
     document.body,
   );

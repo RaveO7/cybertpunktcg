@@ -240,6 +240,23 @@ export function InvestmentScreen() {
     };
   }, [catalog, chartStatus, items, periodStart, ready]);
 
+  const selectedSetLabel =
+    setFilter === "all"
+      ? null
+      : setFilter === CARDS_GROUP_FILTER
+        ? t.investment.groupCards
+        : setFilter === SEALED_GROUP_FILTER
+          ? t.investment.groupSealed
+          : (catalog?.sets.find((set) => set.code === setFilter)?.name ?? setFilter);
+
+  // Re-cliquer l'extension sélectionnée la désélectionne (évite de remonter aux filtres sur mobile).
+  const toggleSet = (code: string) => setSetFilter((current) => (current === code ? "all" : code));
+
+  const renderSetChip = () =>
+    selectedSetLabel ? (
+      <SetChip label={selectedSetLabel} ariaLabel={t.investment.clearSet(selectedSetLabel)} onClear={() => setSetFilter("all")} />
+    ) : null;
+
   const activeFilterCount =
     (setFilter !== "all" ? 1 : 0) + (language ? 1 : 0) + (performance !== "all" ? 1 : 0);
 
@@ -424,7 +441,10 @@ export function InvestmentScreen() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg">{t.investment.bySet}</h2>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <h2 className="text-lg">{t.investment.bySet}</h2>
+          {renderSetChip()}
+        </div>
         {bySet.length === 0 ? (
           <p className="border border-line bg-panel px-4 py-6 text-sm text-muted">{t.investment.emptyFiltered}</p>
         ) : (
@@ -440,21 +460,21 @@ export function InvestmentScreen() {
                 <GroupItem
                   label={t.investment.groupCards}
                   active={setFilter === CARDS_GROUP_FILTER}
-                  onSelect={() => setSetFilter((current) => (current === CARDS_GROUP_FILTER ? "all" : CARDS_GROUP_FILTER))}
+                  onSelect={() => toggleSet(CARDS_GROUP_FILTER)}
                 />
               ) : null}
               {sortedCardSets.map((row) => (
-                <SetItem key={row.setCode} row={row} t={t} onOpen={() => setSetFilter(row.setCode)} />
+                <SetItem key={row.setCode} row={row} t={t} active={setFilter === row.setCode} onOpen={() => toggleSet(row.setCode)} />
               ))}
               {sortedSealedSets.length > 0 ? (
                 <GroupItem
                   label={t.investment.groupSealed}
                   active={setFilter === SEALED_GROUP_FILTER}
-                  onSelect={() => setSetFilter((current) => (current === SEALED_GROUP_FILTER ? "all" : SEALED_GROUP_FILTER))}
+                  onSelect={() => toggleSet(SEALED_GROUP_FILTER)}
                 />
               ) : null}
               {sortedSealedSets.map((row) => (
-                <SetItem key={row.setCode} row={row} t={t} onOpen={() => setSetFilter(row.setCode)} />
+                <SetItem key={row.setCode} row={row} t={t} active={setFilter === row.setCode} onOpen={() => toggleSet(row.setCode)} />
               ))}
             </ul>
             <div className="scrollbar-hud relative hidden overflow-x-auto overscroll-x-contain border border-line md:block">
@@ -510,21 +530,21 @@ export function InvestmentScreen() {
                     <GroupRow
                       label={t.investment.groupCards}
                       active={setFilter === CARDS_GROUP_FILTER}
-                      onSelect={() => setSetFilter((current) => (current === CARDS_GROUP_FILTER ? "all" : CARDS_GROUP_FILTER))}
+                      onSelect={() => toggleSet(CARDS_GROUP_FILTER)}
                     />
                   ) : null}
                   {sortedCardSets.map((row) => (
-                    <SetRow key={row.setCode} row={row} onOpen={() => setSetFilter(row.setCode)} />
+                    <SetRow key={row.setCode} row={row} active={setFilter === row.setCode} onOpen={() => toggleSet(row.setCode)} />
                   ))}
                   {sortedSealedSets.length > 0 ? (
                     <GroupRow
                       label={t.investment.groupSealed}
                       active={setFilter === SEALED_GROUP_FILTER}
-                      onSelect={() => setSetFilter((current) => (current === SEALED_GROUP_FILTER ? "all" : SEALED_GROUP_FILTER))}
+                      onSelect={() => toggleSet(SEALED_GROUP_FILTER)}
                     />
                   ) : null}
                   {sortedSealedSets.map((row) => (
-                    <SetRow key={row.setCode} row={row} onOpen={() => setSetFilter(row.setCode)} />
+                    <SetRow key={row.setCode} row={row} active={setFilter === row.setCode} onOpen={() => toggleSet(row.setCode)} />
                   ))}
                 </tbody>
               </table>
@@ -534,7 +554,10 @@ export function InvestmentScreen() {
       </section>
 
       <section>
-        <h2 className="mb-1 text-lg">{t.investment.detail}</h2>
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <h2 className="text-lg">{t.investment.detail}</h2>
+          {renderSetChip()}
+        </div>
         <p className="mb-3 text-xs text-muted sm:text-sm">
           {t.investment.detailHint(formatInt(filtered.length), t.common.lines(filtered.length))}
         </p>
@@ -894,11 +917,16 @@ function GroupRow({ label, active, onSelect }: { label: string; active: boolean;
   );
 }
 
-function SetRow({ row, onOpen }: { row: SetInvestment; onOpen: () => void }) {
+function SetRow({ row, active, onOpen }: { row: SetInvestment; active: boolean; onOpen: () => void }) {
   return (
-    <tr className="border-t border-line hover:bg-white/5">
+    <tr className={`border-t border-line ${active ? "bg-cyan/10" : "hover:bg-white/5"}`}>
       <td className="p-0">
-        <button type="button" className="block w-full px-3 py-2 text-left hover:text-cyan" onClick={onOpen}>
+        <button
+          type="button"
+          aria-pressed={active}
+          className={`block w-full px-3 py-2 text-left hover:text-cyan ${active ? "text-cyan" : ""}`}
+          onClick={onOpen}
+        >
           {row.setName}
         </button>
       </td>
@@ -969,6 +997,23 @@ function MobileStat({ label, children, className = "" }: { label: string; childr
   );
 }
 
+/** Filtre d'extension actif, retirable sur place. */
+function SetChip({ label, ariaLabel, onClear }: { label: string; ariaLabel: string; onClear: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      aria-label={ariaLabel}
+      className="flex h-8 max-w-full min-w-0 items-center gap-2 border border-cyan bg-cyan/10 px-2.5 text-sm text-cyan hover:bg-cyan/20"
+    >
+      <span className="min-w-0 truncate">{label}</span>
+      <span aria-hidden className="shrink-0 text-base leading-none">
+        ×
+      </span>
+    </button>
+  );
+}
+
 function GroupItem({ label, active, onSelect }: { label: string; active: boolean; onSelect: () => void }) {
   return (
     <li className={`border-t border-line first:border-t-0 ${active ? "bg-cyan/10" : "bg-panel-2/60"}`}>
@@ -984,12 +1029,12 @@ function GroupItem({ label, active, onSelect }: { label: string; active: boolean
   );
 }
 
-function SetItem({ row, t, onOpen }: { row: SetInvestment; t: Messages; onOpen: () => void }) {
+function SetItem({ row, t, active, onOpen }: { row: SetInvestment; t: Messages; active: boolean; onOpen: () => void }) {
   return (
-    <li className="border-t border-line first:border-t-0">
-      <button type="button" className="block w-full px-3 py-3 text-left hover:bg-white/5" onClick={onOpen}>
+    <li className={`border-t border-line first:border-t-0 ${active ? "bg-cyan/10" : ""}`}>
+      <button type="button" aria-pressed={active} className="block w-full px-3 py-3 text-left hover:bg-white/5" onClick={onOpen}>
         <span className="flex items-baseline justify-between gap-3">
-          <span className="min-w-0 truncate">{row.setName}</span>
+          <span className={`min-w-0 truncate ${active ? "text-cyan" : ""}`}>{row.setName}</span>
           <span className="shrink-0 font-mono">{row.pricedCopies > 0 ? formatMoney(row.marketTotal) : "—"}</span>
         </span>
         <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
