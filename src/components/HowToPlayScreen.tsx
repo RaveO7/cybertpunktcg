@@ -24,6 +24,35 @@ export function HowToPlayScreen() {
 
   const pct = progress ? Math.round((progress.step / progress.total) * 100) : 0;
 
+  const switchMode = useCallback((next: Mode) => {
+    setMode(next);
+    if (next === "learn") setShowTop(false);
+  }, []);
+
+  // Téléphone : balayer vers la gauche ouvre le parcours débutant, vers la droite revient aux règles.
+  const swipeRef = useRef<{ x: number; y: number } | null>(null);
+
+  function onTouchStart(event: React.TouchEvent) {
+    const target = event.target;
+    if (event.touches.length !== 1 || (target instanceof Element && isInHorizontalScroller(target))) {
+      swipeRef.current = null;
+      return;
+    }
+    swipeRef.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  }
+
+  function onTouchEnd(event: React.TouchEvent) {
+    const start = swipeRef.current;
+    swipeRef.current = null;
+    if (!start) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0 && mode === "rules") switchMode("learn");
+    else if (dx > 0 && mode === "learn") switchMode("rules");
+  }
+
   const tabs = (
     <div className="mb-2 flex items-stretch border border-line">
       <button
@@ -38,10 +67,7 @@ export function HowToPlayScreen() {
       </button>
       <button
         type="button"
-        onClick={() => {
-          setMode("learn");
-          setShowTop(false);
-        }}
+        onClick={() => switchMode("learn")}
         className={`flex-1 px-3 py-2 text-sm sm:flex-none ${
           mode === "learn" ? "bg-yellow text-black" : "text-muted hover:text-foreground"
         }`}
@@ -70,7 +96,11 @@ export function HowToPlayScreen() {
   );
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
+    <div
+      className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       {/* On phones the rules tabs scroll away with the content instead of staying pinned. */}
       <div
         className={`mx-auto w-full max-w-[1600px] shrink-0 px-3 pt-2 sm:px-4 ${mode === "rules" ? "hidden lg:block" : ""}`}
@@ -111,4 +141,16 @@ export function HowToPlayScreen() {
       )}
     </div>
   );
+}
+
+// Un balayage dans une zone défilant horizontalement (schéma du tapis, tableaux…) ne doit pas changer d'onglet.
+function isInHorizontalScroller(target: Element): boolean {
+  for (let el: Element | null = target; el; el = el.parentElement) {
+    if (el.hasAttribute("data-no-swipe")) return true;
+    if (el.scrollWidth > el.clientWidth) {
+      const overflowX = getComputedStyle(el).overflowX;
+      if (overflowX === "auto" || overflowX === "scroll") return true;
+    }
+  }
+  return false;
 }

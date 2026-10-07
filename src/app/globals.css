@@ -380,7 +380,8 @@ select option:disabled {
   --dm-card-sm: clamp(3.75rem, 9vh, 7rem);
   --dm-card-md: clamp(4.5rem, 11vh, 9.5rem);
   --dm-card-lg: clamp(5rem, 13vh, 10.5rem);
-  --dm-card-hand: clamp(5.25rem, 16vh, 12rem);
+  /* Résolue dans .demo-match-hand (conteneur) : la carte tient dans la hauteur laissée à la main. */
+  --dm-card-hand: min(calc((100cqh - 0.75rem) / 1.4), 13rem);
   --dm-card-rival: clamp(5rem, 14vh, 11rem);
   --dm-hand-overlap: clamp(2.5rem, 6vh, 4.5rem);
   --dm-rival-overlap: clamp(1.5rem, 4vh, 3rem);
@@ -401,7 +402,6 @@ select option:disabled {
 
 @container playmat (min-height: 400px) {
   .demo-match-table {
-    --dm-card-hand: clamp(5.5rem, 22cqh, 13rem);
     --dm-card-rival: clamp(5rem, 18cqh, 11.5rem);
     --dm-card-md: clamp(4.75rem, 16cqh, 10rem);
     --dm-card-sm: clamp(4rem, 13cqh, 8rem);
@@ -444,11 +444,6 @@ select option:disabled {
     --dm-label: 0.55rem;
     --dm-field-avail: calc(100cqw - 15rem);
   }
-}
-
-.demo-match--compact .demo-match-hand {
-  container-type: size;
-  flex: 1 1 0;
 }
 
 .demo-match-mid {
@@ -511,7 +506,10 @@ select option:disabled {
   }
 }
 
+/* La main prend toute la hauteur restante du plateau ; ses cartes s'y dimensionnent (unités cq*). */
 .demo-match-hand {
+  container-type: size;
+  flex: 1 1 0;
   display: flex;
   width: 100%;
   align-items: flex-end;

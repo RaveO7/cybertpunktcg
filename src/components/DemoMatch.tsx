@@ -17,7 +17,7 @@ import {
 } from "@/lib/rules/demo-match";
 
 // Téléphone (portrait ou paysage) : tutoriel plein écran avec panneau coach ancré.
-const COMPACT_QUERY = "(max-width: 767.98px), (max-height: 539.98px)";
+const COMPACT_QUERY = "(max-width: 767.98px), (max-height: 599.98px)";
 
 function subscribeCompact(onChange: () => void) {
   const mq = window.matchMedia(COMPACT_QUERY);
@@ -43,13 +43,6 @@ function pulseHand(expect: ExpectAction, card: CardRef) {
 
 function pulseField(expect: ExpectAction, ref: CardRef) {
   return expect.kind === "field" && expect.ref === ref;
-}
-
-function handOverlap(count: number): string {
-  if (count <= 1) return "0px";
-  if (count <= 3) return "clamp(2rem, 5vh, 3rem)";
-  if (count <= 5) return "clamp(3rem, 7vh, 4.25rem)";
-  return "clamp(3.75rem, 9vh, 5.5rem)";
 }
 
 function rowOverlap(count: number): string {
@@ -87,16 +80,14 @@ function demoDensityVars(state: MatchState, compact: boolean): CSSProperties {
   }
 
   const vars: Record<string, string> = {
-    "--dm-hand-overlap": handOverlap(handN),
+    // La largeur des cartes suit la hauteur de la main : chevauchement relatif, élargi si la place manque.
+    "--dm-hand-overlap": fitOverlap(handN, "--dm-card-hand", "100cqw - 1rem", 0.4),
     "--dm-row-overlap": rowOverlap(fieldN),
     "--dm-rival-overlap": rivalOverlap(rivalN),
   };
 
   if (fieldN >= 4) vars["--dm-card-md"] = "clamp(3.75rem, 9vh, 7.5rem)";
   else if (fieldN === 3) vars["--dm-card-md"] = "clamp(4rem, 10vh, 8.25rem)";
-
-  if (handN >= 6) vars["--dm-hand-overlap"] = "clamp(4rem, 10vh, 6rem)";
-  else if (handN >= 5) vars["--dm-hand-overlap"] = "clamp(3.5rem, 8vh, 5rem)";
 
   if (gigN >= 5) vars["--dm-gig"] = "clamp(1.45rem, 2.6vmin, 2rem)";
   else if (gigN >= 4) vars["--dm-gig"] = "clamp(1.65rem, 3vmin, 2.35rem)";
