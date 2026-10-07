@@ -14,7 +14,6 @@ export function HowToPlayRules() {
   const contentLocale = locale === "fr" ? "fr" : "en";
   const c = howtoPlayContent(contentLocale);
   const rootRef = useRef<HTMLDivElement>(null);
-  const mobileTocRef = useRef<HTMLElement>(null);
   const [activeId, setActiveId] = useState<string>(c.toc[0]?.id ?? "");
 
   useEffect(() => {
@@ -51,21 +50,9 @@ export function HowToPlayRules() {
     };
   }, [c.toc]);
 
-  // Sommaire mobile : garde le chapitre courant visible dans la barre défilante.
-  useEffect(() => {
-    const nav = mobileTocRef.current;
-    const chip = nav?.querySelector<HTMLElement>('[aria-current="location"]');
-    if (!nav || !chip) return;
-    nav.scrollTo({ left: chip.offsetLeft - (nav.clientWidth - chip.offsetWidth) / 2, behavior: "smooth" });
-  }, [activeId]);
-
   return (
-    <div ref={rootRef} className="flex min-w-0 flex-col gap-6 lg:flex-row lg:gap-8 [&_[id]]:scroll-mt-14 lg:[&_[id]]:scroll-mt-0">
-      <nav
-        ref={mobileTocRef}
-        className="scrollbar-hud sticky top-0 z-10 -mx-3 flex gap-1.5 overflow-x-auto border-b border-line bg-background/95 px-3 py-2 backdrop-blur [scrollbar-width:none] sm:-mx-4 sm:px-4 lg:hidden"
-        aria-label={c.title}
-      >
+    <div ref={rootRef} className="flex min-w-0 flex-col gap-6 lg:flex-row lg:gap-8 [&_[id]]:scroll-mt-2 lg:[&_[id]]:scroll-mt-0">
+      <nav className="flex flex-wrap gap-1.5 border-b border-line pb-2 lg:hidden" aria-label={c.title}>
         {c.toc.map((item) => {
           const active = item.id === activeId;
           return (
@@ -121,17 +108,6 @@ export function HowToPlayRules() {
               {c.sourcePdfLabel} ↗
             </a>
           </p>
-          <nav className="flex flex-wrap gap-2 border border-line p-2 lg:hidden" aria-label={c.title}>
-            {c.toc.map((item) => (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                className="border border-line px-2 py-1 text-xs text-muted hover:border-cyan hover:text-foreground"
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
         </header>
 
         <section id="victoire" className="scroll-mt-24 space-y-4">
