@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { CoachCallout } from "@/components/CoachCallout";
 import { GameCard } from "@/components/GameCard";
@@ -104,6 +104,77 @@ function demoDensityVars(state: MatchState, compact: boolean): CSSProperties {
   return vars as CSSProperties;
 }
 
+type FxTone = "you" | "rival" | "info";
+
+const FX_COLOR: Record<FxTone, string> = {
+  you: "#f5e642",
+  rival: "#ff5d6c",
+  info: "#3ee0ff",
+};
+
+type Fx = {
+  tone: FxTone;
+  banner?: string;
+  sub?: string;
+  shake?: boolean;
+  vignette?: boolean;
+  hold?: boolean;
+  confetti?: boolean;
+};
+
+/** Effet visuel associé à chaque action du tutoriel (state.flash). */
+function fxFor(flash: string | null, copy: ReturnType<typeof demoTableCopy>): Fx | null {
+  if (!flash) return null;
+  const f = copy.fx;
+  if (flash.startsWith("gig-")) return { tone: "you", banner: f.gig, sub: f.streetCred(flash.slice(4)) };
+  if (flash.startsWith("play-")) return { tone: "you", banner: f.deployed };
+  switch (flash) {
+    case "begin":
+      return { tone: "you", banner: f.begin, vignette: true };
+    case "sell":
+      return { tone: "you", banner: f.sell };
+    case "call-legend":
+      return { tone: "info", banner: f.legend, vignette: true };
+    case "equip":
+      return { tone: "info", banner: f.equip };
+    case "steal":
+      return { tone: "you", banner: f.steal, shake: true, vignette: true };
+    case "fight":
+      return { tone: "you", banner: f.fight, shake: true, vignette: true };
+    case "end-turn":
+      return { tone: "rival", banner: f.rivalTurn };
+    case "rival-play":
+      return { tone: "rival", banner: f.rivalPlay };
+    case "rival-attack":
+    case "rival-attack-gigs":
+      return { tone: "rival", banner: f.attack, shake: true, vignette: true };
+    case "rival-steal":
+      return { tone: "rival", banner: f.lost, shake: true, vignette: true };
+    case "block":
+      return { tone: "info", banner: f.block, shake: true, vignette: true };
+    case "finale":
+      return { tone: "you", banner: f.win, sub: f.winSub, hold: true, confetti: true, vignette: true };
+    default:
+      return null;
+  }
+}
+
+const CONFETTI_COLORS = ["#f5e642", "#3ee0ff", "#ff2ea6", "#ffffff"];
+const CONFETTI = Array.from({ length: 48 }, (_, i) => {
+  const angle = (i / 48) * Math.PI * 2 + (i % 3) * 0.35;
+  const dist = 0.55 + ((i * 37) % 45) / 100;
+  return {
+    "--x": `${(Math.cos(angle) * 42 * dist).toFixed(1)}cqw`,
+    "--y": `${(Math.sin(angle) * 34 * dist - 12).toFixed(1)}cqh`,
+    "--r": `${((i * 47) % 360) - 180}deg`,
+    "--d": `${(i % 6) * 45}ms`,
+    "--c": CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+  } as CSSProperties;
+});
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 export function DemoMatch({
   locale,
   onOpenRules,
@@ -118,6 +189,11 @@ export function DemoMatch({
   const [stepIndex, setStepIndex] = useState(0);
   const [state, setState] = useState<MatchState>(() => initialMatchState());
   const [toast, setToast] = useState<string | null>(null);
+  // fxSeq rejoue les effets à chaque action ; round redistribue tout au « Rejouer ».
+  const [fxSeq, setFxSeq] = useState(0);
+  const [round, setRound] = useState(0);
+  const [lunges, setLunges] = useState<{ you: string[]; rival: string[] }>({ you: [], rival: [] });
+  const tableRef = useRef<HTMLDivElement>(null);
   const compact = useSyncExternalStore(subscribeCompact, getCompact, getServerCompact);
 
   const step = steps[stepIndex];
@@ -138,7 +214,14 @@ export function DemoMatch({
       return;
     }
     const next = step.apply(state);
+    // Cartes qui viennent d'attaquer / bloquer : elles bondissent vers leur cible.
+    const wasSpent = new Set(state.field.filter((c) => c.spent).map((c) => c.id));
+    setLunges({
+      you: next.field.filter((c) => c.spent && !wasSpent.has(c.id)).map((c) => c.id),
+      rival: next.rivalAttackerId && next.rivalAttackerId !== state.rivalAttackerId ? [next.rivalAttackerId] : [],
+    });
     setState({ ...next, flash: next.flash });
+    setFxSeq((n) => n + 1);
     setToast(null);
     if (stepIndex < steps.length - 1) setStepIndex(stepIndex + 1);
   }
@@ -147,7 +230,36 @@ export function DemoMatch({
     setState(initialMatchState());
     setStepIndex(0);
     setToast(null);
+    setLunges({ you: [], rival: [] });
+    setRound((n) => n + 1);
   }
+
+  const fx = fxSeq > 0 ? fxFor(state.flash, copy) : null;
+  const fxColor = fx ? FX_COLOR[fx.tone] : FX_COLOR.you;
+  const shake = Boolean(fx?.shake);
+
+  // Impact : le plateau tremble (Web Animations, rejouable sans remonter le plateau).
+  useEffect(() => {
+    if (!shake || prefersReducedMotion()) return;
+    tableRef.current?.animate(
+      [
+        { translate: "0 0" },
+        { translate: "-5px 1px" },
+        { translate: "5px -1px" },
+        { translate: "-4px 0" },
+        { translate: "3px 1px" },
+        { translate: "-1px 0" },
+        { translate: "0 0" },
+      ],
+      { duration: 420, easing: "cubic-bezier(0.36, 0.07, 0.19, 0.97)" },
+    );
+  }, [fxSeq, shake]);
+
+  const fxStyle = { "--dm-fx-color": fxColor } as CSSProperties;
+  const burst = (flashes: string[], color: string) =>
+    state.flash && fxSeq > 0 && flashes.some((f) => (f.endsWith("*") ? state.flash!.startsWith(f.slice(0, -1)) : state.flash === f)) ? (
+      <span key={`burst-${fxSeq}`} className="dm-burst" style={{ "--dm-fx-color": color } as CSSProperties} aria-hidden />
+    ) : null;
 
   const handFan = state.hand.length;
   const stepLabel = `${copy.tipLabel} ${stepIndex + 1}/${steps.length}`;
@@ -174,7 +286,7 @@ export function DemoMatch({
           type="button"
           data-coach-id="coach-begin"
           onClick={() => tryAction({ type: "begin" })}
-          className={`${btn} animate-pulse border border-yellow bg-yellow font-medium text-black shadow-lg`}
+          className={`${btn} dm-cta border border-yellow bg-yellow font-medium text-black shadow-lg`}
         >
           {copy.begin}
         </button>
@@ -184,7 +296,8 @@ export function DemoMatch({
           type="button"
           data-coach-id="coach-continue"
           onClick={() => tryAction({ type: "continue" })}
-          className={`${btn} animate-pulse border border-danger bg-danger/20 text-danger shadow-lg backdrop-blur-sm`}
+          className={`${btn} dm-cta border border-danger bg-danger/20 text-danger shadow-lg backdrop-blur-sm`}
+          style={{ "--dm-cta-glow": "rgba(255, 93, 108, 0.55)", "--dm-cta-ring": "rgba(255, 93, 108, 0.18)" } as CSSProperties}
         >
           {copy.next}
         </button>
@@ -194,7 +307,7 @@ export function DemoMatch({
           type="button"
           data-coach-id="coach-end-turn"
           onClick={() => tryAction({ type: "end-turn" })}
-          className={`${btn} animate-pulse border border-yellow bg-yellow font-medium text-black shadow-lg`}
+          className={`${btn} dm-cta border border-yellow bg-yellow font-medium text-black shadow-lg`}
         >
           {copy.endTurn}
         </button>
@@ -204,7 +317,7 @@ export function DemoMatch({
           <button
             type="button"
             onClick={restart}
-            className={`${btn} border border-yellow bg-yellow text-black shadow-lg`}
+            className={`${btn} dm-cta border border-yellow bg-yellow text-black shadow-lg`}
           >
             {copy.restart}
           </button>
@@ -229,14 +342,15 @@ export function DemoMatch({
         type="button"
         data-coach-id="coach-rival-gigs"
         onClick={() => tryAction({ type: "target-gigs" })}
-        className={`shrink-0 self-end border text-left transition ${
+        className={`relative shrink-0 self-end border text-left transition ${
           compact ? "min-w-[5.5rem] px-1.5 py-1" : "min-w-[6.5rem] px-2 py-1.5"
         } ${
           expect.kind === "target-gigs"
-            ? "animate-pulse border-yellow bg-yellow/15"
+            ? "dm-target border-yellow bg-yellow/15"
             : "border-danger/40 bg-danger/5"
         }`}
       >
+        {burst(["steal", "finale", "rival-gig"], FX_COLOR.rival)}
         <p className="demo-hud-label text-danger">{copy.rivalGigs}</p>
         <div className="demo-match-gigs mt-1">
           {state.rivalGigs.length === 0 ? (
@@ -245,7 +359,7 @@ export function DemoMatch({
             state.rivalGigs.map((v, i) => (
               <span
                 key={`rg-${i}`}
-                className="inline-flex size-[var(--dm-gig)] shrink-0 items-center justify-center border border-danger/50 bg-black/40 font-mono text-xs text-danger"
+                className="dm-dice-roll inline-flex size-[var(--dm-gig)] shrink-0 items-center justify-center border border-danger/50 bg-black/40 font-mono text-xs text-danger"
               >
                 {v}
               </span>
@@ -269,6 +383,10 @@ export function DemoMatch({
                     : index + 1,
               }}
             >
+              <div
+                key={lunges.rival.includes(c.id) ? `lunge-${fxSeq}` : "idle"}
+                className={lunges.rival.includes(c.id) ? "dm-lunge-down" : "dm-drop-in"}
+              >
               <GameCard
                 card={cardOf(c.ref)}
                 size="fluid-rival"
@@ -285,6 +403,7 @@ export function DemoMatch({
                     : undefined
                 }
               />
+              </div>
             </div>
           ))}
           {state.rivalField.length === 0 ? <span className="text-xs text-muted">—</span> : null}
@@ -296,12 +415,14 @@ export function DemoMatch({
   const yourGigsBox = (
     <div
       data-coach-id="coach-your-gigs"
-      className={`shrink-0 border transition ${compact ? "px-2 py-1" : "px-3 py-2"} ${
+      className={`relative shrink-0 border transition ${compact ? "px-2 py-1" : "px-3 py-2"} ${
         pulseYourGigs
-          ? "animate-pulse border-yellow bg-yellow/15 shadow-[0_0_16px_rgba(245,230,66,0.35)]"
+          ? "dm-target border-yellow bg-yellow/15 shadow-[0_0_16px_rgba(245,230,66,0.35)]"
           : "border-yellow/30 bg-yellow/5"
       }`}
     >
+      {burst(["gig-*", "steal", "finale"], FX_COLOR.you)}
+      {burst(["rival-steal"], FX_COLOR.rival)}
       <p className="demo-hud-label text-center text-yellow">{copy.yourGigs}</p>
       <div className="demo-match-gigs mt-1 justify-center">
         {state.yourGigs.length === 0 ? (
@@ -310,7 +431,7 @@ export function DemoMatch({
           state.yourGigs.map((v, i) => (
             <span
               key={`yg-${i}`}
-              className="inline-flex size-[var(--dm-gig)] shrink-0 items-center justify-center border border-yellow/60 bg-black/50 font-mono text-xs text-yellow"
+              className="dm-dice-roll inline-flex size-[var(--dm-gig)] shrink-0 items-center justify-center border border-yellow/60 bg-black/50 font-mono text-xs text-yellow"
             >
               {v}
             </span>
@@ -330,6 +451,10 @@ export function DemoMatch({
             className="demo-match-card-row__slot"
             style={{ zIndex: pulseField(expect, c.ref) ? 50 : index + 1 }}
           >
+            <div
+              key={lunges.you.includes(c.id) ? `lunge-${fxSeq}` : "idle"}
+              className={lunges.you.includes(c.id) ? "dm-lunge-up" : "dm-deal-in"}
+            >
             <GameCard
               card={cardOf(c.ref)}
               size="fluid-md"
@@ -345,6 +470,7 @@ export function DemoMatch({
                   : undefined
               }
             />
+            </div>
           </div>
         ))}
         {state.field.length === 0 ? <span className="self-center text-sm text-muted">—</span> : null}
@@ -368,7 +494,7 @@ export function DemoMatch({
                 "inline-flex size-[var(--dm-die)] shrink-0 items-center justify-center border font-mono transition",
                 compact ? "text-[0.65rem]" : "text-xs sm:text-sm",
                 active
-                  ? "animate-pulse border-yellow bg-yellow text-black"
+                  ? "dm-target border-yellow bg-yellow text-black"
                   : "border-line bg-panel-2 text-muted hover:border-cyan/50",
                 die === "d20" ? "opacity-70" : "",
               ].join(" ")}
@@ -385,7 +511,8 @@ export function DemoMatch({
   const legendsBlock = (
     <div>
       <p className="demo-hud-label mb-1">{copy.legends}</p>
-      <div className="flex flex-nowrap gap-1" data-coach-id="coach-legends">
+      <div className="relative flex flex-nowrap gap-1" data-coach-id="coach-legends">
+        {burst(["pay-legend", "call-legend"], FX_COLOR.info)}
         {state.legends.map((c) => {
           const canPay = expect.kind === "legend" && !c.spent;
           const canCall = expect.kind === "call-legend" && c.faceDown;
@@ -429,7 +556,9 @@ export function DemoMatch({
         {state.deckCount}
       </div>
       {lastTrash ? (
-        <GameCard card={cardOf(lastTrash)} size="fluid-pile" locale={locale} dimmed />
+        <div key={`${lastTrash}-${state.trash.length}`} className="dm-drop-in">
+          <GameCard card={cardOf(lastTrash)} size="fluid-pile" locale={locale} dimmed />
+        </div>
       ) : (
         <div className="aspect-card w-full border border-dashed border-line/40 bg-black/20" aria-hidden />
       )}
@@ -439,13 +568,14 @@ export function DemoMatch({
   const eddiesBlock = (
     <div className="min-w-0" data-coach-id="coach-eddies">
       <p className="demo-hud-label mb-1 text-right">{copy.eddies}</p>
-      <div className="flex flex-nowrap justify-end gap-1">
+      <div className="relative flex flex-nowrap justify-end gap-1">
+        {burst(["pay-eddie", "sell"], FX_COLOR.you)}
         {state.eddies.map((c) => {
           const canPay = expect.kind === "eddie" && !c.spent;
           const isAnchor = canPay && state.eddies.find((e) => !e.spent)?.id === c.id;
           return (
+            <div key={c.id} className="dm-flip-in">
             <GameCard
-              key={c.id}
               card={cardOf(c.ref)}
               size="fluid-pile"
               faceDown
@@ -456,6 +586,7 @@ export function DemoMatch({
               coachId={isAnchor ? "coach-eddie" : undefined}
               onClick={canPay ? () => tryAction({ type: "eddie" }) : undefined}
             />
+            </div>
           );
         })}
         {state.eddies.length === 0 ? <span className="text-xs text-muted">—</span> : null}
@@ -474,7 +605,7 @@ export function DemoMatch({
           const offset = index - (handFan - 1) / 2;
           return (
             <div
-              key={`${ref}-${index}`}
+              key={ref}
               style={{
                 // La carte attendue passe devant ses voisines pour rester touchable.
                 zIndex: pulseHand(expect, ref) ? 50 : index + 1,
@@ -482,6 +613,7 @@ export function DemoMatch({
               }}
               className="demo-match-hand__slot"
             >
+              <div className="dm-deal-in" style={{ "--dm-delay": `${250 + index * 90}ms` } as CSSProperties}>
               <GameCard
                 card={cardOf(ref)}
                 size="fluid-hand"
@@ -490,6 +622,7 @@ export function DemoMatch({
                 coachId={`coach-hand-${ref}`}
                 onClick={pulseHand(expect, ref) ? () => tryAction({ type: "hand", card: ref }) : undefined}
               />
+              </div>
             </div>
           );
         })}
@@ -500,9 +633,30 @@ export function DemoMatch({
 
   const overlays = (
     <>
+      {fx ? (
+        <div key={`fx-${fxSeq}`} style={fxStyle} aria-hidden>
+          {fx.vignette ? <div className="dm-vignette" /> : null}
+          {fx.banner ? (
+            <div className={`dm-banner ${fx.hold ? "dm-banner--hold" : ""}`}>
+              <div className="dm-banner__bar">
+                <span className="dm-banner__text">{fx.banner}</span>
+                {fx.sub ? <span className="dm-banner__sub">{fx.sub}</span> : null}
+              </div>
+            </div>
+          ) : null}
+          {fx.confetti ? (
+            <div className="dm-confetti">
+              {CONFETTI.map((style, i) => (
+                <i key={i} style={style} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       {toast ? (
         <p
-          className="absolute top-1 left-1/2 z-30 w-max max-w-[calc(100%-1rem)] -translate-x-1/2 border border-danger/40 bg-black/90 px-2 py-1 text-center text-xs text-danger"
+          key={toast + fxSeq}
+          className="dm-nope absolute top-1 left-1/2 z-30 w-max max-w-[calc(100%-1rem)] -translate-x-1/2 border border-danger/40 bg-black/90 px-2 py-1 text-center text-xs text-danger"
           role="status"
         >
           {toast}
@@ -527,7 +681,7 @@ export function DemoMatch({
       >
         <CoachCallout key={done ? "done" : step.id} anchorId={done ? "coach-done" : step.anchor} ringOnly />
 
-        <div className={tableClass} style={{ gap: "var(--dm-gap)", gridTemplateRows: gridRows }}>
+        <div key={round} ref={tableRef} className={tableClass} style={{ gap: "var(--dm-gap)", gridTemplateRows: gridRows }}>
           {overlays}
           {rivalRow}
           <div className="demo-match-mid shrink-0">
@@ -571,14 +725,16 @@ export function DemoMatch({
               ✕
             </button>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div key={step.id} className="dm-coach-in min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <p className="text-sm leading-snug font-medium text-foreground">{step.title}</p>
             <p className="mt-1 text-[0.8rem] leading-snug text-muted">{step.explain}</p>
           </div>
           {hasButton ? (
             <div className="flex shrink-0 gap-2">{actionButtons}</div>
           ) : (
-            <p className="shrink-0 border-l-2 border-yellow pl-2 text-xs leading-snug text-yellow">{step.tip}</p>
+            <p key={`tip-${step.id}`} className="dm-coach-in shrink-0 border-l-2 border-yellow pl-2 text-xs leading-snug text-yellow">
+              {step.tip}
+            </p>
           )}
         </aside>
       </div>,
@@ -602,7 +758,7 @@ export function DemoMatch({
         stepLabel={stepLabel}
       />
 
-      <div className={tableClass} style={{ gap: "var(--dm-gap)", gridTemplateRows: gridRows }}>
+      <div key={round} ref={tableRef} className={tableClass} style={{ gap: "var(--dm-gap)", gridTemplateRows: gridRows }}>
         {overlays}
         {rivalRow}
 

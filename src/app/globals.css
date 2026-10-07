@@ -576,6 +576,536 @@ select option:disabled {
   color: var(--muted);
 }
 
+/* ───────────── Tutoriel : animations (toutes coupées si prefers-reduced-motion) ───────────── */
+
+/* Ambiance : grille néon qui défile au sol + balayage lent. */
+.demo-match-table::before {
+  content: "";
+  position: absolute;
+  inset: 45% -20% -10%;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(62, 224, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(62, 224, 255, 0.09) 1px, transparent 1px);
+  background-size: 36px 36px;
+  transform: perspective(320px) rotateX(58deg);
+  transform-origin: top center;
+  mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 70%, transparent);
+  animation: dm-grid 6s linear infinite;
+}
+
+.demo-match-table::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 30%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(62, 224, 255, 0.06) 50%, transparent);
+  animation: dm-sweep 7s ease-in-out infinite;
+}
+
+@keyframes dm-grid {
+  to {
+    background-position: 0 36px, 0 0;
+  }
+}
+
+@keyframes dm-sweep {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(340%);
+    opacity: 0;
+  }
+}
+
+/* Carte qui arrive (distribution, pose sur le Field, Trash). */
+.dm-deal-in {
+  animation: dm-deal-in 520ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+  animation-delay: var(--dm-delay, 0ms);
+}
+
+@keyframes dm-deal-in {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.7) rotate(-8deg);
+    filter: brightness(2.2) drop-shadow(0 0 14px rgba(62, 224, 255, 0.9));
+  }
+  60% {
+    opacity: 1;
+    filter: brightness(1.4) drop-shadow(0 0 10px rgba(62, 224, 255, 0.6));
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+
+/* Carte posée par le Rival : tombe d'en haut, lueur rouge. */
+.dm-drop-in {
+  animation: dm-drop-in 480ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+
+@keyframes dm-drop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-36px) scale(0.75) rotate(6deg);
+    filter: brightness(2) drop-shadow(0 0 14px rgba(255, 93, 108, 0.9));
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+
+/* Retournement d'une carte (Legend appelée, carte vendue face cachée). */
+.dm-flip-in {
+  animation: dm-flip-in 560ms cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+
+@keyframes dm-flip-in {
+  0% {
+    transform: perspective(500px) rotateY(90deg) scale(1.15);
+    filter: brightness(2.5);
+  }
+  100% {
+    transform: perspective(500px) rotateY(0) scale(1);
+    filter: none;
+  }
+}
+
+/* Dé lancé → Gig. */
+.dm-dice-roll {
+  animation: dm-dice-roll 700ms cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+}
+
+@keyframes dm-dice-roll {
+  0% {
+    opacity: 0;
+    transform: translateY(-26px) rotate(-540deg) scale(0.3);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(3px) rotate(20deg) scale(1.25);
+    box-shadow: 0 0 18px currentColor;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Cible attendue : halo qui respire et légère lévitation. */
+.dm-target {
+  animation: dm-target 1.6s ease-in-out infinite;
+}
+
+@keyframes dm-target {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px rgba(245, 230, 66, 0.45));
+    translate: 0 0;
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(245, 230, 66, 0.95));
+    translate: 0 -3px;
+  }
+}
+
+/* Reflet qui traverse la cible. */
+.dm-shine {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dm-shine::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-18deg);
+  animation: dm-shine 2.2s ease-in-out infinite;
+}
+
+@keyframes dm-shine {
+  0%,
+  35% {
+    left: -60%;
+  }
+  80%,
+  100% {
+    left: 130%;
+  }
+}
+
+/* Boutons d'action : lueur + reflet. */
+.dm-cta {
+  position: relative;
+  overflow: hidden;
+  animation: dm-cta 1.8s ease-in-out infinite;
+}
+
+.dm-cta::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-18deg);
+  animation: dm-shine 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes dm-cta {
+  0%,
+  100% {
+    box-shadow: 0 0 10px var(--dm-cta-glow, rgba(245, 230, 66, 0.35));
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px var(--dm-cta-ring, rgba(245, 230, 66, 0.18)),
+      0 0 22px var(--dm-cta-glow, rgba(245, 230, 66, 0.6));
+  }
+}
+
+/* Attaque : la carte bondit vers sa cible. */
+.dm-lunge-up {
+  animation: dm-lunge-up 560ms cubic-bezier(0.5, 0, 0.3, 1) both;
+}
+
+.dm-lunge-down {
+  animation: dm-lunge-down 560ms cubic-bezier(0.5, 0, 0.3, 1) both;
+}
+
+@keyframes dm-lunge-up {
+  35% {
+    transform: translateY(-34%) scale(1.15) rotate(-4deg);
+    filter: drop-shadow(0 0 16px rgba(245, 230, 66, 0.9));
+  }
+}
+
+@keyframes dm-lunge-down {
+  35% {
+    transform: translateY(34%) scale(1.15) rotate(4deg);
+    filter: drop-shadow(0 0 16px rgba(255, 93, 108, 0.9));
+  }
+}
+
+/* Impact : le plateau tremble. */
+.dm-shake {
+  animation: dm-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes dm-shake {
+  10%,
+  90% {
+    translate: -1px 0;
+  }
+  20%,
+  80% {
+    translate: 3px 1px;
+  }
+  30%,
+  50%,
+  70% {
+    translate: -5px -1px;
+  }
+  40%,
+  60% {
+    translate: 5px 1px;
+  }
+}
+
+/* Éclair de couleur sur les bords du plateau. */
+.dm-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  pointer-events: none;
+  box-shadow: inset 0 0 70px 10px var(--dm-fx-color);
+  animation: dm-vignette 900ms ease-out both;
+}
+
+@keyframes dm-vignette {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Onde lumineuse autour d'une zone (Gigs gagnés, Eddie payé…). */
+.dm-burst {
+  position: absolute;
+  inset: -4px;
+  pointer-events: none;
+  border: 2px solid var(--dm-fx-color, var(--yellow));
+  animation: dm-burst 700ms ease-out both;
+}
+
+@keyframes dm-burst {
+  0% {
+    opacity: 1;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+/* Bandeau d'événement néon « glitch ». */
+.dm-banner {
+  position: absolute;
+  inset: 0;
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.dm-banner__bar {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  text-align: center;
+  background: linear-gradient(90deg, transparent, rgba(5, 7, 12, 0.88) 18%, rgba(5, 7, 12, 0.88) 82%, transparent);
+  border-block: 1px solid var(--dm-fx-color);
+  box-shadow: 0 0 30px -6px var(--dm-fx-color);
+  animation: dm-banner 1.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.dm-banner--hold .dm-banner__bar {
+  animation: dm-banner-hold 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.dm-banner__text {
+  display: inline-block;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 6cqw, 2.4rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dm-fx-color);
+  text-shadow:
+    0 0 12px var(--dm-fx-color),
+    2px 0 rgba(255, 0, 170, 0.75),
+    -2px 0 rgba(62, 224, 255, 0.75);
+  animation: dm-glitch 1.35s steps(1) both;
+}
+
+.dm-banner__sub {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #e8ecf4;
+  opacity: 0.85;
+}
+
+@keyframes dm-banner {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.05) scaleX(1.4);
+  }
+  14% {
+    opacity: 1;
+    transform: scaleY(1.15) scaleX(1);
+  }
+  22%,
+  78% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(8%) scaleY(0.6);
+  }
+}
+
+@keyframes dm-banner-hold {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.05) scaleX(1.4);
+  }
+  30% {
+    opacity: 1;
+    transform: scaleY(1.15) scaleX(1);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dm-glitch {
+  0% {
+    clip-path: inset(40% 0 35% 0);
+    transform: translateX(-8px);
+  }
+  6% {
+    clip-path: inset(0 0 60% 0);
+    transform: translateX(6px);
+  }
+  12% {
+    clip-path: inset(55% 0 0 0);
+    transform: translateX(-4px);
+  }
+  18%,
+  70%,
+  76% {
+    clip-path: none;
+    transform: none;
+  }
+  73% {
+    transform: translateX(3px) skewX(-8deg);
+  }
+}
+
+/* Victoire : confettis néon. */
+.dm-confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 27;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dm-confetti > i {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 7px;
+  height: 12px;
+  background: var(--c);
+  box-shadow: 0 0 6px var(--c);
+  opacity: 0;
+  animation: dm-confetti 2s cubic-bezier(0.15, 0.6, 0.35, 1) var(--d) forwards;
+}
+
+@keyframes dm-confetti {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0) scale(0.4);
+  }
+  45% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) rotate(var(--r)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x) * 1.25), calc(-50% + var(--y) + 55cqh)) rotate(calc(var(--r) * 2.5))
+      scale(0.9);
+  }
+}
+
+/* Texte du coach qui change d'étape. */
+.dm-coach-in {
+  animation: dm-coach-in 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes dm-coach-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* Mauvaise cible : le message secoue la tête. */
+.dm-nope {
+  animation: dm-nope 380ms ease-in-out both;
+}
+
+@keyframes dm-nope {
+  25% {
+    translate: -7px 0;
+  }
+  50% {
+    translate: 6px 0;
+  }
+  75% {
+    translate: -3px 0;
+  }
+}
+
+/* Anneau du coach. */
+.dm-ring {
+  animation: dm-ring 1.6s ease-in-out infinite;
+}
+
+@keyframes dm-ring {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(245, 230, 66, 0.35),
+      0 0 8px rgba(245, 230, 66, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(245, 230, 66, 0.15),
+      0 0 22px rgba(245, 230, 66, 0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-match-table::before,
+  .demo-match-table::after,
+  .dm-deal-in,
+  .dm-drop-in,
+  .dm-flip-in,
+  .dm-dice-roll,
+  .dm-target,
+  .dm-shine::after,
+  .dm-cta,
+  .dm-cta::after,
+  .dm-lunge-up,
+  .dm-lunge-down,
+  .dm-shake,
+  .dm-coach-in,
+  .dm-nope,
+  .dm-ring,
+  .dm-banner__text {
+    animation: none;
+  }
+
+  .dm-confetti,
+  .dm-vignette,
+  .dm-burst {
+    display: none;
+  }
+
+  .dm-banner__bar {
+    animation: dm-vignette 1.4s linear both;
+  }
+
+  .dm-banner--hold .dm-banner__bar {
+    animation: none;
+  }
+}
+
 .bg-card-red {
   background-color: var(--cp-card-red);
 }

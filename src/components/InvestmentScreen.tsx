@@ -136,6 +136,8 @@ export function InvestmentScreen() {
   const [chartPoints, setChartPoints] = useState<ChartPoint[]>([]);
   const [chartStatus, setChartStatus] = useState<"loading" | "ready" | "error">("loading");
   const [chartRange, setChartRange] = useState<ChartRange>("all");
+  // Après le premier chargement, le graphique reste affiché pendant les rechargements (pas de saut de mise en page).
+  const [chartLoaded, setChartLoaded] = useState(false);
   const rangedChartPoints = useMemo(() => filterChartRange(chartPoints, chartRange), [chartPoints, chartRange]);
   const periodStart = useMemo(() => chartRangeStart(chartPoints, chartRange), [chartPoints, chartRange]);
   const [reference, setReference] = useState<{ day: string | null; prices: Record<string, number> } | null>(null);
@@ -173,8 +175,18 @@ export function InvestmentScreen() {
     [allLines, language, performance, query, setFilter],
   );
 
+  // La liste par extension ignore le filtre d'extension : elle reste complète et sert de sélecteur,
+  // l'extension choisie y est simplement surlignée (pas de liste qui se réduit à une ligne).
+  const filteredAnySet = useMemo(
+    () => filterInvestmentLines(allLines, { set: "all", language, performance, q: query }),
+    [allLines, language, performance, query],
+  );
+
   const summary = useMemo(() => summarizeInvestment(filtered), [filtered]);
-  const bySet = useMemo(() => (catalog ? investmentBySet(filtered, catalog.sets) : []), [catalog, filtered]);
+  const bySet = useMemo(
+    () => (catalog ? investmentBySet(filteredAnySet, catalog.sets) : []),
+    [catalog, filteredAnySet],
+  );
   const sortedBySet = useMemo(() => sortSetRows(bySet, effectiveSetSort), [bySet, effectiveSetSort]);
   const sortedCardSets = useMemo(
     () => sortedBySet.filter((row) => !isSealedSetCode(row.setCode)),
@@ -207,6 +219,7 @@ export function InvestmentScreen() {
         if (cancelled) return;
         setChartPoints((body.points ?? []).map((point) => ({ day: point.day, value: point.marketTotal })));
         setChartStatus("ready");
+        setChartLoaded(true);
       } catch {
         if (!cancelled) {
           setChartPoints([]);
@@ -427,16 +440,21 @@ export function InvestmentScreen() {
             );
           })}
         </div>
-        {chartStatus === "loading" ? (
+        {chartStatus === "loading" && !chartLoaded ? (
           <p className="border border-line bg-panel px-4 py-8 text-sm text-muted">{t.investment.chartLoading}</p>
         ) : chartStatus === "error" ? (
           <p className="border border-line bg-panel px-4 py-8 text-sm text-danger">{t.investment.chartError}</p>
         ) : (
-          <PriceChart
-            points={rangedChartPoints}
-            label={t.investment.chartLabel}
-            emptyHint={t.investment.chartEmpty}
-          />
+          <div
+            aria-busy={chartStatus === "loading"}
+            className={`transition-opacity duration-200 ${chartStatus === "loading" ? "opacity-50" : "opacity-100"}`}
+          >
+            <PriceChart
+              points={rangedChartPoints}
+              label={t.investment.chartLabel}
+              emptyHint={t.investment.chartEmpty}
+            />
+          </div>
         )}
       </section>
 
