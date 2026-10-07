@@ -650,7 +650,7 @@ export function DemoMatch({
   const overlays = (
     <>
       {fx ? (
-        <div key={`fx-${fxSeq}`} style={fxStyle} aria-hidden>
+        <div key={`fx-${fxSeq}`} className="contents" style={fxStyle} aria-hidden>
           {fx.vignette ? <div className="dm-vignette" /> : null}
           {fx.banner ? (
             <div className={`dm-banner ${fx.hold ? "dm-banner--hold" : ""}`}>
