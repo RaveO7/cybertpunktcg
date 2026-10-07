@@ -933,16 +933,14 @@ function ValueItem({
             <TrendBadge delta={value.marketDelta} amount={value.marketDeltaAmount} />
           </dd>
         </div>
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-muted">{t.dashboard.valuePurchaseGain}</dt>
-          <dd>
-            {value.profitEur == null ? (
-              <span className="text-xs text-muted">{t.dashboard.valueNoPurchase}</span>
-            ) : (
+        {value.profitEur != null ? (
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="text-muted">{t.dashboard.valuePurchaseGain}</dt>
+            <dd>
               <ProfitText value={value.profitEur} />
-            )}
-          </dd>
-        </div>
+            </dd>
+          </div>
+        ) : null}
       </dl>
     </li>
   );
