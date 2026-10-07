@@ -12,6 +12,13 @@ import { EXAMPLE_CARDS } from "@/lib/rules/examples";
 
 type Line = { part: AnatomyPartId; d: string };
 
+// Same numbered marker as the playmat zones (PlaymatDiagram).
+function markerClass(active: boolean) {
+  return `inline-flex size-5 items-center justify-center rounded-full border font-mono text-[0.6rem] font-bold ${
+    active ? "border-black bg-cyan text-black" : "border-cyan bg-background text-cyan"
+  }`;
+}
+
 export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
   const copy = anatomyCopy(locale);
   const [cardId, setCardId] = useState<AnatomyCard["id"]>("unit");
@@ -29,6 +36,7 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
   const active = hovered ?? selected;
   const leftPoints = anatomy.points.filter((p) => p.side === "left");
   const rightPoints = anatomy.points.filter((p) => p.side === "right");
+  const numberOf = (part: AnatomyPartId) => anatomy.points.findIndex((p) => p.part === part) + 1;
 
   function measureLines() {
     const root = rootRef.current;
@@ -112,10 +120,11 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
         }`}
       >
         <span
-          className={`font-mono text-[0.7rem] font-bold tracking-[0.14em] uppercase ${
-            isActive ? "text-yellow" : "text-yellow/80"
-          }`}
+          className={`flex items-center gap-2 font-mono text-[0.7rem] font-bold tracking-[0.14em] uppercase ${
+            point.side === "left" ? "flex-row-reverse" : ""
+          } ${isActive ? "text-yellow" : "text-yellow/80"}`}
         >
+          <span className={`shrink-0 ${markerClass(isActive)}`}>{numberOf(point.part)}</span>
           {copy.parts[point.part].name}
         </span>
         <span className={`text-xs leading-relaxed ${isActive ? "text-foreground" : "text-muted"}`}>
@@ -173,7 +182,7 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={card.imagePath} alt={card.name} className="aspect-card w-full object-cover" draggable={false} />
-              {anatomy.points.map((point) => {
+              {anatomy.points.map((point, index) => {
                 const isActive = active === point.part;
                 return (
                   <button
@@ -184,12 +193,10 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
                     onMouseLeave={() => setHovered(null)}
                     aria-label={copy.parts[point.part].name}
                     style={{ left: `${point.x}%`, top: `${point.y}%` }}
-                    className={`absolute z-10 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border transition ${
-                      isActive
-                        ? "scale-125 border-black bg-yellow shadow-[0_0_0_3px_rgba(245,230,66,0.45)]"
-                        : "border-yellow/90 bg-yellow/80 hover:scale-110"
-                    }`}
-                  />
+                    className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 ${markerClass(isActive)}`}
+                  >
+                    {index + 1}
+                  </button>
                 );
               })}
             </div>
@@ -232,7 +239,7 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
           <div className="relative overflow-hidden rounded-[4.5%/3.2%] border border-yellow/50 bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={card.imagePath} alt={card.name} className="aspect-card w-full object-cover" draggable={false} />
-            {anatomy.points.map((point) => {
+            {anatomy.points.map((point, index) => {
               const isActive = active === point.part;
               return (
                 <button
@@ -241,10 +248,10 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
                   onClick={() => setSelected(point.part)}
                   aria-label={copy.parts[point.part].name}
                   style={{ left: `${point.x}%`, top: `${point.y}%` }}
-                  className={`absolute z-10 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border ${
-                    isActive ? "border-black bg-yellow" : "border-yellow bg-yellow/80"
-                  }`}
-                />
+                  className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 ${markerClass(isActive)}`}
+                >
+                  {index + 1}
+                </button>
               );
             })}
           </div>
@@ -256,7 +263,7 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
           <p className="mt-1.5 text-sm leading-relaxed text-foreground">{bodyFor(active)}</p>
         </div>
         <ol className="grid gap-1.5">
-          {anatomy.points.map((point) => (
+          {anatomy.points.map((point, index) => (
             <li key={point.part}>
               <button
                 type="button"
@@ -267,7 +274,7 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
                     : "border-line text-muted"
                 }`}
               >
-                <span className="size-2 shrink-0 rounded-full bg-yellow" />
+                <span className={`shrink-0 ${markerClass(active === point.part)}`}>{index + 1}</span>
                 {copy.parts[point.part].name}
               </button>
             </li>

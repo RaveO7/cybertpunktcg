@@ -52,23 +52,6 @@ export function HowToPlayRules() {
 
   return (
     <div ref={rootRef} className="flex min-w-0 flex-col gap-6 lg:flex-row lg:gap-8 [&_[id]]:scroll-mt-2 lg:[&_[id]]:scroll-mt-0">
-      <nav className="flex flex-wrap gap-1.5 border-b border-line pb-2 lg:hidden" aria-label={c.title}>
-        {c.toc.map((item) => {
-          const active = item.id === activeId;
-          return (
-            <a
-              key={item.id}
-              href={`#${item.id}`}
-              aria-current={active ? "location" : undefined}
-              className={`shrink-0 whitespace-nowrap border px-2.5 py-1.5 text-xs ${
-                active ? "border-yellow bg-yellow/10 text-yellow" : "border-line text-muted"
-              }`}
-            >
-              {item.label}
-            </a>
-          );
-        })}
-      </nav>
       <aside className="hidden w-56 shrink-0 lg:block">
         <nav className="sticky top-0 space-y-1 border border-line bg-panel p-3" aria-label={c.title}>
           <p className="hud-label mb-2 px-2">{c.eyebrow}</p>
