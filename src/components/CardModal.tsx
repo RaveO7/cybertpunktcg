@@ -336,7 +336,7 @@ export function CardModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/80 p-0 sm:p-5"
+      className="fixed inset-x-0 top-0 bottom-[var(--app-bottom-nav)] z-50 overflow-y-auto overscroll-contain bg-black/80 p-0 sm:p-5"
       onClick={onClose}
     >
       <div
@@ -858,7 +858,7 @@ export function CardModal({
 
         {!readOnly && onSave ? (
           <form
-            className="sticky bottom-0 z-10 flex flex-col gap-2.5 border-t border-line bg-panel-2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 md:hidden"
+            className="sticky bottom-0 z-10 flex flex-col gap-2.5 border-t border-line bg-panel-2 px-4 pb-[max(0.75rem,calc(0.75rem+env(safe-area-inset-bottom)-var(--app-bottom-nav)))] pt-3 md:hidden"
             onSubmit={(event) => {
               event.preventDefault();
               void add();
