@@ -72,6 +72,8 @@ export function AuthScreen() {
     const params = new URLSearchParams(window.location.search);
     const authError = params.get("authError");
     if (authError) {
+      // Erreur OAuth transmise par l'URL : lisible seulement dans le navigateur, après l'hydratation.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError(authError);
       params.delete("authError");
       const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;

@@ -68,6 +68,8 @@ export function CoachCallout({
   }, [anchorId]);
 
   useLayoutEffect(() => {
+    // Mesure du DOM avant affichage : c'est le rôle de useLayoutEffect (la bulle ne clignote pas).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     measure();
   }, [measure, title, body]);
 

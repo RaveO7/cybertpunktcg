@@ -160,9 +160,12 @@ export function CardsExplorer({
   useEffect(() => {
     draftRef.current = draft;
   }, [draft]);
-  useEffect(() => {
+  // État par défaut du mode ajout modifié dans les réglages : on suit, pendant le rendu.
+  const [syncedAddCondition, setSyncedAddCondition] = useState(prefs.condition);
+  if (prefs.condition !== syncedAddCondition) {
+    setSyncedAddCondition(prefs.condition);
     setAddCondition(prefs.condition);
-  }, [prefs.condition]);
+  }
   useEffect(() => {
     const key = searchParams.toString();
     if (key === urlSyncRef.current) return;

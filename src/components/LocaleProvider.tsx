@@ -44,10 +44,12 @@ function getServerLocale() {
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const stored = useSyncExternalStore(subscribeLocale, getClientLocale, getServerLocale);
   const [locale, setLocaleState] = useState<Locale>(stored);
-
-  useEffect(() => {
+  // Langue changée ailleurs (autre onglet, hydratation) : on suit, pendant le rendu plutôt que dans un effet.
+  const [syncedStored, setSyncedStored] = useState(stored);
+  if (stored !== syncedStored) {
+    setSyncedStored(stored);
     setLocaleState(stored);
-  }, [stored]);
+  }
 
   useEffect(() => {
     document.documentElement.lang = locale;

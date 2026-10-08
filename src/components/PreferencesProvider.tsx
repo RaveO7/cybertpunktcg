@@ -50,24 +50,27 @@ function getServerPreferences() {
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const stored = useSyncExternalStore(subscribePreferences, getClientPreferences, getServerPreferences);
   const [prefs, setPrefsState] = useState<UserPreferences>(stored);
-
-  useEffect(() => {
+  // Préférences changées ailleurs (autre onglet, hydratation) : on suit, pendant le rendu plutôt que dans un effet.
+  const [syncedStored, setSyncedStored] = useState(stored);
+  if (stored !== syncedStored) {
+    setSyncedStored(stored);
     setPrefsState(stored);
-  }, [stored]);
+  }
 
   useEffect(() => {
     applyTheme(prefs.theme);
   }, [prefs.theme]);
 
   function setPrefs(partial: Partial<UserPreferences>) {
-    setPrefsState((current) => {
-      const next = { ...current, ...partial };
-      clientSnapshot = next;
-      writeStoredPreferences(next);
-      if (partial.theme) applyTheme(next.theme);
-      window.dispatchEvent(new StorageEvent("storage", { key: PREFERENCES_STORAGE_KEY }));
-      return next;
-    });
+    // Effets de bord hors de la fonction de mise à jour : React l'exécute pendant le rendu, et
+    // l'événement « storage » y réveillerait les autres abonnés en plein rendu.
+    // clientSnapshot est la dernière valeur écrite : deux appels rapprochés se cumulent.
+    const next = { ...clientSnapshot, ...partial };
+    clientSnapshot = next;
+    writeStoredPreferences(next);
+    if (partial.theme) applyTheme(next.theme);
+    setPrefsState(next);
+    window.dispatchEvent(new StorageEvent("storage", { key: PREFERENCES_STORAGE_KEY }));
   }
 
   function resetPrefs() {

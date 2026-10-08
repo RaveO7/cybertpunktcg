@@ -14,19 +14,22 @@ import {
   type LocalPrinting,
 } from "../../src/lib/cardmarket";
 import { prisma } from "../../src/lib/prisma";
-import { hasFullCatalog } from "../helpers/catalog";
+import { assertFullCatalog } from "../helpers/catalog";
 
-const CACHE = path.join(process.cwd(), "data", "cardmarket");
+// Le guide de prix qui correspond à la base : le cache local de l'import (data/), sinon
+// l'instantané chargé en CI par tests/fixtures/seed-ci.ts (tests/fixtures/cardmarket/).
+const LOCAL = path.join(process.cwd(), "data", "cardmarket");
+const CACHE = existsSync(path.join(LOCAL, "price_guide_23.json"))
+  ? LOCAL
+  : path.join(process.cwd(), "tests", "fixtures", "cardmarket");
 const PRODUCTS = path.join(CACHE, "products_singles_23.json");
 const GUIDE = path.join(CACHE, "price_guide_23.json");
-const available = existsSync(PRODUCTS) && existsSync(GUIDE) && (await hasFullCatalog());
 
 afterAll(async () => {
   await prisma.$disconnect();
 });
 
-// Fichiers Cardmarket en cache + vrai catalogue : absents en CI, ces tests sont alors ignorés.
-describe.skipIf(!available)("prix Cardmarket du catalogue", () => {
+describe("prix Cardmarket du catalogue", () => {
   let products: ReturnType<typeof parseProductFile>;
   let trends: ReturnType<typeof parsePriceFile>;
   let locals: LocalPrinting[];
@@ -36,6 +39,7 @@ describe.skipIf(!available)("prix Cardmarket du catalogue", () => {
   let byId: Map<string, (typeof report.assignments)[number]>;
 
   beforeAll(async () => {
+    await assertFullCatalog();
     products = parseProductFile(readFileSync(PRODUCTS, "utf8"));
     trends = parsePriceFile(readFileSync(GUIDE, "utf8"));
     const [sets, printings] = await Promise.all([

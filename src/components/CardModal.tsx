@@ -225,10 +225,14 @@ export function CardModal({
     closeRef.current?.focus();
   }, []);
 
-  useEffect(() => {
+  // Autre carte ou préférences modifiées : le formulaire d'ajout repart des préférences.
+  const formDefaultsKey = `${prefs.condition}|${prefs.currency}|${printing.id}`;
+  const [syncedFormDefaults, setSyncedFormDefaults] = useState(formDefaultsKey);
+  if (formDefaultsKey !== syncedFormDefaults) {
+    setSyncedFormDefaults(formDefaultsKey);
     setConditionCode(prefs.condition);
     setCurrency(prefs.currency);
-  }, [prefs.condition, prefs.currency, printing.id]);
+  }
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;

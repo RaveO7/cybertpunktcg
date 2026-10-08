@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { afterAll, describe, it } from "vitest";
+import { afterAll, beforeAll, describe, it } from "vitest";
 import { loadCatalog, loadCollection } from "../../src/lib/catalog";
 import { deleteCollectionLine, saveCollectionLine } from "../../src/lib/collection-mutate";
 import { aggregateCollection, computeProgress, defaultFilters, filterPrintings } from "../../src/lib/logic";
 import { prisma } from "../../src/lib/prisma";
 import { MAIN_SET_CODE } from "../../src/lib/reference-data";
-import { hasFullCatalog } from "../helpers/catalog";
+import { assertFullCatalog } from "../helpers/catalog";
 
 const userId = `verifyuser-${Date.now().toString(36)}`;
 
@@ -14,8 +14,10 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-// Invariants du vrai catalogue importé : sans lui (CI), ces tests sont ignorés.
-describe.skipIf(!(await hasFullCatalog()))("catalogue importé", () => {
+// Invariants du vrai catalogue (import local, ou instantané tests/fixtures chargé en CI).
+describe("catalogue importé", () => {
+  beforeAll(assertFullCatalog);
+
   it("les prix Cardmarket correspondent au catalogue", async () => {
     const catalog = await loadCatalog();
     const prices = await prisma.price.findMany({ include: { source: true } });
