@@ -9,11 +9,12 @@ const YELLOW = "#f5e642";
 const CYAN = "#3ee0ff";
 
 // `scale` réduit le motif pour les icônes maskable (zone sûre = cercle de 80 %).
-function iconSvg(scale: number) {
+// `shiftY` décale le motif verticalement (en fraction de la taille de l'icône, négatif = vers le haut).
+function iconSvg(scale: number, shiftY = 0) {
   const offset = (512 * (1 - scale)) / 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="${BACKGROUND}"/>
-  <g transform="translate(${offset} ${offset}) scale(${scale})">
+  <g transform="translate(${offset} ${offset + 512 * shiftY}) scale(${scale})">
     <g transform="rotate(-8 256 256)">
       <path d="M150 70 H342 L382 110 V442 H170 L130 402 V90 Z" fill="none" stroke="${CYAN}" stroke-width="14" stroke-linejoin="miter" transform="translate(14 10)" opacity="0.85"/>
       <path d="M150 70 H342 L382 110 V442 H170 L130 402 V90 Z" fill="${BACKGROUND}" stroke="${YELLOW}" stroke-width="16" stroke-linejoin="miter"/>
@@ -29,9 +30,13 @@ const root = path.resolve(__dirname, "..");
 // Les icônes « any » reprennent l'échelle de la maskable : Android affiche la maskable au démarrage,
 // puis Chrome peut basculer sur l'icône « any » ; à échelle égale, le logo ne change pas de taille.
 const MASKABLE_SCALE = 0.72;
+// Le splash système Android (maskable) centre le logo entre barre d'état et barre de navigation,
+// le splash Chrome (« any ») le centre sur tout l'écran : il apparaît ~20 px plus bas (Android à 3 boutons).
+// On remonte le motif des icônes « any » d'autant pour que le logo ne saute pas entre les deux.
+const ANY_SHIFT_Y = -0.0265;
 const targets = [
-  { file: "public/icons/icon-192.png", size: 192, scale: MASKABLE_SCALE },
-  { file: "public/icons/icon-512.png", size: 512, scale: MASKABLE_SCALE },
+  { file: "public/icons/icon-192.png", size: 192, scale: MASKABLE_SCALE, shiftY: ANY_SHIFT_Y },
+  { file: "public/icons/icon-512.png", size: 512, scale: MASKABLE_SCALE, shiftY: ANY_SHIFT_Y },
   { file: "public/icons/maskable-512.png", size: 512, scale: MASKABLE_SCALE },
   { file: "src/app/apple-icon.png", size: 180, scale: 0.86 },
 ];
@@ -40,7 +45,7 @@ async function main() {
   for (const target of targets) {
     const output = path.join(root, target.file);
     await mkdir(path.dirname(output), { recursive: true });
-    await sharp(Buffer.from(iconSvg(target.scale))).resize(target.size, target.size).png().toFile(output);
+    await sharp(Buffer.from(iconSvg(target.scale, target.shiftY))).resize(target.size, target.size).png().toFile(output);
     console.log(`✓ ${target.file}`);
   }
 }
