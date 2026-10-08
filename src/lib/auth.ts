@@ -73,7 +73,7 @@ export function readSessionToken(request: Request) {
   return null;
 }
 
-function cookieSecure(request: Request) {
+export function cookieSecure(request: Request) {
   const configured = process.env.APP_URL?.trim();
   if (configured) return configured.startsWith("https:");
   if (process.env.TRUST_PROXY === "1") {

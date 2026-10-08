@@ -1086,6 +1086,33 @@ function languageFromParams(params: URLSearchParams, base: Filters) {
   return base.language;
 }
 
+/**
+ * Listes de texte libre (tags, mots-clés, artistes) dans l'URL : valeurs séparées par « , » ;
+ * une virgule dans une valeur (« Doe, John ») est doublée. Les anciennes URL, sans « ,, »,
+ * se lisent pareil. Les listes à valeurs fixes (couleur, coût…) gardent un découpage simple.
+ */
+function joinList(values: string[]) {
+  return values.map((value) => value.replaceAll(",", ",,")).join(",");
+}
+
+function splitList(raw: string) {
+  const values: string[] = [];
+  let current = "";
+  for (let index = 0; index < raw.length; index += 1) {
+    if (raw[index] !== ",") {
+      current += raw[index];
+    } else if (raw[index + 1] === ",") {
+      current += ",";
+      index += 1;
+    } else {
+      values.push(current);
+      current = "";
+    }
+  }
+  values.push(current);
+  return values.map((value) => value.trim()).filter(Boolean);
+}
+
 export function parseFilters(
   params: URLSearchParams,
   hasMainSet = true,
@@ -1097,6 +1124,7 @@ export function parseFilters(
       .split(",")
       .map((value) => value.trim())
       .filter(Boolean);
+  const textList = (key: string) => splitList(params.get(key) ?? "");
   const collection = params.get("collection");
   const sort = params.get("sort");
   const eddiable = params.get("eddiable");
@@ -1114,16 +1142,19 @@ export function parseFilters(
     set,
     colors: list("color"),
     types: list("type"),
-    tags: list("tag"),
-    keywords: list("keyword"),
+    tags: textList("tag"),
+    keywords: textList("keyword"),
     costs: list("cost"),
     powers: list("power"),
     rams: list("ram"),
-    artists: list("artist"),
+    artists: textList("artist"),
     eddiable: eddiable === "true" || eddiable === "false" ? eddiable : "",
     rarity: params.get("rarity") ?? "",
+    // Sans paramètre (ou valeur inconnue) : la préférence « filtre collection » de l'utilisateur.
     collection:
-      collection === "owned" || collection === "missing" || collection === "duplicates" ? collection : "all",
+      collection === "all" || collection === "owned" || collection === "missing" || collection === "duplicates"
+        ? collection
+        : base.collection,
     condition: params.get("condition") ?? "",
     sort: isSortKey(sort) ? sort : base.sort,
     page: Number.isFinite(page) && page > 0 ? Math.floor(page) : 1,
@@ -1162,15 +1193,15 @@ export function serializeFilters(
   set("set", filters.set, defaults.set);
   if (filters.colors.length) params.set("color", filters.colors.join(","));
   if (filters.types.length) params.set("type", filters.types.join(","));
-  if (filters.tags.length) params.set("tag", filters.tags.join(","));
-  if (filters.keywords.length) params.set("keyword", filters.keywords.join(","));
+  if (filters.tags.length) params.set("tag", joinList(filters.tags));
+  if (filters.keywords.length) params.set("keyword", joinList(filters.keywords));
   if (filters.costs.length) params.set("cost", filters.costs.join(","));
   if (filters.powers.length) params.set("power", filters.powers.join(","));
   if (filters.rams.length) params.set("ram", filters.rams.join(","));
-  if (filters.artists.length) params.set("artist", filters.artists.join(","));
+  if (filters.artists.length) params.set("artist", joinList(filters.artists));
   set("eddiable", filters.eddiable);
   set("rarity", filters.rarity);
-  set("collection", filters.collection, "all");
+  set("collection", filters.collection, defaults.collection);
   set("condition", filters.condition);
   set("sort", filters.sort, defaults.sort);
   if (filters.page > 1) params.set("page", String(filters.page));

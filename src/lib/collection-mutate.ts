@@ -26,6 +26,11 @@ export type MutationResult = {
 
 const include = { condition: true } as const;
 
+/** Exemplaires maximum par ligne (carte × état), quel que soit le nombre d'ajouts. */
+export const MAX_LINE_QUANTITY = 999;
+
+const capped = (quantity: number) => Math.min(quantity, MAX_LINE_QUANTITY);
+
 function toDTO(item: {
   id: string;
   printingId: string;
@@ -66,7 +71,11 @@ export async function saveCollectionLine(userId: string, input: SaveInput): Prom
   };
 
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.collectionItem.findUnique({ where });
+    const existing = await tx.collectionItem.findUnique({ where, include });
+    // Ajouter 0 exemplaire ne change rien (seul « set 0 » retire la ligne).
+    if (input.mode === "add" && input.quantity <= 0) {
+      return { item: existing ? toDTO(existing) : null, deletedId: null };
+    }
     if (input.quantity <= 0) {
       if (!existing) return { item: null, deletedId: null };
       await tx.collectionItem.delete({ where: { id: existing.id } });
@@ -80,7 +89,7 @@ export async function saveCollectionLine(userId: string, input: SaveInput): Prom
       const saved = await tx.collectionItem.update({
         where: { id: existing.id },
         data: {
-          quantity: { increment: input.quantity },
+          quantity: capped(existing.quantity + input.quantity),
           ...(notes !== undefined ? { notes } : {}),
           ...(purchasePrice !== undefined ? { purchasePrice } : {}),
           ...(purchaseCurrency !== undefined ? { purchaseCurrency } : {}),
@@ -90,7 +99,7 @@ export async function saveCollectionLine(userId: string, input: SaveInput): Prom
       return { item: toDTO(saved), deletedId: null };
     }
 
-    const quantity = input.quantity;
+    const quantity = capped(input.quantity);
     const data = {
       quantity,
       notes: input.notes === undefined ? existing?.notes ?? null : input.notes,
@@ -149,7 +158,7 @@ export async function saveCollectionBatch(
       const row = existing
         ? await tx.collectionItem.update({
             where: { id: existing.id },
-            data: { quantity: { increment: line.quantity } },
+            data: { quantity: capped(existing.quantity + line.quantity) },
             include,
           })
         : await tx.collectionItem.create({
@@ -197,7 +206,7 @@ export async function patchCollectionLine(
         },
       });
       if (target) {
-        const quantity = (input.quantity ?? current.quantity) + target.quantity;
+        const quantity = capped((input.quantity ?? current.quantity) + target.quantity);
         const saved = await tx.collectionItem.update({
           where: { id: target.id },
           data: {

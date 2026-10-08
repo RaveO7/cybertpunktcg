@@ -113,14 +113,9 @@ describe.sequential("fenêtre fixe", () => {
     assert.equal((await counter("concurrent"))?.count, 12);
   });
 
-  // BUG (sécurité, faible à moyenne) : rate-limit.ts lit `row.resetAt` APRÈS l'incrément ; toutes les
-  // requêtes dont l'upsert arrive avant la remise à zéro voient l'ancienne échéance et passent
-  // (`return { ok: true }` sans regarder le compteur). Une rafale lancée pile à l'expiration de la
-  // fenêtre contourne donc la limite (observé de façon intermittente même en SQLite : 6/5 ;
-  // en Postgres sous vraie concurrence, toute la rafale peut passer).
-  // L'entrelacement est rendu déterministe en retardant la remise à zéro jusqu'à ce que tous les
-  // upserts soient faits. Attendu : au plus 5 acceptées sur 12. Observé : 12.
-  it.fails("BUG: rafale simultanée juste après l'expiration : la limite tient", async () => {
+  // Rafale lancée pile à l'expiration : l'entrelacement le plus défavorable est rendu
+  // déterministe en retardant la remise à zéro jusqu'à ce que tous les upserts soient faits.
+  it("rafale simultanée juste après l'expiration : la limite tient", async () => {
     await prisma.rateLimit.create({ data: { key: key("burst"), count: 99, resetAt: new Date(Date.now() - 1) } });
     const total = 12;
     let upserts = 0;

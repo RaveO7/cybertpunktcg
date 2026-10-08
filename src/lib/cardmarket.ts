@@ -626,7 +626,9 @@ function cleanCollectorNumber(value: string) {
 
 function readId(record: Record<string, unknown>) {
   const value = record.idProduct ?? record.idproduct ?? record["idProduct"];
-  const id = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  // Number("") vaut 0 : une cellule vide n'est pas un id produit.
+  const id =
+    typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : Number.NaN;
   return Number.isInteger(id) ? id : null;
 }
 
@@ -646,8 +648,10 @@ function readEuro(value: unknown) {
       : typeof value === "string"
         ? Number(value.trim().replace(/\s/g, "").replace(",", "."))
         : Number.NaN;
-  if (!Number.isFinite(amount) || amount <= 0) return null;
-  return Math.round(amount * 100) / 100;
+  if (!Number.isFinite(amount)) return null;
+  const rounded = Math.round(amount * 100) / 100;
+  // Filtré après l'arrondi : 0,004 € deviendrait un prix de 0 €, qui signifie « pas de prix ».
+  return rounded > 0 ? rounded : null;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

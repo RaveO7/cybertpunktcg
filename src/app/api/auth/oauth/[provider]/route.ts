@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  applyOAuthStateCookie,
   buildAuthorizationUrl,
   createOAuthState,
   isOAuthProvider,
@@ -33,5 +34,7 @@ export async function GET(request: Request, context: Context) {
       { status: 503 },
     );
   }
-  return NextResponse.redirect(buildAuthorizationUrl(raw, request, state));
+  const response = NextResponse.redirect(buildAuthorizationUrl(raw, request, state));
+  applyOAuthStateCookie(response, request, state);
+  return response;
 }

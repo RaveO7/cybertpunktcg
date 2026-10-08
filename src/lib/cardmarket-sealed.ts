@@ -41,7 +41,9 @@ export function sealedExternalId(idProduct: number, language = "en") {
 /** Id produit Cardmarket d'un externalId scellé (`cardmarket:123` ou `cardmarket:123:fr`). */
 export function sealedProductId(externalId: string) {
   if (!externalId.startsWith("cardmarket:")) return null;
-  const id = Number(externalId.slice("cardmarket:".length).split(":")[0]);
+  const raw = externalId.slice("cardmarket:".length).split(":")[0];
+  if (!raw.trim()) return null;
+  const id = Number(raw);
   return Number.isInteger(id) ? id : null;
 }
 
@@ -86,7 +88,9 @@ export function parseSealedProductFile(text: string) {
 }
 
 function readInt(value: unknown) {
-  const id = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  // Number("") vaut 0 : une cellule vide n'est pas un entier.
+  const id =
+    typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : Number.NaN;
   return Number.isInteger(id) ? id : null;
 }
 
@@ -97,6 +101,8 @@ function readText(value: unknown) {
 }
 
 export function slugifySealed(name: string, idProduct: number) {
-  const base = normalizeText(name).replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-  return `cm-${base || "product"}-${idProduct}`.slice(0, 80);
+  const base = normalizeText(name).replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || "product";
+  // Tronque le nom, jamais l'id produit : le slug reste unique (Card.slug) et fait au plus 80 caractères.
+  const suffix = `-${idProduct}`;
+  return `cm-${base}`.slice(0, 80 - suffix.length) + suffix;
 }

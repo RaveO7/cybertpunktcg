@@ -159,15 +159,40 @@ function finishPendingUnit(state: MatchState): MatchState {
   };
 }
 
+/** Le Gear de la démo s'équipe sur Meredith (Blocker) : 5 + 3 = 8 de Power pour gagner son blocage. */
+const GEAR_HOST: CardRef = "unitBlocker";
+
 function finishPendingGear(state: MatchState): MatchState {
+  const gear = state.pendingPlay;
+  if (!gear) return state;
   return {
     ...state,
     pendingPlay: null,
     pendingKind: null,
-    field: state.field.map((c) =>
-      c.ref === "unitAdrenaline" ? { ...c, equipped: "gearConverter" } : c,
-    ),
+    field: state.field.map((c) => (c.ref === GEAR_HOST ? { ...c, equipped: gear } : c)),
     flash: "equip",
+  };
+}
+
+/** Start Phase : tes cartes spent se redressent, puis pioche et Gig. */
+function readyYourCards(state: MatchState): MatchState {
+  return {
+    ...state,
+    field: state.field.map((c) => ({ ...c, spent: false })),
+    legends: state.legends.map((c) => ({ ...c, spent: false })),
+    eddies: state.eddies.map((c) => ({ ...c, spent: false })),
+  };
+}
+
+/** Le Rival déclare une attaque sur ta zone Gig avec une Unit ready : elle est spent. */
+function rivalAttack(state: MatchState, ref: CardRef, flash: string): MatchState {
+  const attacker = state.rivalField.find((c) => c.ref === ref && !c.spent);
+  if (!attacker) return state;
+  return {
+    ...state,
+    rivalAttackerId: attacker.id,
+    rivalField: state.rivalField.map((c) => (c.id === attacker.id ? { ...c, spent: true } : c)),
+    flash,
   };
 }
 
@@ -255,16 +280,16 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
     },
     {
       id: "t1-play",
-      tip: fr ? "Clique Riding Nomad pour le jouer." : "Click Riding Nomad to play it.",
+      tip: fr ? "Clique Meredith pour la jouer." : "Click Meredith to play her.",
       ...t(
-        "Jouer une Unit (coût 3)",
-        "Play a Unit (cost 3)",
-        "Tu choisis la carte en main. Ensuite tu paies 3 €$ en cliquant tes Eddies puis tes Legends (1 €$ chacune).",
-        "Pick the card from hand. Then pay 3 €$ by clicking your Eddies, then Legends (1 €$ each).",
+        "Jouer une Unit (coût 4)",
+        "Play a Unit (cost 4)",
+        "Le coût est en haut à gauche : Meredith Stout coûte 4 €$. Choisis-la en main, puis paie 4 €$ : ton Eddie, puis tes 3 Legends (1 €$ chacune).",
+        "The cost is top-left: Meredith Stout costs 4 €$. Pick her from hand, then pay 4 €$: your Eddie, then your 3 Legends (1 €$ each).",
       ),
-      anchor: "coach-hand-unitAdrenaline",
-      expect: { kind: "hand", card: "unitAdrenaline" },
-      apply: (s) => beginPlay(s, "unitAdrenaline", "unit"),
+      anchor: "coach-hand-unitBlocker",
+      expect: { kind: "hand", card: "unitBlocker" },
+      apply: (s) => beginPlay(s, "unitBlocker", "unit"),
     },
     {
       id: "t1-pay-eddie",
@@ -281,12 +306,12 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
     },
     {
       id: "t1-pay-legend-1",
-      tip: fr ? "Clique une Legend (encore 2 €$)." : "Click a Legend (2 €$ left).",
+      tip: fr ? "Clique une Legend (encore 3 €$)." : "Click a Legend (3 €$ left).",
       ...t(
         "Compléter avec les Legends",
         "Finish with Legends",
-        "Il reste 2 €$. Les Legends paient aussi 1 €$ chacune quand tu les spend. Clique une Legend.",
-        "2 €$ left. Legends also pay 1 €$ each when spent. Click a Legend.",
+        "Il reste 3 €$. Les Legends paient aussi 1 €$ chacune quand tu les spend. Clique une Legend.",
+        "3 €$ left. Legends also pay 1 €$ each when spent. Click a Legend.",
       ),
       anchor: "coach-legend",
       expect: { kind: "legend" },
@@ -294,57 +319,29 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
     },
     {
       id: "t1-pay-legend-2",
-      tip: fr ? "Encore une Legend — Nomad arrive." : "One more Legend — Nomad enters.",
+      tip: fr ? "Encore une Legend (encore 2 €$)." : "Another Legend (2 €$ left).",
+      ...t(
+        "Deuxième Legend",
+        "Second Legend",
+        "Encore 1 €$ payé. Il restera 1 €$ : ta dernière Legend.",
+        "Another 1 €$ paid. 1 €$ will remain: your last Legend.",
+      ),
+      anchor: "coach-legend",
+      expect: { kind: "legend" },
+      apply: (s) => spendOneLegend(s),
+    },
+    {
+      id: "t1-pay-legend-3",
+      tip: fr ? "Dernière Legend — Meredith arrive." : "Last Legend — Meredith enters.",
       ...t(
         "Dernier €$ → Unit en jeu",
         "Last €$ → Unit enters",
-        "Dernier paiement : Nomad arrive sur ton Field. Il a Adrenaline, donc il peut attaquer tout de suite.",
-        "Final payment: Nomad enters your Field. It has Adrenaline, so it can attack immediately.",
+        "Meredith arrive ready sur ton Field, mais avec Lag : sans Adrenaline, une Unit n’attaque pas le tour où elle est jouée. Elle a Blocker : elle pourra protéger tes Gigs pendant le tour du Rival.",
+        "Meredith enters your Field ready, but with Lag: without Adrenaline, a Unit can’t attack the turn it’s played. She has Blocker: she can protect your Gigs during the Rival’s turn.",
       ),
       anchor: "coach-legend",
       expect: { kind: "legend" },
       apply: (s) => finishPendingUnit(spendOneLegend(s)),
-    },
-    {
-      id: "t1-attack-select",
-      tip: fr ? "Clique Nomad pour attaquer." : "Click Nomad to attack.",
-      ...t(
-        "Déclarer l’attaquant",
-        "Declare the attacker",
-        "Pour attaquer, spend une Unit ready (tourne-la). Ensuite tu choisis la cible : Unit adverse spent, ou zone Gig adverse.",
-        "To attack, spend a ready Unit (turn it). Then choose a target: a spent rival Unit, or the rival Gig area.",
-      ),
-      anchor: "coach-field-unitAdrenaline",
-      expect: { kind: "field", ref: "unitAdrenaline" },
-      apply: (s) => {
-        const nomad = s.field.find((c) => c.ref === "unitAdrenaline" && !c.spent);
-        return { ...s, selectedAttackerId: nomad?.id ?? null, flash: "select" };
-      },
-    },
-    {
-      id: "t1-attack-target",
-      tip: fr ? "Clique les Gigs du Rival." : "Click Rival Gigs.",
-      ...t(
-        "Voler un Gig",
-        "Steal a Gig",
-        "Attaquer la zone Gig vole des dés. Power 1+ → 1 Gig, 10+ → 2, 20+ → 3. Ici Nomad (P4) vole 1 Gig.",
-        "Attacking the Gig area steals dice. Power 1+ → 1 Gig, 10+ → 2, 20+ → 3. Here Nomad (P4) steals 1 Gig.",
-      ),
-      anchor: "coach-rival-gigs",
-      expect: { kind: "target-gigs" },
-      apply: (s) => {
-        const stolen = s.rivalGigs[0];
-        return {
-          ...s,
-          selectedAttackerId: null,
-          rivalGigs: s.rivalGigs.slice(1),
-          yourGigs: stolen != null ? [...s.yourGigs, stolen] : s.yourGigs,
-          field: s.field.map((c) =>
-            c.ref === "unitAdrenaline" ? { ...c, spent: true } : c,
-          ),
-          flash: "steal",
-        };
-      },
     },
     {
       id: "t1-end",
@@ -352,8 +349,8 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       ...t(
         "Passer la main",
         "Pass the turn",
-        "Quand tu as fini tes actions (vente, jeu, attaques), tu termines. Le Rival joue alors sa Start Phase puis sa Main Phase.",
-        "When you’re done (sell, play, attacks), you end. The Rival then takes their Start and Main phases.",
+        "Tout ton €$ est dépensé et Meredith a Lag : rien d’autre à faire. Termine ton tour : le Rival joue alors sa Start Phase puis sa Main Phase.",
+        "All your €$ is spent and Meredith has Lag: nothing else to do. End your turn: the Rival then takes their Start and Main phases.",
       ),
       anchor: "coach-end-turn",
       expect: { kind: "end-turn" },
@@ -365,8 +362,8 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       ...t(
         "Start Phase (Rival)",
         "Rival Start Phase",
-        "Comme toi, le Rival ready ses cartes spent, pioche une carte, puis prend un dé au Fixer pour un Gig.",
-        "Like you, the Rival readies spent cards, draws a card, then takes a Fixer die for a Gig.",
+        "Comme toi, le Rival ready ses cartes spent (sa Meredith se redresse), pioche une carte, puis prend un dé au Fixer pour un Gig.",
+        "Like you, the Rival readies spent cards (their Meredith stands up), draws a card, then takes a Fixer die for a Gig.",
       ),
       anchor: "coach-rival-field",
       expect: { kind: "continue" },
@@ -401,39 +398,29 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       ...t(
         "Main Phase — Jackie",
         "Main Phase — Jackie",
-        "Le Rival paie le coût et joue Jackie Welles sur son Field. Elle est ready et peut attaquer.",
-        "The Rival pays the cost and plays Jackie Welles onto their Field. She’s ready and can attack.",
+        "Le Rival paie le coût et joue Jackie Welles (Power 8) sur son Field. Elle arrive ready mais avec Lag : elle ne peut pas attaquer ce tour-ci.",
+        "The Rival pays the cost and plays Jackie Welles (Power 8) onto their Field. She enters ready but with Lag: she can’t attack this turn.",
       ),
       anchor: "coach-rival-field",
       expect: { kind: "continue" },
-      apply: (s) => {
-        const jackieId = nid("riv");
-        return {
-          ...s,
-          rivalField: [{ id: jackieId, ref: "unitJackie" }, ...s.rivalField],
-          flash: "rival-play",
-        };
-      },
+      apply: (s) => ({
+        ...s,
+        rivalField: [{ id: nid("riv"), ref: "unitJackie" }, ...s.rivalField],
+        flash: "rival-play",
+      }),
     },
     {
       id: "r1-attack",
       tip: fr ? "Suivant : déclaration d’attaque." : "Next: declare attack.",
       ...t(
-        "Jackie attaque",
-        "Jackie attacks",
-        "Le Rival spend Jackie et cible ta zone Gig. Tu n’as aucun Blocker ready pour intercepter.",
-        "The Rival spends Jackie and targets your Gig area. You have no ready Blocker to intercept.",
+        "Meredith adverse attaque",
+        "Rival Meredith attacks",
+        "Le Rival spend sa Meredith (Power 5), en jeu depuis le début de son tour, et vise ta zone Gig. Ta Meredith pourrait bloquer, mais 5 contre 5 = égalité : les deux iraient à la Trash. Tu laisses passer.",
+        "The Rival spends their Meredith (Power 5), in play since the start of their turn, and targets your Gig area. Your Meredith could block, but 5 vs 5 is a tie: both would go to Trash. You let it through.",
       ),
-      anchor: "coach-rival-unitJackie",
+      anchor: "coach-rival-field",
       expect: { kind: "continue" },
-      apply: (s) => {
-        const jackie = s.rivalField.find((c) => c.ref === "unitJackie" && !c.spent);
-        return {
-          ...s,
-          rivalAttackerId: jackie?.id ?? null,
-          flash: "rival-attack",
-        };
-      },
+      apply: (s) => rivalAttack(s, "unitBlocker", "rival-attack"),
     },
     {
       id: "r1-steal",
@@ -441,8 +428,8 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       ...t(
         "Tu perds un Gig",
         "You lose a Gig",
-        "Attaque réussie sur les Gigs : un dé part de ta zone vers celle du Rival (Power 4 → 1 Gig volé).",
-        "Successful Gig attack: one die moves from your area to the Rival’s (Power 4 → 1 Gig stolen).",
+        "Attaque réussie sur les Gigs : un dé part de ta zone vers celle du Rival (Power 5 → 1 Gig volé).",
+        "Successful Gig attack: one die moves from your area to the Rival’s (Power 5 → 1 Gig stolen).",
       ),
       anchor: "coach-your-gigs",
       expect: { kind: "continue" },
@@ -452,9 +439,6 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
           ...s,
           yourGigs: s.yourGigs.slice(0, -1),
           rivalGigs: lost != null ? [...s.rivalGigs, lost] : s.rivalGigs,
-          rivalField: s.rivalField.map((c) =>
-            c.ref === "unitJackie" ? { ...c, spent: true } : c,
-          ),
           rivalAttackerId: null,
           phase: "you",
           turn: 2,
@@ -473,15 +457,7 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       ),
       anchor: "coach-die-d8",
       expect: { kind: "die", die: "d8" },
-      apply: (s) => {
-        const ready: MatchState = {
-          ...s,
-          field: s.field.map((c) => ({ ...c, spent: false })),
-          legends: s.legends.map((c) => ({ ...c, spent: false })),
-          eddies: s.eddies.map((c) => ({ ...c, spent: false })),
-        };
-        return takeFixer(draw(ready, "programReaper"), "d8", 8);
-      },
+      apply: (s) => takeFixer(draw(readyYourCards(s), "programReaper"), "d8", 8),
     },
     {
       id: "t2-sell",
@@ -489,8 +465,8 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       ...t(
         "Program → Eddie",
         "Program → Eddie",
-        "Detonate est un Program : en vrai tu peux aussi le jouer pour son effet (puis Trash). Ici on le vend pour 1 Eddie — utile pour payer Meredith.",
-        "Detonate is a Program: in a real game you can also play it for its effect (then Trash). Here we sell it for 1 Eddie — needed to pay Meredith.",
+        "Detonate est un Program : en vrai tu peux aussi le jouer pour son effet (puis Trash). Ici on le vend pour 1 Eddie — tu auras 2 Eddies pour payer le Gear.",
+        "Detonate is a Program: in a real game you can also play it for its effect (then Trash). Here we sell it for 1 Eddie — you’ll have 2 Eddies to pay for Gear.",
       ),
       anchor: "coach-hand-programDetonate",
       expect: { kind: "hand", card: "programDetonate" },
@@ -504,21 +480,21 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       },
     },
     {
-      id: "t2-play-blocker",
-      tip: fr ? "Joue Meredith (3 €$)." : "Play Meredith (3 €$).",
+      id: "t2-gear",
+      tip: fr ? "Joue le Gear (coût 2)." : "Play the Gear (cost 2).",
       ...t(
-        "Jouer un Blocker",
-        "Play a Blocker",
-        "Meredith a Blocker. Ici on paie 3 €$ (2 Eddies + 1 Legend) pour garder 2 Legends pour le Gear ensuite. Clique Meredith.",
-        "Meredith has Blocker. Here we pay 3 €$ (2 Eddies + 1 Legend) to keep 2 Legends for Gear next. Click Meredith.",
+        "Équiper un Gear",
+        "Equip Gear",
+        "Adrenaline Converter coûte 2 €$ et donne +3 Power à l’Unit qui le porte. Clique le Gear, puis paie avec tes 2 Eddies.",
+        "Adrenaline Converter costs 2 €$ and gives +3 Power to the Unit carrying it. Click the Gear, then pay with your 2 Eddies.",
       ),
-      anchor: "coach-hand-unitBlocker",
-      expect: { kind: "hand", card: "unitBlocker" },
-      apply: (s) => beginPlay(s, "unitBlocker", "unit"),
+      anchor: "coach-hand-gearConverter",
+      expect: { kind: "hand", card: "gearConverter" },
+      apply: (s) => beginPlay(s, "gearConverter", "gear"),
     },
     {
-      id: "t2-pay-eddie-1",
-      tip: fr ? "Spend un Eddie (1/3)." : "Spend an Eddie (1/3).",
+      id: "t2-gear-pay-1",
+      tip: fr ? "Spend un Eddie (1/2)." : "Spend an Eddie (1/2).",
       ...t(
         "Eddies d’abord",
         "Eddies first",
@@ -530,240 +506,33 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       apply: (s) => spendOneEddie(s),
     },
     {
-      id: "t2-pay-eddie-2",
-      tip: fr ? "Spend le 2ᵉ Eddie (2/3)." : "Spend the 2nd Eddie (2/3).",
+      id: "t2-gear-pay-2",
+      tip: fr ? "Spend le 2ᵉ Eddie — équipement." : "Spend the 2nd Eddie — equip.",
       ...t(
-        "Deuxième Eddie",
-        "Second Eddie",
-        "Ton 2ᵉ Eddie paie encore 1 €$. Il reste 1 €$ à payer avec une Legend.",
-        "Your 2nd Eddie pays another 1 €$. 1 €$ left to pay with a Legend.",
+        "Gear sur Meredith",
+        "Gear on Meredith",
+        "Le Gear s’attache à Meredith : Power 5 + 3 = 8. Il la suit si elle change de zone.",
+        "The Gear attaches to Meredith: Power 5 + 3 = 8. It follows her if she moves zones.",
       ),
       anchor: "coach-eddie",
       expect: { kind: "eddie" },
-      apply: (s) => spendOneEddie(s),
+      apply: (s) => finishPendingGear(spendOneEddie(s)),
     },
     {
-      id: "t2-pay-legend-1",
-      tip: fr ? "Clique une Legend — Meredith arrive." : "Click a Legend — Meredith enters.",
+      id: "t2-call-pay",
+      tip: fr ? "Call a Legend : spend 1 Legend." : "Call a Legend: spend 1 Legend.",
       ...t(
-        "Meredith en jeu",
-        "Meredith enters",
-        "Dernier €$ : clique une Legend. Meredith a Blocker — garde-la ready pour protéger tes Gigs. Il te reste 2 Legends pour le Gear.",
-        "Last €$: click a Legend. Meredith has Blocker — keep her ready to protect your Gigs. 2 Legends left for Gear.",
-      ),
-      anchor: "coach-legend",
-      expect: { kind: "legend" },
-      apply: (s) => finishPendingUnit(spendOneLegend(s)),
-    },
-    {
-      id: "t2-gear",
-      tip: fr ? "Équipe le Gear (coût 2)." : "Equip the Gear (cost 2).",
-      ...t(
-        "Équiper un Gear",
-        "Equip Gear",
-        "Converter coûte 2. Tes Eddies sont spent : tu paieras avec 2 Legends ready. Clique le Gear.",
-        "Converter costs 2. Your Eddies are spent: you’ll pay with 2 ready Legends. Click the Gear.",
-      ),
-      anchor: "coach-hand-gearConverter",
-      expect: { kind: "hand", card: "gearConverter" },
-      apply: (s) => beginPlay(s, "gearConverter", "gear"),
-    },
-    {
-      id: "t2-gear-pay-1",
-      tip: fr ? "Clique une Legend (1/2)." : "Click a Legend (1/2).",
-      ...t(
-        "Payer le Gear",
-        "Pay for Gear",
-        "Sans Eddie ready, les Legends couvrent le coût. Clique une Legend qui pulse.",
-        "With no ready Eddie, Legends cover the cost. Click a pulsing Legend.",
+        "Call a Legend (1×/tour)",
+        "Call a Legend (once/turn)",
+        "Tes Eddies sont spent mais tes 3 Legends sont ready. Spend-en une (1 €$) pour Call a Legend : retourner une Legend face visible, sans regarder avant.",
+        "Your Eddies are spent but your 3 Legends are ready. Spend one (1 €$) to Call a Legend: flip a Legend face-up without peeking.",
       ),
       anchor: "coach-legend",
       expect: { kind: "legend" },
       apply: (s) => spendOneLegend(s),
     },
     {
-      id: "t2-gear-pay-2",
-      tip: fr ? "Clique la dernière Legend — équipement." : "Click the last Legend — equip.",
-      ...t(
-        "Gear sur Nomad",
-        "Gear on Nomad",
-        "Clique la Legend qui pulse. Le Gear s’attache à Nomad et le suit s’il change de zone.",
-        "Click the pulsing Legend. The Gear attaches to Nomad and follows if it moves zones.",
-      ),
-      anchor: "coach-legend",
-      expect: { kind: "legend" },
-      apply: (s) => finishPendingGear(spendOneLegend(s)),
-    },
-    {
-      id: "t2-atk-select",
-      tip: fr ? "Sélectionne Nomad." : "Select Nomad.",
-      ...t(
-        "Attaquer une Unit",
-        "Attack a Unit",
-        "Parfois il vaut mieux nettoyer le Field adverse avant de voler. Sélectionne ton attaquant.",
-        "Sometimes clear the rival Field before stealing. Select your attacker.",
-      ),
-      anchor: "coach-field-unitAdrenaline",
-      expect: { kind: "field", ref: "unitAdrenaline" },
-      apply: (s) => {
-        const nomad = s.field.find((c) => c.ref === "unitAdrenaline" && !c.spent);
-        return { ...s, selectedAttackerId: nomad?.id ?? null };
-      },
-    },
-    {
-      id: "t2-atk-target",
-      tip: fr ? "Clique Jackie adverse." : "Click rival Jackie.",
-      ...t(
-        "Combat Power vs Power",
-        "Fight Power vs Power",
-        "Compare la Power. Le plus haut vainc ; égalité = les deux Trash. Jackie adverse part à la Trash.",
-        "Compare Power. Higher wins; tie = both to Trash. Rival Jackie goes to Trash.",
-      ),
-      anchor: "coach-rival-unitJackie",
-      expect: { kind: "target-rival", ref: "unitJackie" },
-      apply: (s) => ({
-        ...s,
-        selectedAttackerId: null,
-        field: s.field.map((c) =>
-          c.ref === "unitAdrenaline" ? { ...c, spent: true } : c,
-        ),
-        rivalField: s.rivalField.filter((c) => c.ref !== "unitJackie"),
-        trash: [...s.trash, "unitJackie"],
-        flash: "fight",
-      }),
-    },
-    {
-      id: "t2-end",
-      tip: fr ? "Fin du tour." : "End turn.",
-      ...t(
-        "Fin du Tour 2",
-        "End of Turn 2",
-        "Meredith est ready avec Blocker. Le Rival va attaquer tes Gigs — tu pourras réagir.",
-        "Meredith is ready with Blocker. The Rival will attack your Gigs — you can react.",
-      ),
-      anchor: "coach-end-turn",
-      expect: { kind: "end-turn" },
-      apply: (s) => ({ ...s, phase: "rival", rivalAttackerId: null }),
-    },
-    {
-      id: "r2-ready",
-      tip: fr ? "Suivant : tour Rival." : "Next: Rival turn.",
-      ...t(
-        "Start Phase (Rival)",
-        "Rival Start Phase",
-        "Nouveau tour adverse : ses cartes spent redeviennent ready. Il se prépare à attaquer tes Gigs.",
-        "New Rival turn: their spent cards ready again. They’re setting up to attack your Gigs.",
-      ),
-      anchor: "coach-rival-field",
-      expect: { kind: "continue" },
-      apply: (s) => ({
-        ...s,
-        phase: "rival",
-        rivalField: s.rivalField.map((c) => ({ ...c, spent: false })),
-        rivalAttackerId: null,
-        flash: "rival-ready",
-      }),
-    },
-    {
-      id: "r2-play",
-      tip: fr ? "Suivant : Unit adverse." : "Next: Rival Unit.",
-      ...t(
-        "Le Rival joue encore",
-        "Rival plays again",
-        "Il pose une nouvelle menace : Jackie Welles revient sur son Field, ready.",
-        "They deploy another threat: Jackie Welles enters their Field, ready.",
-      ),
-      anchor: "coach-rival-field",
-      expect: { kind: "continue" },
-      apply: (s) => ({
-        ...s,
-        rivalField: [{ id: nid("riv"), ref: "unitJackie" }, ...s.rivalField],
-        flash: "rival-play",
-      }),
-    },
-    {
-      id: "r2-attack",
-      tip: fr ? "Suivant : attaque sur tes Gigs." : "Next: attack on your Gigs.",
-      ...t(
-        "Attaque sur tes Gigs",
-        "Attack on your Gigs",
-        "Jackie spend et vise ta zone Gig. Tu peux encore réagir avec un Blocker ready — Meredith !",
-        "Jackie spends and targets your Gig area. You can still react with a ready Blocker — Meredith!",
-      ),
-      anchor: "coach-your-gigs",
-      expect: { kind: "continue" },
-      apply: (s) => {
-        const jackie = s.rivalField.find((c) => c.ref === "unitJackie" && !c.spent);
-        return {
-          ...s,
-          rivalAttackerId: jackie?.id ?? null,
-          rivalField: s.rivalField.map((c) =>
-            c.ref === "unitJackie" ? { ...c, spent: true } : c,
-          ),
-          flash: "rival-attack-gigs",
-        };
-      },
-    },
-    {
-      id: "r2-block",
-      tip: fr ? "Clique Meredith pour bloquer." : "Click Meredith to block.",
-      ...t(
-        "Réaction Blocker",
-        "Blocker reaction",
-        "Spend Meredith pour rediriger l’attaque sur elle. Aucun Gig n’est volé — c’est ta défense clé.",
-        "Spend Meredith to redirect the attack onto her. No Gig is stolen — this is your key defense.",
-      ),
-      anchor: "coach-field-unitBlocker",
-      expect: { kind: "field", ref: "unitBlocker" },
-      apply: (s) => ({
-        ...s,
-        field: s.field.map((c) =>
-          c.ref === "unitBlocker" ? { ...c, spent: true } : c,
-        ),
-        rivalAttackerId: null,
-        phase: "you",
-        turn: 3,
-        rivalField: s.rivalField.filter((c) => c.ref !== "unitJackie"),
-        trash: [...s.trash, "unitJackie"],
-        flash: "block",
-      }),
-    },
-    {
-      id: "t3-die",
-      tip: fr ? "Clique le d10." : "Click the d10.",
-      ...t(
-        "Tour 3 — nouveau Gig",
-        "Turn 3 — new Gig",
-        "Ready → pioche → Gig. Eddies et Legends sont ready à nouveau.",
-        "Ready → draw → Gig. Eddies and Legends ready again.",
-      ),
-      anchor: "coach-die-d10",
-      expect: { kind: "die", die: "d10" },
-      apply: (s) => {
-        const ready: MatchState = {
-          ...s,
-          field: s.field.map((c) => ({ ...c, spent: false })),
-          legends: s.legends.map((c) => ({ ...c, spent: false })),
-          eddies: s.eddies.map((c) => ({ ...c, spent: false })),
-        };
-        return takeFixer(draw(ready, "eddieFace"), "d10", 10);
-      },
-    },
-    {
-      id: "t3-call-pay",
-      tip: fr ? "Call a Legend : spend 1 Eddie." : "Call a Legend: spend 1 Eddie.",
-      ...t(
-        "Call a Legend (1×/tour)",
-        "Call a Legend (once/turn)",
-        "Spend 1 €$ pour retourner une Legend face visible, sans regarder avant. Clique un Eddie pour payer.",
-        "Spend 1 €$ to flip a Legend face-up without peeking. Click an Eddie to pay.",
-      ),
-      anchor: "coach-eddie",
-      expect: { kind: "eddie" },
-      apply: (s) => spendOneEddie(s),
-    },
-    {
-      id: "t3-call-flip",
+      id: "t2-call-flip",
       tip: fr ? "Clique une Legend face cachée." : "Click a face-down Legend.",
       ...t(
         "Retourner une Legend",
@@ -776,39 +545,173 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       apply: (s) => flipOneLegend(s),
     },
     {
-      id: "t3-play",
-      tip: fr ? "Joue Jackie (coût 2)." : "Play Jackie (cost 2).",
+      id: "t2-end",
+      tip: fr ? "Fin du tour." : "End turn.",
       ...t(
-        "Renforcer le Field",
-        "Reinforce the Field",
-        "Il te reste 1 Eddie ready + des Legends. Clique Jackie, puis paie 1 Eddie + 1 Legend.",
-        "You still have 1 ready Eddie + Legends. Click Jackie, then pay 1 Eddie + 1 Legend.",
+        "Fin du Tour 2",
+        "End of Turn 2",
+        "Meredith pourrait attaquer, mais elle resterait spent pendant le tour du Rival. Garde-la ready : avec Blocker et 8 de Power, elle protège tes Gigs.",
+        "Meredith could attack, but she’d stay spent during the Rival’s turn. Keep her ready: with Blocker and 8 Power, she protects your Gigs.",
       ),
-      anchor: "coach-hand-unitJackie",
-      expect: { kind: "hand", card: "unitJackie" },
-      apply: (s) => beginPlay(s, "unitJackie", "unit"),
+      anchor: "coach-end-turn",
+      expect: { kind: "end-turn" },
+      apply: (s) => ({ ...s, phase: "rival", rivalAttackerId: null, flash: "end-turn" }),
+    },
+    {
+      id: "r2-ready",
+      tip: fr ? "Suivant : tour Rival." : "Next: Rival turn.",
+      ...t(
+        "Start Phase (Rival)",
+        "Rival Start Phase",
+        "Nouveau tour adverse : sa Meredith redevient ready. Jackie, restée ready, ne pouvait pas être attaquée.",
+        "New Rival turn: their Meredith readies again. Jackie stayed ready, so she couldn’t be attacked.",
+      ),
+      anchor: "coach-rival-field",
+      expect: { kind: "continue" },
+      apply: (s) => ({
+        ...s,
+        phase: "rival",
+        rivalField: s.rivalField.map((c) => ({ ...c, spent: false })),
+        rivalAttackerId: null,
+        flash: "rival-ready",
+      }),
+    },
+    {
+      id: "r2-gig",
+      tip: fr ? "Suivant : Gig adverse." : "Next: Rival Gig.",
+      ...t(
+        "Gig pour le Rival",
+        "Rival gains a Gig",
+        "Il pioche puis lance un d4 au Fixer : un 4 rejoint sa zone Gig.",
+        "They draw, then roll a d4 from the Fixer: a 4 joins their Gig area.",
+      ),
+      anchor: "coach-rival-gigs",
+      expect: { kind: "continue" },
+      apply: (s) => ({
+        ...s,
+        rivalGigs: [...s.rivalGigs, 4],
+        flash: "rival-gig",
+      }),
+    },
+    {
+      id: "r2-attack",
+      tip: fr ? "Suivant : attaque sur tes Gigs." : "Next: attack on your Gigs.",
+      ...t(
+        "Attaque sur tes Gigs",
+        "Attack on your Gigs",
+        "La Meredith adverse (Power 5) spend et vise ta zone Gig. Tu peux réagir avec un Blocker ready — ta Meredith !",
+        "Rival Meredith (Power 5) spends and targets your Gig area. You can react with a ready Blocker — your Meredith!",
+      ),
+      anchor: "coach-your-gigs",
+      expect: { kind: "continue" },
+      apply: (s) => rivalAttack(s, "unitBlocker", "rival-attack-gigs"),
+    },
+    {
+      id: "r2-block",
+      tip: fr ? "Clique Meredith pour bloquer." : "Click Meredith to block.",
+      ...t(
+        "Réaction Blocker",
+        "Blocker reaction",
+        "Spend Meredith pour rediriger l’attaque sur elle. Combat : 8 (5 + Gear) contre 5, la Meredith du Rival part à la Trash. Aucun Gig n’est volé — c’est ta défense clé.",
+        "Spend Meredith to redirect the attack onto her. Fight: 8 (5 + Gear) vs 5, the Rival’s Meredith goes to Trash. No Gig is stolen — this is your key defense.",
+      ),
+      anchor: "coach-field-unitBlocker",
+      expect: { kind: "field", ref: "unitBlocker" },
+      apply: (s) => {
+        const attacker = s.rivalField.find((c) => c.id === s.rivalAttackerId);
+        return {
+          ...s,
+          field: s.field.map((c) => (c.ref === "unitBlocker" ? { ...c, spent: true } : c)),
+          rivalAttackerId: null,
+          phase: "you",
+          turn: 3,
+          rivalField: s.rivalField.filter((c) => c.id !== attacker?.id),
+          trash: attacker ? [...s.trash, attacker.ref] : s.trash,
+          flash: "block",
+        };
+      },
+    },
+    {
+      id: "t3-die",
+      tip: fr ? "Clique le d10." : "Click the d10.",
+      ...t(
+        "Tour 3 — nouveau Gig",
+        "Turn 3 — new Gig",
+        "Ready → pioche → Gig. Meredith, tes Eddies et tes Legends sont ready à nouveau.",
+        "Ready → draw → Gig. Meredith, your Eddies and your Legends are ready again.",
+      ),
+      anchor: "coach-die-d10",
+      expect: { kind: "die", die: "d10" },
+      apply: (s) => takeFixer(draw(readyYourCards(s), "eddieFace"), "d10", 10),
+    },
+    {
+      id: "t3-play",
+      tip: fr ? "Joue Riding Nomad (coût 5)." : "Play Riding Nomad (cost 5).",
+      ...t(
+        "Une Unit Adrenaline",
+        "An Adrenaline Unit",
+        "Riding Nomad coûte 5 €$ : tes 2 Eddies + tes 3 Legends. Il a Adrenaline : il pourra attaquer dès ce tour. Clique Nomad.",
+        "Riding Nomad costs 5 €$: your 2 Eddies + your 3 Legends. It has Adrenaline: it can attack this very turn. Click Nomad.",
+      ),
+      anchor: "coach-hand-unitAdrenaline",
+      expect: { kind: "hand", card: "unitAdrenaline" },
+      apply: (s) => beginPlay(s, "unitAdrenaline", "unit"),
     },
     {
       id: "t3-pay-eddie-1",
-      tip: fr ? "Spend l’Eddie restant (1/2)." : "Spend the remaining Eddie (1/2).",
+      tip: fr ? "Spend un Eddie (1/5)." : "Spend an Eddie (1/5).",
+      ...t("Payer Nomad", "Pay for Nomad", "Clique un Eddie ready.", "Click a ready Eddie."),
+      anchor: "coach-eddie",
+      expect: { kind: "eddie" },
+      apply: (s) => spendOneEddie(s),
+    },
+    {
+      id: "t3-pay-eddie-2",
+      tip: fr ? "Spend le 2ᵉ Eddie (2/5)." : "Spend the 2nd Eddie (2/5).",
       ...t(
-        "Payer Jackie",
-        "Pay for Jackie",
-        "Clique l’Eddie ready.",
-        "Click the ready Eddie.",
+        "Deuxième Eddie",
+        "Second Eddie",
+        "Ton 2ᵉ Eddie paie encore 1 €$. Il reste 3 €$ à payer avec tes Legends.",
+        "Your 2nd Eddie pays another 1 €$. 3 €$ left to pay with your Legends.",
       ),
       anchor: "coach-eddie",
       expect: { kind: "eddie" },
       apply: (s) => spendOneEddie(s),
     },
     {
-      id: "t3-pay-legend",
-      tip: fr ? "Clique une Legend — Jackie arrive." : "Click a Legend — Jackie enters.",
+      id: "t3-pay-legend-1",
+      tip: fr ? "Clique une Legend (3/5)." : "Click a Legend (3/5).",
       ...t(
-        "Jackie en jeu",
-        "Jackie enters",
-        "Paiement OK. Jackie arrive ready (Lag : sans Adrenaline elle n’attaque pas ce tour-ci).",
-        "Paid. Jackie enters ready (Lag: without Adrenaline she won’t attack this turn).",
+        "Puis les Legends",
+        "Then Legends",
+        "Face visible ou non, chaque Legend paie 1 €$. Clique une Legend.",
+        "Face-up or down, each Legend pays 1 €$. Click a Legend.",
+      ),
+      anchor: "coach-legend",
+      expect: { kind: "legend" },
+      apply: (s) => spendOneLegend(s),
+    },
+    {
+      id: "t3-pay-legend-2",
+      tip: fr ? "Encore une Legend (4/5)." : "Another Legend (4/5).",
+      ...t(
+        "Plus qu’1 €$",
+        "1 €$ to go",
+        "Encore 1 €$ payé. Une dernière Legend et Nomad arrive.",
+        "Another 1 €$ paid. One last Legend and Nomad enters.",
+      ),
+      anchor: "coach-legend",
+      expect: { kind: "legend" },
+      apply: (s) => spendOneLegend(s),
+    },
+    {
+      id: "t3-pay-legend-3",
+      tip: fr ? "Dernière Legend — Nomad arrive." : "Last Legend — Nomad enters.",
+      ...t(
+        "Nomad en jeu",
+        "Nomad enters",
+        "Paiement OK. Grâce à Adrenaline, Nomad ignore le Lag : il peut attaquer tout de suite.",
+        "Paid. Thanks to Adrenaline, Nomad ignores Lag: it can attack right away.",
       ),
       anchor: "coach-legend",
       expect: { kind: "legend" },
@@ -816,28 +719,28 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
     },
     {
       id: "t3-atk-select",
-      tip: fr ? "Nomad attaque encore." : "Nomad attacks again.",
+      tip: fr ? "Clique Nomad pour attaquer." : "Click Nomad to attack.",
       ...t(
-        "Encore une attaque",
-        "Another attack",
-        "Les Units ready peuvent attaquer chaque tour. Clique Nomad pour viser les Gigs.",
-        "Ready Units can attack each turn. Click Nomad to aim at the Gigs.",
+        "Déclarer l’attaquant",
+        "Declare the attacker",
+        "Pour attaquer, spend une Unit ready (tourne-la). Cible : une Unit adverse spent, ou la zone Gig adverse. Jackie est ready, donc pas attaquable : vise les Gigs.",
+        "To attack, spend a ready Unit (turn it). Target: a spent rival Unit, or the rival Gig area. Jackie is ready, so she can’t be attacked: go for the Gigs.",
       ),
       anchor: "coach-field-unitAdrenaline",
       expect: { kind: "field", ref: "unitAdrenaline" },
       apply: (s) => {
         const nomad = s.field.find((c) => c.ref === "unitAdrenaline" && !c.spent);
-        return { ...s, selectedAttackerId: nomad?.id ?? null };
+        return { ...s, selectedAttackerId: nomad?.id ?? null, flash: "select" };
       },
     },
     {
       id: "t3-atk-target",
-      tip: fr ? "Vole un dernier Gig." : "Steal one last Gig.",
+      tip: fr ? "Clique les Gigs du Rival." : "Click Rival Gigs.",
       ...t(
-        "Boucle de partie",
-        "The game loop",
-        "Tu as vu le cycle complet : Eddies → Units/Gear → attaque/défense → Gigs. Une vraie partie continue jusqu’à 7 Gigs en début de tour.",
-        "You’ve seen the full loop: Eddies → Units/Gear → attack/defense → Gigs. A real game continues until 7 Gigs at turn start.",
+        "Voler un Gig",
+        "Steal a Gig",
+        "Attaquer la zone Gig vole des dés : Power 1+ → 1 Gig, 10+ → 2, 20+ → 3. Nomad (P4) vole 1 Gig. Une vraie partie continue jusqu’à 7 Gigs au début de ton tour.",
+        "Attacking the Gig area steals dice: Power 1+ → 1 Gig, 10+ → 2, 20+ → 3. Nomad (P4) steals 1 Gig. A real game continues until 7 Gigs at the start of your turn.",
       ),
       anchor: "coach-rival-gigs",
       expect: { kind: "target-gigs" },
@@ -848,9 +751,7 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
           selectedAttackerId: null,
           rivalGigs: s.rivalGigs.slice(1),
           yourGigs: stolen != null ? [...s.yourGigs, stolen] : s.yourGigs,
-          field: s.field.map((c) =>
-            c.ref === "unitAdrenaline" ? { ...c, spent: true } : c,
-          ),
+          field: s.field.map((c) => (c.id === s.selectedAttackerId ? { ...c, spent: true } : c)),
           phase: "end",
           flash: "finale",
         };
@@ -862,8 +763,8 @@ export function buildInteractiveSteps(locale: DemoLocale): InteractiveStep[] {
       ...t(
         "Tu as les bases",
         "You’ve got the basics",
-        "Tu as vu : types (Unit/Program/Gear/Legend), Eddies, Call a Legend, attaque, Blocker, Gear. Pour RAM, construction de deck et tous les keywords → Règles détaillées.",
-        "You’ve seen: types (Unit/Program/Gear/Legend), Eddies, Call a Legend, attack, Blocker, Gear. For RAM, deckbuilding and all keywords → Detailed rules.",
+        "Tu as vu : types (Unit/Program/Gear/Legend), Eddies, coûts, Lag et Adrenaline, Call a Legend, attaque, Blocker, combat, Gear. Pour RAM, construction de deck et tous les keywords → Règles détaillées.",
+        "You’ve seen: types (Unit/Program/Gear/Legend), Eddies, costs, Lag and Adrenaline, Call a Legend, attack, Blocker, fights, Gear. For RAM, deckbuilding and all keywords → Detailed rules.",
       ),
       anchor: "coach-done",
       expect: { kind: "done" },
@@ -916,8 +817,8 @@ export function demoTableCopy(locale: Locale | DemoLocale) {
       attack: fr ? "Attaque !" : "Attack!",
       lost: fr ? "Gig perdu" : "Gig lost",
       block: fr ? "Bloqué !" : "Blocked!",
-      win: fr ? "Victoire" : "Victory",
-      winSub: fr ? "7 Gigs — Night City est à toi" : "7 Gigs — Night City is yours",
+      win: fr ? "Fin de la démo" : "Demo complete",
+      winSub: fr ? "3 Gigs — il en faut 7 au début de ton tour pour gagner" : "3 Gigs — you need 7 at the start of your turn to win",
     },
     turnYou: (n: number) => (fr ? `Tour ${n}` : `Turn ${n}`),
     turnRival: (n: number) => (fr ? `Rival · Tour ${n}` : `Rival · Turn ${n}`),

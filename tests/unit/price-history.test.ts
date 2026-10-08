@@ -53,7 +53,7 @@ describe("utcDay / utcDayKey", () => {
 
   // Attendu : une date calendaire impossible est refusée comme les autres dates invalides.
   // Observé : « 2026-02-30 » passe le motif AAAA-MM-JJ et V8 la reporte au 2026-03-02.
-  it.fails("BUG: une date impossible (30 février) est refusée au lieu d'être reportée en mars", () => {
+  it("une date impossible (30 février) est refusée au lieu d'être reportée en mars", () => {
     assert.throws(() => utcDay("2026-02-30"), /Date de snapshot invalide/);
   });
 });

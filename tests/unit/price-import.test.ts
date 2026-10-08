@@ -240,11 +240,9 @@ describe("import des prix : téléchargement Cardmarket simulé", () => {
     await assert.rejects(importPrices(fakePrisma().prisma, { cacheDir: freshDir(), log: quiet }), /^Error: 500 https:/);
   });
 
-  // BUG : products_nonsingles est présenté comme optionnel (catch vide dans downloadCyberpunk), mais
-  // resolveFiles renvoie toujours son chemin. S'il n'a jamais été téléchargé, readText échoue et TOUT
-  // l'import (donc le cron) tombe en « Lecture impossible ».
-  // Attendu : import poursuivi sans produits scellés (ici « skipped »). Observé : rejet « Lecture impossible ».
-  it.fails("BUG: échec du téléchargement des produits scellés → tout l'import échoue", async () => {
+  // Régression : products_nonsingles est optionnel, mais resolveFiles renvoyait toujours son chemin ;
+  // sans copie en cache, tout l'import (donc le cron) tombait en « Lecture impossible ».
+  it("échec du téléchargement des produits scellés sans cache : import poursuivi sans eux", async () => {
     mockFetch(cardmarket(23, { nonsingles: new Response("", { status: 404 }) }));
     const result = await importPrices(fakePrisma().prisma, { cacheDir: freshDir(), log: quiet });
     assert.equal(result.status, "skipped");
@@ -344,10 +342,9 @@ describe("monitoring : alertes et journalisation", () => {
     assert.equal(JSON.parse(errors[2]).message, '{"code":42}');
   });
 
-  // BUG (mineur) : le module promet « Ne lève jamais d'exception », mais describe() fait
-  // JSON.stringify(error) : un objet circulaire (ou contenant un BigInt) fait lever reportError.
-  // Attendu : promesse résolue. Observé : TypeError « Converting circular structure to JSON ».
-  it.fails("BUG: reportError lève sur une erreur non sérialisable", async () => {
+  // Régression : describe() faisait JSON.stringify(error) sans garde ; un objet circulaire (ou un
+  // BigInt) faisait lever reportError, alors que le module promet de ne jamais lever.
+  it("reportError ne lève pas sur une erreur non sérialisable", async () => {
     mockFetch(() => new Response("ok"));
     const circular: Record<string, unknown> = { name: "circulaire" };
     circular.self = circular;

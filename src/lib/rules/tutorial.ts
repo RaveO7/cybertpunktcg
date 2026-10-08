@@ -237,7 +237,7 @@ const fr: TutorialCopy = {
     allSeen: "Tu connais les 4 rôles. On enchaîne sur le rythme d’un tour.",
   },
   turn: {
-    title: "Deroule un tour",
+    title: "Déroule un tour",
     explain: "Chaque tour = Start Phase (obligatoire, dans l’ordre) puis Main Phase (tu choisis).",
     challenge: "Enchaîne les étapes en cliquant « Faire cette action ».",
     steps: [

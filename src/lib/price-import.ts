@@ -2,7 +2,7 @@
 // Utilisé par le script local (scripts/import-prices.ts) et par le cron Vercel
 // (src/app/api/cron/import-prices/route.ts).
 import { gunzipSync } from "node:zlib";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { PrismaClient } from "@prisma/client";
 import {
@@ -204,14 +204,11 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
     const oldAmount = Number(prior.amount.toString());
     const next = Number(assignment.amount);
     if (todayAmountByPrinting.has(assignment.printingId)) continue;
-    const baseline =
-      Number.isFinite(oldAmount) && moneyChanged(oldAmount, next)
-        ? oldAmount
-        : prior.previousAmount == null
-          ? null
-          : Number(prior.previousAmount.toString());
-    if (baseline == null || !Number.isFinite(baseline) || baseline <= 0) continue;
-    baselineCandidates.push({ printingId: assignment.printingId, amount: baseline });
+    // Archive la veille uniquement si le prix change : c'est alors l'ancien prix qui valait hier.
+    // Un prix inchangé n'a rien à archiver (son `previousAmount` peut dater de plusieurs jours :
+    // l'écrire la veille inventerait un creux ou un pic après un jour sans import).
+    if (!Number.isFinite(oldAmount) || oldAmount <= 0 || !moneyChanged(oldAmount, next)) continue;
+    baselineCandidates.push({ printingId: assignment.printingId, amount: oldAmount });
   }
   const existingBaselines = baselineCandidates.length
     ? await prisma.priceSnapshot.findMany({
@@ -458,11 +455,22 @@ async function resolveFiles(ctx: Ctx, offline: boolean): Promise<PriceFiles> {
     ctx.log(`Téléchargement impossible (${detail}). Utilisation des fichiers en cache.`);
     return cached;
   }
+  const nonsingles = path.join(ctx.cacheDir, `products_nonsingles_${id}.json`);
   return {
     products: path.join(ctx.cacheDir, `products_singles_${id}.json`),
     prices: path.join(ctx.cacheDir, `price_guide_${id}.json`),
-    nonsingles: path.join(ctx.cacheDir, `products_nonsingles_${id}.json`),
+    // Optionnel : son téléchargement a pu échouer sans copie en cache → import sans les scellés.
+    nonsingles: (await fileExists(nonsingles)) ? nonsingles : null,
   };
+}
+
+async function fileExists(file: string) {
+  try {
+    await access(file);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function cachedFiles({ cacheDir }: Ctx): Promise<PriceFiles | null> {

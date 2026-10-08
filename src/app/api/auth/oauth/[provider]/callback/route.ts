@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { applySessionCookie, createSession } from "@/lib/auth";
 import {
   appOrigin,
+  clearOAuthStateCookie,
   exchangeOAuthCode,
   isOAuthProvider,
   loginWithOAuth,
   oauthConfigured,
   oauthErrorRedirect,
+  oauthStateMatchesBrowser,
   verifyOAuthState,
 } from "@/lib/oauth";
 
@@ -30,7 +32,7 @@ async function finish(
   if (!params.code || !params.state) return fail("Réponse OAuth invalide.");
 
   const stored = verifyOAuthState(params.state, providerRaw);
-  if (!stored) return fail("Session OAuth expirée. Réessayez.");
+  if (!stored || !oauthStateMatchesBrowser(request, params.state)) return fail("Session OAuth expirée. Réessayez.");
 
   try {
     const profile = await exchangeOAuthCode(providerRaw, params.code, request, params.appleUser);
@@ -50,10 +52,17 @@ async function finish(
   }
 }
 
+/** Le state ne sert qu'une fois : le cookie est effacé quelle que soit l'issue. */
+async function finishOnce(request: Request, ...args: [string, Parameters<typeof finish>[2]]) {
+  const response = await finish(request, ...args);
+  clearOAuthStateCookie(response, request);
+  return response;
+}
+
 export async function GET(request: Request, context: Context) {
   const { provider } = await context.params;
   const url = new URL(request.url);
-  return finish(request, provider, {
+  return finishOnce(request, provider, {
     code: url.searchParams.get("code"),
     state: url.searchParams.get("state"),
     error: url.searchParams.get("error"),
@@ -65,13 +74,13 @@ export async function POST(request: Request, context: Context) {
   const { provider } = await context.params;
   const form = await request.formData().catch(() => null);
   if (!form) {
-    return finish(request, provider, { code: null, state: null, error: "invalid", appleUser: null });
+    return finishOnce(request, provider, { code: null, state: null, error: "invalid", appleUser: null });
   }
   const asString = (key: string) => {
     const value = form.get(key);
     return typeof value === "string" ? value : null;
   };
-  return finish(request, provider, {
+  return finishOnce(request, provider, {
     code: asString("code"),
     state: asString("state"),
     error: asString("error"),

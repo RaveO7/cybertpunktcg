@@ -28,11 +28,11 @@ export const quantitySchema = z.preprocess(
   z.number({ error: "Quantité invalide." }).int("Quantité invalide.").min(0, "Quantité invalide.").max(999, "Quantité invalide."),
 );
 
-// "" ou null efface le prix ; accepte la virgule décimale (« 12,50 »). Sortie : chaîne à 2 décimales.
+// "", espaces ou null effacent le prix ; accepte la virgule décimale (« 12,50 »). Sortie : chaîne à 2 décimales.
 const priceSchema = z
   .preprocess(
     (value) => {
-      if (value === "" || value === null) return null;
+      if (value === null || (typeof value === "string" && value.trim() === "")) return null;
       if (typeof value === "string") return Number(value.trim().replace(",", "."));
       return value;
     },

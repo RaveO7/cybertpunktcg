@@ -257,25 +257,25 @@ describe.sequential("modes add et set", () => {
     assert.equal((await rows()).length, 0);
   });
 
-  // BUG : « ajouter 0 exemplaire » (mode add, le mode par défaut) supprime toute la ligne,
-  // notes et prix d'achat compris (collection-mutate.ts, test `input.quantity <= 0` avant le mode).
-  // Attendu : add 0 = aucun changement. Observé : la ligne est supprimée.
-  it.fails("BUG: add 0 ne doit pas supprimer une ligne existante", async () => {
+  it("add 0 ne supprime pas une ligne existante", async () => {
     await saveOk({ printingId: P1, quantity: 4, notes: "précieuse", purchasePrice: "20" });
     const result = await saveOk({ printingId: P1, quantity: 0, mode: "add" });
     assert.equal(result.deletedId, null, "aucune suppression attendue");
+    assert.equal(result.item?.quantity, 4);
     assert.equal((await row(P1))?.quantity, 4);
+    assert.equal((await row(P1))?.notes, "précieuse");
+    assert.deepEqual(await saveOk({ printingId: P2, quantity: 0, mode: "add" }), { item: null, deletedId: null });
+    assert.equal(await row(P2), null, "add 0 ne crée pas de ligne");
   });
 
-  // BUG : la quantité est bornée à 999 par requête, mais les ajouts successifs (add, ajout groupé)
-  // dépassent la borne sans contrôle. Attendu : total plafonné à 999 ou requête refusée.
-  // Observé : 1998 exemplaires enregistrés.
-  it.fails("BUG: add ne doit pas dépasser la quantité maximale de 999", async () => {
+  it("les ajouts successifs sont plafonnés à 999 exemplaires", async () => {
     await saveOk({ printingId: P1, quantity: 999 });
-    const response = await save({ printingId: P1, quantity: 999 });
-    const stored = await row(P1);
-    assert.ok(response.status === 400 || (stored?.quantity ?? 0) <= 999, `quantité enregistrée : ${stored?.quantity}`);
-    assert.ok((stored?.quantity ?? 0) <= 999, `quantité enregistrée : ${stored?.quantity}`);
+    const again = await saveOk({ printingId: P1, quantity: 999 });
+    assert.equal(again.item?.quantity, 999);
+    assert.equal((await row(P1))?.quantity, 999);
+    await saveOk({ printingId: P2, quantity: 990 });
+    await bulk({ lines: [{ printingId: P2, quantity: 5 }, { printingId: P2, quantity: 9 }] });
+    assert.equal((await row(P2))?.quantity, 999, "ajout groupé plafonné");
   });
 });
 

@@ -28,7 +28,7 @@ export function isIconicRarity(rarity: string) {
 
 /** Couleur unie d'une rareté ; `null` si la rareté est inconnue. */
 export function rarityColor(rarity: string): string | null {
-  if (RARITY_COLORS[rarity]) return RARITY_COLORS[rarity];
+  if (Object.hasOwn(RARITY_COLORS, rarity)) return RARITY_COLORS[rarity];
   return isIconicRarity(rarity) ? "var(--rarity-chrome)" : null;
 }
 

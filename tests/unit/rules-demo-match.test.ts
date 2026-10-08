@@ -451,15 +451,9 @@ describe("Démo interactive — simulation de la partie", () => {
 
   // --- Incohérences de règles relevées par la simulation -------------------------------------
 
-  /**
-   * Coût payé dans la démo vs coût imprimé sur la carte affichée (EXAMPLE_CARDS).
-   * Attendu : nombre de paiements = cost. Observé : Nomad payé 3 (coût 5), Meredith 3 (coût 4),
-   * Jackie 2 (coût 6) ; seul le Gear (2) est juste.
-   */
-  const KNOWN_COST_MISMATCH = new Set(["t1-play", "t2-play-blocker", "t3-play"]);
+  /** Coût payé dans la démo = coût imprimé sur la carte affichée (EXAMPLE_CARDS). */
   for (const { step } of runDemo("fr").transitions.filter((t) => t.step.expect.kind === "hand" && t.after.pendingPlay)) {
-    const title = `paiement de ${step.id} = coût imprimé de la carte`;
-    const body = () => {
+    it(`paiement de ${step.id} = coût imprimé de la carte`, () => {
       const { transitions: ts } = runDemo("fr");
       const start = ts.findIndex((t) => t.step.id === step.id);
       const ref = ts[start].after.pendingPlay!;
@@ -469,25 +463,17 @@ describe("Démo interactive — simulation de la partie", () => {
       }
       const cost = cardOf(ref).cost;
       assert.equal(paid, cost, `${ref} : payé ${paid}, coût ${cost}`);
-    };
-    if (KNOWN_COST_MISMATCH.has(step.id)) it.fails(`BUG: ${title}`, body);
-    else it(title, body);
+    });
   }
 
-  /**
-   * Lag : une Unit jouée ce tour-ci ne peut pas attaquer, sauf Adrenaline (règle rappelée par la démo
-   * elle-même à t3-pay-legend). Observé : la Jackie du Rival (sans Adrenaline) attaque le tour où elle
-   * est jouée (r1-play → r1-attack, r2-play → r2-attack).
-   */
-  const KNOWN_LAG = new Set(["r1-attack", "r2-attack"]);
+  /** Lag : une Unit jouée ce tour-ci ne peut pas attaquer, sauf Adrenaline. */
   const attackDeclarations = transitions.filter(
     (t) =>
       (t.after.selectedAttackerId != null && t.after.selectedAttackerId !== t.before.selectedAttackerId) ||
       (t.after.rivalAttackerId != null && t.after.rivalAttackerId !== t.before.rivalAttackerId),
   );
   for (const decl of attackDeclarations) {
-    const title = `Lag respecté à ${decl.step.id} (Adrenaline seule exception)`;
-    const body = () => {
+    it(`Lag respecté à ${decl.step.id} (Adrenaline seule exception)`, () => {
       const adrenaline = keywordExample("Adrenaline");
       const rival = decl.after.rivalAttackerId != null && decl.after.rivalAttackerId !== decl.before.rivalAttackerId;
       const attackerId = rival ? decl.after.rivalAttackerId! : decl.after.selectedAttackerId!;
@@ -499,23 +485,15 @@ describe("Démo interactive — simulation de la partie", () => {
       const wasThere = zone(atTurnStart).some((c) => c.id === attackerId);
       const card = zone(decl.after).find((c) => c.id === attackerId)!;
       assert.ok(wasThere || card.ref === adrenaline, `${card.ref} attaque le tour où elle est jouée`);
-    };
-    if (KNOWN_LAG.has(decl.step.id)) it.fails(`BUG: ${title}`, body);
-    else it(title, body);
+    });
   }
 
-  /**
-   * Combats : la plus haute Power vainc, égalité = les deux à la Trash.
-   * Observé : t2-atk-target — Nomad (4 + Gear 3 = 7) « bat » Jackie (8) ;
-   * r2-block — Meredith (5) bloque Jackie (8) et c'est Jackie qui part à la Trash.
-   */
-  const KNOWN_FIGHT = new Set(["t2-atk-target", "r2-block"]);
+  /** Combats : la plus haute Power vainc, égalité = les deux à la Trash. */
   const fights = transitions.filter(
     (t) => t.step.expect.kind === "target-rival" || (t.step.expect.kind === "field" && t.before.rivalAttackerId != null),
   );
   for (const fight of fights) {
-    const title = `issue du combat ${fight.step.id} conforme aux Power`;
-    const body = () => {
+    it(`issue du combat ${fight.step.id} conforme aux Power`, () => {
       const { before, after, step } = fight;
       let mine: BoardCard | undefined;
       let theirs: BoardCard | undefined;
@@ -533,22 +511,15 @@ describe("Démo interactive — simulation de la partie", () => {
       const theirsSurvives = after.rivalField.some((c) => c.id === theirs.id);
       assert.equal(mineSurvives, pm > pt, `${mine.ref} (${pm}) vs ${theirs.ref} (${pt}) : ton Unit`);
       assert.equal(theirsSurvives, pt > pm, `${mine.ref} (${pm}) vs ${theirs.ref} (${pt}) : Unit du Rival`);
-    };
-    if (KNOWN_FIGHT.has(fight.step.id)) it.fails(`BUG: ${title}`, body);
-    else it(title, body);
+    });
   }
 
-  /**
-   * Le texte « Power N » d'une étape de vol doit citer la Power réelle de l'attaquant.
-   * Observé : r1-steal annonce « Power 4 » alors que l'attaquant est Jackie (Power 8).
-   */
-  const KNOWN_POWER_TEXT = new Set(["r1-steal"]);
+  /** Le texte « Power N » d'une étape de vol doit citer la Power réelle de l'attaquant. */
   const stealSteps = transitions.filter(
     (t) => t.step.expect.kind === "target-gigs" || (t.before.rivalAttackerId != null && t.after.yourGigs.length < t.before.yourGigs.length),
   );
   for (const t of stealSteps) {
-    const title = `la Power citée à ${t.step.id} est celle de l'attaquant`;
-    const body = () => {
+    it(`la Power citée à ${t.step.id} est celle de l'attaquant`, () => {
       const attacker =
         t.step.expect.kind === "target-gigs"
           ? t.before.field.find((c) => c.id === t.before.selectedAttackerId)
@@ -559,17 +530,11 @@ describe("Démo interactive — simulation de la partie", () => {
         const cited = [...text.matchAll(/\b(?:P|Power )(\d+)\b(?!\+)/g)].map((m) => Number(m[1]));
         for (const n of cited) assert.equal(n, powerOf(attacker), `${locale} : « ${text} »`);
       }
-    };
-    if (KNOWN_POWER_TEXT.has(t.step.id)) it.fails(`BUG: ${title}`, body);
-    else it(title, body);
+    });
   }
 
-  /**
-   * La bannière finale (flash « finale ») affiche « Victoire — 7 Gigs » alors que la partie s'arrête
-   * avec 4 Gigs, en plein tour (la victoire se constate au début du tour).
-   * Attendu : yourGigs ≥ 7 quand la victoire est annoncée. Observé : 4.
-   */
-  it.fails("BUG: la victoire annoncée en fin de démo correspond à l'état (7 Gigs)", () => {
+  /** Le nombre de Gigs affiché par la bannière finale (flash « finale ») correspond à l'état. */
+  it("le compte de Gigs annoncé en fin de démo correspond à l'état", () => {
     const finale = transitions.find((t) => t.after.flash === "finale");
     assert.ok(finale);
     const needed = Number(demoTableCopy("fr").fx.winSub.match(/\d+/)![0]);

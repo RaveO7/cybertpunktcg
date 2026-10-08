@@ -120,7 +120,7 @@ describe("saveLineSchema", () => {
 
   // Attendu : une saisie composée d'espaces vaut une saisie vide (prix effacé) ou est refusée.
   // Observé : " ".trim() → "" puis Number("") → 0 : un prix d'achat de 0,00 € est enregistré.
-  it.fails("BUG: un prix composé uniquement d'espaces n'enregistre pas 0,00 €", async () => {
+  it("un prix composé uniquement d'espaces efface le prix au lieu d'enregistrer 0,00 €", async () => {
     const result = validate(saveLineSchema, line({ purchasePrice: "   " }));
     if (result.ok) assert.notEqual((result.data as Record<string, unknown>).purchasePrice, "0.00");
   });

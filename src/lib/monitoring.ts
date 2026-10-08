@@ -6,7 +6,26 @@ const recentAlerts = new Map<string, number>();
 
 function describe(error: unknown) {
   if (error instanceof Error) return error.message;
-  return typeof error === "string" ? error : JSON.stringify(error);
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error) ?? String(error);
+  } catch {
+    // Objet circulaire, BigInt… : jamais d'exception.
+    try {
+      return String(error);
+    } catch {
+      return "[erreur non sérialisable]";
+    }
+  }
+}
+
+function logLine(entry: Record<string, unknown>) {
+  try {
+    return JSON.stringify(entry);
+  } catch {
+    // Contexte non sérialisable : on garde au moins la source et le message.
+    return JSON.stringify({ level: entry.level, source: entry.source, message: entry.message, context: "[non sérialisable]" });
+  }
 }
 
 /** Envoie un message au webhook d'alerte (Discord : `content`, Slack : `text`). */
@@ -35,7 +54,11 @@ export async function sendAlert(message: string) {
 }
 
 export async function reportError(source: string, error: unknown, context?: Record<string, unknown>) {
-  const message = describe(error);
-  console.error(JSON.stringify({ level: "error", source, message, ...context }));
-  await sendAlert(`Erreur ${source} : ${message}`);
+  try {
+    const message = describe(error);
+    console.error(logLine({ level: "error", source, message, ...context }));
+    await sendAlert(`Erreur ${source} : ${message}`);
+  } catch {
+    // Promesse du module : ne jamais lever (même si console.error elle-même échoue).
+  }
 }

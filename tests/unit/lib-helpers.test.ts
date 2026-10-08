@@ -107,7 +107,7 @@ describe("rarity-color", () => {
   // Attendu : null pour une rareté inconnue (contrat documenté).
   // Observé : RARITY_COLORS est un objet littéral, donc « constructor » / « toString » renvoient
   // les fonctions héritées d'Object.prototype au lieu de null.
-  it.fails("BUG: une rareté nommée comme une clé d'Object.prototype renvoie null", () => {
+  it("une rareté nommée comme une clé d'Object.prototype renvoie null", () => {
     assert.equal(rarityColor("constructor"), null);
     assert.equal(rarityColor("toString"), null);
   });
@@ -380,7 +380,7 @@ describe("dashboard", () => {
   // Attendu : « demo » désigne un deck de démo ; un nom d'extension qui contient ces lettres
   // (Demolition, Demon…) reste une extension, comme pour « deck » testé avec \b.
   // Observé : value.includes("demo") classe ces extensions dans « Decks ».
-  it.fails("BUG: une extension dont le nom contient « demo » (Demolition) reste une extension", () => {
+  it("une extension dont le nom contient « demo » (Demolition) reste une extension", () => {
     assert.equal(productGroup("Demolition Crew"), "Extensions");
   });
 
@@ -402,7 +402,7 @@ describe("dashboard", () => {
   });
 
   // Attendu : code langue inconnu → le code lui-même. Observé : la fonction héritée d'Object.prototype.
-  it.fails("BUG: languageLabel d'un code nommé comme une clé d'Object.prototype renvoie ce code", () => {
+  it("languageLabel d'un code nommé comme une clé d'Object.prototype renvoie ce code", () => {
     assert.equal(languageLabel("constructor"), "constructor");
   });
 

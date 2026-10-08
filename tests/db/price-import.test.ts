@@ -353,12 +353,10 @@ describe.sequential("import des prix Cardmarket en base (copie)", () => {
     assert.equal(await prisma.price.count({ where: { printing: { externalId: { startsWith: `cardmarket:${BOX_ID}` } } } }), 2);
   });
 
-  // BUG : après un jour sans import (guide Cardmarket non publié, cron en échec…), un prix INCHANGÉ
-  // reçoit pour la veille un snapshot égal à son ancien `previousAmount` (price-import.ts:207-214),
-  // alors que le prix de la veille était le prix actuel. La courbe montre un faux creux / pic.
-  // Ex. : P1 vaut 1,50 depuis J-3 (précédent 1,00) ; import à J-0 sans import à J-1 → J-1 = 1,00.
-  // Attendu : pas de snapshot J-1 (ou 1,50). Observé : snapshot J-1 à 1,00 (et 2,00 pour P2).
-  it.fails("BUG: après un jour sauté, un prix inchangé reçoit un faux snapshot la veille", async () => {
+  // Régression : après un jour sans import (guide non publié, cron en échec…), un prix INCHANGÉ
+  // recevait pour la veille un snapshot égal à son ancien `previousAmount` (faux creux / pic).
+  // Ex. : P1 vaut 1,50 depuis J-2 (précédent 1,00) ; import à J-0 sans import à J-1 → pas de J-1 à 1,00.
+  it("après un jour sauté, un prix inchangé ne reçoit pas de faux snapshot la veille", async () => {
     await shiftDays(2);
     await imported({ ...trend([1.5, 2.5, undefined, 4]), [BOX_ID]: 89.5 });
     const p1 = await history(P[0]);

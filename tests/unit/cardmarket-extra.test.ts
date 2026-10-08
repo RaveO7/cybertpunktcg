@@ -81,9 +81,9 @@ describe("lecture du guide de prix", () => {
     assert.equal(trends.get(11), 1234.5);
   });
 
-  // BUG (mineur) : readEuro filtre « amount <= 0 » AVANT l'arrondi ; 0,004 € devient un prix de 0,00 €
-  // (alors qu'un 0 signifie « pas de prix » partout ailleurs). Attendu : ignoré. Observé : 0.
-  it.fails("BUG: un prix < 0,005 € est arrondi et gardé à 0", () => {
+  // Régression : readEuro filtrait « <= 0 » avant l'arrondi ; 0,004 € devenait un prix de 0 €
+  // (alors qu'un 0 signifie « pas de prix » partout ailleurs).
+  it("un prix < 0,005 € (arrondi à 0) est ignoré", () => {
     const trends = parseTrends([{ idproduct: 12, TREND: 0.004 }]);
     assert.equal(trends.has(12), false);
   });
@@ -282,9 +282,8 @@ describe("produits scellés (cardmarket-sealed)", () => {
     assert.equal(sealedProductId("ci-card-1"), null);
   });
 
-  // BUG (mineur) : Number("") vaut 0, entier → un externalId « cardmarket: » donne le produit 0.
-  // Attendu : null. Observé : 0.
-  it.fails("BUG: sealedProductId('cardmarket:') renvoie 0 au lieu de null", () => {
+  // Régression : Number("") vaut 0 → un externalId « cardmarket: » donnait le produit 0.
+  it("sealedProductId('cardmarket:') renvoie null", () => {
     assert.equal(sealedProductId("cardmarket:"), null);
   });
 
@@ -327,9 +326,8 @@ describe("produits scellés (cardmarket-sealed)", () => {
     assert.throws(() => parseSealedProductFile("pas du json"), SyntaxError);
   });
 
-  // BUG (mineur) : readInt("") → Number("") = 0 → idProduct 0 accepté (idem readId de cardmarket.ts
-  // pour un CSV avec une cellule idProduct vide). Attendu : ligne ignorée. Observé : produit 0.
-  it.fails("BUG: un idProduct vide est lu comme le produit 0", () => {
+  // Régression : readInt("") → Number("") = 0 → idProduct 0 accepté (idem readId de cardmarket.ts).
+  it("un idProduct vide est ignoré (pas de produit 0)", () => {
     assert.deepEqual(parseSealedProducts([{ idProduct: "", name: "Vide" }]), []);
   });
 
@@ -339,10 +337,9 @@ describe("produits scellés (cardmarket-sealed)", () => {
     assert.ok(slugifySealed("x".repeat(200), 1).length <= 80);
   });
 
-  // BUG : le slug est tronqué à 80 caractères APRÈS l'ajout de l'id produit. Deux produits au nom
-  // long partageant les mêmes ~75 premiers caractères obtiennent le même slug (Card.slug est unique)
-  // → card.upsert échoue et tout l'import des prix avec. Attendu : slugs distincts, finissant par l'id.
-  it.fails("BUG: deux noms longs donnent le même slug (id produit tronqué)", () => {
+  // Régression : le slug était tronqué à 80 caractères APRÈS l'ajout de l'id produit ; deux noms
+  // longs de même début donnaient le même slug (Card.slug est unique) → l'import des prix échouait.
+  it("deux noms longs donnent des slugs distincts, finissant par l'id produit", () => {
     const name = "Cyberpunk TCG Welcome to Night City Booster Display Box of 24 boosters English edition";
     const left = slugifySealed(name, 1001);
     const right = slugifySealed(name, 1002);

@@ -13,18 +13,21 @@ export async function rateLimit(key: string, limit: number, windowMs: number): P
   const resetAt = new Date(now.getTime() + windowMs);
   try {
     // Upsert natif (INSERT … ON CONFLICT) : incrément atomique même sous requêtes concurrentes.
-    const row = await prisma.rateLimit.upsert({
+    let row = await prisma.rateLimit.upsert({
       where: { key },
       create: { key, count: 1, resetAt },
       update: { count: { increment: 1 } },
     });
     if (row.resetAt <= now) {
-      // Fenêtre expirée : on repart à 1. La condition évite d'écraser une remise à zéro concurrente.
-      await prisma.rateLimit.updateMany({
+      // Fenêtre expirée : une seule requête la remet à zéro (condition sur l'ancienne échéance).
+      const { count: reset } = await prisma.rateLimit.updateMany({
         where: { key, resetAt: { lte: now } },
         data: { count: 1, resetAt },
       });
-      return { ok: true, remaining: limit - 1, retryAfterMs: 0 };
+      if (reset === 1) return { ok: true, remaining: limit - 1, retryAfterMs: 0 };
+      // Une requête concurrente a ouvert la nouvelle fenêtre : on y compte celle-ci, sinon
+      // toute une rafale lancée pile à l'expiration passerait sans limite.
+      row = await prisma.rateLimit.update({ where: { key }, data: { count: { increment: 1 } } });
     }
     if (row.count > limit) {
       return { ok: false, remaining: 0, retryAfterMs: Math.max(0, row.resetAt.getTime() - now.getTime()) };

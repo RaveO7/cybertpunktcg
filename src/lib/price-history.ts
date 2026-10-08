@@ -19,6 +19,10 @@ export function utcDay(value: Date | string = new Date()) {
       ? new Date(value.getTime())
       : new Date(/^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00.000Z` : value);
   if (Number.isNaN(date.getTime())) throw new Error("Date de snapshot invalide.");
+  // « 2026-02-30 » serait reporté au 2 mars : une date calendaire impossible est refusée.
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && date.toISOString().slice(0, 10) !== value) {
+    throw new Error("Date de snapshot invalide.");
+  }
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 

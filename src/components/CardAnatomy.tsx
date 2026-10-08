@@ -45,6 +45,11 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
 
     const rootBox = root.getBoundingClientRect();
     const cardBox = cardEl.getBoundingClientRect();
+    // Schéma masqué (téléphone) : taille nulle, les tracés vaudraient NaN.
+    if (!rootBox.width || !rootBox.height) {
+      setLines([]);
+      return;
+    }
     const next: Line[] = [];
 
     for (const point of pointsRef.current) {

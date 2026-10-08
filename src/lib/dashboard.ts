@@ -16,7 +16,7 @@ export function productGroup(name: string, code?: string) {
   if (code && isSealedSetCode(code)) return "Scellé";
   const value = name.toLowerCase();
   if (value.includes("promo")) return "Promos";
-  if (value.includes("starter") || value.includes("demo") || /\bdeck\b/.test(value)) return "Decks";
+  if (value.includes("starter") || /\bdemo\b/.test(value) || /\bdeck\b/.test(value)) return "Decks";
   if (value.includes("topper")) return "Produits annexes";
   if (/pre-?\s*release|\bopen\b|\bbrawl\b|\bshowdown\b/.test(value)) return "Événements";
   return "Extensions";
@@ -29,7 +29,7 @@ export function displaySetName(name: string, language: string) {
 
 export function languageLabel(language: string) {
   if (!language) return "Toutes les langues";
-  return LANGUAGE_LABELS[language] ?? language;
+  return Object.hasOwn(LANGUAGE_LABELS, language) ? LANGUAGE_LABELS[language] : language;
 }
 
 export function gamesInCatalog(sets: SetDTO[], printings: PrintingDTO[]) {

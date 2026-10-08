@@ -1,6 +1,7 @@
 import { createHmac, createPrivateKey, randomBytes, sign, timingSafeEqual } from "node:crypto";
 import { Prisma } from "@prisma/client";
-import { normalizeDisplayName, normalizeEmail } from "@/lib/auth";
+import type { NextResponse } from "next/server";
+import { cookieSecure, normalizeDisplayName, normalizeEmail } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const OAUTH_PROVIDERS = ["google", "apple"] as const;
@@ -111,6 +112,53 @@ export function verifyOAuthState(raw: string | null, expectedProvider: OAuthProv
   } catch {
     return null;
   }
+}
+
+/**
+ * Le state signé est aussi posé dans un cookie du navigateur qui démarre la connexion.
+ * Le callback exige le même state dans ce cookie, puis l'efface : un lien de callback
+ * (code + state) envoyé à quelqu'un d'autre ou rejoué est refusé (« login CSRF »).
+ */
+export const OAUTH_STATE_COOKIE = "cptcg_oauth_state";
+
+function oauthStateCookie(request: Request, value: string, maxAge: number) {
+  const secure = cookieSecure(request);
+  return {
+    name: OAUTH_STATE_COOKIE,
+    value,
+    httpOnly: true,
+    secure,
+    // Apple renvoie le state en form_post cross-site : SameSite=None (donc Secure) en HTTPS.
+    sameSite: secure ? ("none" as const) : ("lax" as const),
+    path: "/api/auth/oauth",
+    maxAge,
+  };
+}
+
+export function applyOAuthStateCookie(response: NextResponse, request: Request, state: string) {
+  response.cookies.set(oauthStateCookie(request, state, 10 * 60));
+}
+
+export function clearOAuthStateCookie(response: NextResponse, request: Request) {
+  response.cookies.set(oauthStateCookie(request, "", 0));
+}
+
+/** Le state reçu est-il celui posé dans ce navigateur au démarrage ? */
+export function oauthStateMatchesBrowser(request: Request, state: string) {
+  const cookie = (request.headers.get("cookie") ?? "")
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${OAUTH_STATE_COOKIE}=`));
+  if (!cookie) return false;
+  let stored: string;
+  try {
+    stored = decodeURIComponent(cookie.slice(OAUTH_STATE_COOKIE.length + 1));
+  } catch {
+    return false;
+  }
+  const left = Buffer.from(stored);
+  const right = Buffer.from(state);
+  return left.length === right.length && timingSafeEqual(left, right);
 }
 
 function callbackUrl(origin: string, provider: OAuthProvider) {

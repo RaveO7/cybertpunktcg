@@ -338,7 +338,7 @@ describe("parseFilters / serializeFilters", () => {
 
   // Attendu : les noms d'artistes / tags sont des valeurs opaques ; « Doe, John » doit survivre à l'URL.
   // Observé : les listes sont jointes puis découpées sur « , » → ["Doe", "John"].
-  it.fails("BUG: une valeur de liste contenant une virgule survit à l'aller-retour URL", () => {
+  it("une valeur de liste contenant une virgule survit à l'aller-retour URL", () => {
     const filters = { ...defaultFilters(), artists: ["Doe, John"] };
     assert.deepEqual(parseFilters(serializeFilters(filters)).artists, ["Doe, John"]);
   });
@@ -347,7 +347,7 @@ describe("parseFilters / serializeFilters", () => {
   // sans paramètre d'URL, la préférence de collection s'applique comme celle du tri.
   // Observé : parseFilters ignore prefs.collection et force « all » (CardsExplorer.tsx:139).
   // Corriger aussi serializeFilters (set("collection", …, "all") → defaults.collection) pour garder l'aller-retour.
-  it.fails("BUG: la préférence « filtre collection » s'applique au démarrage (URL sans paramètre)", () => {
+  it("la préférence « filtre collection » s'applique au démarrage (URL sans paramètre)", () => {
     const prefs = { sort: "rarity" as SortKey, collection: "owned" as const };
     const parsed = parseFilters(new URLSearchParams(""), true, prefs);
     assert.equal(parsed.sort, "rarity");

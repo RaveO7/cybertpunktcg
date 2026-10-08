@@ -12,7 +12,7 @@ import {
   POST as callbackPost,
 } from "../../src/app/api/auth/oauth/[provider]/callback/route";
 import { SESSION_COOKIE, registerAccount } from "../../src/lib/auth";
-import { createOAuthState, verifyOAuthState } from "../../src/lib/oauth";
+import { OAUTH_STATE_COOKIE, createOAuthState, verifyOAuthState } from "../../src/lib/oauth";
 import { prisma } from "../../src/lib/prisma";
 
 const stamp = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -102,19 +102,36 @@ function context(provider: string) {
   return { params: Promise.resolve({ provider }) };
 }
 
-function callback(provider: string, params: Record<string, string>) {
-  const url = new URL(`http://127.0.0.1/api/auth/oauth/${provider}/callback`);
-  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  return callbackGet(new Request(url), context(provider));
+/** Cookie du state tel que le navigateur le renverrait (null : aucun cookie). */
+function stateCookieHeader(cookie: string | null | undefined): Record<string, string> {
+  return cookie ? { cookie: `${OAUTH_STATE_COOKIE}=${encodeURIComponent(cookie)}` } : {};
 }
 
-function applePost(params: Record<string, string>, provider = "apple") {
+/** Par défaut, le navigateur est celui qui a démarré la connexion : il renvoie le state en cookie. */
+function callback(provider: string, params: Record<string, string>, cookie: string | null | undefined = params.state) {
+  const url = new URL(`http://127.0.0.1/api/auth/oauth/${provider}/callback`);
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  return callbackGet(new Request(url, { headers: stateCookieHeader(cookie) }), context(provider));
+}
+
+function applePost(params: Record<string, string>, provider = "apple", cookie: string | null | undefined = params.state) {
   const form = new FormData();
   for (const [key, value] of Object.entries(params)) form.set(key, value);
   return callbackPost(
-    new Request(`http://127.0.0.1/api/auth/oauth/${provider}/callback`, { method: "POST", body: form }),
+    new Request(`http://127.0.0.1/api/auth/oauth/${provider}/callback`, {
+      method: "POST",
+      body: form,
+      headers: stateCookieHeader(cookie),
+    }),
     context(provider),
   );
+}
+
+/** Le cookie du state est effacé par toute réponse du callback. */
+function expectStateCookieCleared(response: Response) {
+  const line = response.headers.getSetCookie().find((item) => item.startsWith(`${OAUTH_STATE_COOKIE}=`));
+  assert.ok(line, "le callback doit effacer le cookie du state");
+  assert.match(line, /Max-Age=0/i);
 }
 
 function location(response: Response) {
@@ -220,6 +237,15 @@ describe("démarrage de la connexion", () => {
     const state = target.searchParams.get("state");
     assert.ok(state);
     assert.deepEqual(verifyOAuthState(state, "google"), { provider: "google", localUserId: "abcdefgh1234" });
+    const cookie = response.headers.getSetCookie().find((line) => line.startsWith(`${OAUTH_STATE_COOKIE}=`));
+    assert.ok(cookie, "le state est lié au navigateur par un cookie");
+    assert.equal(decodeURIComponent(cookie.split(";")[0].slice(OAUTH_STATE_COOKIE.length + 1)), state);
+    assert.match(cookie, /HttpOnly/i);
+    assert.match(cookie, /Path=\/api\/auth\/oauth/i);
+    assert.match(cookie, /Max-Age=600/i);
+    // form_post Apple cross-site : le cookie doit partir avec, donc SameSite=None + Secure en HTTPS.
+    assert.match(cookie, /SameSite=None/i);
+    assert.match(cookie, /Secure/i);
     assert.equal(verifyOAuthState(state, "apple"), null, "un state Google n'est pas valable pour Apple");
     assert.equal(fetchCalls.length, 0, "aucun appel réseau au démarrage");
   });
@@ -342,18 +368,33 @@ describe.sequential("callback", () => {
     assert.equal(await prisma.oAuthAccount.count({ where: { userId: user.id } }), 1);
   });
 
-  // BUG (sécurité, moyenne) : le state est sans état côté serveur et n'est lié ni au navigateur
-  // (pas de cookie) ni à un usage unique. Un même state reste valable 10 min pour n'importe quel
-  // navigateur : rejouable, et il ne protège pas contre le « login CSRF » (un attaquant envoie à la
-  // victime son propre lien de callback code+state et la connecte sur le compte de l'attaquant).
-  // Attendu : un state déjà utilisé est refusé. Observé : le second callback ouvre une session.
-  it.fails("BUG: un state déjà utilisé est refusé", async () => {
+  it("un state déjà utilisé est refusé (cookie effacé après le premier callback)", async () => {
     const email = `oauth.replay.${stamp}@example.com`;
     const state = createOAuthState("google", null);
     googleProfile({ sub: `google-replay-${stamp}`, email, email_verified: true });
-    await expectSuccess(await callback("google", { code: "code-a", state }));
+    const first = await callback("google", { code: "code-a", state });
+    await expectSuccess(first);
+    expectStateCookieCleared(first);
     googleProfile({ sub: `google-replay-${stamp}`, email, email_verified: true });
-    expectFailure(await callback("google", { code: "code-b", state }), /.+/);
+    // Le navigateur a perdu le cookie : rejouer le même lien échoue.
+    expectFailure(await callback("google", { code: "code-b", state }, null), /expirée/i);
+  });
+
+  it("login CSRF : un lien de callback ouvert dans un autre navigateur est refusé", async () => {
+    const attackerState = createOAuthState("google", null);
+    const victimState = createOAuthState("google", null);
+    googleProfile({ sub: `google-csrf-${stamp}`, email: `oauth.csrf.${stamp}@example.com`, email_verified: true });
+    // Victime sans cookie, ou avec le cookie de sa propre tentative.
+    expectFailure(await callback("google", { code: "c", state: attackerState }, null), /expirée/i);
+    expectFailure(await callback("google", { code: "c", state: attackerState }, victimState), /expirée/i);
+    expectFailure(await applePost({ code: "c", state: createOAuthState("apple", null) }, "apple", null), /expirée/i);
+    assert.equal(fetchCalls.length, 0, "aucun échange de code sans cookie correspondant");
+    assert.equal(await prisma.user.count({ where: { email: `oauth.csrf.${stamp}@example.com` } }), 0);
+  });
+
+  it("le cookie du state est effacé même en cas d'échec", async () => {
+    expectStateCookieCleared(await callback("google", { error: "access_denied", code: "c", state: createOAuthState("google", null) }));
+    expectStateCookieCleared(await callback("google", { code: "c", state: "falsifie.signature" }));
   });
 
   it("Google : e-mail non vérifié, compte existant, erreurs du fournisseur", async () => {
