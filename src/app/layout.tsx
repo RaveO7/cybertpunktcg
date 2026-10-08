@@ -6,6 +6,7 @@ import { AppFrame } from "@/components/AppFrame";
 import { BrowseSelectionProvider } from "@/components/BrowseSelection";
 import { CollectionProvider } from "@/components/CollectionProvider";
 import { LocaleProvider } from "@/components/LocaleProvider";
+import { ServiceWorkerRegister } from "@/components/OfflineSupport";
 import { PreferencesProvider } from "@/components/PreferencesProvider";
 import { PREFERENCES_STORAGE_KEY } from "@/lib/preferences";
 import "./globals.css";
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </CollectionProvider>
           </PreferencesProvider>
         </LocaleProvider>
+        <ServiceWorkerRegister />
         <Analytics />
         <SpeedInsights />
       </body>

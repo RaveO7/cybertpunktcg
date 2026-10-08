@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
+import { OfflineSection } from "@/components/OfflineSection";
 import { usePreferences } from "@/components/PreferencesProvider";
 import { LOCALES, type Locale } from "@/lib/i18n/messages";
 import { CURRENCIES } from "@/lib/parse";
@@ -33,7 +34,7 @@ function sortOptions(t: ReturnType<typeof useI18n>["t"]): { value: SortKey; labe
 }
 
 export function SettingsScreen() {
-  const { user, ready, logout, items } = useCollection();
+  const { user, ready, logout, items, catalog } = useCollection();
   const { locale, setLocale, t } = useI18n();
   const { prefs, setPrefs, resetPrefs } = usePreferences();
   const [pending, setPending] = useState(false);
@@ -342,6 +343,8 @@ export function SettingsScreen() {
           {t.settings.resetDefaults}
         </button>
       </section>
+
+      <OfflineSection catalog={catalog} />
 
       <section className="mt-8 border-t border-line pt-6">
         <h2 className="text-xs uppercase tracking-[0.14em] text-muted">{t.settings.data}</h2>

@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        // Service worker (mode hors-ligne) : jamais mis en cache HTTP, pour que les mises à jour arrivent.
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
     ];
   },
 };

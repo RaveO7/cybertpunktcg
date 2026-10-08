@@ -56,9 +56,11 @@ function assertSameShape(a: unknown, b: unknown, path: string): void {
     const kb = Object.keys(b as object).sort();
     assert.deepEqual(ka, kb, `${path} : clés différentes`);
     for (const k of ka) {
-      const va = (a as Record<string, unknown>)[k];
-      const vb = (b as Record<string, unknown>)[k];
-      if (IDENTITY_KEYS.has(k)) assert.deepEqual(va, vb, `${path}.${k} : identifiant différent entre langues`);
+      const va: unknown = (a as Record<string, unknown>)[k];
+      const vb: unknown = (b as Record<string, unknown>)[k];
+      // `correct` est aussi un libellé (« Bien joué ») au premier niveau : seul le booléen est un identifiant.
+      const isIdentity = IDENTITY_KEYS.has(k) && !(k === "correct" && typeof va === "string");
+      if (isIdentity) assert.deepEqual(va, vb, `${path}.${k} : identifiant différent entre langues`);
       else assertSameShape(va, vb, `${path}.${k}`);
     }
     return;
@@ -419,7 +421,7 @@ describe("Parcours tutoriel (tutorial)", () => {
     }
   });
 
-  it("le dé de départ « 6 dés » de l'intro liste bien d4…d20", () => {
+  it("l’intro liste les 6 dés du Fixer, d4 à d20", () => {
     for (const c of [fr, en]) {
       const dice = c.intro.needItems.join(" ").match(/d\d+/g);
       assert.deepEqual(dice, ["d4", "d6", "d8", "d10", "d12", "d20"]);

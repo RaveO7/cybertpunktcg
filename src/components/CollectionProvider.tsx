@@ -55,6 +55,16 @@ export function useCollection() {
   return value;
 }
 
+/** fetch des modifications : sans réseau, un message explicite plutôt qu'un « Failed to fetch ». */
+async function mutationFetch(url: string, init: RequestInit) {
+  try {
+    return await fetch(url, init);
+  } catch (error) {
+    if (!navigator.onLine) throw new Error("Hors ligne : modification impossible pour le moment.");
+    throw error;
+  }
+}
+
 async function readJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
@@ -150,7 +160,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
 
   async function request(url: string, init: RequestInit) {
     if (!user) throw new Error("Session absente.");
-    const response = await fetch(url, {
+    const response = await mutationFetch(url, {
       ...init,
       headers: {
         "content-type": "application/json",
@@ -198,7 +208,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       saveLine: (input) => request("/api/collection", { method: "POST", body: JSON.stringify(input) }),
       saveBatch: async (input) => {
         if (!user) throw new Error("Session absente.");
-        const response = await fetch("/api/collection/bulk", {
+        const response = await mutationFetch("/api/collection/bulk", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(input),
