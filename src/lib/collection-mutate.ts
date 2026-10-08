@@ -176,6 +176,97 @@ export async function saveCollectionBatch(
   });
 }
 
+type ImportInput = {
+  mode: "add" | "set";
+  lines: {
+    printingId: string;
+    conditionCode: string;
+    quantity: number;
+    notes?: string;
+    purchasePrice?: string;
+    purchaseCurrency?: string;
+  }[];
+};
+
+/**
+ * Import CSV : « add » ajoute aux quantités existantes, « set » remplace la quantité des
+ * cartes du fichier (les autres lignes de la collection ne bougent pas). Les notes et prix
+ * absents du fichier sont conservés. Une seule transaction, requêtes groupées.
+ */
+export async function importCollectionLines(userId: string, input: ImportInput) {
+  const [conditions, printings] = await Promise.all([
+    prisma.condition.findMany({ select: { id: true, code: true } }),
+    prisma.printing.findMany({
+      where: { id: { in: [...new Set(input.lines.map((line) => line.printingId))] }, isActive: true },
+      select: { id: true },
+    }),
+  ]);
+  const conditionIds = new Map(conditions.map((condition) => [condition.code, condition.id]));
+  const validPrintings = new Set(printings.map((printing) => printing.id));
+
+  // Fusionne les doublons (même carte × état) envoyés dans le même import.
+  const merged = new Map<string, ImportInput["lines"][number] & { conditionId: string }>();
+  let skipped = 0;
+  for (const line of input.lines) {
+    const conditionId = conditionIds.get(line.conditionCode);
+    if (!conditionId || !validPrintings.has(line.printingId)) {
+      skipped += 1;
+      continue;
+    }
+    const key = `${line.printingId}|${conditionId}`;
+    const current = merged.get(key);
+    merged.set(
+      key,
+      current
+        ? {
+            ...current,
+            quantity: current.quantity + line.quantity,
+            notes: line.notes ?? current.notes,
+            purchasePrice: line.purchasePrice ?? current.purchasePrice,
+            purchaseCurrency: line.purchasePrice ? line.purchaseCurrency : current.purchaseCurrency,
+          }
+        : { ...line, conditionId },
+    );
+  }
+  if (merged.size === 0) throw new Error("Aucune carte valide.");
+
+  const existing = await prisma.collectionItem.findMany({
+    where: { userId, printingId: { in: [...new Set([...merged.values()].map((line) => line.printingId))] } },
+    select: { id: true, printingId: true, conditionId: true, quantity: true },
+  });
+  const existingByKey = new Map(existing.map((item) => [`${item.printingId}|${item.conditionId}`, item]));
+
+  const creates = [];
+  const updates = [];
+  for (const [key, line] of merged) {
+    const fields = {
+      ...(line.notes !== undefined ? { notes: line.notes } : {}),
+      ...(line.purchasePrice !== undefined
+        ? { purchasePrice: line.purchasePrice, purchaseCurrency: line.purchaseCurrency ?? "EUR" }
+        : {}),
+    };
+    const current = existingByKey.get(key);
+    if (current) {
+      const quantity = capped(input.mode === "add" ? current.quantity + line.quantity : line.quantity);
+      updates.push(prisma.collectionItem.update({ where: { id: current.id }, data: { quantity, ...fields } }));
+    } else {
+      creates.push({
+        userId,
+        printingId: line.printingId,
+        conditionId: line.conditionId,
+        quantity: capped(line.quantity),
+        ...fields,
+      });
+    }
+  }
+
+  await prisma.$transaction([
+    ...(creates.length ? [prisma.collectionItem.createMany({ data: creates })] : []),
+    ...updates,
+  ]);
+  return { created: creates.length, updated: updates.length, skipped };
+}
+
 export async function patchCollectionLine(
   userId: string,
   id: string,

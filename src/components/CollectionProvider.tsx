@@ -1,7 +1,10 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { ImportLine } from "@/lib/collection-csv";
 import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
+
+export type ImportSummary = { created: number; updated: number; skipped: number };
 
 const LOCAL_USER_KEY = "cptcg-user-id";
 
@@ -43,6 +46,7 @@ type CollectionContextValue = {
     conditionCode: string;
     lines: { printingId: string; quantity: number }[];
   }) => Promise<void>;
+  importLines: (input: { mode: "add" | "set"; lines: ImportLine[] }) => Promise<ImportSummary>;
   patchLine: (id: string, input: PatchInput) => Promise<void>;
   deleteLine: (id: string) => Promise<void>;
 };
@@ -225,6 +229,24 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
           const incoming = new Map(result.items?.map((item) => [item.id, item]) ?? []);
           return [...current.filter((item) => !incoming.has(item.id)), ...incoming.values()];
         });
+      },
+      importLines: async (input) => {
+        if (!user) throw new Error("Session absente.");
+        const response = await mutationFetch("/api/collection/import", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        const result = await readJson<ImportSummary & { items?: CollectionItemDTO[]; error?: string }>(response);
+        if (response.status === 401) {
+          setUser(null);
+          setItems([]);
+          setCatalog(null);
+          throw new Error("Session expirée. Reconnectez-vous.");
+        }
+        if (!response.ok || !result.items) throw new Error(result.error || "Import impossible.");
+        setItems(result.items);
+        return { created: result.created, updated: result.updated, skipped: result.skipped };
       },
       patchLine: async (id, input) => {
         // Mise à jour optimiste : l'interface reflète la modification sans attendre le serveur.

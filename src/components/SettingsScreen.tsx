@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
 import { OfflineSection } from "@/components/OfflineSection";
 import { usePreferences } from "@/components/PreferencesProvider";
+import {
+  CollectionCsvError,
+  collectionToCsv,
+  parseCollectionCsv,
+  type ImportIssue,
+  type ImportPreview,
+} from "@/lib/collection-csv";
 import { LOCALES, type Locale } from "@/lib/i18n/messages";
+import { formatInt } from "@/lib/logic";
 import { CURRENCIES } from "@/lib/parse";
 import { CONDITIONS } from "@/lib/reference-data";
 import type { FiltersPanelMode, UserPreferences } from "@/lib/preferences";
@@ -34,7 +42,7 @@ function sortOptions(t: ReturnType<typeof useI18n>["t"]): { value: SortKey; labe
 }
 
 export function SettingsScreen() {
-  const { user, ready, logout, items, catalog } = useCollection();
+  const { user, ready, logout, items, catalog, importLines } = useCollection();
   const { locale, setLocale, t } = useI18n();
   const { prefs, setPrefs, resetPrefs } = usePreferences();
   const [pending, setPending] = useState(false);
@@ -43,6 +51,11 @@ export function SettingsScreen() {
   const [share, setShare] = useState<ShareState | null>(null);
   const [shareBusy, setShareBusy] = useState(false);
   const [shareNote, setShareNote] = useState<string | null>(null);
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [importMode, setImportMode] = useState<"add" | "set">("add");
+  const [importBusy, setImportBusy] = useState(false);
+  const [importNote, setImportNote] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   const sorts = useMemo(() => sortOptions(t), [t]);
 
   const collectionOptions: { value: CollectionFilter; label: string }[] = [
@@ -88,24 +101,82 @@ export function SettingsScreen() {
     }
   }
 
-  function exportCollection() {
+  function download(content: string, type: string, extension: string) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `cyberpunk-tcg-collection-${new Date().toISOString().slice(0, 10)}.${extension}`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportCollection(format: "csv" | "json") {
     setExportNote(null);
     try {
-      const payload = {
-        exportedAt: new Date().toISOString(),
-        user: user ? { email: user.email, displayName: user.displayName } : null,
-        items,
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `cyberpunk-tcg-collection-${new Date().toISOString().slice(0, 10)}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
+      if (format === "csv") {
+        if (!catalog) throw new Error("catalog");
+        download(collectionToCsv(items, catalog), "text/csv;charset=utf-8", "csv");
+      } else {
+        const payload = {
+          exportedAt: new Date().toISOString(),
+          user: user ? { email: user.email, displayName: user.displayName } : null,
+          items,
+        };
+        download(JSON.stringify(payload, null, 2), "application/json", "json");
+      }
       setExportNote(t.settings.exportDone);
     } catch {
       setExportNote(t.settings.exportFailed);
+    }
+  }
+
+  async function readImportFile(file: File | undefined) {
+    setImportPreview(null);
+    setImportNote(null);
+    if (!file || !catalog) return;
+    setImportBusy(true);
+    try {
+      const preview = parseCollectionCsv(await file.text(), catalog, {
+        defaultCondition: prefs.condition,
+        defaultCurrency: prefs.currency,
+      });
+      if (preview.lines.length === 0) setImportNote(t.settings.importNothing);
+      setImportPreview(preview);
+    } catch (caught) {
+      const code = caught instanceof CollectionCsvError ? caught.code : null;
+      setImportNote(
+        code === "empty"
+          ? t.settings.importEmpty
+          : code === "no-columns"
+            ? t.settings.importNoColumns
+            : code === "too-many"
+              ? t.settings.importTooMany
+              : t.settings.importFailed,
+      );
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  function issueReason(issue: ImportIssue) {
+    if (issue.reason === "bad-quantity") return t.settings.importReasonQuantity;
+    if (issue.reason === "no-identity") return t.settings.importReasonIdentity;
+    return t.settings.importReasonUnknown;
+  }
+
+  async function confirmImport() {
+    if (!importPreview?.lines.length) return;
+    setImportBusy(true);
+    setImportNote(null);
+    try {
+      const summary = await importLines({ mode: importMode, lines: importPreview.lines });
+      setImportPreview(null);
+      setImportNote(t.settings.importDone(formatInt(summary.created), formatInt(summary.updated)));
+    } catch (caught) {
+      setImportNote(caught instanceof Error ? caught.message : t.settings.importFailed);
+    } finally {
+      setImportBusy(false);
     }
   }
 
@@ -349,16 +420,135 @@ export function SettingsScreen() {
       <section className="mt-8 border-t border-line pt-6">
         <h2 className="text-xs uppercase tracking-[0.14em] text-muted">{t.settings.data}</h2>
         <p className="mt-2 text-sm text-muted">{t.settings.dataHint}</p>
-        <button
-          type="button"
-          onClick={exportCollection}
-          className="mt-4 h-12 w-full border border-cyan text-sm text-cyan hover:bg-cyan/10"
-        >
-          {t.settings.exportCollection}
-        </button>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            disabled={!catalog}
+            onClick={() => exportCollection("csv")}
+            className="h-12 border border-cyan text-sm text-cyan hover:bg-cyan/10 disabled:opacity-60"
+          >
+            {t.settings.exportCsv}
+          </button>
+          <button
+            type="button"
+            onClick={() => exportCollection("json")}
+            className="h-12 border border-line text-sm text-muted hover:border-cyan hover:text-cyan"
+          >
+            {t.settings.exportJson}
+          </button>
+        </div>
         {exportNote ? (
           <p className="mt-3 text-sm text-muted" role="status">
             {exportNote}
+          </p>
+        ) : null}
+
+        <h3 className="mt-6 text-xs uppercase tracking-[0.14em] text-muted">{t.settings.importTitle}</h3>
+        <p className="mt-2 text-sm text-muted">{t.settings.importHint}</p>
+        <input
+          ref={fileInput}
+          type="file"
+          accept=".csv,.txt,text/csv"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={(event) => {
+            void readImportFile(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
+        {importPreview && importPreview.lines.length > 0 ? (
+          <div className="mt-4 space-y-3 border border-line p-4 text-sm">
+            <p className="text-muted">
+              {importPreview.format === "app"
+                ? t.settings.importFormatApp
+                : importPreview.format === "cardmarket"
+                  ? t.settings.importFormatCardmarket
+                  : t.settings.importFormatGeneric}
+            </p>
+            <p className="text-foreground">
+              {t.settings.importSummary(formatInt(importPreview.lines.length), formatInt(importPreview.copies))}
+            </p>
+            {importPreview.format === "cardmarket" ? (
+              <p className="text-xs text-muted">{t.settings.importCardmarketPrice}</p>
+            ) : null}
+            <IssueList
+              title={t.settings.importGuessed(formatInt(importPreview.guessed.length))}
+              issues={importPreview.guessed}
+              more={t.settings.importMore}
+              tone="text-yellow"
+            />
+            <IssueList
+              title={t.settings.importRejected(formatInt(importPreview.rejected.length))}
+              issues={importPreview.rejected}
+              more={t.settings.importMore}
+              reason={issueReason}
+              tone="text-danger"
+            />
+            <fieldset className="space-y-2">
+              {(
+                [
+                  { value: "add", label: t.settings.importModeAdd },
+                  { value: "set", label: t.settings.importModeSet },
+                ] as const
+              ).map((option) => (
+                <label key={option.value} className="flex items-start gap-2">
+                  <input
+                    type="radio"
+                    name="import-mode"
+                    className="mt-1 accent-cyan"
+                    checked={importMode === option.value}
+                    onChange={() => setImportMode(option.value)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </fieldset>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={importBusy}
+                onClick={() => void confirmImport()}
+                className="h-11 border border-cyan text-sm text-cyan hover:bg-cyan/10 disabled:opacity-60"
+              >
+                {importBusy ? t.settings.importing : t.settings.importConfirm}
+              </button>
+              <button
+                type="button"
+                disabled={importBusy}
+                onClick={() => setImportPreview(null)}
+                className="h-11 border border-line text-sm text-muted hover:border-cyan hover:text-cyan disabled:opacity-60"
+              >
+                {t.settings.importCancel}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled={importBusy || !catalog}
+              onClick={() => fileInput.current?.click()}
+              className="mt-4 h-12 w-full border border-cyan text-sm text-cyan hover:bg-cyan/10 disabled:opacity-60"
+            >
+              {importBusy ? t.settings.importReading : t.settings.importChoose}
+            </button>
+            {importPreview && importPreview.rejected.length > 0 ? (
+              <div className="mt-3 text-sm">
+                <IssueList
+                  title={t.settings.importRejected(formatInt(importPreview.rejected.length))}
+                  issues={importPreview.rejected}
+                  more={t.settings.importMore}
+                  reason={issueReason}
+                  tone="text-danger"
+                />
+              </div>
+            ) : null}
+          </>
+        )}
+        {importNote ? (
+          <p className="mt-3 text-sm text-muted" role="status">
+            {importNote}
           </p>
         ) : null}
       </section>
@@ -377,6 +567,39 @@ export function SettingsScreen() {
       >
         {pending ? t.settings.loggingOut : t.settings.logout}
       </button>
+    </div>
+  );
+}
+
+const MAX_LISTED_ISSUES = 8;
+
+function IssueList({
+  title,
+  issues,
+  more,
+  reason,
+  tone,
+}: {
+  title: string;
+  issues: ImportIssue[];
+  more: (n: string) => string;
+  reason?: (issue: ImportIssue) => string;
+  tone: string;
+}) {
+  if (issues.length === 0) return null;
+  const hidden = issues.length - MAX_LISTED_ISSUES;
+  return (
+    <div>
+      <p className={tone}>{title}</p>
+      <ul className="mt-1 space-y-0.5 text-xs text-muted">
+        {issues.slice(0, MAX_LISTED_ISSUES).map((issue) => (
+          <li key={issue.row}>
+            L{issue.row} · {issue.label}
+            {reason ? ` — ${reason(issue)}` : null}
+          </li>
+        ))}
+        {hidden > 0 ? <li>{more(formatInt(hidden))}</li> : null}
+      </ul>
     </div>
   );
 }

@@ -62,7 +62,7 @@ export type MatchReport = {
   expansions: { key: string; setCode: string | null; products: number }[];
 };
 
-const EXPANSION_ALIASES: Record<string, string> = {
+export const EXPANSION_ALIASES: Record<string, string> = {
   "the heist demo deck": "merc demo deck",
   "embracing power demo deck": "arasaka demo deck",
 };
@@ -538,9 +538,11 @@ function csvRecords(text: string) {
   });
 }
 
-function parseCsv(text: string) {
-  const sample = text.slice(0, 2000);
-  const delimiter = (sample.match(/;/g) ?? []).length > (sample.match(/,/g) ?? []).length ? ";" : ",";
+/** Lit un CSV (séparateur « ; », « , » ou tabulation détecté sur l'en-tête, guillemets doublés). */
+export function parseCsv(text: string) {
+  const header = text.slice(0, 2000).split(/\r?\n/, 1)[0];
+  const count = (char: string) => header.split(char).length - 1;
+  const delimiter = [";", "\t"].reduce((best, char) => (count(char) > count(best) ? char : best), ",");
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = "";

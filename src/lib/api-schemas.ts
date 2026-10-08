@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { normalizeDisplayName, normalizeEmail, normalizeLoginPassword, normalizePassword } from "./auth";
+import { MAX_IMPORT_LINES } from "./collection-csv";
 import { CURRENCIES } from "./parse";
 
 const INVALID_REQUEST = "Requête invalide.";
@@ -120,7 +121,31 @@ export const bulkSchema = z.object({
     .refine((lines) => lines.length > 0, "Aucune carte à ajouter."),
 });
 
-export const shareSchema = z.object({ rotate: z.boolean().optional() }).nullable();
+/** Import CSV : lignes déjà reconnues côté client (carte × état). Les champs absents ne sont pas modifiés. */
+export const importSchema = z.object({
+  mode: z.enum(["add", "set"]).default("add"),
+  lines: z
+    .array(
+      z
+        .object({
+          printingId: id,
+          conditionCode,
+          quantity: quantitySchema,
+          notes: notesSchema.transform((value) => value ?? undefined),
+          purchasePrice: priceSchema.transform((value) => value ?? undefined),
+          purchaseCurrency: z.enum(CURRENCIES, { error: "Devise invalide." }).optional(),
+        })
+        .transform((line) => ({
+          ...line,
+          purchaseCurrency: line.purchasePrice ? (line.purchaseCurrency ?? "EUR") : undefined,
+        })),
+    )
+    .max(MAX_IMPORT_LINES, "Fichier trop volumineux.")
+    .transform((lines) => lines.filter((line) => line.quantity > 0))
+    .refine((lines) => lines.length > 0, "Aucune carte à importer."),
+});
+
+export const shareSchema =z.object({ rotate: z.boolean().optional() }).nullable();
 
 export const shareTokenSchema = z.string().min(16).max(128);
 
