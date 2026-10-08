@@ -3,24 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/prisma.mjs generate",
+    "predev": "node scripts/prisma.mjs generate && tsx scripts/generate-thumbnails.ts",
     "dev": "next dev",
-    "build": "node scripts/prisma.mjs generate && node scripts/vercel-db-push.mjs && next build",
+    "build": "node scripts/prisma.mjs generate && node scripts/vercel-db-push.mjs && tsx scripts/generate-thumbnails.ts && next build",
     "start": "next start",
     "lint": "eslint",
-    "test:account": "tsx scripts/verify-account.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run --project unit",
+    "test:db": "vitest run --project db",
+    "test:ci:seed": "tsx tests/fixtures/seed-ci.ts",
     "test:account:mutations": "tsx scripts/mutate-account-checks.ts",
-    "test:security": "tsx scripts/verify-security-audit2.ts",
-    "test": "tsx scripts/verify-logic.ts && tsx scripts/verify-cardmarket.ts && tsx scripts/verify-db.ts && tsx scripts/verify-auth.ts && tsx scripts/verify-account.ts && tsx scripts/verify-security-audit2.ts && tsx scripts/verify-history-cache.ts && tsx scripts/mutate-account-checks.ts",
-    "test:history": "tsx scripts/verify-history-cache.ts",
     "test:catalog-cache": "tsx scripts/verify-catalog-cache.ts --build",
     "test:mutations:cache": "tsx scripts/mutate-cache-checks.ts",
-    "test:cardmarket": "tsx scripts/verify-logic.ts && tsx scripts/verify-cardmarket.ts",
     "db:push": "node scripts/prisma.mjs db push",
     "db:seed": "tsx prisma/seed.ts",
     "import:cards": "node scripts/prisma.mjs db push && tsx prisma/seed.ts && tsx scripts/import-cards.ts",
     "import:prices": "node scripts/prisma.mjs db push --skip-generate && tsx scripts/import-prices.ts",
     "import:sealed-images": "tsx scripts/import-sealed-images.ts",
+    "thumbnails": "tsx scripts/generate-thumbnails.ts",
     "db:export-postgres": "tsx scripts/export-local-to-postgres.ts",
     "db:sync-prod": "tsx scripts/sync-local-to-prod.ts"
   },
@@ -32,7 +34,8 @@
     "next": "16.3.6",
     "prisma": "^6.19.3",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -41,8 +44,10 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

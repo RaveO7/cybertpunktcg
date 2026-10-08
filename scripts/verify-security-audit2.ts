@@ -8,12 +8,14 @@ import { prisma } from "../src/lib/prisma";
 import { registerAccount } from "../src/lib/auth";
 import { appOrigin, createOAuthState, loginWithOAuth, verifyOAuthState } from "../src/lib/oauth";
 import { saveCollectionBatch } from "../src/lib/collection-mutate";
-import { clientKey, rateLimit, resetRateLimitsForTests } from "../src/lib/rate-limit";
+import { clientKey, rateLimit } from "../src/lib/rate-limit";
 import { POST as login } from "../src/app/api/auth/login/route";
 import { POST as register } from "../src/app/api/auth/register/route";
 
 const stamp = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const cleanupIds: string[] = [];
+// Toutes les IP fictives finissent par le stamp : leurs compteurs du limiteur sont supprimés à la fin.
+const testIp = `test-audit2-${stamp}`;
 const password = "motdepasse-robuste";
 
 async function testOAuthEmailAutolinkBlocked() {
@@ -125,7 +127,7 @@ async function testOrphanClaimBlocked() {
   const attackerLogin = await login(
     new Request("http://127.0.0.1/api/auth/login", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-forwarded-for": testIp },
       body: JSON.stringify({
         email: `orphan.login.${stamp}@example.com`,
         password,
@@ -152,7 +154,7 @@ async function testOrphanClaimBlocked() {
   const regWithLocal = await register(
     new Request("http://127.0.0.1/api/auth/register", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-forwarded-for": testIp },
       body: JSON.stringify({
         email: `orphan.api.${stamp}@example.com`,
         password,
@@ -187,28 +189,45 @@ async function testBulkRejectsEarly() {
 }
 
 async function testLoginRateLimit() {
-  resetRateLimitsForTests();
-  const email = `rate.${stamp}@example.com`;
-  await registerAccount({ email, password, displayName: "Rate", localUserId: null }).then((user) => {
-    cleanupIds.push(user.id);
-  });
+  // IP fictive unique : le compteur est en base, partagé, et doit être nettoyé ensuite.
+  const previousTrustProxy = process.env.TRUST_PROXY;
+  process.env.TRUST_PROXY = "1";
+  const attackerIp = `203.0.113.${Math.floor(Math.random() * 200) + 1}-${stamp}`;
+  const otherIp = `198.51.100.7-${stamp}`;
+  try {
+    const email = `rate.${stamp}@example.com`;
+    await registerAccount({ email, password, displayName: "Rate", localUserId: null }).then((user) => {
+      cleanupIds.push(user.id);
+    });
 
-  let hit429 = false;
-  for (let i = 0; i < 25; i += 1) {
-    const response = await login(
-      new Request("http://127.0.0.1/api/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, password: "mauvais-mot-de-passe" }),
-      }),
-    );
-    if (response.status === 429) {
-      hit429 = true;
-      break;
+    const attempt = (ip: string, pass: string) =>
+      login(
+        new Request("http://127.0.0.1/api/auth/login", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-forwarded-for": `${ip}, 10.0.0.1` },
+          body: JSON.stringify({ email, password: pass }),
+        }),
+      );
+
+    let hit429 = false;
+    for (let i = 0; i < 25; i += 1) {
+      const response = await attempt(attackerIp, "mauvais-mot-de-passe");
+      if (response.status === 429) {
+        hit429 = true;
+        break;
+      }
     }
+    assert.equal(hit429, true, "le login doit finir en 429 sous rafale");
+    // Un autre visiteur ne doit pas être bloqué par les échecs du premier.
+    const other = await attempt(otherIp, password);
+    assert.equal(other.status, 200, "une autre IP ne doit pas être bloquée");
+    assert.equal(clientKey(new Request("http://x/", { headers: { "x-forwarded-for": otherIp } }), "probe"), `probe:${otherIp}`);
+    assert.equal((await rateLimit(`probe:${otherIp}`, 1, 1000)).ok, true);
+    assert.equal((await rateLimit(`probe:${otherIp}`, 1, 1000)).ok, false);
+  } finally {
+    if (previousTrustProxy === undefined) delete process.env.TRUST_PROXY;
+    else process.env.TRUST_PROXY = previousTrustProxy;
   }
-  assert.equal(hit429, true, "le login doit finir en 429 sous rafale");
-  assert.equal(rateLimit(clientKey(new Request("http://127.0.0.1/"), "probe"), 1, 1000).ok, true);
 }
 
 async function testOAuthCreatesNewUserWhenEmailFree() {
@@ -230,6 +249,7 @@ async function testOAuthCreatesNewUserWhenEmailFree() {
 }
 
 async function main() {
+  process.env.TRUST_PROXY = "1";
   process.env.OAUTH_STATE_SECRET = process.env.OAUTH_STATE_SECRET || `test-oauth-secret-${stamp}-xx`;
   await testOAuthEmailAutolinkBlocked();
   await testOAuthStateRequiresSecret();
@@ -247,6 +267,7 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
+    await prisma.rateLimit.deleteMany({ where: { key: { endsWith: `-${stamp}` } } });
     if (cleanupIds.length) {
       await prisma.oAuthAccount.deleteMany({ where: { userId: { in: cleanupIds } } });
       await prisma.collectionItem.deleteMany({ where: { userId: { in: cleanupIds } } });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/catalog";
 import { deleteCollectionLine, patchCollectionLine } from "@/lib/collection-mutate";
-import { parseCurrency, parseNotes, parsePrice, parseQuantity } from "@/lib/parse";
+import { patchLineSchema, readJsonBody } from "@/lib/api-schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -11,21 +11,10 @@ export async function PATCH(request: Request, context: Context) {
   const user = await requireUser(request);
   if (!user) return NextResponse.json({ error: "Session requise." }, { status: 401 });
   const { id } = await context.params;
-  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  if (!body) return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
-  const quantity = body.quantity === undefined ? undefined : parseQuantity(body.quantity);
-  if (body.quantity !== undefined && quantity == null) {
-    return NextResponse.json({ error: "Quantité invalide." }, { status: 400 });
-  }
-  const purchasePrice = parsePrice(body.purchasePrice);
+  const parsed = await readJsonBody(request, patchLineSchema);
+  if (!parsed.ok) return parsed.response;
   try {
-    const result = await patchCollectionLine(user.id, id, {
-      conditionCode: typeof body.conditionCode === "string" ? body.conditionCode : undefined,
-      quantity: quantity ?? undefined,
-      notes: parseNotes(body.notes),
-      purchasePrice,
-      purchaseCurrency: parseCurrency(body.purchaseCurrency, purchasePrice),
-    });
+    const result = await patchCollectionLine(user.id, id, parsed.data);
     return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Mise à jour impossible.";

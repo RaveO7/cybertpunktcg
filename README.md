@@ -25,6 +25,12 @@ Les boutons apparaissent seulement si les variables d'environnement correspondan
 - `APP_URL` : origine publique de l'app (`http://localhost:3000` en local), utilisée pour construire les redirections OAuth.
 - `OAUTH_STATE_SECRET` (recommandé) : secret pour signer le paramètre `state` OAuth.
 
+### Robustesse et suivi des erreurs
+
+- **Limiteur de débit** (connexion, inscription) : compteurs stockés en base (table `RateLimit`), donc partagés entre toutes les instances Vercel. L'IP vient de `x-real-ip` / `x-forwarded-for`, lus automatiquement sur Vercel ; derrière un autre proxy, définir `TRUST_PROXY=1`. Les compteurs expirés sont purgés par le cron quotidien.
+- **Entrées API** : validées par les schémas Zod de `src/lib/api-schemas.ts`. Une nouvelle route qui lit un corps JSON passe par `readJsonBody(request, schéma)`.
+- **Alertes** : `ALERT_WEBHOOK_URL` (optionnel) = URL d'un webhook Discord ou Slack. Y sont envoyées les erreurs serveur non rattrapées (`src/instrumentation.ts`), chaque échec du cron de prix (avec le nombre d'échecs consécutifs, table `JobStatus`), son rétablissement, et un avertissement si le guide Cardmarket a plus de 3 jours. Sans cette variable, tout reste dans les logs Vercel.
+
 Après avoir modifié le schéma Prisma, arrêtez le serveur de dev puis lancez `npx prisma generate` (le fichier moteur Prisma est parfois verrouillé tant que Node tourne).
 
 Aucun prix de marché n'est inventé. Un prix d'achat peut être saisi sur une ligne de collection. La valeur marché reste vide tant que le guide Cardmarket n'est pas importé.

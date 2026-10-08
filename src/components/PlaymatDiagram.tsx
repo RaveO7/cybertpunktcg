@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { EXAMPLE_CARDS, type ExampleCard, type PlaymatZoneId } from "@/lib/rules/examples";
 import type { HowToPlayContent } from "@/lib/rules/howto-play";
+import { CardImage } from "@/components/CardImage";
 
 const ZONE_ORDER: PlaymatZoneId[] = ["fixer", "rivalGig", "gig", "field", "legends", "eddies", "deck", "trash"];
 
@@ -342,8 +343,7 @@ function MatCard({
           â‚¬$
         </div>
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={card.imagePath} alt="" className="h-full w-full object-cover" loading="lazy" draggable={false} />
+        <CardImage src={card.imagePath} alt="" className="h-full w-full object-cover" loading="lazy" draggable={false} />
       )}
     </div>
   );

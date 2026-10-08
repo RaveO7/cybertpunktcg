@@ -204,7 +204,7 @@ const mutations: Mutation[] = [
 ];
 
 const tests: Record<Group, string> = {
-  history: "npx tsx scripts/verify-logic.ts && npx tsx scripts/verify-history-cache.ts",
+  history: "npx vitest run tests/unit/logic.test.ts tests/db/history-cache.test.ts",
   catalog: "npx tsx scripts/verify-catalog-cache.ts --build",
 };
 

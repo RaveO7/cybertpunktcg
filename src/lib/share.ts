@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { shareTokenSchema } from "@/lib/api-schemas";
 import { prisma } from "@/lib/prisma";
 import type { CollectionItemDTO } from "@/lib/types";
 
@@ -21,6 +22,13 @@ export async function createOrRotateShare(userId: string) {
     create: { userId, token },
     update: { token, createdAt: new Date() },
   });
+}
+
+/** Lien valide et actif ? (pour répondre 404 dès le rendu serveur). */
+export async function shareExists(token: string) {
+  if (!shareTokenSchema.safeParse(token).success) return false;
+  const share = await prisma.collectionShare.findUnique({ where: { token }, select: { id: true } });
+  return share !== null;
 }
 
 export async function revokeShare(userId: string) {

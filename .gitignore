@@ -43,8 +43,15 @@ next-env.d.ts
 # local database
 /data
 
-.vercel
-.env*
-
 # schéma SQLite local généré par scripts/prisma.mjs
 /prisma/schema.sqlite.prisma
+
+# python
+__pycache__/
+*.pyc
+
+# skills : copie locale (symlinks) de .agents/skills, source suivie par skills-lock.json
+/.claude/skills/
+
+# miniatures générées au build (scripts/generate-thumbnails.ts)
+/public/card-images/thumb/

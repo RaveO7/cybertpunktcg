@@ -27,8 +27,8 @@ const mutations: { name: string; file: string; from: string; to: string }[] = [
   {
     name: "l'enregistrement n'est plus lié au compte connecté",
     file: "src/app/api/collection/route.ts",
-    from: "const result = await saveCollectionLine(user.id, {",
-    to: "const result = await saveCollectionLine(\"compte-inconnu\", {",
+    from: "const result = await saveCollectionLine(user.id, parsed.data);",
+    to: "const result = await saveCollectionLine(\"compte-inconnu\", parsed.data);",
   },
   {
     name: "le mot de passe n'est plus vérifié",
@@ -95,15 +95,11 @@ function write(file: string, contents: string) {
 }
 
 function runTests() {
-  return spawnSync(
-    "npx",
-    ["tsx", "scripts/verify-account.ts", "&&", "npx", "tsx", "scripts/verify-security-audit2.ts"],
-    {
-      cwd: root,
-      encoding: "utf8",
-      shell: true,
-    },
-  );
+  return spawnSync("npx", ["vitest", "run", "tests/db/account.test.ts", "tests/db/security.test.ts"], {
+    cwd: root,
+    encoding: "utf8",
+    shell: true,
+  });
 }
 
 const originals = new Map<string, string>();

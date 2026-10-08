@@ -2,6 +2,7 @@
 
 import type { CSSProperties, MouseEvent } from "react";
 import type { CardDTO, PrintingDTO } from "@/lib/types";
+import { CardImage } from "@/components/CardImage";
 
 export function chipColor(color: string | null | undefined) {
   switch ((color ?? "").toLowerCase()) {
@@ -79,15 +80,13 @@ export function CardTile({
       {printing.imagePath ? (
         <>
           <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 aspect-card" aria-hidden>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={printing.imagePath} alt="" role="presentation" draggable={false} className="card-ambilight" />
+            <CardImage src={printing.imagePath} alt="" role="presentation" draggable={false} className="card-ambilight" />
           </div>
           <div
             className="pointer-events-none absolute inset-x-0 top-0 z-[1] aspect-card overflow-visible"
             aria-hidden
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <CardImage
               src={printing.imagePath}
               alt=""
               role="presentation"
@@ -109,8 +108,7 @@ export function CardTile({
             }`}
           >
             {printing.imagePath ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <CardImage
                 src={printing.imagePath}
                 alt=""
                 draggable={false}

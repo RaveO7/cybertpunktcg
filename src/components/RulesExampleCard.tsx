@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "@/components/LocaleProvider";
 import type { ExampleCard } from "@/lib/rules/examples";
+import { CardImage } from "@/components/CardImage";
 
 export function RulesExampleCard({
   card,
@@ -60,8 +61,7 @@ export function RulesExampleCard({
       <span className="font-mono text-[0.55rem] tracking-[0.14em] text-cyan/70 sm:text-[0.65rem]">€$</span>
     </div>
   ) : (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <CardImage
       src={card.imagePath}
       alt={card.name}
       className="aspect-card w-full object-cover"

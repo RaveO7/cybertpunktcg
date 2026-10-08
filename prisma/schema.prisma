@@ -60,6 +60,25 @@ model Session {
   @@index([expiresAt])
 }
 
+/// Compteur du limiteur de débit, partagé entre toutes les instances (clé = portée:IP).
+/// Les lignes expirées sont purgées par le cron quotidien.
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
+/// Statut des tâches planifiées (ex. import des prix) pour détecter les échecs répétés.
+model JobStatus {
+  name                String    @id
+  lastRunAt           DateTime
+  lastSuccessAt       DateTime?
+  lastError           String?
+  consecutiveFailures Int       @default(0)
+}
+
 /// Extension officielle. Le code vient de la base (ex. welcometonightcityretail).
 /// `number` reste vide tant qu'aucun numéro d'extension officiel n'est publié.
 model Set {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJsonBody, shareSchema } from "@/lib/api-schemas";
 import { requireUser } from "@/lib/catalog";
 import {
   absoluteShareUrl,
@@ -27,7 +28,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const user = await requireUser(request);
   if (!user) return NextResponse.json({ error: "Session requise." }, { status: 401 });
-  const body = (await request.json().catch(() => null)) as { rotate?: boolean } | null;
+  const parsed = await readJsonBody(request, shareSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
   const existing = await getShareForUser(user.id);
   if (existing && !body?.rotate) {
     return NextResponse.json({

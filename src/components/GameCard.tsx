@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ExampleCard } from "@/lib/rules/examples";
+import { CardImage } from "@/components/CardImage";
 
 export function GameCard({
   card,
@@ -192,8 +193,7 @@ export function GameCard({
               <span className="font-mono text-[0.65rem] tracking-[0.16em] text-cyan/80">€$</span>
             </div>
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <CardImage
               src={card.imagePath}
               alt=""
               className="aspect-card w-full object-cover"
@@ -215,8 +215,7 @@ export function GameCard({
         </div>
         {equipped ? (
           <div data-equipped className="pointer-events-none absolute -right-2 -top-3 w-[55%] rotate-12">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <CardImage
               src={equipped.imagePath}
               alt=""
               className="aspect-card w-full border border-cyan/50 object-cover shadow-md"

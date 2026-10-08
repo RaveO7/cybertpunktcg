@@ -21,8 +21,14 @@ type Line = {
 const createdUserIds = new Set<string>();
 const password = "motdepasse-robuste";
 
+// IP fictive propre à ce test : ses compteurs du limiteur (stockés en base) sont supprimés à la fin.
+process.env.TRUST_PROXY = "1";
+const testIp = `test-account-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
 function originRequest(path: string, init: RequestInit = {}) {
-  return new Request(`http://127.0.0.1${path}`, init);
+  const headers = new Headers(init.headers);
+  headers.set("x-forwarded-for", testIp);
+  return new Request(`http://127.0.0.1${path}`, { ...init, headers });
 }
 
 function sessionToken(response: Response) {
@@ -417,6 +423,7 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
+    await prisma.rateLimit.deleteMany({ where: { key: { endsWith: `:${testIp}` } } });
     const ids = [...createdUserIds];
     if (ids.length > 0) {
       await prisma.collectionItem.deleteMany({ where: { userId: { in: ids } } });

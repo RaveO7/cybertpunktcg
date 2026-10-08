@@ -26,6 +26,7 @@ import {
   SEALED_GROUP_FILTER,
 } from "@/lib/reference-data";
 import type { Messages } from "@/lib/i18n/messages";
+import { CardImage } from "@/components/CardImage";
 
 type SortDir = "asc" | "desc";
 
@@ -970,8 +971,7 @@ function LineRow({ line }: { line: InvestmentLine }) {
       <td className="p-0">
         <Link href={href} className="flex w-44 items-center gap-3 px-3 py-2 hover:text-cyan sm:w-auto sm:min-w-56">
           {line.imagePath ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={line.imagePath} alt="" className="h-12 w-9 bg-black object-contain" loading="lazy" />
+            <CardImage src={line.imagePath} alt="" className="h-12 w-9 bg-black object-contain" loading="lazy" />
           ) : (
             <div className="grid h-12 w-9 place-items-center bg-black text-[10px] text-muted">N/A</div>
           )}
@@ -1079,8 +1079,7 @@ function LineItem({ line, t }: { line: InvestmentLine; t: Messages }) {
     <li className="border-t border-line first:border-t-0">
       <Link href={lineHref(line)} className="flex gap-3 px-3 py-3 hover:bg-white/5">
         {line.imagePath ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={line.imagePath} alt="" className="h-16 w-12 shrink-0 bg-black object-contain" loading="lazy" />
+          <CardImage src={line.imagePath} alt="" className="h-16 w-12 shrink-0 bg-black object-contain" loading="lazy" />
         ) : (
           <div className="grid h-16 w-12 shrink-0 place-items-center bg-black text-[10px] text-muted">N/A</div>
         )}
