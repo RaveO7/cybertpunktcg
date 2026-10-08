@@ -26,10 +26,13 @@ function iconSvg(scale: number) {
 }
 
 const root = path.resolve(__dirname, "..");
+// Les icônes « any » reprennent l'échelle de la maskable : Android affiche la maskable au démarrage,
+// puis Chrome peut basculer sur l'icône « any » ; à échelle égale, le logo ne change pas de taille.
+const MASKABLE_SCALE = 0.72;
 const targets = [
-  { file: "public/icons/icon-192.png", size: 192, scale: 1 },
-  { file: "public/icons/icon-512.png", size: 512, scale: 1 },
-  { file: "public/icons/maskable-512.png", size: 512, scale: 0.72 },
+  { file: "public/icons/icon-192.png", size: 192, scale: MASKABLE_SCALE },
+  { file: "public/icons/icon-512.png", size: 512, scale: MASKABLE_SCALE },
+  { file: "public/icons/maskable-512.png", size: 512, scale: MASKABLE_SCALE },
   { file: "src/app/apple-icon.png", size: 180, scale: 0.86 },
 ];
 
