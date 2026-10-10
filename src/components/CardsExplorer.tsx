@@ -38,7 +38,6 @@ import { usePreferences } from "@/components/PreferencesProvider";
 import { conditionOptionLabel } from "@/lib/condition-label";
 import type { Messages } from "@/lib/i18n/messages";
 import { filterDefaultsFrom } from "@/lib/preferences";
-import { cardsWithExtras } from "@/lib/trades";
 
 function collectorRank(value: string) {
   const beta = /^β/i.test(value) ? 1 : 0;
@@ -180,10 +179,6 @@ export function CardsExplorer({
   const activeFilters = useMemo(() => alignReleasedFilters(filters), [filters]);
   // Each printing keeps its own ownership: a beta copy must not mark the retail card as owned.
   const agg = useMemo(() => aggregateCollection(items), [items]);
-  const extraCards = useMemo(
-    () => (catalog ? cardsWithExtras(catalog.printings, cardsById, agg) : new Set<string>()),
-    [catalog, cardsById, agg],
-  );
 
   useEffect(() => {
     const params = serializeFilters(activeFilters, true, filterDefaults);
@@ -257,10 +252,9 @@ export function CardsExplorer({
       agg,
       activeFilters,
       browseChecklist(catalog.printings, activeFilters.set),
-      extraCards,
     );
     return sortPrintings(matched, cardsById, agg, setsByCode, activeFilters.sort);
-  }, [catalog, cardsById, agg, activeFilters, setsByCode, extraCards]);
+  }, [catalog, cardsById, agg, activeFilters, setsByCode]);
 
   const missingPrice = useMemo(
     () => (activeFilters.collection === "missing" && catalog?.hasPrices ? printingsPriceTotal(filtered) : null),

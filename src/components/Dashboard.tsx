@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
-import { TradesPanel, useTradeList } from "@/components/TradesPanel";
 import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
 import {
   aggregateCollection,
@@ -353,8 +352,6 @@ export function Dashboard() {
     };
   }, [catalog, items, language, t]);
 
-  const collectionAgg = useMemo(() => aggregateCollection(items), [items]);
-  const trades = useTradeList(catalog?.printings, catalog?.cards, collectionAgg);
   const isSealed = mode === "sealed";
   const gridItems: (Block | Extension)[] = view ? (isSealed ? view.sealedExtensions : view.blocks) : [];
   const wanted = selectedKey[mode];
@@ -779,14 +776,7 @@ export function Dashboard() {
         </Section>
       ) : null}
 
-      {/* 4. Doublons & échanges : exemplaires au-delà de la limite par deck */}
-      {!isSealed && trades ? (
-        <Section title={t.trades.title} hint={t.trades.hint}>
-          <TradesPanel list={trades} hasPrices={view.hasPrices} cardsPath="/cards" />
-        </Section>
-      ) : null}
-
-      {/* 5. Valeur par extension */}
+      {/* 4. Valeur par extension */}
       <Section
         title={isSealed ? t.dashboard.valueBySealed : t.dashboard.valueBySet}
         hint={isSealed ? t.dashboard.valueBySealedHint : t.dashboard.valueBySetHint}

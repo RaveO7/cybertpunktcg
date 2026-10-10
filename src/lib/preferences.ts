@@ -39,7 +39,7 @@ const SORT_KEYS = new Set<SortKey>([
   "owned-first",
   "missing-first",
 ]);
-const COLLECTION_FILTERS = new Set<CollectionFilter>(["all", "owned", "missing", "duplicates", "extras"]);
+const COLLECTION_FILTERS = new Set<CollectionFilter>(["all", "owned", "missing", "duplicates"]);
 const PANEL_MODES = new Set<FiltersPanelMode>(["auto", "open", "closed"]);
 const THEME_MODES = new Set<ThemeMode>(["dark", "light"]);
 
