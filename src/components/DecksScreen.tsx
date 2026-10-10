@@ -589,7 +589,7 @@ function DeckEditor({
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-start">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,40rem)] lg:items-start">
         <div className={`${pane === "deck" ? "flex" : "hidden"} min-w-0 flex-col gap-4 lg:flex`}>
           <DeckSections
             analysis={analysis}
@@ -817,17 +817,19 @@ function Stepper({
   quantity,
   canAdd,
   onQuantity,
+  wide = false,
 }: {
   card: CardDTO;
   quantity: number;
   canAdd: boolean;
   onQuantity: (cardId: string, quantity: number) => void;
+  wide?: boolean;
 }) {
   const { t } = useI18n();
   const label = cardLabel(card);
   const step = "grid h-9 w-9 place-items-center border border-line text-base text-muted hover:border-cyan hover:text-foreground disabled:opacity-40 disabled:hover:border-line disabled:hover:text-muted";
   return (
-    <span className="flex shrink-0 items-center">
+    <span className={wide ? "flex w-full items-center justify-between" : "flex shrink-0 items-center"}>
       <button type="button" className={step} disabled={quantity <= 0} onClick={() => onQuantity(card.id, quantity - 1)} aria-label={t.decks.removeOne(label)}>
         −
       </button>
@@ -1168,31 +1170,88 @@ function CardPicker({
           </label>
         </div>
       </div>
-      <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <ul className="grid min-h-0 flex-1 auto-rows-max grid-cols-2 gap-2 overflow-y-auto overscroll-contain p-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
         {results.slice(0, RESULTS_LIMIT).map((card) => {
           const quantity = quantities.get(card.id) ?? 0;
-          const have = owned.get(card.id) ?? 0;
           const ramOk = isLegend(card) || !hasLegends || ramAllowed(card, analysis.ramLimits);
           return (
-            <li key={card.id} className={`flex items-center gap-2.5 border-t border-line/40 px-3 py-1.5 first:border-t-0 ${quantity ? "bg-cyan/5" : ""}`}>
-              <CardThumb printing={preview.get(card.id)} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm">{cardLabel(card)}</span>
-                <CardFacts card={card} ramOk={ramOk} />
-                <span className="block text-[11px] text-muted">
-                  {card.cardType}
-                  {have > 0 ? ` · ${t.decks.ownedCount(have)}` : ""}
-                </span>
-              </span>
-              <Stepper card={card} quantity={quantity} canAdd={canAdd(card)} onQuantity={onQuantity} />
-            </li>
+            <PickerTile
+              key={card.id}
+              card={card}
+              printing={preview.get(card.id)}
+              quantity={quantity}
+              owned={owned.get(card.id) ?? 0}
+              ramOk={ramOk}
+              canAdd={canAdd(card)}
+              onQuantity={onQuantity}
+            />
           );
         })}
-        {results.length === 0 ? <li className="px-3 py-4 text-sm text-muted">{t.decks.noResults}</li> : null}
+        {results.length === 0 ? <li className="col-span-full px-1 py-4 text-sm text-muted">{t.decks.noResults}</li> : null}
         {results.length > RESULTS_LIMIT ? (
-          <li className="px-3 py-3 text-xs text-muted">{t.decks.moreResults(results.length - RESULTS_LIMIT)}</li>
+          <li className="col-span-full px-1 py-3 text-xs text-muted">{t.decks.moreResults(results.length - RESULTS_LIMIT)}</li>
         ) : null}
       </ul>
     </section>
+  );
+}
+
+/** Carte de la recherche, en grand : un clic sur l'image ajoute un exemplaire. */
+function PickerTile({
+  card,
+  printing,
+  quantity,
+  owned,
+  ramOk,
+  canAdd,
+  onQuantity,
+}: {
+  card: CardDTO;
+  printing: PrintingDTO | undefined;
+  quantity: number;
+  owned: number;
+  ramOk: boolean;
+  canAdd: boolean;
+  onQuantity: (cardId: string, quantity: number) => void;
+}) {
+  const { t } = useI18n();
+  const label = cardLabel(card);
+  return (
+    <li className={`flex min-w-0 flex-col gap-1.5 border p-1.5 ${quantity ? "border-cyan bg-cyan/5" : "border-line/60"}`}>
+      {/* Raccourci souris/tactile ; au clavier, le bouton + ci-dessous fait la même chose. */}
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden="true"
+        disabled={!canAdd}
+        onClick={() => onQuantity(card.id, quantity + 1)}
+        className="group relative block w-full cursor-pointer disabled:cursor-not-allowed"
+      >
+        {printing?.imagePath ? (
+          <CardImage
+            src={printing.imagePath}
+            alt=""
+            loading="lazy"
+            className={`aspect-[63/88] w-full rounded-md bg-black object-contain transition group-enabled:group-hover:brightness-110 ${
+              canAdd || quantity ? "" : "opacity-45"
+            }`}
+          />
+        ) : (
+          <span className="grid aspect-[63/88] w-full place-items-center rounded-md bg-black text-xs text-muted">N/A</span>
+        )}
+        {quantity ? (
+          <span className="absolute top-1.5 right-1.5 bg-cyan px-1.5 py-0.5 font-mono text-xs font-semibold text-black">×{quantity}</span>
+        ) : null}
+        {owned > 0 ? (
+          <span className="absolute top-1.5 left-1.5 bg-black/80 px-1.5 py-0.5 font-mono text-[11px] text-gain">✓ {owned}</span>
+        ) : null}
+      </button>
+      <span className="line-clamp-2 min-h-[2.5em] text-xs leading-tight" title={label}>
+        {label}
+      </span>
+      <CardFacts card={card} ramOk={ramOk} />
+      {owned > 0 ? <span className="sr-only">{t.decks.ownedCount(owned)}</span> : null}
+      <Stepper card={card} quantity={quantity} canAdd={canAdd} onQuantity={onQuantity} wide />
+    </li>
   );
 }
