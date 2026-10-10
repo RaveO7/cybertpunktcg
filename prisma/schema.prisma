@@ -23,6 +23,7 @@ model User {
   collectionShare CollectionShare?
   portfolioHistory PortfolioHistoryCache[]
   wishlist      WishlistItem[]
+  decks         Deck[]
 }
 
 /// Lien secret pour consulter le classeur en lecture seule (sans compte).
@@ -127,6 +128,7 @@ model Card {
   tags              CardTag[]
   keywords          CardKeyword[]
   printings         Printing[]
+  deckCards         DeckCard[]
 
   @@index([color])
   @@index([cardType])
@@ -230,6 +232,33 @@ model WishlistItem {
 
   @@unique([userId, printingId])
   @@index([printingId])
+}
+
+/// Deck construit par l'utilisateur. Les cartes sont des identités de jeu (Card), pas des tirages :
+/// la possession compte tous les tirages de la carte. Un deck peut être incomplet ou illégal
+/// (brouillon) ; la validité est calculée à l'affichage (src/lib/deck.ts).
+model Deck {
+  id        String     @id @default(cuid())
+  userId    String
+  name      String
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards     DeckCard[]
+
+  @@index([userId])
+}
+
+model DeckCard {
+  deckId   String
+  cardId   String
+  quantity Int
+  deck     Deck   @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  card     Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([deckId, cardId])
+  @@index([cardId])
 }
 
 model PriceSource {

@@ -46,6 +46,7 @@ export async function loadCatalog(): Promise<CatalogDTO> {
     cost: card.cost,
     power: card.power,
     ram: card.ram,
+    legality: card.legality,
     tags: card.tags.map((tag) => tag.tag).sort(),
     keywords: card.keywords.map((keyword) => keyword.keyword).sort(),
   }));

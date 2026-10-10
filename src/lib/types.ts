@@ -13,6 +13,8 @@ export type CardDTO = {
   cost: number | null;
   power: number | null;
   ram: number | null;
+  /** « legal », « not-legal » ou null (produits scellés). */
+  legality?: string | null;
   tags: string[];
   keywords: string[];
 };
@@ -76,6 +78,16 @@ export type WishlistItemDTO = {
   alertPrice: string | null;
   alertSeen: boolean;
   createdAt: string;
+};
+
+export type DeckDTO = {
+  id: string;
+  name: string;
+  notes: string | null;
+  /** Cartes de jeu (Card.id) et nombre d'exemplaires, Legends comprises. */
+  cards: { cardId: string; quantity: number }[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type CatalogDTO = {

@@ -157,6 +157,33 @@ export const wishlistPatchSchema = z.object({
   notes: notesSchema,
 });
 
+const deckNameSchema = z
+  .string({ error: "Nom du deck invalide." })
+  .trim()
+  .min(1, "Donnez un nom au deck.")
+  .max(60, "Nom du deck trop long (60 caractères maximum).");
+
+/** Liste complète des cartes d'un deck (remplace l'existante). Un deck peut rester incomplet ou illégal. */
+const deckCardsSchema = z
+  .array(
+    z.object({
+      cardId: id,
+      quantity: z.number({ error: "Quantité invalide." }).int("Quantité invalide.").min(1, "Quantité invalide.").max(9, "Quantité invalide."),
+    }),
+  )
+  .max(150, "Trop de cartes différentes dans le deck.");
+
+export const deckCreateSchema = z.object({
+  name: deckNameSchema.optional(),
+  cards: deckCardsSchema.optional(),
+});
+
+export const deckPatchSchema = z.object({
+  name: deckNameSchema.optional(),
+  notes: notesSchema,
+  cards: deckCardsSchema.optional(),
+});
+
 export const shareSchema =z.object({ rotate: z.boolean().optional() }).nullable();
 
 export const shareTokenSchema = z.string().min(16).max(128);
