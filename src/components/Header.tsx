@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
-import { useWishlist } from "@/components/WishlistProvider";
 
 type NavIcon = "dashboard" | "cards" | "investment" | "wishlist" | "howto" | "binder";
 
@@ -16,7 +15,6 @@ function useNavigation() {
   const pathname = usePathname();
   const { cardsHref } = useBrowseSelection();
   const { user, ready } = useCollection();
-  const { unseenAlerts } = useWishlist();
   const { t } = useI18n();
   const sharedMatch = pathname.match(/^\/classeur\/([^/]+)/);
   const isSharedView = Boolean(sharedMatch);
@@ -37,7 +35,9 @@ function useNavigation() {
         { href: "/", label: t.nav.dashboard, match: "/", icon: "dashboard" },
         { href: cardsHref, label: t.nav.cards, match: "/cards", icon: "cards" },
         { href: "/investissement", label: t.nav.investment, match: "/investissement", icon: "investment" },
-        { href: "/souhaits", label: t.nav.wishlist, match: "/souhaits", icon: "wishlist", badge: unseenAlerts },
+        // Page /souhaits masquée pour l'instant. Pour la réafficher, lire `const { unseenAlerts } = useWishlist();`
+        // en haut du hook puis ajouter :
+        // { href: "/souhaits", label: t.nav.wishlist, match: "/souhaits", icon: "wishlist", badge: unseenAlerts },
         { href: "/comment-jouer", label: t.nav.howto, match: "/comment-jouer", icon: "howto" },
       ];
 

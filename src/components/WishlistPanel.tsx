@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useId, useState } from "react";
 import { useI18n } from "@/components/LocaleProvider";
 import { useWishlist } from "@/components/WishlistProvider";
@@ -53,11 +52,6 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
         <h3 id={headingId} className="hud-label text-cyan">
           {t.wishlist.title}
         </h3>
-        {item ? (
-          <Link href="/souhaits" className="text-xs text-cyan underline-offset-2 hover:underline">
-            {t.wishlist.inWishlist}
-          </Link>
-        ) : null}
       </div>
       <form
         className="flex flex-wrap items-end gap-3 px-4 py-3 sm:px-5"
