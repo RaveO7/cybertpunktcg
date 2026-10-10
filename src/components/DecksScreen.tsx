@@ -188,7 +188,7 @@ function DeckList({
   const { t, locale } = useI18n();
   const router = useRouter();
   const { items } = useCollection();
-  const { cardsById, printingsByCard } = useDeckCatalog(catalog);
+  const { cardsById, printingsByCard, preview } = useDeckCatalog(catalog);
   const owned = useMemo(() => ownedCopiesByCard(items, catalog.printings), [items, catalog.printings]);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -242,6 +242,7 @@ function DeckList({
                 deck={deck}
                 analysis={analysis}
                 shortfall={shortfall}
+                preview={preview}
                 updated={dateFormat.format(new Date(deck.updatedAt))}
                 pending={pending}
                 onDuplicate={() =>
@@ -259,10 +260,12 @@ function DeckList({
   );
 }
 
+/** Carte d'un deck dans la liste : toute la carte ouvre l'éditeur (lien étiré « Modifier »). */
 function DeckSummaryCard({
   deck,
   analysis,
   shortfall,
+  preview,
   updated,
   pending,
   onDuplicate,
@@ -271,6 +274,7 @@ function DeckSummaryCard({
   deck: DeckDTO;
   analysis: DeckAnalysis;
   shortfall: Shortfall;
+  preview: Map<string, PrintingDTO>;
   updated: string;
   pending: boolean;
   onDuplicate: () => void;
@@ -278,18 +282,38 @@ function DeckSummaryCard({
 }) {
   const { t } = useI18n();
   const [confirming, setConfirming] = useState(false);
+  const slots = Array.from({ length: DECK_RULES.legends }, (_, position) => analysis.legends[position]);
+  const secondary = `${buttonClass} relative z-10 h-9 px-3 text-xs`;
   return (
-    <li className="flex flex-col gap-3 border border-line bg-panel p-4">
-      <Link
-        href={`/decks?deck=${encodeURIComponent(deck.id)}`}
-        className="flex min-w-0 flex-col gap-2 hover:text-cyan"
-        aria-label={t.decks.open(deck.name)}
-      >
-        <span className="flex items-start justify-between gap-2">
-          <span className="min-w-0 truncate text-lg">{deck.name}</span>
+    <li className="group relative flex flex-col overflow-hidden border border-line bg-panel transition hover:border-cyan active:bg-panel-2">
+      <div className="grid grid-cols-3 gap-1.5 p-3 pb-0" aria-hidden="true">
+        {slots.map((line, position) => {
+          const image = line ? preview.get(line.card.id)?.imagePath : null;
+          return image ? (
+            <CardImage
+              key={line!.card.id}
+              src={image}
+              alt=""
+              loading="lazy"
+              className="aspect-[63/52] w-full rounded-md bg-black object-cover object-top"
+            />
+          ) : (
+            <span
+              key={`slot-${position}`}
+              className="grid aspect-[63/52] w-full place-items-center rounded-md border border-dashed border-line text-[10px] text-muted"
+            >
+              Legend
+            </span>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="min-w-0 truncate text-lg text-foreground group-hover:text-cyan">{deck.name}</h2>
           <ValidityBadge analysis={analysis} />
-        </span>
-        <span className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+        </div>
+        <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
           {analysis.legends.length > 0 ? (
             analysis.legends.map(({ card }) => (
               <span key={card.id} className="inline-flex items-center gap-1">
@@ -300,36 +324,46 @@ function DeckSummaryCard({
           ) : (
             <span>{t.decks.noLegends}</span>
           )}
-        </span>
-      </Link>
-      <dl className="grid grid-cols-3 gap-2 border-t border-line/60 pt-3 text-xs">
-        <div>
-          <dt className="hud-label">{t.decks.mainDeck}</dt>
-          <dd className="mt-1 font-mono tabular-nums">{formatInt(analysis.mainCount)}</dd>
-        </div>
-        <div>
-          <dt className="hud-label">{t.decks.owned}</dt>
-          <dd className="mt-1 font-mono tabular-nums">
-            {formatInt(shortfall.ownedCopies)}/{formatInt(shortfall.totalCopies)}
-          </dd>
-        </div>
-        <div>
-          <dt className="hud-label">{t.decks.toBuy}</dt>
-          <dd className={`mt-1 font-mono tabular-nums ${shortfall.missingCopies === 0 && shortfall.totalCopies > 0 ? "text-gain" : ""}`}>
-            {shortfall.missingCopies === 0 ? "—" : formatMoney(shortfall.missingCost)}
-          </dd>
-        </div>
-      </dl>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] text-muted">{t.decks.updated(updated)}</span>
-        <span className="flex gap-2">
-          <button type="button" className={`${buttonClass} h-8 px-2 text-xs`} disabled={pending} onClick={onDuplicate}>
+        </p>
+        <dl className="grid grid-cols-3 gap-2 border-t border-line/60 pt-3 text-xs">
+          <div>
+            <dt className="hud-label">{t.decks.mainDeck}</dt>
+            <dd className="mt-1 font-mono tabular-nums">{formatInt(analysis.mainCount)}</dd>
+          </div>
+          <div>
+            <dt className="hud-label">{t.decks.owned}</dt>
+            <dd className="mt-1 font-mono tabular-nums">
+              {formatInt(shortfall.ownedCopies)}/{formatInt(shortfall.totalCopies)}
+            </dd>
+          </div>
+          <div>
+            <dt className="hud-label">{t.decks.toBuy}</dt>
+            <dd className={`mt-1 font-mono tabular-nums ${shortfall.missingCopies === 0 && shortfall.totalCopies > 0 ? "text-gain" : ""}`}>
+              {shortfall.missingCopies === 0 ? "—" : formatMoney(shortfall.missingCost)}
+            </dd>
+          </div>
+        </dl>
+        <p className="text-[11px] text-muted">{t.decks.updated(updated)}</p>
+
+        <div className="mt-auto flex flex-wrap items-center gap-2">
+          {/* Lien étiré : son ::after couvre toute la carte, les autres boutons passent au-dessus (z-10). */}
+          <Link
+            href={`/decks?deck=${encodeURIComponent(deck.id)}`}
+            aria-label={t.decks.open(deck.name)}
+            className={`${primaryClass} h-9 flex-1 gap-1.5 after:absolute after:inset-0 after:content-['']`}
+          >
+            {t.decks.edit}
+            <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 8h9M8.5 4 12.5 8l-4 4" />
+            </svg>
+          </Link>
+          <button type="button" className={secondary} disabled={pending} onClick={onDuplicate}>
             {t.decks.duplicate}
           </button>
           {confirming ? (
             <button
               type="button"
-              className={`${buttonClass} h-8 border-danger px-2 text-xs text-danger hover:border-danger hover:text-danger`}
+              className={`${secondary} border-danger text-danger hover:border-danger hover:text-danger`}
               disabled={pending}
               onClick={onDelete}
               onBlur={() => setConfirming(false)}
@@ -338,11 +372,11 @@ function DeckSummaryCard({
               {t.decks.confirmDelete}
             </button>
           ) : (
-            <button type="button" className={`${buttonClass} h-8 px-2 text-xs`} disabled={pending} onClick={() => setConfirming(true)}>
+            <button type="button" className={secondary} disabled={pending} onClick={() => setConfirming(true)}>
               {t.decks.delete}
             </button>
           )}
-        </span>
+        </div>
       </div>
     </li>
   );
@@ -478,6 +512,13 @@ function DeckEditor({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const saver = useDeckSaver(deck.id, onSaved);
   const browserRef = useRef<HTMLElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  // Deck tout juste créé : on propose de le nommer d'abord (champ sélectionné).
+  useEffect(() => {
+    if (deck.cards.length === 0 && deck.createdAt === deck.updatedAt) nameRef.current?.select();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seulement à l'ouverture de l'éditeur
+  }, []);
 
   const analysis = useMemo(() => analyzeDeck(entries, index.cardsById), [entries, index.cardsById]);
   const allLines = useMemo(() => [...analysis.legends, ...analysis.main], [analysis]);
@@ -579,18 +620,24 @@ function DeckEditor({
             )}
           </span>
         </div>
-        <label className="block">
-          <span className="sr-only">{t.decks.name}</span>
-          <input
-            className="w-full border-b border-transparent bg-transparent pb-1 text-2xl text-yellow outline-none hover:border-line focus:border-cyan sm:text-3xl"
-            value={name}
+        <label className="flex max-w-2xl flex-col gap-1.5">
+          <span className="hud-label">{t.decks.name}</span>
+          <span className="flex items-center gap-2 border border-line bg-panel px-3 transition hover:border-muted focus-within:border-cyan">
+            <input
+              ref={nameRef}
+              className="h-12 min-w-0 flex-1 bg-transparent text-xl text-yellow outline-none sm:text-2xl"
+              value={name}
             maxLength={60}
             onChange={(event) => setName(event.target.value)}
             onBlur={commitName}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") event.currentTarget.blur();
-            }}
-          />
+              onKeyDown={(event) => {
+                if (event.key === "Enter") event.currentTarget.blur();
+              }}
+            />
+            <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M11 2.5 13.5 5 6 12.5H3.5V10z" />
+            </svg>
+          </span>
         </label>
         {deleteError ? (
           <p role="alert" className="text-sm text-danger">
