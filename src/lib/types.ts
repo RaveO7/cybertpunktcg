@@ -98,7 +98,7 @@ export type CatalogDTO = {
   hasPrices: boolean;
 };
 
-export type CollectionFilter = "all" | "owned" | "missing" | "duplicates";
+export type CollectionFilter = "all" | "owned" | "missing" | "duplicates" | "extras";
 
 export type SortKey =
   | "default"

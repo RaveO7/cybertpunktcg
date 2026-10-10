@@ -196,6 +196,10 @@ export type Shortfall = {
   missingCost: number;
   /** Exemplaires manquants sans prix Cardmarket (non inclus dans missingCost). */
   unpricedCopies: number;
+  /** Prix du deck complet (tous les exemplaires cotés, possédés ou non). */
+  deckCost: number;
+  /** Exemplaires du deck sans prix Cardmarket (non inclus dans deckCost). */
+  deckUnpricedCopies: number;
 };
 
 /**
@@ -207,7 +211,16 @@ export function deckShortfall(
   printingsByCard: Map<string, PrintingDTO[]>,
   owned: Map<string, number>,
 ): Shortfall {
-  const result: Shortfall = { lines: [], totalCopies: 0, ownedCopies: 0, missingCopies: 0, missingCost: 0, unpricedCopies: 0 };
+  const result: Shortfall = {
+    lines: [],
+    totalCopies: 0,
+    ownedCopies: 0,
+    missingCopies: 0,
+    missingCost: 0,
+    unpricedCopies: 0,
+    deckCost: 0,
+    deckUnpricedCopies: 0,
+  };
   for (const line of lines) {
     const have = Math.min(owned.get(line.card.id) ?? 0, line.quantity);
     const missing = line.quantity - have;
@@ -226,6 +239,8 @@ export function deckShortfall(
     result.missingCopies += missing;
     if (cost != null) result.missingCost += cost;
     else result.unpricedCopies += missing;
+    if (cheapest) result.deckCost += cheapest.price * line.quantity;
+    else result.deckUnpricedCopies += line.quantity;
   }
   return result;
 }

@@ -155,6 +155,9 @@ describe("collection et prix", () => {
     assert.equal(result.missingCopies, 1 + 2);
     assert.equal(result.missingCost, 0.8);
     assert.equal(result.unpricedCopies, 2);
+    // Deck complet : 3 × 0,80 + 3 × 12,00 ; les 2 u1 ne sont pas cotés.
+    assert.equal(Math.round(result.deckCost * 100), 3840);
+    assert.equal(result.deckUnpricedCopies, 2);
     const green = result.lines.find((line) => line.card.id === "green4")!;
     assert.equal(green.missing, 0);
     assert.equal(green.cost, 0);

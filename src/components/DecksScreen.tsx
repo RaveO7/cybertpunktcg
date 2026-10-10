@@ -572,7 +572,6 @@ function DeckEditor({
       ) : null}
 
       <ValidationPanel analysis={analysis} />
-      <CollectionSummary shortfall={shortfall} />
 
       {/* Téléphone : un onglet à la fois. Bureau : deck et recherche côte à côte. */}
       <div className="flex border border-line lg:hidden" role="tablist" aria-label={t.decks.title}>
@@ -601,7 +600,7 @@ function DeckEditor({
             onBrowse={() => setPane("add")}
           />
           {analysis.mainCount > 0 ? <CostCurve curve={analysis.curve} /> : null}
-          <MissingCards shortfall={shortfall} />
+          <DeckRecap shortfall={shortfall} />
         </div>
         <div className={`${pane === "add" ? "flex" : "hidden"} min-w-0 flex-col lg:sticky lg:top-4 lg:flex`}>
           <CardPicker
@@ -710,30 +709,14 @@ function Check({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-function CollectionSummary({ shortfall }: { shortfall: Shortfall }) {
-  const { t } = useI18n();
-  if (shortfall.totalCopies === 0) return null;
-  const complete = shortfall.missingCopies === 0;
-  return (
-    <section className="grid grid-cols-3 gap-2 sm:gap-3">
-      <Stat label={t.decks.owned} value={`${formatInt(shortfall.ownedCopies)}/${formatInt(shortfall.totalCopies)}`} tone={complete ? "gain" : undefined} />
-      <Stat label={t.decks.missing} value={formatInt(shortfall.missingCopies)} />
-      <Stat
-        label={t.decks.toBuy}
-        value={complete ? t.decks.complete : formatMoney(shortfall.missingCost)}
-        hint={shortfall.unpricedCopies > 0 ? t.decks.unpriced(shortfall.unpricedCopies) : undefined}
-        tone={complete ? "gain" : undefined}
-      />
-    </section>
-  );
-}
-
 function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "gain" }) {
   return (
-    <div className="min-w-0 border border-line bg-panel px-3 py-3 sm:px-4">
-      <p className="truncate text-[11px] tracking-[0.12em] text-muted uppercase sm:text-xs">{label}</p>
-      <p className={`mt-2 truncate text-xl sm:text-2xl ${tone === "gain" ? "text-gain" : "text-foreground"}`}>{value}</p>
-      {hint ? <p className="mt-0.5 truncate text-[11px] text-muted">{hint}</p> : null}
+    <div className="flex min-w-0 flex-col justify-between border border-line bg-panel px-3 py-3 sm:px-4">
+      <p className="text-[11px] leading-tight tracking-[0.12em] text-muted uppercase sm:text-xs">{label}</p>
+      <div className="mt-2">
+        <p className={`truncate text-xl sm:text-2xl ${tone === "gain" ? "text-gain" : "text-foreground"}`}>{value}</p>
+        {hint ? <p className="mt-0.5 truncate text-[11px] text-muted">{hint}</p> : null}
+      </div>
     </div>
   );
 }
@@ -934,47 +917,76 @@ async function copyText(text: string) {
   }
 }
 
-function MissingCards({ shortfall }: { shortfall: Shortfall }) {
+/** Récapitulatif en fin de deck : manquantes, prix du deck complet, reste à acheter et liste d'achat. */
+function DeckRecap({ shortfall }: { shortfall: Shortfall }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState<boolean | null>(null);
+  if (shortfall.totalCopies === 0) return null;
   const missing = shortfall.lines.filter((line) => line.missing > 0).sort((a, b) => (b.cost ?? -1) - (a.cost ?? -1));
-  if (missing.length === 0) return null;
+  const complete = missing.length === 0;
   const text = missing.map((line) => `${line.missing} ${cardLabel(line.card)}`).join("\n");
   return (
-    <section className="border border-line bg-panel" aria-labelledby="deck-missing">
-      <div className="flex flex-wrap items-center gap-2 border-b border-line/60 px-3 py-2 sm:px-4">
-        <h2 id="deck-missing" className="hud-label">
-          {t.decks.missingTitle} · {formatInt(shortfall.missingCopies)}
-        </h2>
-        <span className="ml-auto flex items-center gap-2">
-          {copied != null ? (
-            <span className={`text-xs ${copied ? "text-gain" : "text-danger"}`} aria-live="polite">
-              {copied ? t.decks.copied : t.decks.copyFailed}
-            </span>
-          ) : null}
-          <button type="button" className={`${buttonClass} h-8 px-2 text-xs`} onClick={() => void copyText(text).then(setCopied)}>
-            {t.decks.copyList}
-          </button>
-        </span>
+    <section className="flex flex-col gap-3" aria-labelledby="deck-recap">
+      <h2 id="deck-recap" className="hud-label">
+        {t.decks.recapTitle}
+      </h2>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <Stat
+          label={t.decks.missingCards}
+          value={`${formatInt(shortfall.missingCopies)}/${formatInt(shortfall.totalCopies)}`}
+          tone={complete ? "gain" : undefined}
+        />
+        <Stat
+          label={t.decks.deckCost}
+          value={formatMoney(shortfall.deckCost)}
+          hint={shortfall.deckUnpricedCopies > 0 ? t.decks.unpriced(shortfall.deckUnpricedCopies) : undefined}
+        />
+        <Stat
+          label={t.decks.toBuy}
+          value={complete ? t.decks.complete : formatMoney(shortfall.missingCost)}
+          hint={shortfall.unpricedCopies > 0 ? t.decks.unpriced(shortfall.unpricedCopies) : undefined}
+          tone={complete ? "gain" : undefined}
+        />
       </div>
-      <ul className="text-sm">
-        {missing.map((line) => (
-          <li key={line.card.id} className="flex items-center gap-3 border-t border-line/40 px-3 py-1.5 first:border-t-0 sm:px-4">
-            <span className="w-6 shrink-0 font-mono text-xs tabular-nums text-muted">×{line.missing}</span>
-            <span className="min-w-0 flex-1 truncate">{cardLabel(line.card)}</span>
-            <span className="shrink-0 font-mono text-xs tabular-nums text-muted">
-              {line.unitPrice != null ? t.decks.priceEach(formatMoney(line.unitPrice)) : ""}
+      {complete ? (
+        <p className="border border-gain/45 bg-gain/10 px-3 py-2 text-sm text-gain sm:px-4">{t.decks.allOwned}</p>
+      ) : (
+        <div className="border border-line bg-panel">
+          <div className="flex flex-wrap items-center gap-2 border-b border-line/60 px-3 py-2 sm:px-4">
+            <h3 className="hud-label">
+              {t.decks.missingTitle} · {formatInt(shortfall.missingCopies)}
+            </h3>
+            <span className="ml-auto flex items-center gap-2">
+              {copied != null ? (
+                <span className={`text-xs ${copied ? "text-gain" : "text-danger"}`} aria-live="polite">
+                  {copied ? t.decks.copied : t.decks.copyFailed}
+                </span>
+              ) : null}
+              <button type="button" className={`${buttonClass} h-8 px-2 text-xs`} onClick={() => void copyText(text).then(setCopied)}>
+                {t.decks.copyList}
+              </button>
             </span>
-            <span className="w-20 shrink-0 text-right font-mono text-xs tabular-nums">
-              {line.cost != null ? formatMoney(line.cost) : t.decks.noPrice}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <p className="flex items-center justify-between gap-3 border-t border-line/60 px-3 py-2 text-sm sm:px-4">
-        <span className="text-[11px] text-muted">{t.decks.missingHint}</span>
-        <span className="font-mono tabular-nums">{formatMoney(shortfall.missingCost)}</span>
-      </p>
+          </div>
+          <ul className="text-sm">
+            {missing.map((line) => (
+              <li key={line.card.id} className="flex items-center gap-3 border-t border-line/40 px-3 py-1.5 first:border-t-0 sm:px-4">
+                <span className="w-6 shrink-0 font-mono text-xs tabular-nums text-muted">×{line.missing}</span>
+                <span className="min-w-0 flex-1 truncate">{cardLabel(line.card)}</span>
+                <span className="hidden shrink-0 font-mono text-xs tabular-nums text-muted sm:inline">
+                  {line.unitPrice != null ? t.decks.priceEach(formatMoney(line.unitPrice)) : ""}
+                </span>
+                <span className="w-20 shrink-0 text-right font-mono text-xs tabular-nums">
+                  {line.cost != null ? formatMoney(line.cost) : t.decks.noPrice}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="flex items-center justify-between gap-3 border-t border-line/60 px-3 py-2 text-sm sm:px-4">
+            <span className="text-[11px] text-muted">{t.decks.missingHint}</span>
+            <span className="font-mono tabular-nums">{formatMoney(shortfall.missingCost)}</span>
+          </p>
+        </div>
+      )}
     </section>
   );
 }

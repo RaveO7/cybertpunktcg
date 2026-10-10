@@ -357,7 +357,7 @@ export function matchesSearch(card: CardDTO, printing: PrintingDTO, query: strin
   return tokens.every((token) => tokenMatches(card, printing, token));
 }
 
-function matchesCollection(owned: Ownership, filter: CollectionFilter) {
+function matchesCollection(owned: Ownership, filter: CollectionFilter, hasExtras: boolean) {
   switch (filter) {
     case "owned":
       return owned.qty >= 1;
@@ -365,6 +365,8 @@ function matchesCollection(owned: Ownership, filter: CollectionFilter) {
       return owned.qty === 0;
     case "duplicates":
       return owned.qty > 1;
+    case "extras":
+      return owned.qty >= 1 && hasExtras;
     default:
       return true;
   }
@@ -497,6 +499,8 @@ export function filterPrintings(
   agg: Map<string, Ownership>,
   filters: Filters,
   checklist = releasedChecklist(printings, filters.set),
+  /** Cartes au-delà de la limite par deck (cardsWithExtras, src/lib/trades.ts), pour le filtre « extras ». */
+  extraCards: ReadonlySet<string> = new Set(),
 ) {
   const allowed = checklist ? new Set(checklist.map((printing) => printing.id)) : null;
   const source = checklist ?? printings;
@@ -532,7 +536,7 @@ export function filterPrintings(
     if (filters.artists.length > 0 && !filters.artists.includes(printing.artist ?? "")) return false;
     if (filters.rarity && (printing.rarity ?? "Inconnue") !== filters.rarity) return false;
     const owned = ownershipOf(printing.id, agg);
-    if (!matchesCollection(owned, filters.collection)) return false;
+    if (!matchesCollection(owned, filters.collection, extraCards.has(card.id))) return false;
     if (filters.condition && !owned.conditions.includes(filters.condition)) return false;
     if (!matchesSearch(card, printing, filters.q)) return false;
     return true;
@@ -1158,7 +1162,11 @@ export function parseFilters(
     rarity: params.get("rarity") ?? "",
     // Sans paramètre (ou valeur inconnue) : la préférence « filtre collection » de l'utilisateur.
     collection:
-      collection === "all" || collection === "owned" || collection === "missing" || collection === "duplicates"
+      collection === "all" ||
+      collection === "owned" ||
+      collection === "missing" ||
+      collection === "duplicates" ||
+      collection === "extras"
         ? collection
         : base.collection,
     condition: params.get("condition") ?? "",

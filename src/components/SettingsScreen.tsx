@@ -63,6 +63,7 @@ export function SettingsScreen() {
     { value: "owned", label: t.filters.owned },
     { value: "missing", label: t.filters.missing },
     { value: "duplicates", label: t.filters.duplicates },
+    { value: "extras", label: t.filters.extras },
   ];
 
   const panelOptions: { value: FiltersPanelMode; label: string }[] = [

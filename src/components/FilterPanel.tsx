@@ -39,6 +39,7 @@ export function FilterPanel({
     owned: t.filters.helpOwned,
     missing: t.filters.helpMissing,
     duplicates: t.filters.helpDuplicates,
+    extras: t.filters.helpExtras,
   };
 
   const { cardSets, sealedSets } = useMemo(
@@ -162,6 +163,7 @@ export function FilterPanel({
             { value: "owned", label: t.filters.owned },
             { value: "missing", label: t.filters.missing },
             { value: "duplicates", label: t.filters.duplicates },
+            { value: "extras", label: t.filters.extras },
           ]}
         />
         <p className="mt-1 text-xs text-muted">{collectionHelp[filters.collection]}</p>

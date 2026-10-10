@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useSharedBinder } from "@/components/SharedBinderProvider";
 import { useI18n } from "@/components/LocaleProvider";
+import { TradesPanel, tradesHref, useTradeList } from "@/components/TradesPanel";
 import {
   aggregateCollection,
   computeProgress,
@@ -19,6 +20,7 @@ import {
   FRENCH_SET_ID,
   MAIN_SET_CODE,
 } from "@/lib/reference-data";
+import type { Ownership } from "@/lib/types";
 
 const SCOPES = [
   { id: "en", checklist: ENGLISH_SET_ID, language: "en" as const },
@@ -30,9 +32,11 @@ export function SharedBinderHome() {
   const { t } = useI18n();
 
   const agg = useMemo(() => {
-    if (!data) return new Map();
+    if (!data) return new Map<string, Ownership>();
     return aggregateCollection(data.items);
   }, [data]);
+
+  const trades = useTradeList(data?.catalog.printings, data?.catalog.cards, agg);
 
   const scopes = useMemo(() => {
     if (!data) return [];
@@ -95,6 +99,14 @@ export function SharedBinderHome() {
         >
           {t.share.openOwned}
         </Link>
+        {trades && trades.lines.length > 0 ? (
+          <Link
+            href={tradesHref(cardsHref)}
+            className="inline-flex h-12 items-center border border-yellow px-4 text-sm text-yellow hover:bg-yellow/10"
+          >
+            {t.share.openTrades}
+          </Link>
+        ) : null}
         <Link
           href={cardsHref}
           className="inline-flex h-12 items-center border border-line px-4 text-sm text-muted hover:border-cyan hover:text-foreground"
@@ -102,6 +114,14 @@ export function SharedBinderHome() {
           {t.share.openAll}
         </Link>
       </div>
+
+      {trades ? (
+        <section className="mt-10">
+          <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-foreground">{t.trades.title}</h2>
+          <p className="mt-1 mb-3 text-sm text-muted">{t.share.tradesHint(data.ownerName)}</p>
+          <TradesPanel list={trades} hasPrices={data.catalog.hasPrices} cardsPath={cardsHref} />
+        </section>
+      ) : null}
 
       <p className="mt-8 text-xs text-muted">
         {t.share.editionsNote} ({BETA_SET_CODE} / {MAIN_SET_CODE})
