@@ -597,6 +597,8 @@ const fr = {
     ramOnly: "Compatibles avec la RAM",
     noResults: "Aucune carte ne correspond.",
     moreResults: (n: number) => `${n} autres cartes : affinez la recherche.`,
+    resultCount: (n: number) => (n > 1 ? `${n} cartes` : `${n} carte`),
+    showMore: (n: number) => `Afficher plus (${n})`,
   },
   chart: {
     label: "Évolution",
@@ -1192,6 +1194,8 @@ const en: MessagesShape = {
     ramOnly: "RAM compatible",
     noResults: "No matching cards.",
     moreResults: (n: number) => `${n} more cards: refine the search.`,
+    resultCount: (n: number) => (n === 1 ? "1 card" : `${n} cards`),
+    showMore: (n: number) => `Show more (${n})`,
   },
   chart: {
     label: "Trend",
@@ -1778,6 +1782,8 @@ const de: MessagesShape = {
     ramOnly: "RAM-kompatibel",
     noResults: "Keine passenden Karten.",
     moreResults: (n: number) => `${n} weitere Karten: Suche verfeinern.`,
+    resultCount: (n: number) => (n === 1 ? "1 Karte" : `${n} Karten`),
+    showMore: (n: number) => `Mehr anzeigen (${n})`,
   },
   chart: {
     label: "Trend",
@@ -2364,6 +2370,8 @@ const es: MessagesShape = {
     ramOnly: "Compatibles con la RAM",
     noResults: "Ninguna carta coincide.",
     moreResults: (n: number) => `${n} cartas más: afina la búsqueda.`,
+    resultCount: (n: number) => (n === 1 ? "1 carta" : `${n} cartas`),
+    showMore: (n: number) => `Mostrar más (${n})`,
   },
   chart: {
     label: "Evolución",
@@ -2950,6 +2958,8 @@ const it: MessagesShape = {
     ramOnly: "Compatibili con la RAM",
     noResults: "Nessuna carta corrisponde.",
     moreResults: (n: number) => `Altre ${n} carte: affina la ricerca.`,
+    resultCount: (n: number) => (n === 1 ? "1 carta" : `${n} carte`),
+    showMore: (n: number) => `Mostra altro (${n})`,
   },
   chart: {
     label: "Andamento",
