@@ -310,7 +310,10 @@ function DeckSummaryCard({
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="min-w-0 truncate text-lg text-foreground group-hover:text-cyan">{deck.name}</h2>
+          <h2 className="flex min-w-0 items-center gap-1.5 text-lg text-foreground group-hover:text-cyan">
+            <span className="truncate">{deck.name}</span>
+            <PencilIcon className="h-4 w-4 shrink-0 text-muted group-hover:text-cyan" />
+          </h2>
           <ValidityBadge analysis={analysis} />
         </div>
         <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
@@ -379,6 +382,15 @@ function DeckSummaryCard({
         </div>
       </div>
     </li>
+  );
+}
+
+function PencilIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M11 2.5 13.5 5 6 12.5H3.5V10z" />
+      <path d="m9.5 4 2.5 2.5" />
+    </svg>
   );
 }
 
@@ -634,9 +646,7 @@ function DeckEditor({
                 if (event.key === "Enter") event.currentTarget.blur();
               }}
             />
-            <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
-              <path d="M11 2.5 13.5 5 6 12.5H3.5V10z" />
-            </svg>
+            <PencilIcon className="h-5 w-5 shrink-0 text-yellow/80" />
           </span>
         </label>
         {deleteError ? (
@@ -1745,7 +1755,11 @@ function CardPreview({
                   type="button"
                   className={`${primaryClass} h-11 w-full`}
                   disabled={blockReason !== null}
-                  onClick={() => onQuantity(card.id, 1)}
+                  onClick={() => {
+                    // Ajout fait : retour direct à la liste, sans clic de fermeture en plus.
+                    onQuantity(card.id, 1);
+                    onClose();
+                  }}
                 >
                   {t.decks.addToDeck}
                 </button>
