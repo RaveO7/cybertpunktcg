@@ -22,6 +22,7 @@ model User {
   oauthAccounts OAuthAccount[]
   collectionShare CollectionShare?
   portfolioHistory PortfolioHistoryCache[]
+  wishlist      WishlistItem[]
 }
 
 /// Lien secret pour consulter le classeur en lecture seule (sans compte).
@@ -172,6 +173,7 @@ model Printing {
   items             CollectionItem[]
   prices            Price[]
   snapshots         PriceSnapshot[]
+  wishlistItems     WishlistItem[]
 
   @@unique([setId, collectorNumber, language])
   @@index([cardId])
@@ -206,6 +208,27 @@ model CollectionItem {
 
   @@unique([userId, printingId, conditionId])
   @@index([userId])
+  @@index([printingId])
+}
+
+/// Carte souhaitée, avec un prix cible optionnel (EUR, comparé au prix tendance Cardmarket).
+/// `alertAt` est posé quand le prix passe sous la cible (cron quotidien des prix) et effacé
+/// quand il repasse au-dessus ; `alertSeen` vaut false tant que l'utilisateur n'a pas vu l'alerte.
+model WishlistItem {
+  id          String    @id @default(cuid())
+  userId      String
+  printingId  String
+  targetPrice Decimal?
+  notes       String?
+  alertAt     DateTime?
+  alertPrice  Decimal?
+  alertSeen   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  printing    Printing  @relation(fields: [printingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, printingId])
   @@index([printingId])
 }
 

@@ -6,15 +6,17 @@ import { useEffect, useState } from "react";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
+import { useWishlist } from "@/components/WishlistProvider";
 
-type NavIcon = "dashboard" | "cards" | "investment" | "howto" | "binder";
+type NavIcon = "dashboard" | "cards" | "investment" | "wishlist" | "howto" | "binder";
 
-type NavLink = { href: string; label: string; match: string; icon: NavIcon };
+type NavLink = { href: string; label: string; match: string; icon: NavIcon; badge?: number };
 
 function useNavigation() {
   const pathname = usePathname();
   const { cardsHref } = useBrowseSelection();
   const { user, ready } = useCollection();
+  const { unseenAlerts } = useWishlist();
   const { t } = useI18n();
   const sharedMatch = pathname.match(/^\/classeur\/([^/]+)/);
   const isSharedView = Boolean(sharedMatch);
@@ -35,6 +37,7 @@ function useNavigation() {
         { href: "/", label: t.nav.dashboard, match: "/", icon: "dashboard" },
         { href: cardsHref, label: t.nav.cards, match: "/cards", icon: "cards" },
         { href: "/investissement", label: t.nav.investment, match: "/investissement", icon: "investment" },
+        { href: "/souhaits", label: t.nav.wishlist, match: "/souhaits", icon: "wishlist", badge: unseenAlerts },
         { href: "/comment-jouer", label: t.nav.howto, match: "/comment-jouer", icon: "howto" },
       ];
 
@@ -69,6 +72,7 @@ export function Header() {
                   aria-current={active ? "page" : undefined}
                 >
                   {link.label}
+                  <NavBadge count={link.badge} label={t.wishlist.newAlerts} />
                 </Link>
               );
             })}
@@ -127,7 +131,10 @@ export function BottomNav() {
                 aria-current={active ? "page" : undefined}
               >
                 {active ? <span className="absolute inset-x-4 top-0 h-0.5 bg-yellow" aria-hidden="true" /> : null}
-                <NavGlyph icon={link.icon} />
+                <span className="relative">
+                  <NavGlyph icon={link.icon} />
+                  <NavBadge count={link.badge} label={t.wishlist.newAlerts} floating />
+                </span>
                 <span className="max-w-full truncate text-[11px] leading-none">{link.label}</span>
               </Link>
             </li>
@@ -164,6 +171,21 @@ function useKeyboardOpen() {
   return open;
 }
 
+/** Pastille du nombre d'alertes de prix non vues. */
+function NavBadge({ count, label, floating = false }: { count?: number; label: (n: number) => string; floating?: boolean }) {
+  if (!count) return null;
+  return (
+    <span
+      className={`grid h-4 min-w-4 place-items-center bg-danger px-1 font-mono text-[10px] leading-none text-white ${
+        floating ? "absolute -right-2.5 -top-1.5" : "ml-1.5 inline-grid align-middle"
+      }`}
+    >
+      <span aria-hidden="true">{count > 99 ? "99+" : count}</span>
+      <span className="sr-only">{label(count)}</span>
+    </span>
+  );
+}
+
 function NavGlyph({ icon }: { icon: NavIcon }) {
   const common = {
     "aria-hidden": true,
@@ -194,6 +216,12 @@ function NavGlyph({ icon }: { icon: NavIcon }) {
           <path d="M3.5 20.5h17" />
           <path d="m4.5 15.5 5-5 4 3.5 6-7" />
           <path d="M15.5 7h4v4" />
+        </svg>
+      );
+    case "wishlist":
+      return (
+        <svg {...common}>
+          <path d="M12 20s-7.5-4.6-7.5-10.1A4.2 4.2 0 0 1 12 7.4a4.2 4.2 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z" />
         </svg>
       );
     case "howto":

@@ -65,6 +65,19 @@ export type CollectionItemDTO = {
   addedAt: string;
 };
 
+export type WishlistItemDTO = {
+  id: string;
+  printingId: string;
+  /** Prix cible en EUR (2 décimales), null = simple suivi sans alerte. */
+  targetPrice: string | null;
+  notes: string | null;
+  /** Date à laquelle le prix est passé sous la cible (null si la cible n'est pas atteinte). */
+  alertAt: string | null;
+  alertPrice: string | null;
+  alertSeen: boolean;
+  createdAt: string;
+};
+
 export type CatalogDTO = {
   sets: SetDTO[];
   conditions: ConditionDTO[];

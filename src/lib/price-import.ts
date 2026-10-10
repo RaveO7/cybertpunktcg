@@ -21,6 +21,7 @@ import {
   type SealedProduct,
 } from "./cardmarket-sealed";
 import { shiftUtcDay, utcDay, utcDayKey } from "./price-history";
+import { evaluateWishlistAlerts } from "./wishlist";
 
 const DOWNLOAD_BASE = "https://downloads.s3.cardmarket.com/productCatalog";
 const DEFAULT_GAME_ID = 23;
@@ -269,6 +270,9 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
 
   await prisma.priceSource.update({ where: { id: source.id }, data: { guideCreatedAt: guideDate } });
 
+  // Nouveaux prix : signale les cartes souhaitées passées sous leur prix cible.
+  const wishlistAlerts = await evaluateWishlistAlerts(prisma);
+
   return {
     status: "imported",
     report: {
@@ -289,6 +293,7 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
       snapshotDay: utcDayKey(today),
       snapshotsWritten,
       baselinesWritten,
+      wishlistAlerts,
       expansions: report.expansions.map((entry) => ({
         expansion: entry.key,
         set: entry.setCode,

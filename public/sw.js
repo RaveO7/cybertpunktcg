@@ -16,7 +16,7 @@ const USER_CACHE = `cptcg-user-${VERSION}`;
 const IMAGES_CACHE = `cptcg-images-${VERSION}`;
 const KNOWN_CACHES = [SHELL_CACHE, STATIC_CACHE, DATA_CACHE, USER_CACHE, IMAGES_CACHE];
 
-const SHELL_PAGES = ["/", "/cards", "/investissement", "/comment-jouer", "/parametres"];
+const SHELL_PAGES = ["/", "/cards", "/investissement", "/souhaits", "/comment-jouer", "/parametres"];
 const SHELL_ASSETS = ["/manifest.webmanifest", "/icons/icon-192.png?v=2", "/icons/icon-512.png?v=2"];
 
 // Au-delà, on garde la copie en cache et la réponse réseau la mettra à jour en arrière-plan.
@@ -24,7 +24,7 @@ const NETWORK_TIMEOUT_MS = 4000;
 // Les assets de chaque déploiement s'accumulent : on ne garde que les plus récents.
 const STATIC_MAX_ENTRIES = 400;
 
-const USER_API = ["/api/auth/session", "/api/collection", "/api/stats", "/api/investment/history", "/api/share"];
+const USER_API = ["/api/auth/session", "/api/collection", "/api/stats", "/api/investment/history", "/api/share", "/api/wishlist"];
 const PUBLIC_API = ["/api/catalog", "/api/share/"];
 const SESSION_CHANGES = ["/api/auth/login", "/api/auth/logout", "/api/auth/register"];
 

@@ -13,6 +13,7 @@ import { baseCollectorNumber, formatInt, formatMoney, formatPercent, priceMoveme
 import { CURRENCIES } from "@/lib/parse";
 import { ICONIC_GRADIENT_SOFT, isIconicRarity, rarityColor } from "@/lib/rarity-color";
 import { CardImage } from "@/components/CardImage";
+import { WishlistPanel } from "@/components/WishlistPanel";
 
 const fieldClass =
   "h-10 w-full border border-line bg-background px-2.5 text-sm outline-none transition focus:border-cyan focus-visible:ring-1 focus-visible:ring-cyan/70";
@@ -812,6 +813,8 @@ export function CardModal({
                 </form>
               ) : null}
             </section>
+
+            {!readOnly && onSave ? <WishlistPanel printingId={printing.id} marketPrice={market} /> : null}
 
             <footer className="order-8 flex flex-col gap-1.5 text-[13px] text-muted md:order-none md:flex-row md:flex-wrap md:items-center md:gap-x-7 md:gap-y-2">
               {printing.artist ? (

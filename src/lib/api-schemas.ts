@@ -145,6 +145,18 @@ export const importSchema = z.object({
     .refine((lines) => lines.length > 0, "Aucune carte à importer."),
 });
 
+/** Liste de souhaits : prix cible en EUR (vide ou null = pas d'alerte). */
+export const wishlistSaveSchema = z.object({
+  printingId: id,
+  targetPrice: priceSchema,
+  notes: notesSchema,
+});
+
+export const wishlistPatchSchema = z.object({
+  targetPrice: priceSchema,
+  notes: notesSchema,
+});
+
 export const shareSchema =z.object({ rotate: z.boolean().optional() }).nullable();
 
 export const shareTokenSchema = z.string().min(16).max(128);

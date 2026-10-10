@@ -764,6 +764,12 @@ export function priceMovement(current: number | null, previous: number | null): 
   return delta > 0 ? "up" : "down";
 }
 
+/** Vrai quand le prix du marché est au niveau du prix cible de la liste de souhaits ou en dessous. */
+export function wishlistTargetReached(target: number | null, price: number | null) {
+  if (target == null || price == null || !Number.isFinite(target) || !Number.isFinite(price) || price <= 0) return false;
+  return Math.round(price * 100) <= Math.round(target * 100);
+}
+
 export type InvestmentPerformance = "all" | "profit" | "loss" | "flat" | "unknown" | "rising" | "falling";
 
 export type InvestmentLine = {
