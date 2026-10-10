@@ -440,6 +440,12 @@ describe("sortPrintings", () => {
     assert.deepEqual(sort("missing-first", agg), ["pb1", "p9", "p9a", "p10", "p9b"]);
   });
 
+  it("quantité possédée : croissante / décroissante, égalités par numéro", () => {
+    const agg = own([["p10", 1], ["p9b", 3], ["pb1", 1]]);
+    assert.deepEqual(sort("qty-asc", agg), ["p9", "p9a", "p10", "pb1", "p9b"]);
+    assert.deepEqual(sort("qty-desc", agg), ["p9b", "p10", "pb1", "p9", "p9a"]);
+  });
+
   it("ne modifie pas la liste reçue ; liste vide", () => {
     const before = ids(printings);
     sort("cost-desc");

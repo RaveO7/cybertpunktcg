@@ -106,6 +106,8 @@ export type SortKey =
   | "number-desc"
   | "cost-asc"
   | "cost-desc"
+  | "qty-asc"
+  | "qty-desc"
   | "name-asc"
   | "name-desc"
   | "rarity"

@@ -469,6 +469,11 @@ export function sortPrintings(
     if (sort === "cost-asc" || sort === "cost-desc") {
       return compareMarketPrice(a, b, sort === "cost-asc" ? 1 : -1);
     }
+    if (sort === "qty-asc" || sort === "qty-desc") {
+      const diff = ownershipOf(a.id, agg).qty - ownershipOf(b.id, agg).qty;
+      if (diff !== 0) return sort === "qty-asc" ? diff : -diff;
+      return compareNumber(a, b);
+    }
     if (sort === "name-asc" || sort === "name-desc") {
       const cardA = cards.get(a.cardId) ?? emptyCard(a.cardId);
       const cardB = cards.get(b.cardId) ?? emptyCard(b.cardId);
@@ -1175,6 +1180,8 @@ function isSortKey(value: string | null): value is SortKey {
     value === "number-desc" ||
     value === "cost-asc" ||
     value === "cost-desc" ||
+    value === "qty-asc" ||
+    value === "qty-desc" ||
     value === "name-asc" ||
     value === "name-desc" ||
     value === "rarity" ||

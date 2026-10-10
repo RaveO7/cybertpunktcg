@@ -32,6 +32,8 @@ function sortOptions(t: ReturnType<typeof useI18n>["t"]): { value: SortKey; labe
     { value: "number-desc", label: t.cards.sortNumberDesc },
     { value: "cost-asc", label: t.cards.sortCostAsc },
     { value: "cost-desc", label: t.cards.sortCostDesc },
+    { value: "qty-asc", label: t.cards.sortQtyAsc },
+    { value: "qty-desc", label: t.cards.sortQtyDesc },
     { value: "name-asc", label: t.cards.sortNameAsc },
     { value: "name-desc", label: t.cards.sortNameDesc },
     { value: "rarity", label: t.cards.sortRarity },
