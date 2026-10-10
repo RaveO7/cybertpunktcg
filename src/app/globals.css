@@ -1157,3 +1157,28 @@ select option:disabled {
     transition: none;
   }
 }
+
+/* Éditeur de deck sur téléphone : l'onglet affiché glisse depuis son côté (Deck à gauche, Ajouter à droite). */
+@keyframes deck-pane-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+
+@keyframes deck-pane-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+}
+
+@media (max-width: 1023.98px) and (prefers-reduced-motion: no-preference) {
+  .deck-pane-from-right {
+    animation: deck-pane-from-right 180ms ease-out;
+  }
+
+  .deck-pane-from-left {
+    animation: deck-pane-from-left 180ms ease-out;
+  }
+}
