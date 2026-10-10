@@ -5,6 +5,8 @@ import {
   cheapestPrinting,
   deckShortfall,
   deckToText,
+  extensionsByCard,
+  OTHER_EXTENSION,
   ownedCopiesByCard,
   parseDeckText,
   type DeckEntry,
@@ -189,5 +191,22 @@ describe("export et import texte", () => {
       { cardId: "goro2", quantity: 1 },
       { cardId: "u4", quantity: 9 },
     ]);
+  });
+});
+
+describe("extensionsByCard", () => {
+  it("rattache extensions, versions FR et produits liés au bloc ; le reste va dans « Autres »", () => {
+    const result = extensionsByCard([
+      { cardId: "booster", setCode: "welcometonightcitybeta" },
+      { cardId: "fr", setCode: "welcometonightcityretail-fr" },
+      { cardId: "starter", setCode: "embracingpowerretailstarterdeck" },
+      { cardId: "promo", setCode: "PRM01" },
+      { cardId: "inconnue", setCode: "set2-nouveau" },
+      { cardId: "mixte", setCode: "set2-nouveau" },
+      { cardId: "mixte", setCode: "welcometonightcityretail" },
+    ]);
+    const names = (cardId: string) => [...result.get(cardId)!];
+    for (const cardId of ["booster", "fr", "starter", "promo", "mixte"]) assert.deepEqual(names(cardId), ["Welcome to Night City"]);
+    assert.deepEqual(names("inconnue"), [OTHER_EXTENSION]);
   });
 });

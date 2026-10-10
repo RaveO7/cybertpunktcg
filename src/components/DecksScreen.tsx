@@ -1,5 +1,6 @@
 "use client";
 
+import { useVirtualizer } from "@tanstack/react-virtual";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -14,6 +15,8 @@ import {
   compareDeckLines,
   deckShortfall,
   deckToText,
+  extensionsByCard,
+  OTHER_EXTENSION,
   isDeckCard,
   isLegal,
   isLegend,
@@ -31,7 +34,7 @@ import {
 import type { Messages } from "@/lib/i18n/messages";
 import { intlLocale } from "@/lib/i18n/messages";
 import { formatInt, formatMoney, normalizeText } from "@/lib/logic";
-import { COLOR_ORDER, TYPE_ORDER } from "@/lib/reference-data";
+import { BLOCKS, COLOR_ORDER, TYPE_ORDER } from "@/lib/reference-data";
 import type { CardDTO, CatalogDTO, DeckDTO, PrintingDTO } from "@/lib/types";
 
 type DeckPatch = { name?: string; cards?: DeckEntry[] };
@@ -108,7 +111,8 @@ function useDeckCatalog(catalog: CatalogDTO | null) {
     const cardsById = new Map<string, CardDTO>();
     const printingsByCard = new Map<string, PrintingDTO[]>();
     const preview = new Map<string, PrintingDTO>();
-    if (!catalog) return { cardsById, printingsByCard, preview, pool: [] as CardDTO[] };
+    const extensions = new Map<string, Set<string>>();
+    if (!catalog) return { cardsById, printingsByCard, preview, extensions, pool: [] as CardDTO[] };
     for (const card of catalog.cards) cardsById.set(card.id, card);
     for (const printing of catalog.printings) {
       printingsByCard.set(printing.cardId, [...(printingsByCard.get(printing.cardId) ?? []), printing]);
@@ -119,7 +123,7 @@ function useDeckCatalog(catalog: CatalogDTO | null) {
       if (!current || better) preview.set(printing.cardId, printing);
     }
     const pool = catalog.cards.filter(isDeckCard).sort((a, b) => compareDeckLines({ card: a, quantity: 1 }, { card: b, quantity: 1 }));
-    return { cardsById, printingsByCard, preview, pool };
+    return { cardsById, printingsByCard, preview, extensions: extensionsByCard(catalog.printings), pool };
   }, [catalog]);
 }
 
@@ -431,9 +435,17 @@ function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
   return { status, error, queue, retry: flush };
 }
 
-type BrowserFilters = { query: string; colors: string[]; type: string; ownedOnly: boolean; ramOnly: boolean };
+type BrowserFilters = {
+  query: string;
+  /** Nom d'un bloc de BLOCKS, OTHER_EXTENSION ou "" (toutes). */
+  extension: string;
+  colors: string[];
+  type: string;
+  ownedOnly: boolean;
+  ramOnly: boolean;
+};
 
-const DEFAULT_FILTERS: BrowserFilters = { query: "", colors: [], type: "", ownedOnly: false, ramOnly: true };
+const DEFAULT_FILTERS: BrowserFilters = { query: "", extension: "", colors: [], type: "", ownedOnly: false, ramOnly: true };
 
 /**
  * Éditeur : à gauche (bureau) les cartes à ajouter, qui défilent avec la page ; à droite le deck,
@@ -625,6 +637,7 @@ function DeckEditor({
         >
           <CardBrowser
             pool={index.pool}
+            extensions={index.extensions}
             filters={filters}
             onFilters={setFilters}
             analysis={analysis}
@@ -1159,11 +1172,10 @@ function ImportPanel({ cards, onApply, onClose }: { cards: CardDTO[]; onApply: (
   );
 }
 
-const PAGE_SIZE = 60;
-
 /** Cartes à ajouter : barre de filtres (collée en haut sur bureau) et grille d'images qui défile avec la page. */
 function CardBrowser({
   pool,
+  extensions,
   filters,
   onFilters,
   analysis,
@@ -1174,6 +1186,7 @@ function CardBrowser({
   onQuantity,
 }: {
   pool: CardDTO[];
+  extensions: Map<string, Set<string>>;
   filters: BrowserFilters;
   onFilters: (filters: BrowserFilters) => void;
   analysis: DeckAnalysis;
@@ -1184,7 +1197,6 @@ function CardBrowser({
   onQuantity: (cardId: string, quantity: number) => void;
 }) {
   const { t } = useI18n();
-  const [limit, setLimit] = useState(PAGE_SIZE);
   const haystacks = useMemo(
     () =>
       new Map(
@@ -1195,22 +1207,22 @@ function CardBrowser({
       ),
     [pool],
   );
+  // Extensions proposées : celles des cartes jouables, dans l'ordre de BLOCKS, « Autres » en dernier.
+  const extensionOptions = useMemo(() => {
+    const present = new Set(pool.flatMap((card) => [...(extensions.get(card.id) ?? [])]));
+    return [...BLOCKS.map((block) => block.name), OTHER_EXTENSION].filter((name) => present.has(name));
+  }, [pool, extensions]);
   const hasLegends = analysis.legends.length > 0;
   const needle = normalizeText(filters.query);
   const results = pool.filter((card) => {
     if (needle && !haystacks.get(card.id)!.includes(needle)) return false;
     if (filters.colors.length > 0 && !filters.colors.includes(card.color ?? "")) return false;
+    if (filters.extension && !extensions.get(card.id)?.has(filters.extension)) return false;
     if (filters.type && card.cardType !== filters.type) return false;
     if (filters.ownedOnly && !(owned.get(card.id) ?? 0)) return false;
     if (filters.ramOnly && hasLegends && !isLegend(card) && !ramAllowed(card, analysis.ramLimits)) return false;
     return true;
   });
-  // Nouveau filtre : on repart de la première page de résultats.
-  const [syncedFilters, setSyncedFilters] = useState(filters);
-  if (syncedFilters !== filters) {
-    setSyncedFilters(filters);
-    setLimit(PAGE_SIZE);
-  }
   const update = (patch: Partial<BrowserFilters>) => onFilters({ ...filters, ...patch });
   const chip = (active: boolean) =>
     `inline-flex h-9 items-center gap-1.5 border px-2.5 text-xs transition ${
@@ -1220,18 +1232,33 @@ function CardBrowser({
   return (
     <>
       <div className="flex flex-col gap-2.5 border-b border-line bg-background pb-3 lg:sticky lg:top-0 lg:z-10 lg:pt-5">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2 id="deck-picker" className="sr-only">
             {t.decks.addCards}
           </h2>
           <input
             type="search"
-            className="h-11 min-w-0 flex-1 border border-line bg-panel px-3 text-sm outline-none focus:border-cyan"
+            className="h-11 min-w-0 flex-1 basis-56 border border-line bg-panel px-3 text-sm outline-none focus:border-cyan"
             placeholder={t.decks.searchPlaceholder}
             aria-label={t.common.search}
             value={filters.query}
             onChange={(event) => update({ query: event.target.value })}
           />
+          <label className="flex h-11 min-w-0 flex-1 basis-48 items-center border border-line bg-panel focus-within:border-cyan sm:flex-none">
+            <span className="shrink-0 pl-3 font-mono text-[10px] tracking-[0.12em] text-muted uppercase">{t.decks.extension}</span>
+            <select
+              className="h-full min-w-0 flex-1 cursor-pointer bg-transparent px-2 text-sm outline-none"
+              value={filters.extension}
+              onChange={(event) => update({ extension: event.target.value })}
+            >
+              <option value="">{t.decks.allExtensions}</option>
+              {extensionOptions.map((name) => (
+                <option key={name} value={name}>
+                  {name === OTHER_EXTENSION ? t.decks.otherExtensions : name}
+                </option>
+              ))}
+            </select>
+          </label>
           <span className="shrink-0 font-mono text-xs tabular-nums text-muted" aria-live="polite">
             {t.decks.resultCount(results.length)}
           </span>
@@ -1280,8 +1307,9 @@ function CardBrowser({
       {results.length === 0 ? (
         <p className="py-8 text-sm text-muted">{t.decks.noResults}</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-x-3 gap-y-4 pt-4 sm:grid-cols-[repeat(auto-fill,minmax(10rem,1fr))]">
-          {results.slice(0, limit).map((card) => (
+        <VirtualTileGrid
+          cards={results}
+          renderTile={(card) => (
             <PickerTile
               key={card.id}
               card={card}
@@ -1292,16 +1320,9 @@ function CardBrowser({
               canAdd={canAdd(card)}
               onQuantity={onQuantity}
             />
-          ))}
-        </ul>
+          )}
+        />
       )}
-      {results.length > limit ? (
-        <div className="flex justify-center pt-5">
-          <button type="button" className={buttonClass} onClick={() => setLimit(limit + PAGE_SIZE)}>
-            {t.decks.showMore(results.length - limit)}
-          </button>
-        </div>
-      ) : null}
     </>
   );
 }
@@ -1327,7 +1348,7 @@ function PickerTile({
   const { t } = useI18n();
   const label = cardLabel(card);
   return (
-    <li className="flex min-w-0 flex-col gap-1.5">
+    <div role="listitem" className="flex min-w-0 flex-col gap-1.5">
       {/* Raccourci souris/tactile ; au clavier, le bouton + ci-dessous fait la même chose. */}
       <button
         type="button"
@@ -1362,6 +1383,92 @@ function PickerTile({
       <CardFacts card={card} ramOk={ramOk} />
       {owned > 0 ? <span className="sr-only">{t.decks.ownedCount(owned)}</span> : null}
       <Stepper card={card} quantity={quantity} canAdd={canAdd} onQuantity={onQuantity} wide />
-    </li>
+    </div>
+  );
+}
+
+const TILE_MIN_WIDTH = 160;
+const TILE_GAP_X = 12;
+const TILE_GAP_Y = 16;
+/** Hauteur sous l'image : nom (2 lignes), coût/RAM, boutons − / + et espacements. */
+const TILE_META_HEIGHT = 112;
+
+function scrollParentOf(node: HTMLElement) {
+  let current = node.parentElement;
+  while (current) {
+    if (/(auto|scroll|overlay)/.test(getComputedStyle(current).overflowY)) return current;
+    current = current.parentElement;
+  }
+  return null;
+}
+
+/**
+ * Grille virtualisée : toutes les cartes filtrées, mais seules les rangées proches de l'écran
+ * sont rendues. Elle suit le défilement de la page (pas de zone de défilement imbriquée).
+ */
+function VirtualTileGrid({ cards, renderTile }: { cards: CardDTO[]; renderTile: (card: CardDTO) => React.ReactNode }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  const [scrollMargin, setScrollMargin] = useState(0);
+  const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null);
+
+  const cols = width < 640 ? 2 : Math.max(2, Math.floor((width + TILE_GAP_X) / (TILE_MIN_WIDTH + TILE_GAP_X)));
+  const colWidth = width > 0 ? (width - TILE_GAP_X * (cols - 1)) / cols : TILE_MIN_WIDTH;
+  const rowHeight = Math.ceil((colWidth * 88) / 63 + TILE_META_HEIGHT + TILE_GAP_Y);
+  const rowCount = Math.ceil(cards.length / cols);
+
+  useEffect(() => {
+    const node = listRef.current;
+    if (!node) return;
+    const parent = scrollParentOf(node);
+    setScrollElement(parent);
+    const update = () => {
+      setWidth(node.clientWidth);
+      // Position de la grille dans la zone qui défile (change si un panneau s'ouvre au-dessus).
+      const margin = parent
+        ? Math.round(parent.scrollTop + node.getBoundingClientRect().top - parent.getBoundingClientRect().top)
+        : 0;
+      setScrollMargin((current) => (current === margin ? current : margin));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    if (parent?.firstElementChild) observer.observe(parent.firstElementChild);
+    return () => observer.disconnect();
+  }, []);
+
+  const virtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollElement,
+    estimateSize: () => rowHeight,
+    overscan: 3,
+    scrollMargin,
+    useFlushSync: false,
+  });
+
+  useEffect(() => {
+    virtualizer.measure();
+  }, [rowHeight, cols, virtualizer]);
+
+  return (
+    <div ref={listRef} role="list" className="relative mt-4" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+      {virtualizer.getVirtualItems().map((row) => (
+        <div
+          key={row.key}
+          data-index={row.index}
+          ref={virtualizer.measureElement}
+          role="presentation"
+          className="absolute left-0 grid w-full"
+          style={{
+            top: `${row.start - scrollMargin}px`,
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            columnGap: TILE_GAP_X,
+            paddingBottom: TILE_GAP_Y,
+          }}
+        >
+          {cards.slice(row.index * cols, row.index * cols + cols).map(renderTile)}
+        </div>
+      ))}
+    </div>
   );
 }

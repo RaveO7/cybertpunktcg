@@ -1,6 +1,6 @@
 // Règles de construction de deck (cf. « Construction de deck & RAM » dans src/lib/rules/howto-play.ts)
 // et comparaison avec la collection. Module pur : utilisé par l'écran des decks et les tests.
-import { COLOR_ORDER, TYPE_ORDER } from "./reference-data";
+import { BLOCKS, COLOR_ORDER, TYPE_ORDER } from "./reference-data";
 import { normalizeText } from "./logic";
 import type { CardDTO, CollectionItemDTO, PrintingDTO } from "./types";
 
@@ -150,6 +150,29 @@ export function analyzeDeck(entries: DeckEntry[], cardsById: Map<string, CardDTO
     colorCounts,
     typeCounts,
   };
+}
+
+/** Valeur du filtre « extension » pour les cartes dont aucun tirage n'est rattaché à un bloc. */
+export const OTHER_EXTENSION = "__other";
+
+/**
+ * Extensions (blocs de BLOCKS) de chaque carte, d'après les sets de ses tirages : extensions du bloc,
+ * leurs versions « -fr » et produits liés (starter decks, promos…). Sans bloc connu : OTHER_EXTENSION.
+ */
+export function extensionsByCard(printings: Pick<PrintingDTO, "cardId" | "setCode">[]) {
+  const blockOfSet = new Map<string, string>();
+  for (const block of BLOCKS) {
+    for (const code of [...block.sets, ...(block.related ?? [])]) blockOfSet.set(code, block.name);
+  }
+  const result = new Map<string, Set<string>>();
+  for (const printing of printings) {
+    const block = blockOfSet.get(printing.setCode.replace(/-fr$/, ""));
+    const set = result.get(printing.cardId) ?? new Set<string>();
+    if (block) set.add(block);
+    result.set(printing.cardId, set);
+  }
+  for (const set of result.values()) if (set.size === 0) set.add(OTHER_EXTENSION);
+  return result;
 }
 
 /** Exemplaires possédés par carte de jeu, tous tirages (sets, langues, états) confondus. */

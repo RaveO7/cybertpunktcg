@@ -22,9 +22,32 @@ export const MIN_EXTENSION_CARDS = 100;
  * Une extension = code de son set anglais (sa version « -fr » suit d'elle-même).
  * La source officielle ne donne pas le bloc : à compléter à chaque nouvelle extension.
  * Une extension absente de cette liste s'affiche dans « Extensions non classées ».
+ *
+ * `related` : produits du bloc qui ne sont pas des extensions (starter decks, decks de démo,
+ * promos, box toppers, sets de tournoi). Ils servent au filtre par extension des decks : certaines
+ * cartes n'existent que là. Un set absent des deux listes range ses cartes dans « Autres ».
  */
-export const BLOCKS: readonly { name: string; sets: readonly string[] }[] = [
-  { name: RELEASED_SET_NAME, sets: [BETA_SET_CODE, MAIN_SET_CODE] },
+export const BLOCKS: readonly { name: string; sets: readonly string[]; related?: readonly string[] }[] = [
+  {
+    name: RELEASED_SET_NAME,
+    sets: [BETA_SET_CODE, MAIN_SET_CODE],
+    related: [
+      "arasakademodeck",
+      "mercdemodeck",
+      "embracingpowerbetastarterdeck",
+      "embracingpowerretailstarterdeck",
+      "theheistbetastarterdeck",
+      "theheistretailstarterdeck",
+      "prereleasebeta",
+      "prereleaseretail",
+      "boxtoppersbeta",
+      "boxtoppersretail",
+      "edgerunneropens1",
+      "nightcitybrawls1",
+      "nightcityshowdowns1",
+      "PRM01",
+    ],
+  },
 ];
 
 /** Codes des produits scellés / lots Cardmarket (pas des extensions de cartes). */
