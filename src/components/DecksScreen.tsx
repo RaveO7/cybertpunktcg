@@ -526,13 +526,6 @@ function DeckEditor({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const saver = useDeckSaver(deck.id, onSaved);
   const browserRef = useRef<HTMLElement>(null);
-  const nameRef = useRef<HTMLInputElement>(null);
-
-  // Deck tout juste créé : on propose de le nommer d'abord (champ sélectionné).
-  useEffect(() => {
-    if (deck.cards.length === 0 && deck.createdAt === deck.updatedAt) nameRef.current?.select();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- seulement à l'ouverture de l'éditeur
-  }, []);
 
   const analysis = useMemo(() => analyzeDeck(entries, index.cardsById), [entries, index.cardsById]);
   const allLines = useMemo(() => [...analysis.legends, ...analysis.main], [analysis]);
@@ -683,7 +676,6 @@ function DeckEditor({
           <span className="hud-label">{t.decks.name}</span>
           <span className="flex items-center gap-2 border border-line bg-panel px-3 transition hover:border-muted focus-within:border-cyan">
             <input
-              ref={nameRef}
               className="h-12 min-w-0 flex-1 bg-transparent text-xl text-yellow outline-none sm:text-2xl"
               value={name}
             maxLength={60}
