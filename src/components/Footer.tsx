@@ -10,43 +10,42 @@ export function Footer() {
 
   return (
     <footer className="mt-auto shrink-0 border-t border-line" aria-label={t.footer.label}>
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-4 text-xs text-muted">
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {LEGAL_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className="py-1 hover:text-foreground">
-                {t.footer[link.key]}
-              </Link>
-            ))}
-          </nav>
-          <ul className="flex items-center gap-1" aria-label={t.footer.social}>
-            {SOCIAL_LINKS.map((link) => (
-              <li key={link.network}>
-                {link.href ? (
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex size-9 items-center justify-center border border-transparent hover:border-cyan hover:text-foreground"
-                    aria-label={link.label}
-                    title={link.label}
-                  >
-                    <SocialGlyph network={link.network} />
-                  </a>
-                ) : (
-                  // Réseau sans URL renseignée dans src/lib/site.ts : icône affichée, non cliquable.
-                  <span className="inline-flex size-9 items-center justify-center opacity-60" title={link.label}>
-                    <SocialGlyph network={link.network} />
-                    <span className="sr-only">{link.label}</span>
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* Une seule ligne : liens légaux à gauche, copyright au centre, réseaux à droite (empilés sur téléphone). */}
+      <div className="mx-auto flex max-w-[1600px] flex-col items-center gap-2 px-4 py-3 text-xs text-muted md:grid md:grid-cols-[1fr_auto_1fr] md:gap-6">
+        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 md:justify-start">
+          {LEGAL_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className="py-1 hover:text-foreground">
+              {t.footer[link.key]}
+            </Link>
+          ))}
+        </nav>
         <p className="font-mono tracking-[0.12em]">
           © {new Date().getFullYear()} {SITE.name}
         </p>
+        <ul className="flex items-center gap-1 md:justify-self-end" aria-label={t.footer.social}>
+          {SOCIAL_LINKS.map((link) => (
+            <li key={link.network}>
+              {link.href ? (
+                <a
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex size-9 items-center justify-center border border-transparent hover:border-cyan hover:text-foreground"
+                  aria-label={link.label}
+                  title={link.label}
+                >
+                  <SocialGlyph network={link.network} />
+                </a>
+              ) : (
+                // Réseau sans URL renseignée dans src/lib/site.ts : icône affichée, non cliquable.
+                <span className="inline-flex size-9 items-center justify-center opacity-60" title={link.label}>
+                  <SocialGlyph network={link.network} />
+                  <span className="sr-only">{link.label}</span>
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
       </div>
     </footer>
   );
