@@ -39,6 +39,16 @@ const fr = {
     cards: (n: number) => (n > 1 ? "cartes" : "carte"),
     lines: (n: number) => (n > 1 ? "lignes" : "ligne"),
   },
+  footer: {
+    label: "Pied de page",
+    legal: "Mentions légales",
+    terms: "CGU",
+    privacy: "Confidentialité",
+    social: "Réseaux sociaux",
+    disclaimer:
+      "Site de fans non officiel. Cyberpunk est une marque de CD PROJEKT S.A. ; ce site n’est ni affilié ni approuvé par CD PROJEKT RED ni par l’éditeur du jeu. Prix indicatifs issus du guide Cardmarket.",
+    legalOnlyFrench: "",
+  },
   nav: {
     dashboard: "Tableau de bord",
     cards: "Cartes",
@@ -864,6 +874,16 @@ const en: MessagesShape = {
     cards: (n: number) => (n === 1 ? "card" : "cards"),
     lines: (n: number) => (n === 1 ? "line" : "lines"),
   },
+  footer: {
+    label: "Footer",
+    legal: "Legal notice",
+    terms: "Terms of use",
+    privacy: "Privacy",
+    social: "Social media",
+    disclaimer:
+      "Unofficial fan site. Cyberpunk is a trademark of CD PROJEKT S.A.; this site is not affiliated with or endorsed by CD PROJEKT RED or the game’s publisher. Indicative prices from the Cardmarket price guide.",
+    legalOnlyFrench: "This page is only available in French.",
+  },
   nav: {
     dashboard: "Dashboard",
     cards: "Cards",
@@ -1675,6 +1695,16 @@ const de: MessagesShape = {
     copies: (n: number) => (n === 1 ? "Exemplar" : "Exemplare"),
     cards: (n: number) => (n === 1 ? "Karte" : "Karten"),
     lines: (n: number) => (n === 1 ? "Zeile" : "Zeilen"),
+  },
+  footer: {
+    label: "Fußzeile",
+    legal: "Impressum",
+    terms: "Nutzungsbedingungen",
+    privacy: "Datenschutz",
+    social: "Soziale Netzwerke",
+    disclaimer:
+      "Inoffizielle Fanseite. Cyberpunk ist eine Marke der CD PROJEKT S.A.; diese Seite steht in keiner Verbindung zu CD PROJEKT RED oder dem Verlag des Spiels und wird von ihnen nicht unterstützt. Richtpreise aus dem Cardmarket-Preisguide.",
+    legalOnlyFrench: "Diese Seite ist nur auf Französisch verfügbar.",
   },
   nav: {
     dashboard: "Übersicht",
@@ -2489,6 +2519,16 @@ const es: MessagesShape = {
     cards: (n: number) => (n === 1 ? "carta" : "cartas"),
     lines: (n: number) => (n === 1 ? "línea" : "líneas"),
   },
+  footer: {
+    label: "Pie de página",
+    legal: "Aviso legal",
+    terms: "Condiciones de uso",
+    privacy: "Privacidad",
+    social: "Redes sociales",
+    disclaimer:
+      "Sitio de fans no oficial. Cyberpunk es una marca de CD PROJEKT S.A.; este sitio no está afiliado ni respaldado por CD PROJEKT RED ni por el editor del juego. Precios orientativos de la guía de precios de Cardmarket.",
+    legalOnlyFrench: "Esta página solo está disponible en francés.",
+  },
   nav: {
     dashboard: "Panel",
     cards: "Cartas",
@@ -3301,6 +3341,16 @@ const it: MessagesShape = {
     copies: (n: number) => (n === 1 ? "copia" : "copie"),
     cards: (n: number) => (n === 1 ? "carta" : "carte"),
     lines: (n: number) => (n === 1 ? "riga" : "righe"),
+  },
+  footer: {
+    label: "Piè di pagina",
+    legal: "Note legali",
+    terms: "Condizioni d’uso",
+    privacy: "Privacy",
+    social: "Social network",
+    disclaimer:
+      "Sito di fan non ufficiale. Cyberpunk è un marchio di CD PROJEKT S.A.; questo sito non è affiliato né approvato da CD PROJEKT RED o dall’editore del gioco. Prezzi indicativi dalla guida prezzi di Cardmarket.",
+    legalOnlyFrench: "Questa pagina è disponibile solo in francese.",
   },
   nav: {
     dashboard: "Dashboard",
