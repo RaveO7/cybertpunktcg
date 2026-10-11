@@ -38,6 +38,10 @@ const LANGUAGES = ["en", "fr"] as const;
 const BLOCK_OF_SET = new Map(
   BLOCKS.flatMap((block, blockIndex) => block.sets.map((set, order) => [set, { block: blockIndex, order }])),
 );
+/** Code d'un produit lié (promos, box toppers, decks…) → index de son bloc. */
+const BLOCK_OF_RELATED_SET = new Map(
+  BLOCKS.flatMap((block, blockIndex) => (block.related ?? []).map((set) => [set, blockIndex])),
+);
 
 type Language = (typeof LANGUAGES)[number];
 type CatalogMode = "cards" | "sealed";
@@ -76,6 +80,8 @@ type Extension = Scope & {
   block: number | null;
   order: number | null;
   sortOrder: number;
+  /** Produit lié du bloc (pas une extension) : listé, mais hors de la progression du bloc. */
+  related: boolean;
 };
 
 type Block = Scope & { extensions: Extension[] };
@@ -157,6 +163,7 @@ function buildCardExtensions(
 
   // Une extension par set anglais, remplacée par son jumeau « -fr » en français.
   // Hors BLOCKS, les petits sets (promos, decks, tournois) ne sont pas des extensions.
+  // Les produits liés d'un bloc n'apparaissent que si l'on en possède au moins une carte.
   const groups = new Map<string, typeof cardSets>();
   for (const set of cardSets) {
     const base = set.code.replace(/-fr$/u, "");
@@ -164,6 +171,7 @@ function buildCardExtensions(
   }
   for (const [base, group] of groups) {
     const place = BLOCK_OF_SET.get(base) ?? null;
+    const relatedBlock = place ? null : (BLOCK_OF_RELATED_SET.get(base) ?? null);
     const candidates = language === "fr" ? [`${base}-fr`, base] : [base];
     for (const code of candidates) {
       const set = group.find((entry) => entry.code === code);
@@ -171,7 +179,10 @@ function buildCardExtensions(
       const printings = catalog.printings.filter(
         (printing) => printing.setCode === code && printing.language === language,
       );
-      if (printings.length === 0 || (!place && printings.length < MIN_EXTENSION_CARDS)) continue;
+      if (printings.length === 0) continue;
+      if (relatedBlock != null) {
+        if (!printings.some((printing) => (agg.get(printing.id)?.qty ?? 0) > 0)) continue;
+      } else if (!place && printings.length < MIN_EXTENSION_CARDS) continue;
       const name = group.find((entry) => entry.code === base)?.name ?? set.name;
       // Dans son bloc, « Welcome to Night City — Beta » se lit simplement « Beta ».
       const prefix = place ? `${BLOCKS[place.block].name} — ` : null;
@@ -181,10 +192,11 @@ function buildCardExtensions(
         shortName: prefix && name.startsWith(prefix) ? name.slice(prefix.length) : name,
         browseSet: code,
         codes: [code],
-        block: place?.block ?? null,
+        block: place?.block ?? relatedBlock,
         order: place?.order ?? null,
         language,
         sortOrder: set.sortOrder,
+        related: relatedBlock != null,
         printings,
         ownership: agg,
         progress: computeProgress(printings, agg),
@@ -209,15 +221,19 @@ function buildBlocks(extensions: Extension[], agg: Map<string, Ownership>, unsor
   return [...byBlock.entries()]
     .sort(([a], [b]) => (a ?? Number.POSITIVE_INFINITY) - (b ?? Number.POSITIVE_INFINITY))
     .map(([index, list]) => {
+      // La progression du bloc ne compte que ses extensions, pas les produits liés.
+      const core = list.some((extension) => !extension.related)
+        ? list.filter((extension) => !extension.related)
+        : list;
       return {
         key: `block-${index ?? "unsorted"}`,
         name: index == null ? unsortedLabel : BLOCKS[index].name,
         extensions: list,
-        browseSet: blockBrowseSet(list),
+        browseSet: blockBrowseSet(core),
         language: list[0].language,
-        printings: list.flatMap((extension) => extension.printings),
+        printings: core.flatMap((extension) => extension.printings),
         ownership: agg,
-        progress: sumProgress(list.map((extension) => extension.progress)),
+        progress: sumProgress(core.map((extension) => extension.progress)),
         value: summarizeRows(list.map((extension) => extension.value)),
       };
     });
@@ -314,6 +330,7 @@ export function Dashboard() {
           shortName: set.name,
           language,
           sortOrder: set.sortOrder,
+          related: false,
           printings,
           ownership: agg,
           progress: computeProgress(printings, agg),
@@ -421,6 +438,7 @@ export function Dashboard() {
   const heroLanguage = scope?.language ?? language;
   const heroTitle =
     pickedExtension?.shortName ?? scope?.name ?? (isSealed ? t.dashboard.sealed : t.dashboard.allSetsTitle);
+  const blockExtensionCount = block?.extensions.filter((extension) => !extension.related).length ?? 0;
   const heroIntro = isSealed
     ? scope
       ? t.dashboard.sealedProductsHint(formatInt(scope.printings.length))
@@ -428,10 +446,7 @@ export function Dashboard() {
     : pickedExtension
       ? t.dashboard.extensionIntro(formatInt(pickedExtension.progress.total))
       : [
-          t.dashboard.globalIntro(
-            formatInt(block?.extensions.length ?? 0),
-            t.dashboard.extensionNoun(block?.extensions.length ?? 0),
-          ),
+          t.dashboard.globalIntro(formatInt(blockExtensionCount), t.dashboard.extensionNoun(blockExtensionCount)),
           block?.extensions.some((extension) => extension.codes.includes(BETA_SET_CODE)) ? t.dashboard.splitNote : null,
         ]
           .filter(Boolean)
