@@ -45,8 +45,6 @@ const fr = {
     terms: "CGU",
     privacy: "Confidentialité",
     social: "Réseaux sociaux",
-    disclaimer:
-      "Site de fans non officiel. Cyberpunk est une marque de CD PROJEKT S.A. ; ce site n’est ni affilié ni approuvé par CD PROJEKT RED ni par l’éditeur du jeu. Prix indicatifs issus du guide Cardmarket.",
     legalOnlyFrench: "",
   },
   nav: {
@@ -880,8 +878,6 @@ const en: MessagesShape = {
     terms: "Terms of use",
     privacy: "Privacy",
     social: "Social media",
-    disclaimer:
-      "Unofficial fan site. Cyberpunk is a trademark of CD PROJEKT S.A.; this site is not affiliated with or endorsed by CD PROJEKT RED or the game’s publisher. Indicative prices from the Cardmarket price guide.",
     legalOnlyFrench: "This page is only available in French.",
   },
   nav: {
@@ -1702,8 +1698,6 @@ const de: MessagesShape = {
     terms: "Nutzungsbedingungen",
     privacy: "Datenschutz",
     social: "Soziale Netzwerke",
-    disclaimer:
-      "Inoffizielle Fanseite. Cyberpunk ist eine Marke der CD PROJEKT S.A.; diese Seite steht in keiner Verbindung zu CD PROJEKT RED oder dem Verlag des Spiels und wird von ihnen nicht unterstützt. Richtpreise aus dem Cardmarket-Preisguide.",
     legalOnlyFrench: "Diese Seite ist nur auf Französisch verfügbar.",
   },
   nav: {
@@ -2525,8 +2519,6 @@ const es: MessagesShape = {
     terms: "Condiciones de uso",
     privacy: "Privacidad",
     social: "Redes sociales",
-    disclaimer:
-      "Sitio de fans no oficial. Cyberpunk es una marca de CD PROJEKT S.A.; este sitio no está afiliado ni respaldado por CD PROJEKT RED ni por el editor del juego. Precios orientativos de la guía de precios de Cardmarket.",
     legalOnlyFrench: "Esta página solo está disponible en francés.",
   },
   nav: {
@@ -3348,8 +3340,6 @@ const it: MessagesShape = {
     terms: "Condizioni d’uso",
     privacy: "Privacy",
     social: "Social network",
-    disclaimer:
-      "Sito di fan non ufficiale. Cyberpunk è un marchio di CD PROJEKT S.A.; questo sito non è affiliato né approvato da CD PROJEKT RED o dall’editore del gioco. Prezzi indicativi dalla guida prezzi di Cardmarket.",
     legalOnlyFrench: "Questa pagina è disponibile solo in francese.",
   },
   nav: {

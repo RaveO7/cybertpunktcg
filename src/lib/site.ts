@@ -2,7 +2,7 @@
 
 export type SocialNetwork = "discord" | "x" | "instagram" | "youtube" | "tiktok" | "bluesky";
 
-/** Réseaux affichés dans le pied de page. Une entrée sans `href` est masquée. */
+/** Réseaux affichés dans le pied de page. Une entrée sans `href` montre son icône sans lien. */
 export const SOCIAL_LINKS: { network: SocialNetwork; label: string; href: string }[] = [
   { network: "discord", label: "Discord", href: "" },
   { network: "x", label: "X (Twitter)", href: "" },

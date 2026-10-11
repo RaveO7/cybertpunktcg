@@ -4,10 +4,9 @@ import Link from "next/link";
 import { useI18n } from "@/components/LocaleProvider";
 import { LEGAL_LINKS, SITE, SOCIAL_LINKS, type SocialNetwork } from "@/lib/site";
 
-/** Pied de page : liens légaux, réseaux sociaux et avertissement de site de fans. */
+/** Pied de page : liens légaux et réseaux sociaux. */
 export function Footer() {
   const { t } = useI18n();
-  const socials = SOCIAL_LINKS.filter((link) => link.href);
 
   return (
     <footer className="mt-auto shrink-0 border-t border-line" aria-label={t.footer.label}>
@@ -20,10 +19,10 @@ export function Footer() {
               </Link>
             ))}
           </nav>
-          {socials.length > 0 ? (
-            <ul className="flex items-center gap-1" aria-label={t.footer.social}>
-              {socials.map((link) => (
-                <li key={link.network}>
+          <ul className="flex items-center gap-1" aria-label={t.footer.social}>
+            {SOCIAL_LINKS.map((link) => (
+              <li key={link.network}>
+                {link.href ? (
                   <a
                     href={link.href}
                     target="_blank"
@@ -34,12 +33,17 @@ export function Footer() {
                   >
                     <SocialGlyph network={link.network} />
                   </a>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+                ) : (
+                  // Réseau sans URL renseignée dans src/lib/site.ts : icône affichée, non cliquable.
+                  <span className="inline-flex size-9 items-center justify-center opacity-60" title={link.label}>
+                    <SocialGlyph network={link.network} />
+                    <span className="sr-only">{link.label}</span>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
-        <p className="max-w-3xl leading-relaxed">{t.footer.disclaimer}</p>
         <p className="font-mono tracking-[0.12em]">
           © {new Date().getFullYear()} {SITE.name}
         </p>
