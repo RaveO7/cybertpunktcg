@@ -12,9 +12,11 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
   const isSharedView = pathname.startsWith("/classeur/");
+  // Pages joueur d'un tournoi (/t/…) : ouvertes aux invités sans compte.
+  const isPublicPage = isSharedView || pathname.startsWith("/t/");
   // Tant que la session n'est pas vérifiée, aucune page protégée n'est rendue.
   let content: React.ReactNode = children;
-  if (!isSharedView) {
+  if (!isPublicPage) {
     if (!ready) {
       content = (
         <div className="flex flex-1 items-center justify-center text-sm opacity-70" role="status" aria-live="polite">

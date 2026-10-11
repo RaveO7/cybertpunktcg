@@ -5,6 +5,9 @@ import { z } from "zod";
 import { normalizeDisplayName, normalizeEmail, normalizeLoginPassword, normalizePassword } from "./auth";
 import { MAX_IMPORT_LINES } from "./collection-csv";
 import { CURRENCIES } from "./parse";
+import { normalizePlayerName } from "./tournament/code";
+import type { MatchResult } from "./tournament/scores";
+import { TOP_CUT_SETTINGS } from "./tournament/top-cut";
 
 const INVALID_REQUEST = "Requête invalide.";
 
@@ -187,6 +190,114 @@ export const deckPatchSchema = z.object({
 export const shareSchema =z.object({ rotate: z.boolean().optional() }).nullable();
 
 export const shareTokenSchema = z.string().min(16).max(128);
+
+// --- Tournois -------------------------------------------------------------------------------
+
+const intIn = (min: number, max: number, message: string) =>
+  z.number({ error: message }).int(message).min(min, message).max(max, message);
+
+const tournamentNameSchema = z
+  .string({ error: "Nom du tournoi invalide." })
+  .trim()
+  .min(1, "Donnez un nom au tournoi.")
+  .max(60, "Nom du tournoi trop long (60 caractères maximum).");
+
+const playerNameSchema = normalized(normalizePlayerName, "Le pseudo doit contenir entre 1 et 32 caractères.");
+
+const tournamentSettingsFields = {
+  name: tournamentNameSchema.optional(),
+  format: z.enum(["boutique", "competitif"], { error: "Format invalide." }).optional(),
+  matchType: z.enum(["bo1", "bo3"], { error: "Type de match invalide." }).optional(),
+  roundMinutes: intIn(10, 180, "Durée de ronde invalide (10 à 180 minutes).").optional(),
+  topCutExtraMinutes: intIn(0, 120, "Temps supplémentaire du top cut invalide (0 à 120 minutes).").optional(),
+  topCutSetting: z.enum(TOP_CUT_SETTINGS, { error: "Taille de top cut invalide." }).optional(),
+  requireApproval: z.boolean().optional(),
+  oneDeviceMode: z.enum(["direct", "organizer"], { error: "Mode de validation invalide." }).optional(),
+  declareTimeoutMinutes: intIn(1, 120, "Délai de confirmation invalide (1 à 120 minutes).").optional(),
+  lateEntryPolicy: z.enum(["zero", "loss"], { error: "Règle des retardataires invalide." }).optional(),
+};
+
+export const tournamentCreateSchema = z.object({ ...tournamentSettingsFields, name: tournamentNameSchema });
+
+const matchResultSchema = z
+  .object({
+    kind: z.enum(["normal", "id", "double_loss"], { error: "Résultat invalide." }).default("normal"),
+    gamesA: intIn(0, 2, "Score invalide."),
+    gamesB: intIn(0, 2, "Score invalide."),
+  })
+  .transform((result): MatchResult => result);
+
+const clientActionId = z.string({ error: "Requête invalide." }).trim().min(8).max(64);
+const entityId = id;
+
+/** Commandes organisateur (POST /api/tournaments/[id]/actions), rejouables par la file hors connexion. */
+export const organizerCommandSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("updateSettings"), clientActionId, settings: z.object({ ...tournamentSettingsFields, swissRounds: intIn(1, 20, "Nombre de rondes invalide (1 à 20).").optional() }) }),
+  z.object({ type: z.literal("regenerateCode"), clientActionId }),
+  z.object({ type: z.literal("setRegistration"), clientActionId, open: z.boolean() }),
+  z.object({ type: z.literal("addPlayer"), clientActionId, name: playerNameSchema }),
+  z.object({ type: z.literal("renamePlayer"), clientActionId, playerId: entityId, name: playerNameSchema }),
+  z.object({ type: z.literal("removePlayer"), clientActionId, playerId: entityId }),
+  z.object({ type: z.literal("approvePlayer"), clientActionId, playerId: entityId }),
+  z.object({ type: z.literal("rejectPlayer"), clientActionId, playerId: entityId }),
+  z.object({ type: z.literal("mergePlayers"), clientActionId, keepId: entityId, mergeId: entityId }),
+  z.object({ type: z.literal("issueClaim"), clientActionId, playerId: entityId }),
+  z.object({ type: z.literal("dropPlayer"), clientActionId, playerId: entityId }),
+  z.object({ type: z.literal("undropPlayer"), clientActionId, playerId: entityId }),
+  z.object({
+    type: z.literal("disqualify"),
+    clientActionId,
+    playerId: entityId,
+    reason: z.string({ error: "Motif invalide." }).trim().min(1, "Indiquez un motif.").max(200, "Motif trop long."),
+  }),
+  z.object({ type: z.literal("pairRound"), clientActionId }),
+  z.object({ type: z.literal("swapPlayers"), clientActionId, playerA: entityId, playerB: entityId }),
+  z.object({ type: z.literal("moveBye"), clientActionId, playerId: entityId }),
+  z.object({ type: z.literal("publishRound"), clientActionId }),
+  z.object({
+    type: z.literal("startRound"),
+    clientActionId,
+    confirmFewPlayers: z.boolean().optional(),
+    ignorePending: z.boolean().optional(),
+  }),
+  z.object({ type: z.literal("pauseClock"), clientActionId }),
+  z.object({ type: z.literal("resumeClock"), clientActionId }),
+  z.object({ type: z.literal("adjustClock"), clientActionId, seconds: intIn(-7200, 7200, "Durée invalide.") }),
+  z.object({ type: z.literal("addTableTime"), clientActionId, matchId: entityId, seconds: intIn(-3600, 3600, "Durée invalide.") }),
+  z.object({
+    type: z.literal("setResult"),
+    clientActionId,
+    matchId: entityId,
+    result: matchResultSchema,
+    expectedVersion: z.number().int().min(0).optional(),
+  }),
+  z.object({ type: z.literal("resetResult"), clientActionId, matchId: entityId }),
+  z.object({ type: z.literal("noShow"), clientActionId, matchId: entityId, absentPlayerId: entityId, drop: z.boolean().optional() }),
+  z.object({ type: z.literal("closeRound"), clientActionId }),
+  z.object({ type: z.literal("declineCut"), clientActionId, playerId: entityId }),
+  z.object({ type: z.literal("inviteOrganizer"), clientActionId }),
+  z.object({ type: z.literal("removeOrganizer"), clientActionId, userId: entityId }),
+  z.object({ type: z.literal("cancel"), clientActionId }),
+]);
+
+export type OrganizerCommand = z.output<typeof organizerCommandSchema>;
+
+/** Commandes joueur (POST /api/tournaments/[id]/player). */
+export const playerCommandSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("declare"), matchId: entityId, result: matchResultSchema }),
+  z.object({ type: z.literal("confirm"), matchId: entityId }),
+  z.object({ type: z.literal("refuse"), matchId: entityId }),
+  z.object({ type: z.literal("confirmOnSite"), matchId: entityId }),
+  z.object({ type: z.literal("drop") }),
+  z.object({ type: z.literal("withdraw") }),
+]);
+
+export type PlayerCommand = z.output<typeof playerCommandSchema>;
+
+/** Inscription par code : pseudo obligatoire pour un invité, facultatif avec un compte. */
+export const tournamentJoinSchema = z.object({ name: playerNameSchema.optional() });
+
+export const tournamentTokenSchema = z.object({ token: shareTokenSchema });
 
 type ParseResult<T> = { ok: true; data: T } | { ok: false; response: NextResponse };
 

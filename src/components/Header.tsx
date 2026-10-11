@@ -7,7 +7,7 @@ import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
 
-type NavIcon = "dashboard" | "cards" | "investment" | "decks" | "wishlist" | "howto" | "binder";
+type NavIcon = "dashboard" | "cards" | "investment" | "decks" | "tournaments" | "wishlist" | "howto" | "binder";
 
 type NavLink = { href: string; label: string; match: string; icon: NavIcon; badge?: number };
 
@@ -36,6 +36,7 @@ function useNavigation() {
         { href: cardsHref, label: t.nav.cards, match: "/cards", icon: "cards" },
         { href: "/investissement", label: t.nav.investment, match: "/investissement", icon: "investment" },
         { href: "/decks", label: t.nav.decks, match: "/decks", icon: "decks" },
+        { href: "/tournois", label: t.nav.tournaments, match: "/tournois", icon: "tournaments" },
         // Page /souhaits masquée pour l'instant. Pour la réafficher, lire `const { unseenAlerts } = useWishlist();`
         // en haut du hook puis ajouter :
         // { href: "/souhaits", label: t.nav.wishlist, match: "/souhaits", icon: "wishlist", badge: unseenAlerts },
@@ -224,6 +225,14 @@ function NavGlyph({ icon }: { icon: NavIcon }) {
         <svg {...common}>
           <path d="M9 6.5h10v14H9z" />
           <path d="M6.5 4.5h10M4.5 8v12.5" />
+        </svg>
+      );
+    case "tournaments":
+      return (
+        <svg {...common}>
+          <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0z" />
+          <path d="M7.5 6H4.5v1.5A3 3 0 0 0 7.8 10.5M16.5 6h3v1.5a3 3 0 0 1-3.3 3" />
+          <path d="M12 13.5v3.5M8.5 20.5h7M9.5 17h5v3.5h-5z" />
         </svg>
       );
     case "wishlist":

@@ -24,6 +24,8 @@ model User {
   portfolioHistory PortfolioHistoryCache[]
   wishlist      WishlistItem[]
   decks         Deck[]
+  tournamentRoles   TournamentOrganizer[]
+  tournamentPlayers TournamentPlayer[]
 }
 
 /// Lien secret pour consulter le classeur en lecture seule (sans compte).
@@ -323,4 +325,186 @@ model PortfolioHistoryCache {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, scope])
+}
+
+/// Tournoi (rondes suisses puis top cut optionnel). Aucune relation directe vers User : les
+/// organisateurs sont des lignes TournamentOrganizer, pour qu'une suppression de compte ne
+/// supprime jamais un tournoi ni ses résultats. Les états sont des chaînes (pas d'enum : SQLite).
+/// `revision` est incrémentée à chaque écriture (sondage des écrans, cf. src/lib/tournament).
+model Tournament {
+  id                    String                @id @default(cuid())
+  code                  String                @unique
+  name                  String
+  /// boutique | competitif
+  format                String                @default("boutique")
+  /// bo1 | bo3
+  matchType             String                @default("bo3")
+  roundMinutes          Int                   @default(50)
+  topCutExtraMinutes    Int                   @default(25)
+  /// aucun | auto | 2 | 4 | 8 | 16 | 32
+  topCutSetting         String                @default("aucun")
+  swissRounds           Int                   @default(3)
+  /// inscriptions | suisse | top_cut | termine | annule
+  status                String                @default("inscriptions")
+  registrationOpen      Boolean               @default(true)
+  requireApproval       Boolean               @default(false)
+  /// direct | organizer : validation d'un score confirmé sur le téléphone du déclarant
+  oneDeviceMode         String                @default("direct")
+  declareTimeoutMinutes Int                   @default(10)
+  /// zero | loss : rondes manquées par un retardataire
+  lateEntryPolicy       String                @default("zero")
+  revision              Int                   @default(0)
+  /// Tirage au sort d'une égalité au seuil du top cut (JSON), figé une fois effectué.
+  cutDrawJson           String?
+  /// Qualifiés du top cut (JSON : ids dans l'ordre de seed), figés à la fin des rondes suisses.
+  cutJson               String?
+  championId            String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  organizers            TournamentOrganizer[]
+  invites               TournamentInvite[]
+  players               TournamentPlayer[]
+  rounds                TournamentRound[]
+  actions               TournamentAction[]
+}
+
+model TournamentOrganizer {
+  tournamentId String
+  userId       String
+  /// owner | co
+  role         String
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([tournamentId, userId])
+  @@index([userId])
+}
+
+/// Invitation de co-organisateur à usage unique (seule l'empreinte du jeton est stockée).
+model TournamentInvite {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tokenHash    String     @unique
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId])
+}
+
+/// Participant : inscrit par code (compte ou invité), créé par le TO (« papier ») ou récupéré
+/// par QR personnel. `name` est une copie : il survit à la suppression du compte (SetNull).
+model TournamentPlayer {
+  id                String            @id @default(cuid())
+  tournamentId      String
+  userId            String?
+  name              String
+  /// Pseudo normalisé (sans casse, accents ni espaces superflus) : unicité par tournoi.
+  nameKey           String
+  /// pending | active | dropped | dq
+  status            String            @default("active")
+  dqReason          String?
+  /// Première ronde à laquelle le joueur peut être apparié.
+  joinedRound       Int               @default(1)
+  /// Rondes suisses manquées (arrivée en retard, drop puis réintégration) : défaites si
+  /// lateEntryPolicy = loss, sans effet sinon.
+  missedRounds      Int               @default(0)
+  /// Dernière ronde suisse jouée avant un drop / une DQ.
+  droppedAfterRound Int?
+  cutDeclined       Boolean           @default(false)
+  deviceTokenHash   String?           @unique
+  claimTokenHash    String?           @unique
+  claimExpiresAt    DateTime?
+  createdAt         DateTime          @default(now())
+  tournament        Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  matchesAsA        TournamentMatch[] @relation("MatchPlayerA")
+  matchesAsB        TournamentMatch[] @relation("MatchPlayerB")
+
+  @@unique([tournamentId, nameKey])
+  @@unique([tournamentId, userId])
+  @@index([userId])
+}
+
+model TournamentRound {
+  id              String            @id @default(cuid())
+  tournamentId    String
+  number          Int
+  /// swiss | top_cut
+  phase           String
+  /// draft | published | running | closed
+  status          String            @default("draft")
+  startedAt       DateTime?
+  durationSeconds Int
+  pausedAt        DateTime?
+  pausedSeconds   Int               @default(0)
+  addedSeconds    Int               @default(0)
+  createdAt       DateTime          @default(now())
+  tournament      Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  matches         TournamentMatch[]
+
+  @@unique([tournamentId, number])
+}
+
+/// Match. `playerBId` nul = bye. Chaque joueur déclare dans sa propre case (declAJson /
+/// declBJson) : deux déclarations simultanées ne s'écrasent jamais. `version` sert de verrou
+/// optimiste pour toute écriture.
+model TournamentMatch {
+  id              String               @id @default(cuid())
+  roundId         String
+  table           Int
+  /// Position dans l'arbre du top cut (0 = premier match du tour).
+  bracketSlot     Int?
+  playerAId       String
+  playerBId       String?
+  /// en_cours | declare | conteste | valide
+  status          String               @default("en_cours")
+  /// normal | bye | double_loss | id | no_show
+  kind            String               @default("normal")
+  gamesA          Int?
+  gamesB          Int?
+  declAJson       String?
+  declBJson       String?
+  declaredAt      DateTime?
+  confirmedOnSite Boolean              @default(false)
+  extraSeconds    Int                  @default(0)
+  version         Int                  @default(0)
+  updatedAt       DateTime             @updatedAt
+  round           TournamentRound      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  playerA         TournamentPlayer     @relation("MatchPlayerA", fields: [playerAId], references: [id], onDelete: NoAction)
+  playerB         TournamentPlayer?    @relation("MatchPlayerB", fields: [playerBId], references: [id], onDelete: NoAction)
+  logs            TournamentMatchLog[]
+
+  @@index([roundId])
+  @@index([playerAId])
+  @@index([playerBId])
+}
+
+/// Historique des modifications d'un résultat (auteur, ancien et nouveau score).
+model TournamentMatchLog {
+  id            String          @id @default(cuid())
+  matchId       String
+  actorUserId   String?
+  actorPlayerId String?
+  action        String
+  beforeJson    String
+  afterJson     String
+  createdAt     DateTime        @default(now())
+  match         TournamentMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+}
+
+/// Commandes organisateur déjà appliquées : un renvoi de la file hors connexion avec le même
+/// `clientActionId` renvoie le résultat enregistré au lieu d'agir deux fois.
+model TournamentAction {
+  tournamentId   String
+  clientActionId String
+  resultJson     String
+  createdAt      DateTime   @default(now())
+  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@id([tournamentId, clientActionId])
 }

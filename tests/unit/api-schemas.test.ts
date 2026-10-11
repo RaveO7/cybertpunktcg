@@ -3,6 +3,8 @@ import { describe, it } from "vitest";
 import {
   bulkSchema,
   loginSchema,
+  organizerCommandSchema,
+  playerCommandSchema,
   patchLineSchema,
   quantitySchema,
   readJsonBody,
@@ -10,6 +12,8 @@ import {
   saveLineSchema,
   shareSchema,
   shareTokenSchema,
+  tournamentCreateSchema,
+  tournamentJoinSchema,
   validate,
 } from "../../src/lib/api-schemas";
 
@@ -304,5 +308,60 @@ describe("readJsonBody", () => {
     const result = await readJsonBody(request(JSON.stringify({ printingId: "p", quantity: 2 })), saveLineSchema);
     assert.equal(result.ok, true);
     if (result.ok) assert.equal(result.data.quantity, 2);
+  });
+});
+
+describe("tournois", () => {
+  const action = { clientActionId: "action-0001" };
+
+  it("création : nom obligatoire, réglages bornés", async () => {
+    assert.deepEqual(await ok(tournamentCreateSchema, { name: "  Soirée vendredi " }), { name: "Soirée vendredi" });
+    assert.equal((await ko(tournamentCreateSchema, {})).error, "Nom du tournoi invalide.");
+    assert.equal((await ko(tournamentCreateSchema, { name: " " })).error, "Donnez un nom au tournoi.");
+    assert.equal(
+      (await ko(tournamentCreateSchema, { name: "T", roundMinutes: 9 })).error,
+      "Durée de ronde invalide (10 à 180 minutes).",
+    );
+    assert.equal(
+      (await ko(tournamentCreateSchema, { name: "T", roundMinutes: 181 })).error,
+      "Durée de ronde invalide (10 à 180 minutes).",
+    );
+    assert.equal((await ko(tournamentCreateSchema, { name: "T", topCutSetting: "6" })).error, "Taille de top cut invalide.");
+    assert.equal((await ok(tournamentCreateSchema, { name: "T", topCutSetting: "8", matchType: "bo1" })).topCutSetting, "8");
+  });
+
+  it("commandes organisateur : union sur le type", async () => {
+    assert.deepEqual(await ok(organizerCommandSchema, { ...action, type: "addPlayer", name: "  Neo  Anderson " }), {
+      ...action,
+      type: "addPlayer",
+      name: "Neo Anderson",
+    });
+    const result = await ok(organizerCommandSchema, {
+      ...action,
+      type: "setResult",
+      matchId: "m1",
+      result: { gamesA: 2, gamesB: 1 },
+    });
+    assert.deepEqual(result.result, { kind: "normal", gamesA: 2, gamesB: 1 });
+    assert.equal((await ko(organizerCommandSchema, { ...action, type: "inconnu" })).error, "Requête invalide.");
+    assert.equal((await ko(organizerCommandSchema, { type: "pairRound" })).error, "Requête invalide.");
+    assert.equal(
+      (await ko(organizerCommandSchema, { ...action, type: "setResult", matchId: "m1", result: { gamesA: 3, gamesB: 0 } })).error,
+      "Score invalide.",
+    );
+    assert.equal(
+      (await ko(organizerCommandSchema, { ...action, type: "updateSettings", settings: { swissRounds: 0 } })).error,
+      "Nombre de rondes invalide (1 à 20).",
+    );
+  });
+
+  it("commandes joueur et inscription", async () => {
+    await ok(playerCommandSchema, { type: "confirm", matchId: "m1" });
+    assert.equal((await ko(playerCommandSchema, { type: "setResult", matchId: "m1" })).error, "Requête invalide.");
+    assert.deepEqual(await ok(tournamentJoinSchema, {}), {});
+    assert.equal(
+      (await ko(tournamentJoinSchema, { name: "x".repeat(33) })).error,
+      "Le pseudo doit contenir entre 1 et 32 caractères.",
+    );
   });
 });
