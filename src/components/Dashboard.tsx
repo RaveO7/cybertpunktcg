@@ -237,6 +237,22 @@ function sortScopes<T extends Scope>(list: T[], sort: SortKey) {
   );
 }
 
+/** Prix marché d'un exemplaire de chaque impression, et part encore manquante. */
+function fullSetPrice(printings: PrintingDTO[], agg: Map<string, Ownership>) {
+  let total = 0;
+  let missing = 0;
+  let priced = 0;
+  for (const printing of printings) {
+    if (printing.marketPrice == null) continue;
+    const price = Number(printing.marketPrice);
+    if (!Number.isFinite(price)) continue;
+    priced += 1;
+    total += price;
+    if ((agg.get(printing.id)?.qty ?? 0) === 0) missing += price;
+  }
+  return { total, missing, priced, count: printings.length };
+}
+
 function cardsHref(params: Record<string, string>) {
   return `/cards?${new URLSearchParams(params)}`;
 }
@@ -716,6 +732,8 @@ export function Dashboard() {
                   </span>
                 </div>
               </div>
+
+              {!isSealed && view.hasPrices ? <FullSetPrice printings={scope.printings} ownership={scope.ownership} /> : null}
             </div>
 
             {isSealed ? (
@@ -943,6 +961,32 @@ function ValueItem({
         ) : null}
       </dl>
     </li>
+  );
+}
+
+function FullSetPrice({ printings, ownership }: { printings: PrintingDTO[]; ownership: Map<string, Ownership> }) {
+  const { t } = useI18n();
+  const price = fullSetPrice(printings, ownership);
+  if (price.priced === 0) return null;
+  return (
+    <div className="hud-panel flex items-center justify-between gap-4 p-5">
+      <div className="flex flex-col gap-1">
+        <span className="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+          {t.dashboard.fullSetPrice}
+        </span>
+        <span className="font-mono text-xl text-yellow">{formatMoney(price.total)}</span>
+        <span className="text-xs text-muted">
+          {t.dashboard.fullSetHint}
+          {price.priced < price.count ? ` · ${formatInt(price.priced)} / ${formatInt(price.count)}` : null}
+        </span>
+      </div>
+      <div className="flex flex-col items-end gap-1">
+        <span className="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+          {t.dashboard.fullSetMissing}
+        </span>
+        <span className="font-mono text-base text-danger">{formatMoney(price.missing)}</span>
+      </div>
+    </div>
   );
 }
 

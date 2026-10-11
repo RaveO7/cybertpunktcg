@@ -189,6 +189,7 @@ export function CardModal({
   const total = items.reduce((sum, item) => sum + item.quantity, 0);
   const rules = resolveRulesText(card, printing, siblings, locale);
   const accent = chipColor(card.color);
+  const canAdd = !readOnly && Boolean(onSave);
 
   const market = toAmount(printing.marketPrice);
   const previous = toAmount(printing.previousMarketPrice);
@@ -252,6 +253,18 @@ export function CardModal({
       if (event.key === "ArrowRight" && nextId) {
         event.preventDefault();
         onOpen(nextId);
+        return;
+      }
+      // Flèches haut / bas : quantité du formulaire d'ajout.
+      if (!canAdd) return;
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setQuantity((current) => current + 1);
+        return;
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setQuantity((current) => Math.max(1, current - 1));
       }
     }
     window.addEventListener("keydown", onKey);
@@ -259,7 +272,7 @@ export function CardModal({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
     };
-  }, [onClose, onOpen, prevId, nextId]);
+  }, [onClose, onOpen, prevId, nextId, canAdd]);
 
   useEffect(() => {
     let cancelled = false;
