@@ -87,22 +87,35 @@ function isWideLayout() {
   return window.matchMedia("(min-width: 1024px)").matches;
 }
 
-function sortOptions(t: Messages): { value: Filters["sort"]; label: string }[] {
+type SortDirection = "asc" | "desc";
+
+/** Critère de tri affiché dans le menu ; le sens se choisit avec la flèche à côté. */
+type SortField = {
+  id: string;
+  label: string;
+  /** Clé de tri par sens ; une seule entrée quand le critère n'a pas de sens. */
+  keys: { asc: Filters["sort"]; desc?: Filters["sort"] };
+};
+
+function sortFields(t: Messages): SortField[] {
   return [
-    { value: "default", label: t.cards.sortDefault },
-    { value: "number-asc", label: t.cards.sortNumberAsc },
-    { value: "number-desc", label: t.cards.sortNumberDesc },
-    { value: "cost-asc", label: t.cards.sortCostAsc },
-    { value: "cost-desc", label: t.cards.sortCostDesc },
-    { value: "qty-asc", label: t.cards.sortQtyAsc },
-    { value: "qty-desc", label: t.cards.sortQtyDesc },
-    { value: "name-asc", label: t.cards.sortNameAsc },
-    { value: "name-desc", label: t.cards.sortNameDesc },
-    { value: "rarity", label: t.cards.sortRarity },
-    { value: "set", label: t.cards.groupSet },
-    { value: "owned-first", label: t.cards.groupOwnedFirst },
-    { value: "missing-first", label: t.cards.groupMissingFirst },
+    { id: "default", label: t.cards.sortDefault, keys: { asc: "default" } },
+    { id: "number", label: t.cards.sortFieldNumber, keys: { asc: "number-asc", desc: "number-desc" } },
+    { id: "cost", label: t.cards.sortFieldCost, keys: { asc: "cost-asc", desc: "cost-desc" } },
+    { id: "qty", label: t.cards.sortFieldQty, keys: { asc: "qty-asc", desc: "qty-desc" } },
+    { id: "name", label: t.cards.sortFieldName, keys: { asc: "name-asc", desc: "name-desc" } },
+    { id: "owned", label: t.cards.sortFieldOwned, keys: { asc: "missing-first", desc: "owned-first" } },
+    { id: "rarity", label: t.cards.sortRarity, keys: { asc: "rarity" } },
+    { id: "set", label: t.cards.groupSet, keys: { asc: "set" } },
   ];
+}
+
+function splitSort(fields: SortField[], sort: Filters["sort"]): { field: SortField; dir: SortDirection } {
+  for (const field of fields) {
+    if (field.keys.asc === sort) return { field, dir: "asc" };
+    if (field.keys.desc === sort) return { field, dir: "desc" };
+  }
+  return { field: fields[0], dir: "asc" };
 }
 
 export function CardsExplorer({
@@ -137,7 +150,7 @@ export function CardsExplorer({
   const { t } = useI18n();
   const { prefs } = usePreferences();
   const filterDefaults = useMemo(() => filterDefaultsFrom(prefs), [prefs.collection, prefs.sort]);
-  const SORTS = sortOptions(t);
+  const SORT_FIELDS = sortFields(t);
   const [filters, setFilters] = useState<Filters>(() => parseFilters(searchParams, true, filterDefaultsFrom(prefs)));
   const [filtersVisibility, setFiltersVisibility] = useState<"auto" | "open" | "closed">(prefs.filtersPanel);
   // Tiroir de filtres sur téléphone/tablette, indépendant de la colonne de bureau.
@@ -758,18 +771,51 @@ export function CardsExplorer({
             enterKeyHint="search"
             className="h-10 min-w-0 flex-1 basis-[calc(100%-3rem)] border border-line bg-panel px-3 text-sm outline-none focus:border-cyan sm:basis-40"
           />
-          <select
-            aria-label={t.cards.sort}
-            className="h-10 min-w-0 flex-1 border border-line bg-panel px-3 text-sm sm:flex-none"
-            value={activeFilters.sort}
-            onChange={(event) => update({ sort: event.target.value as Filters["sort"], page: 1 })}
-          >
-            {SORTS.map((sort) => (
-              <option key={sort.value} value={sort.value}>
-                {sort.label}
-              </option>
-            ))}
-          </select>
+          {(() => {
+            const { field, dir } = splitSort(SORT_FIELDS, activeFilters.sort);
+            const directional = field.keys.desc !== undefined;
+            return (
+              <div className="flex h-10 min-w-0 flex-1 sm:flex-none">
+                <select
+                  aria-label={t.cards.sort}
+                  className="h-10 min-w-0 flex-1 border border-line bg-panel px-3 text-sm"
+                  value={field.id}
+                  onChange={(event) => {
+                    const next = SORT_FIELDS.find((item) => item.id === event.target.value) ?? SORT_FIELDS[0];
+                    update({ sort: (dir === "desc" && next.keys.desc) || next.keys.asc, page: 1 });
+                  }}
+                >
+                  {SORT_FIELDS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={!directional}
+                  aria-label={`${t.cards.sortToggleDirection} (${dir === "asc" ? t.cards.sortAscending : t.cards.sortDescending})`}
+                  title={dir === "asc" ? t.cards.sortAscending : t.cards.sortDescending}
+                  className="grid h-10 w-10 shrink-0 place-items-center border border-l-0 border-line bg-panel text-cyan disabled:text-muted disabled:opacity-40"
+                  onClick={() => {
+                    if (!field.keys.desc) return;
+                    update({ sort: dir === "asc" ? field.keys.desc : field.keys.asc, page: 1 });
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={`h-4 w-4 transition-transform ${dir === "desc" ? "rotate-180" : ""}`}
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                  >
+                    <path d="M10 16V4M5 9l5-5 5 5" strokeLinecap="square" />
+                  </svg>
+                </button>
+              </div>
+            );
+          })()}
           {!readOnly ? (
             <button
               type="button"
