@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { PriceChart, type ChartPoint } from "@/components/PriceChart";
 import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
@@ -115,6 +116,10 @@ function lineSortLabel(key: LineSortKey, t: Messages) {
   return labels[key];
 }
 
+function languageParam(value: string | null) {
+  return value === "en" || value === "fr" ? value : "";
+}
+
 function performanceOptions(t: Messages): { value: InvestmentPerformance; label: string }[] {
   return [
     { value: "all", label: t.investment.perfAll },
@@ -130,8 +135,17 @@ function performanceOptions(t: Messages): { value: InvestmentPerformance; label:
 export function InvestmentScreen() {
   const { ready, error, catalog, items } = useCollection();
   const { t } = useI18n();
-  const [setFilter, setSetFilter] = useState("all");
-  const [language, setLanguage] = useState("");
+  // Filtres initiaux passés par l'URL (ex. clic sur une extension du tableau de bord).
+  const searchParams = useSearchParams();
+  const [setFilter, setSetFilter] = useState(() => searchParams.get("set") || "all");
+  const [language, setLanguage] = useState(() => languageParam(searchParams.get("language")));
+  const searchKey = searchParams.toString();
+  const [syncedSearchKey, setSyncedSearchKey] = useState(searchKey);
+  if (searchKey !== syncedSearchKey) {
+    setSyncedSearchKey(searchKey);
+    setSetFilter(searchParams.get("set") || "all");
+    setLanguage(languageParam(searchParams.get("language")));
+  }
   const [performance, setPerformance] = useState<InvestmentPerformance>("all");
   const [query, setQuery] = useState("");
   const [chartPoints, setChartPoints] = useState<ChartPoint[]>([]);

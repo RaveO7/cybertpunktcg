@@ -91,6 +91,8 @@ type ValueRow = {
   key: string;
   name: string | null;
   language: Language | null;
+  /** Filtre d'extension de la page Investissement (nul pour la ligne « autres »). */
+  set: string | null;
   value: ValueSummary;
 };
 
@@ -253,20 +255,17 @@ function sortScopes<T extends Scope>(list: T[], sort: SortKey) {
   );
 }
 
-/** Prix marché d'un exemplaire de chaque impression, et part encore manquante. */
-function fullSetPrice(printings: PrintingDTO[], agg: Map<string, Ownership>) {
+/** Prix marché d'un exemplaire de chaque impression (nul si aucune n'a de prix). */
+function fullSetPrice(printings: PrintingDTO[]) {
   let total = 0;
-  let missing = 0;
   let priced = 0;
   for (const printing of printings) {
-    if (printing.marketPrice == null) continue;
-    const price = Number(printing.marketPrice);
+    const price = printing.marketPrice == null ? Number.NaN : Number(printing.marketPrice);
     if (!Number.isFinite(price)) continue;
     priced += 1;
     total += price;
-    if ((agg.get(printing.id)?.qty ?? 0) === 0) missing += price;
   }
-  return { total, missing, priced, count: printings.length };
+  return priced === 0 ? null : { total, priced, count: printings.length };
 }
 
 function cardsHref(params: Record<string, string>) {
@@ -351,6 +350,7 @@ export function Dashboard() {
             key: `${extension.key}|${entry}`,
             name: extension.name,
             language: entry,
+            set: extension.browseSet,
             value: extension.value,
           });
         }
@@ -362,12 +362,13 @@ export function Dashboard() {
         key: "other",
         name: null,
         language: null,
+        set: null,
         value: otherValue,
       });
     const sealedValueRows: ValueRow[] = LANGUAGES.flatMap((entry) =>
       (entry === language ? sealedRows : sealedRowsFor(entry)).flatMap((row) => {
         const value = summarizeRows([row]);
-        return value ? [{ key: `${row.setCode}|${entry}`, name: row.setName, language: entry, value }] : [];
+        return value ? [{ key: `${row.setCode}|${entry}`, name: row.setName, language: entry, set: row.setCode, value }] : [];
       }),
     );
 
@@ -721,6 +722,7 @@ export function Dashboard() {
                       key={extension.key}
                       label={extension.shortName}
                       progress={extension.progress}
+                      price={view.hasPrices ? fullSetPrice(extension.printings) : null}
                       active={pickedExtension?.key === extension.key}
                       openLabel={t.dashboard.openList}
                       onClick={() => pickRow(extension)}
@@ -728,27 +730,6 @@ export function Dashboard() {
                   ))}
                 </div>
               ) : null}
-
-              <div className="hud-panel flex items-center justify-between gap-4 p-5">
-                <div className="flex flex-col gap-1">
-                  <span className="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-                    {t.dashboard.setValue}
-                  </span>
-                  <span className="font-mono text-xl text-yellow">
-                    {scope.value && scope.value.pricedCopies > 0 ? formatMoney(scope.value.marketTotal) : "—"}
-                  </span>
-                </div>
-                <div className="flex flex-col items-end gap-1 text-sm">
-                  {scope.value ? (
-                    <TrendBadge delta={scope.value.marketDelta} amount={scope.value.marketDeltaAmount} />
-                  ) : null}
-                  <span className="text-xs text-muted">
-                    {t.dashboard.purchasePnL} <ProfitText value={scope.value?.profitEur ?? null} />
-                  </span>
-                </div>
-              </div>
-
-              {!isSealed && view.hasPrices ? <FullSetPrice printings={scope.printings} ownership={scope.ownership} /> : null}
             </div>
 
             {isSealed ? (
@@ -827,9 +808,10 @@ export function Dashboard() {
         ) : (
           <>
             <ul className="hud-panel md:hidden">
-              {valueRows.map(({ key, name, language: rowLanguage, value: row }) => (
+              {valueRows.map(({ key, name, language: rowLanguage, set, value: row }) => (
                 <ValueItem
                   key={key}
+                  href={set ? investmentHref(set, rowLanguage) : null}
                   title={
                     <>
                       <span className={name == null ? "text-muted" : "font-medium"}>{name ?? t.dashboard.otherSets}</span>
@@ -866,36 +848,37 @@ export function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {valueRows.map(({ key, name, language: rowLanguage, value: row }) => {
+                {valueRows.map(({ key, name, language: rowLanguage, set, value: row }) => {
                   const share = valueTotal > 0 ? (row.marketTotal / valueTotal) * 100 : 0;
+                  const href = set ? investmentHref(set, rowLanguage) : null;
                   return (
-                    <tr key={key}>
-                      <td className={`px-4 py-3 ${name == null ? "text-muted" : "font-medium"}`}>
+                    <tr key={key} className={href ? "hover:bg-white/5" : undefined}>
+                      <ValueCell href={href} primary className={name == null ? "text-muted" : "font-medium"}>
                         {name ?? t.dashboard.otherSets}
                         {rowLanguage ? (
                           <span className="ml-2 text-xs font-normal text-muted">
                             {rowLanguage === "fr" ? t.common.french : t.common.english}
                           </span>
                         ) : null}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono">
+                      </ValueCell>
+                      <ValueCell href={href} className="text-right font-mono">
                         {formatInt(row.pricedCopies)} / {formatInt(row.copies)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono">
+                      </ValueCell>
+                      <ValueCell href={href} className="text-right font-mono">
                         {row.pricedCopies > 0 ? formatMoney(row.marketTotal) : "—"}
-                      </td>
-                      <td className="px-4 py-3">
+                      </ValueCell>
+                      <ValueCell href={href}>
                         <span className="flex items-center gap-2.5">
                           <Bar percent={share} tone="cyan" />
                           <span className="w-10 text-right font-mono text-muted">{Math.round(share)} %</span>
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      </ValueCell>
+                      <ValueCell href={href} className="text-right">
                         <TrendBadge delta={row.marketDelta} amount={row.marketDeltaAmount} />
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono">
+                      </ValueCell>
+                      <ValueCell href={href} className="text-right font-mono">
                         <ProfitText value={row.profitEur} />
-                      </td>
+                      </ValueCell>
                     </tr>
                   );
                 })}
@@ -933,16 +916,18 @@ function ValueItem({
   title,
   value,
   share,
+  href = null,
   total = false,
 }: {
   title: ReactNode;
   value: ValueSummary;
   share: number | null;
+  href?: string | null;
   total?: boolean;
 }) {
   const { t } = useI18n();
-  return (
-    <li className={`px-4 py-3.5 ${total ? "border-t border-[var(--hud-border)]" : "border-t border-line/60 first:border-t-0"}`}>
+  const content = (
+    <>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0">{title}</span>
         <span className={`shrink-0 font-mono text-base ${total ? "text-yellow" : ""}`}>
@@ -975,34 +960,51 @@ function ValueItem({
           </div>
         ) : null}
       </dl>
+    </>
+  );
+  const border = total ? "border-t border-[var(--hud-border)]" : "border-t border-line/60 first:border-t-0";
+  return href ? (
+    <li className={border}>
+      <Link href={href} className="block px-4 py-3.5 hover:bg-white/5">
+        {content}
+      </Link>
     </li>
+  ) : (
+    <li className={`px-4 py-3.5 ${border}`}>{content}</li>
   );
 }
 
-function FullSetPrice({ printings, ownership }: { printings: PrintingDTO[]; ownership: Map<string, Ownership> }) {
-  const { t } = useI18n();
-  const price = fullSetPrice(printings, ownership);
-  if (price.priced === 0) return null;
+/** Cellule du tableau des valeurs : toute la ligne mène à la page Investissement filtrée. */
+function ValueCell({
+  href,
+  primary = false,
+  className = "",
+  children,
+}: {
+  href: string | null;
+  primary?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  if (!href) return <td className={`px-4 py-3 ${className}`}>{children}</td>;
   return (
-    <div className="hud-panel flex items-center justify-between gap-4 p-5">
-      <div className="flex flex-col gap-1">
-        <span className="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-          {t.dashboard.fullSetPrice}
-        </span>
-        <span className="font-mono text-xl text-yellow">{formatMoney(price.total)}</span>
-        <span className="text-xs text-muted">
-          {t.dashboard.fullSetHint}
-          {price.priced < price.count ? ` · ${formatInt(price.priced)} / ${formatInt(price.count)}` : null}
-        </span>
-      </div>
-      <div className="flex flex-col items-end gap-1">
-        <span className="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-          {t.dashboard.fullSetMissing}
-        </span>
-        <span className="font-mono text-base text-danger">{formatMoney(price.missing)}</span>
-      </div>
-    </div>
+    <td className={`p-0 ${className}`}>
+      <Link
+        href={href}
+        tabIndex={primary ? undefined : -1}
+        aria-hidden={primary ? undefined : true}
+        className={`block px-4 py-3 ${primary ? "hover:text-cyan" : ""}`}
+      >
+        {children}
+      </Link>
+    </td>
   );
+}
+
+function investmentHref(set: string, language: Language | null) {
+  const params = new URLSearchParams({ set });
+  if (language) params.set("language", language);
+  return `/investissement?${params}`;
 }
 
 function rarityColor(rarity: string) {
@@ -1058,16 +1060,27 @@ function GridCard({
 function PickRow({
   label,
   progress,
+  price,
   active,
   openLabel,
   onClick,
 }: {
   label: string;
   progress: Progress;
+  price: ReturnType<typeof fullSetPrice>;
   active: boolean;
   openLabel: string;
   onClick: () => void;
 }) {
+  const { t } = useI18n();
+  const priceTitle = price
+    ? [
+        `${t.dashboard.fullSetPrice} ${t.dashboard.fullSetHint}`,
+        price.priced < price.count ? `${formatInt(price.priced)} / ${formatInt(price.count)}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : undefined;
   return (
     <button
       type="button"
@@ -1078,8 +1091,15 @@ function PickRow({
         active ? "border-yellow/70 bg-panel-2" : "border-transparent hover:border-cyan/50 hover:bg-panel-2"
       }`}
     >
-      <span className="w-24 shrink-0 truncate font-display text-sm font-semibold uppercase tracking-[0.08em] text-foreground sm:w-44">
-        {label}
+      <span className="flex w-24 shrink-0 flex-col py-1 sm:w-44">
+        <span className="truncate font-display text-sm font-semibold uppercase tracking-[0.08em] text-foreground">
+          {label}
+        </span>
+        {price ? (
+          <span title={priceTitle} className="truncate font-mono text-xs text-yellow">
+            {formatMoney(price.total)}
+          </span>
+        ) : null}
       </span>
       <Bar percent={progress.percent} tone={active ? "yellow" : "cyan"} thick />
       <span className="w-20 shrink-0 text-right font-mono text-sm text-muted group-hover:text-foreground sm:w-24">
