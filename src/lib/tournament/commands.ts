@@ -644,6 +644,8 @@ export async function deleteTournament(tournamentId: string, userId: string) {
     const role = organizerRole(t, userId);
     if (!role) fail("Réservé aux organisateurs du tournoi.", 403);
     if (role !== "owner") fail("Réservé à l'organisateur principal.", 403);
+    if (t.rounds.some(isStarted)) fail("Un tournoi commencé ne peut plus être supprimé : annulez-le.", 409);
+    if (t.players.length) fail("Un tournoi avec des inscrits ne peut pas être supprimé : annulez-le.", 409);
     await tx.tournament.delete({ where: { id: t.id } });
   });
 }

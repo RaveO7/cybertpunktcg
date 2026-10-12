@@ -21,6 +21,7 @@ export function SettingsTab({ view, run }: { view: TournamentView; run: RunComma
   const started = view.rounds.some((round) => round.status === "running" || round.status === "closed");
   const cutLocked = settings.status !== "inscriptions" && settings.status !== "suisse";
   const readOnly = settings.status === "termine" || settings.status === "annule";
+  const deletable = !started && view.players.length === 0;
 
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -178,7 +179,7 @@ export function SettingsTab({ view, run }: { view: TournamentView; run: RunComma
         ) : null}
       </section>
 
-      {isOwner ? (
+      {isOwner && (!readOnly || deletable) ? (
         <section className={`${panelClass} flex flex-wrap gap-2`}>
           {!readOnly ? (
             <button
@@ -191,9 +192,11 @@ export function SettingsTab({ view, run }: { view: TournamentView; run: RunComma
               {t.tournaments.cancelTournament}
             </button>
           ) : null}
-          <button type="button" className={dangerClass} onClick={() => void remove()}>
-            {t.tournaments.deleteTournament}
-          </button>
+          {deletable ? (
+            <button type="button" className={dangerClass} onClick={() => void remove()}>
+              {t.tournaments.deleteTournament}
+            </button>
+          ) : null}
         </section>
       ) : null}
     </div>

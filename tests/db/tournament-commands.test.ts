@@ -155,6 +155,20 @@ describe("droits", () => {
     await expectError(run(id, owner, { type: "addPlayer", name: "Trop tard" }), 409, /lecture seule/);
   });
 
+  it("suppression réservée à un tournoi sans inscrit et non commencé", async () => {
+    const withPlayers = await newTournament();
+    const [playerId] = await addPlayers(withPlayers, ["Inscrit"]);
+    await expectError(commands.deleteTournament(withPlayers, owner), 409, /inscrits/);
+    await run(withPlayers, owner, { type: "removePlayer", playerId });
+    await commands.deleteTournament(withPlayers, owner);
+    assert.equal(await repo.loadTournament(prisma, withPlayers), null);
+
+    const empty = await newTournament();
+    await run(empty, owner, { type: "cancel" });
+    await commands.deleteTournament(empty, owner);
+    assert.equal(await repo.loadTournament(prisma, empty), null);
+  });
+
   it("invitation de co-organisateur à usage unique", async () => {
     const id = await newTournament();
     const invite = await run(id, owner, { type: "inviteOrganizer" });
