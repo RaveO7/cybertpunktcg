@@ -1,6 +1,8 @@
 // Vue d'un tournoi envoyée aux écrans, adaptée au rôle : l'organisateur voit tout (brouillons,
 // inscriptions en attente, historique) ; un joueur ou un visiteur voit ce qui est publié.
 
+import { placeFromRow, type Place } from "@/lib/geo/location";
+import { waitlistPosition } from "./capacity";
 import { isOverdue, type MatchStatus } from "./match-state";
 import { findViewerPlayer, type Viewer } from "./player-auth";
 import type { FullTournament, MatchRow } from "./repository";
@@ -15,7 +17,9 @@ export type ViewRole = "organizer" | "player" | "public";
 export type PlayerView = {
   id: string;
   name: string;
-  status: "pending" | "active" | "dropped" | "dq";
+  status: "pending" | "active" | "dropped" | "dq" | "waitlist";
+  /** Rang dans la liste d'attente (1 = prochain promu), sinon null. */
+  waitlistPosition: number | null;
   hasApp: boolean;
   isAccount: boolean;
   joinedRound: number;
@@ -93,6 +97,16 @@ export type TournamentView = {
     championId: string | null;
     cutSeeds: string[];
     cutDraws: CutDraw[];
+    visibility: "private" | "public";
+    startsAt: string | null;
+    timeZone: string | null;
+    place: Place | null;
+    entryFeeCents: number | null;
+    currency: string;
+    maxPlayers: number | null;
+    description: string | null;
+    prizes: string | null;
+    shop: { id: string; name: string; slug: string; status: string } | null;
   };
   players: PlayerView[];
   rounds: RoundView[];
@@ -140,11 +154,14 @@ export function buildView(t: FullTournament, viewer: Viewer, now = new Date()): 
   const isOrganizer = role === "organizer";
 
   const players: PlayerView[] = t.players
-    .filter((player) => isOrganizer || player.status !== "pending" || player.id === mePlayer?.id)
+    .filter(
+      (player) => isOrganizer || (player.status !== "pending" && player.status !== "waitlist") || player.id === mePlayer?.id,
+    )
     .map((player) => ({
       id: player.id,
       name: player.name,
       status: player.status as PlayerView["status"],
+      waitlistPosition: player.status === "waitlist" ? waitlistPosition(t.players, player.id) : null,
       hasApp: hasApp(player),
       isAccount: player.userId !== null,
       joinedRound: player.joinedRound,
@@ -206,6 +223,16 @@ export function buildView(t: FullTournament, viewer: Viewer, now = new Date()): 
       championId: t.championId,
       cutSeeds: cut?.seeds ?? [],
       cutDraws: readCutDraws(t),
+      visibility: t.visibility === "public" ? "public" : "private",
+      startsAt: t.startsAt?.toISOString() ?? null,
+      timeZone: t.timeZone,
+      place: placeFromRow(t),
+      entryFeeCents: t.entryFeeCents,
+      currency: t.currency,
+      maxPlayers: t.maxPlayers,
+      description: t.description,
+      prizes: t.prizes,
+      shop: t.shop ? { id: t.shop.id, name: t.shop.name, slug: t.shop.slug, status: t.shop.status } : null,
     },
     players,
     rounds,

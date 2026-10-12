@@ -16,7 +16,12 @@ export function PlayersTab({ view, run }: { view: TournamentView; run: RunComman
   const started = view.rounds.some((round) => round.status === "running" || round.status === "closed");
   const canAdd = view.tournament.status === "inscriptions" || view.tournament.status === "suisse";
   const pendingPlayers = view.players.filter((player) => player.status === "pending");
-  const players = view.players.filter((player) => player.status !== "pending");
+  const waitlisted = view.players
+    .filter((player) => player.status === "waitlist")
+    .sort((a, b) => (a.waitlistPosition ?? 0) - (b.waitlistPosition ?? 0));
+  const players = view.players.filter((player) => player.status !== "pending" && player.status !== "waitlist");
+  const maxPlayers = view.tournament.maxPlayers;
+  const seatsTaken = view.players.filter((player) => player.status === "active" || player.status === "pending").length;
   const joinUrl = code ? absoluteUrl(`/t/${code}`) : "";
 
   async function add(event: React.FormEvent) {
@@ -111,8 +116,37 @@ export function PlayersTab({ view, run }: { view: TournamentView; run: RunComman
         </section>
       ) : null}
 
+      {waitlisted.length ? (
+        <section className={`${panelClass} flex flex-col gap-2`}>
+          <h2 className="hud-label">
+            {t.publicTournaments.waitlistTitle} · {waitlisted.length}
+          </h2>
+          {waitlisted.map((player) => (
+            <div key={player.id} className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                <span className="mr-2 font-mono text-muted">{player.waitlistPosition}</span>
+                {player.name}
+              </span>
+              {canAdd ? (
+                <span className="flex gap-2">
+                  <button type="button" className={buttonClass} onClick={() => void run({ type: "promoteWaitlisted", playerId: player.id })}>
+                    {t.publicTournaments.promote}
+                  </button>
+                  <button type="button" className={dangerClass} onClick={() => void run({ type: "removePlayer", playerId: player.id })}>
+                    {t.tournaments.remove}
+                  </button>
+                </span>
+              ) : null}
+            </div>
+          ))}
+        </section>
+      ) : null}
+
       <section className="flex flex-col">
-        <h2 className="hud-label mb-2">{t.tournaments.playerCount(players.length)}</h2>
+        <h2 className="hud-label mb-2">
+          {t.tournaments.playerCount(players.length)}
+          {maxPlayers !== null ? ` · ${t.publicTournaments.capacityLine(seatsTaken, maxPlayers)}` : ""}
+        </h2>
         {players.length === 0 ? <p className="text-sm text-muted">{t.tournaments.noPlayers}</p> : null}
         <ul className="flex flex-col border-t border-line">
           {players.map((player) => (
@@ -153,7 +187,9 @@ function PlayerRow({
   const [mode, setMode] = useState<Mode>("none");
   const [text, setText] = useState("");
   const [claim, setClaim] = useState<{ token: string; expiresAt: string } | null>(null);
-  const others = view.players.filter((candidate) => candidate.id !== player.id && candidate.status !== "pending");
+  const others = view.players.filter(
+    (candidate) => candidate.id !== player.id && candidate.status !== "pending" && candidate.status !== "waitlist",
+  );
   const swissOver = view.tournament.status !== "inscriptions" && view.tournament.status !== "suisse";
 
   async function issueClaim() {

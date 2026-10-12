@@ -18,6 +18,7 @@ const fullInclude = {
     include: { user: { select: { displayName: true, email: true } } },
   },
   players: { orderBy: { createdAt: "asc" } },
+  shop: { select: { id: true, name: true, slug: true, status: true, ownerId: true, logoUpdatedAt: true } },
   rounds: {
     orderBy: { number: "asc" },
     include: {

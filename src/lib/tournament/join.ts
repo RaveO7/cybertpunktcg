@@ -1,5 +1,6 @@
 // Inscription par code ou QR du tournoi : avec un compte ou en invité (pseudo seul).
 
+import { isFull, promoteWaitlist, waitlist } from "./capacity";
 import { playerNameKey } from "./code";
 import { fail } from "./errors";
 import { findViewerPlayer, newDeviceToken, type Viewer } from "./player-auth";
@@ -47,18 +48,25 @@ export async function joinTournament(
 
     const joinedRound = nextJoinRound(t);
     const device = newDeviceToken();
+    // Complet, ou d'autres attendent déjà : on prend son tour dans la liste d'attente, puis
+    // la promotion décide (dans l'ordre) qui obtient les places libres.
+    const queued = isFull(t.maxPlayers, t.players) || waitlist(t.players).length > 0;
     const player = await tx.tournamentPlayer.create({
       data: {
         tournamentId: t.id,
         userId: viewer.userId,
         name: playerName,
         nameKey,
-        status: t.requireApproval ? "pending" : "active",
+        status: queued ? "waitlist" : t.requireApproval ? "pending" : "active",
         joinedRound,
         missedRounds: joinedRound - 1,
         deviceTokenHash: device.hash,
       },
     });
-    return { playerId: player.id, existing: false, status: player.status, deviceToken: device.token };
+    let status = player.status;
+    if (queued && (await promoteWaitlist(tx, t)).includes(player.id)) {
+      status = t.requireApproval ? "pending" : "active";
+    }
+    return { playerId: player.id, existing: false, status, deviceToken: device.token };
   });
 }

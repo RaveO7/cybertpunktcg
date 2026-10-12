@@ -345,6 +345,7 @@ export async function dropPlayer(
 ) {
   if (player.status === "dq") fail("Ce joueur est disqualifié.", 409);
   if (player.status === "pending") fail("Inscription en attente : refusez-la plutôt.", 409);
+  if (player.status === "waitlist") fail("Joueur en liste d'attente : retirez-le plutôt.", 409);
   if (player.status === "dropped" && !options.dq) fail("Ce joueur a déjà droppé.", 409);
   const cut = readCut(t);
   const inCut = cut?.seeds.includes(player.id) ?? false;
@@ -380,8 +381,15 @@ export function roundIsUpToDate(t: FullTournament, round: RoundRow) {
   return paired.size === eligible.length && eligible.every((player) => paired.has(player.id));
 }
 
-/** Retrait avant le tournoi : supprime le joueur (et le brouillon de ronde 1 qui le contient). */
+/**
+ * Retrait avant le tournoi : supprime le joueur (et le brouillon de ronde 1 qui le contient).
+ * Un joueur en liste d'attente n'a jamais joué : il peut se retirer à tout moment.
+ */
 export async function removePlayerBeforeStart(tx: Tx, t: FullTournament, player: PlayerRow) {
+  if (player.status === "waitlist") {
+    await tx.tournamentPlayer.delete({ where: { id: player.id } });
+    return;
+  }
   if (startedSwissRounds(t) > 0) fail("Le tournoi a commencé : utilisez le drop.", 409);
   const draft = pendingRound(t);
   if (draft && draft.matches.some((match) => sideOf(match, player.id))) await deleteDraftRound(tx, draft);

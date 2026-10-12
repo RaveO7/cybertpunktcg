@@ -109,6 +109,8 @@ function JoinForm({ code, view, onJoined }: { code: string; view: TournamentView
 
   if (!open) return <p className={`${panelClass} text-sm text-muted`}>{t.tournaments.registrationClosedHint}</p>;
   const accountName = user && user.displayName !== "Ma collection" ? user.displayName : null;
+  const { maxPlayers } = view.tournament;
+  const full = maxPlayers !== null && view.players.filter((player) => player.status === "active").length >= maxPlayers;
 
   return (
     <form
@@ -131,6 +133,7 @@ function JoinForm({ code, view, onJoined }: { code: string; view: TournamentView
         />
       </label>
       {!user ? <p className="text-xs text-muted">{t.tournaments.guestHint}</p> : null}
+      {full ? <p className="text-xs text-yellow">{t.publicTournaments.fullHint}</p> : null}
       {message ? (
         <p role="alert" className="text-sm text-danger">
           {message}
@@ -184,6 +187,17 @@ function PlayerHome({ view, now, refresh }: { view: TournamentView; now: Date; r
         </p>
       ) : null}
       {me.status === "pending" ? <p className="text-sm text-yellow">{t.tournaments.waitingApproval}</p> : null}
+      {me.status === "waitlist" ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-yellow">{t.publicTournaments.waitlistPosition(me.waitlistPosition ?? 1)}</p>
+          <p className="text-xs text-muted">{t.publicTournaments.waitlistHint}</p>
+          {!finished ? (
+            <button type="button" className={`${buttonClass} self-start`} disabled={pending} onClick={() => void send({ type: "withdraw" })}>
+              {t.publicTournaments.leaveWaitlist}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       {me.status === "dropped" ? <p className="text-sm text-muted">{t.tournaments.droppedHint}</p> : null}
       {me.status === "dq" ? <p className="text-sm text-danger">{t.tournaments.dqHint}</p> : null}
       {me.status === "active" && !round && !finished ? <p className="text-sm text-muted">{t.tournaments.waitingStart}</p> : null}

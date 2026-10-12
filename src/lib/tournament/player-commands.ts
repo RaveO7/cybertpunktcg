@@ -3,6 +3,7 @@
 // match peuvent toucher à son résultat.
 
 import type { PlayerCommand } from "@/lib/api-schemas";
+import { promoteWaitlist } from "./capacity";
 import { fail } from "./errors";
 import { confirmOnSite, confirmResult, declareResult, refuseResult } from "./match-state";
 import { findViewerPlayer, type Viewer } from "./player-auth";
@@ -21,12 +22,15 @@ export async function runPlayerCommand(
     const player = findViewerPlayer(t, viewer) ?? fail("Vous n'êtes pas inscrit à ce tournoi.", 403);
     if (isReadOnly(t)) fail("Tournoi terminé.", 409);
 
+    // Une place libérée profite au premier de la liste d'attente.
     if (command.type === "drop") {
       await dropPlayer(tx, t, player, { rng: options.rng ?? cryptoRng, now });
+      await promoteWaitlist(tx, t);
       return { ok: true as const };
     }
     if (command.type === "withdraw") {
       await removePlayerBeforeStart(tx, t, player);
+      await promoteWaitlist(tx, t);
       return { ok: true as const };
     }
 

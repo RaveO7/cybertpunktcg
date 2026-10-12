@@ -3,8 +3,11 @@
 // permet à la file hors connexion de renvoyer sans risque de double effet.
 
 import { Prisma } from "@prisma/client";
-import type { OrganizerCommand } from "@/lib/api-schemas";
+import type { OrganizerCommand, TournamentCreateInput } from "@/lib/api-schemas";
+import { EMPTY_PLACE_COLUMNS, placeFromRow, toPlaceColumns } from "@/lib/geo/location";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
+import { promoteWaitlist } from "./capacity";
 import { adjustClock, pauseClock, resumeClock, roundDurationSeconds, type RoundClock } from "./clock";
 import { generateTournamentCode, playerNameKey } from "./code";
 import { fail, TournamentError } from "./errors";
@@ -83,6 +86,11 @@ export async function runOrganizerCommand(
 ): Promise<CommandResult> {
   const previous = await storedResult(tournamentId, command.clientActionId);
   if (previous) return previous;
+  if (command.type === "setVisibility" && command.public) {
+    // Garde-fou contre le spam de l'annuaire : 10 publications par jour et par compte.
+    const limited = await rateLimit(`tournament-publish:${userId}`, 10, 24 * 60 * 60_000);
+    if (!limited.ok) fail("Trop de publications aujourd'hui : réessayez demain.", 429);
+  }
   try {
     return await writeTournament(tournamentId, async (tx, t) => {
       // Revérifié sous verrou : une copie concurrente de la même commande a pu passer avant nous.
@@ -119,13 +127,48 @@ async function storedResult(tournamentId: string, clientActionId: string): Promi
 
 const OK: CommandResult = { ok: true };
 
+/** Commandes qui peuvent libérer une place (ou en créer) : la liste d'attente avance ensuite. */
+const MAY_FREE_SEAT: ReadonlySet<OrganizerCommand["type"]> = new Set([
+  "updateSettings",
+  "setRegistration",
+  "removePlayer",
+  "rejectPlayer",
+  "mergePlayers",
+  "dropPlayer",
+  "disqualify",
+  "noShow",
+]);
+
 async function dispatch(tx: Tx, t: FullTournament, command: OrganizerCommand, ctx: Ctx): Promise<CommandResult> {
+  const result = await dispatchCommand(tx, t, command, ctx);
+  if (!MAY_FREE_SEAT.has(command.type)) return result;
+  const promoted = await promoteWaitlist(tx, t);
+  return promoted.length ? { ...result, data: { ...result.data, promoted } } : result;
+}
+
+async function dispatchCommand(tx: Tx, t: FullTournament, command: OrganizerCommand, ctx: Ctx): Promise<CommandResult> {
   // Tournoi terminé ou annulé : lecture seule, sauf la correction de résultats.
   if (isReadOnly(t) && command.type !== "setResult") fail("Tournoi terminé : il est en lecture seule.", 409);
 
   switch (command.type) {
     case "updateSettings":
       return updateSettings(tx, t, command.settings);
+    case "setVisibility":
+      return setVisibility(tx, t, command.public, ctx);
+    case "setShop":
+      return setShop(tx, t, command.shopId, ctx);
+    case "promoteWaitlisted": {
+      const player = findPlayer(t, command.playerId);
+      if (player.status !== "waitlist") fail("Ce joueur n'est pas en liste d'attente.", 409);
+      assertRegistrationPhase(t);
+      // Choix explicite du TO : il vaut approbation, même au-delà du nombre de places.
+      const joinedRound = nextJoinRound(t);
+      await tx.tournamentPlayer.update({
+        where: { id: player.id },
+        data: { status: "active", joinedRound, missedRounds: joinedRound - 1 },
+      });
+      return { ok: true, warnings: draftWarning(t) };
+    }
     case "regenerateCode":
       return { ok: true, data: { code: await uniqueCode(tx, ctx.rng, t.id) } };
     case "setRegistration":
@@ -259,12 +302,60 @@ async function updateSettings(tx: Tx, t: FullTournament, settings: Settings): Pr
     const draft = pendingRound(t);
     if (draft && draft.number > settings.swissRounds) await deleteDraftRound(tx, draft);
   }
-  const { swissRounds, ...rest } = settings;
+  if (t.visibility === "public" && (settings.startsAt === null || settings.place === null)) {
+    fail("Un tournoi public doit garder une date et un lieu : repassez-le en privé d'abord.", 409);
+  }
+  const { swissRounds, place, ...rest } = settings;
   await tx.tournament.update({
     where: { id: t.id },
-    data: { ...rest, ...(swissRounds !== undefined ? { swissRounds } : {}) },
+    data: {
+      ...rest,
+      ...(swissRounds !== undefined ? { swissRounds } : {}),
+      ...(place === undefined ? {} : place === null ? EMPTY_PLACE_COLUMNS : toPlaceColumns(place)),
+    },
   });
   return { ok: true, warnings };
+}
+
+// --- Publication -----------------------------------------------------------------------------
+
+/** Champs manquants pour publier (cf. specs/tournaments/public-listing). */
+export function missingForPublication(t: Pick<FullTournament, "startsAt" | "city" | "country" | "lat" | "lng">, now: Date) {
+  const missing: ("startsAt" | "place")[] = [];
+  if (!t.startsAt || t.startsAt.getTime() <= now.getTime()) missing.push("startsAt");
+  if (!t.city || !t.country || t.lat === null || t.lng === null) missing.push("place");
+  return missing;
+}
+
+async function setVisibility(tx: Tx, t: FullTournament, makePublic: boolean, ctx: Ctx): Promise<CommandResult> {
+  if (!makePublic) {
+    await tx.tournament.update({ where: { id: t.id }, data: { visibility: "private" } });
+    return OK;
+  }
+  const missing = missingForPublication(t, ctx.now);
+  if (missing.length) {
+    const labels = missing.map((field) => (field === "startsAt" ? "une date de début à venir" : "un lieu localisé"));
+    fail(`Pour publier, il manque ${labels.join(" et ")}.`, 409, { missing });
+  }
+  await tx.tournament.update({
+    where: { id: t.id },
+    data: { visibility: "public", publishedAt: t.publishedAt ?? ctx.now },
+  });
+  return OK;
+}
+
+async function setShop(tx: Tx, t: FullTournament, shopId: string | null, ctx: Ctx): Promise<CommandResult> {
+  if (shopId === null) {
+    await tx.tournament.update({ where: { id: t.id }, data: { shopId: null } });
+    return OK;
+  }
+  const shop = await tx.shop.findUnique({ where: { id: shopId } });
+  if (!shop || shop.ownerId !== ctx.userId) fail("Vous ne gérez pas cette boutique.", 403);
+  if (shop.status === "rejected") fail("Cette boutique a été refusée : elle ne peut pas organiser de tournoi.", 409);
+  // Sans lieu, le tournoi a lieu à la boutique (modifiable ensuite : tournoi hors les murs).
+  const place = placeFromRow(t) ? {} : toPlaceColumns(placeFromRow(shop)!);
+  await tx.tournament.update({ where: { id: t.id }, data: { shopId: shop.id, ...place } });
+  return OK;
 }
 
 // --- Joueurs ---------------------------------------------------------------------------------
@@ -619,7 +710,7 @@ export async function acceptOrganizerInvite(token: string, userId: string, now =
 
 // --- Création, suppression, liste ------------------------------------------------------------
 
-export type TournamentCreateInput = Omit<Settings, "swissRounds"> & { name: string };
+export type { TournamentCreateInput };
 
 export async function createTournament(userId: string, input: TournamentCreateInput, rng: Rng = cryptoRng) {
   for (let attempt = 0; attempt < 5; attempt += 1) {

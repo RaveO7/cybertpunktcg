@@ -125,3 +125,9 @@ export async function loadCollection(userId: string): Promise<CollectionItemDTO[
 export async function requireUser(request: Request) {
   return userFromRequest(request);
 }
+
+/** Compte administrateur (rôle attribué par scripts/set-role.ts), sinon null. */
+export async function requireAdmin(request: Request) {
+  const user = await userFromRequest(request);
+  return user?.role === "admin" ? user : null;
+}

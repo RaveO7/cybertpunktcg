@@ -15,9 +15,12 @@ model User {
   displayName   String         @default("Ma collection")
   passwordHash  String?
   isPublic      Boolean        @default(false)
+  /// user | admin. Attribué uniquement par scripts/set-role.ts, jamais par l'API.
+  role          String         @default("user")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   items         CollectionItem[]
+  shops         Shop[]
   sessions      Session[]
   oauthAccounts OAuthAccount[]
   collectionShare CollectionShare?
@@ -72,6 +75,62 @@ model RateLimit {
   resetAt DateTime
 
   @@index([resetAt])
+}
+
+/// Réponses des services de géocodage (clé = fournisseur + requête normalisée), gardées 30
+/// jours pour ménager les services gratuits. Purgées par le cron quotidien.
+model GeocodeCache {
+  key        String   @id
+  resultJson String
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+/// Boutique de jeu : vitrine publique (/boutiques/[slug]) gérée par un compte. Le lieu est
+/// stocké à plat (mêmes colonnes que Tournament) pour filtrer par ville et par rayon.
+model Shop {
+  id            String       @id @default(cuid())
+  slug          String       @unique
+  ownerId       String
+  name          String
+  description   String?
+  website       String?
+  /// JSON : [{ "kind": "instagram", "url": "https://…" }]
+  socialsJson   String?
+  phone         String?
+  contactEmail  String?
+  /// Texte libre des horaires d'ouverture.
+  hours         String?
+  venueName     String?
+  address       String
+  postalCode    String?
+  city          String
+  /// Ville normalisée (sans casse, accents ni espaces superflus) pour les filtres.
+  cityKey       String
+  region        String?
+  /// Code ISO 3166-1 alpha-2.
+  country       String
+  lat           Float
+  lng           Float
+  /// Logo carré 256×256 en WebP.
+  logo          Bytes?
+  logoUpdatedAt DateTime?
+  /// pending | verified | rejected
+  status        String       @default("pending")
+  reviewNote    String?
+  reviewedAt    DateTime?
+  /// Sans relation : la décision reste tracée même si le compte admin est supprimé.
+  reviewedById  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  owner         User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tournaments   Tournament[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([country, cityKey])
+  @@index([lat, lng])
 }
 
 /// Statut des tâches planifiées (ex. import des prix) pour détecter les échecs répétés.
@@ -359,6 +418,31 @@ model Tournament {
   /// Qualifiés du top cut (JSON : ids dans l'ordre de seed), figés à la fin des rondes suisses.
   cutJson               String?
   championId            String?
+  /// private | public : un tournoi public est listé dans l'annuaire (/tournois/publics).
+  visibility            String                @default("private")
+  publishedAt           DateTime?
+  startsAt              DateTime?
+  /// Fuseau IANA du lieu (affichage de l'heure).
+  timeZone              String?
+  venueName             String?
+  address               String?
+  postalCode            String?
+  city                  String?
+  cityKey               String?
+  region                String?
+  country               String?
+  lat                   Float?
+  lng                   Float?
+  /// null = gratuit.
+  entryFeeCents         Int?
+  currency              String                @default("EUR")
+  /// null = pas de limite ; au-delà, les inscrits passent en liste d'attente.
+  maxPlayers            Int?
+  description           String?
+  prizes                String?
+  /// Boutique organisatrice : la supprimer détache le tournoi sans le supprimer.
+  shopId                String?
+  shop                  Shop?                 @relation(fields: [shopId], references: [id], onDelete: SetNull)
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
   organizers            TournamentOrganizer[]
@@ -366,6 +450,11 @@ model Tournament {
   players               TournamentPlayer[]
   rounds                TournamentRound[]
   actions               TournamentAction[]
+
+  @@index([visibility, startsAt])
+  @@index([country, cityKey])
+  @@index([lat, lng])
+  @@index([shopId])
 }
 
 model TournamentOrganizer {
@@ -403,7 +492,7 @@ model TournamentPlayer {
   name              String
   /// Pseudo normalisé (sans casse, accents ni espaces superflus) : unicité par tournoi.
   nameKey           String
-  /// pending | active | dropped | dq
+  /// pending | active | dropped | dq | waitlist (tournoi complet : rang = ordre de createdAt)
   status            String            @default("active")
   dqReason          String?
   /// Première ronde à laquelle le joueur peut être apparié.

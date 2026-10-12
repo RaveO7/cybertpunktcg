@@ -11,7 +11,8 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
+            // Géolocalisation pour soi seulement : recherche « autour de moi » de l'annuaire des tournois.
+            value: "camera=(), microphone=(), geolocation=(self)",
           },
         ],
       },

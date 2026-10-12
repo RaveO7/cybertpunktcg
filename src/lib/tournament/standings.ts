@@ -6,7 +6,7 @@ import { matchPoints, POINTS_WIN, winnerOf, type MatchResult, type Phase } from 
 export const PERCENT_FLOOR = 0.33;
 const EPSILON = 1e-9;
 
-export type PlayerStatus = "pending" | "active" | "dropped" | "dq";
+export type PlayerStatus = "pending" | "active" | "dropped" | "dq" | "waitlist";
 export type LateEntryPolicy = "zero" | "loss";
 
 /** `missedRounds` : rondes suisses manquées (retard, drop puis réintégration). */
@@ -144,7 +144,8 @@ export function computeStandings(
   matches: StandingsMatch[],
   policy: LateEntryPolicy = "zero",
 ): Standing[] {
-  const ranked = players.filter((player) => player.status !== "pending");
+  // Ni inscriptions en attente d'approbation, ni liste d'attente : ils n'ont pas de place.
+  const ranked = players.filter((player) => player.status !== "pending" && player.status !== "waitlist");
   const tallies = tallyPlayers(ranked, matches, policy);
 
   const mwp = new Map<string, number>();

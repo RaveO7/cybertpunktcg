@@ -89,6 +89,19 @@ export function TournamentsScreen() {
         </p>
       ) : null}
 
+      <Link href="/tournois/publics" className={`${panelClass} flex flex-col gap-1 border-cyan/50 transition hover:border-cyan`}>
+        <span className="text-lg text-cyan">{t.publicTournaments.browse} →</span>
+        <span className="text-sm text-muted">{t.publicTournaments.browseHint}</span>
+      </Link>
+      <p className="flex flex-wrap gap-4 text-sm">
+        <Link href="/boutiques" className="text-cyan underline">
+          {t.publicTournaments.shopsLink}
+        </Link>
+        <Link href="/compte/boutique" className="text-cyan underline">
+          {t.publicTournaments.myShopLink}
+        </Link>
+      </p>
+
       <div className="grid gap-3 md:grid-cols-2">
         <form className={`${panelClass} flex flex-col gap-3`} onSubmit={join}>
           <h2 className="text-lg">{t.tournaments.joinTitle}</h2>

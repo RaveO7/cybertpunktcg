@@ -14,8 +14,16 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
   const isSharedView = pathname.startsWith("/classeur/");
-  // Pages joueur d'un tournoi (/t/…) et pages légales : ouvertes aux invités sans compte.
-  const isPublicPage = isSharedView || pathname.startsWith("/t/") || LEGAL_PATHS.includes(pathname);
+  // Pages joueur d'un tournoi (/t/…), tournois publics, boutiques et pages légales : ouvertes
+  // aux invités sans compte.
+  const isPublicPage =
+    isSharedView ||
+    pathname.startsWith("/t/") ||
+    pathname === "/tournois/publics" ||
+    pathname.startsWith("/tournois/publics/") ||
+    pathname === "/boutiques" ||
+    pathname.startsWith("/boutiques/") ||
+    LEGAL_PATHS.includes(pathname);
   // Le didacticiel occupe toute la hauteur : pas de pied de page.
   const showFooter = !pathname.startsWith("/comment-jouer");
   // Tant que la session n'est pas vérifiée, aucune page protégée n'est rendue.

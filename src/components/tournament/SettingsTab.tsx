@@ -5,10 +5,15 @@ import { useState } from "react";
 import { useI18n } from "@/components/LocaleProvider";
 import { TOP_CUT_SETTINGS, type TopCutSetting } from "@/lib/tournament/top-cut";
 import type { TournamentView } from "@/lib/tournament/view";
+import { PublicationPanel } from "./PublicationPanel";
 import type { RunCommand } from "./TournamentConsole";
 import { absoluteUrl, buttonClass, dangerClass, inputClass, panelClass, primaryClass, Tag } from "./ui";
 
 type Draft = TournamentView["tournament"];
+
+function publicationKey(t: Draft) {
+  return JSON.stringify([t.startsAt, t.place, t.entryFeeCents, t.currency, t.maxPlayers, t.description, t.prizes, t.shop?.id ?? null]);
+}
 
 export function SettingsTab({ view, run }: { view: TournamentView; run: RunCommand }) {
   const { t } = useI18n();
@@ -147,6 +152,9 @@ export function SettingsTab({ view, run }: { view: TournamentView; run: RunComma
           </div>
         ) : null}
       </form>
+
+      {/* Remonté quand le serveur change ces informations (ex. lieu copié de la boutique choisie). */}
+      <PublicationPanel key={publicationKey(view.tournament)} view={view} run={run} />
 
       <section className={`${panelClass} flex flex-col gap-2`}>
         <h2 className="text-lg">{t.tournaments.organizers}</h2>

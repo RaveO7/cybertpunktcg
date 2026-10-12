@@ -4,8 +4,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { normalizeDisplayName, normalizeEmail, normalizeLoginPassword, normalizePassword } from "./auth";
 import { MAX_IMPORT_LINES } from "./collection-csv";
+import { normalizePlace, type Place } from "./geo/location";
 import { CURRENCIES } from "./parse";
 import { normalizePlayerName } from "./tournament/code";
+import { DESCRIPTION_MAX, PRIZES_MAX, SEARCH_RADII_KM, TOURNAMENT_CURRENCIES } from "./tournament/listing";
 import type { MatchResult } from "./tournament/scores";
 import { TOP_CUT_SETTINGS } from "./tournament/top-cut";
 
@@ -218,6 +220,7 @@ const tournamentSettingsFields = {
 };
 
 export const tournamentCreateSchema = z.object({ ...tournamentSettingsFields, name: tournamentNameSchema });
+export type TournamentCreateInput = z.output<typeof tournamentCreateSchema>;
 
 const matchResultSchema = z
   .object({
@@ -227,12 +230,181 @@ const matchResultSchema = z
   })
   .transform((result): MatchResult => result);
 
+// --- Lieux, tournois publics, boutiques ------------------------------------------------------
+
+const countrySchema = z
+  .string({ error: "Pays invalide." })
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z]{2}$/, "Pays invalide.");
+
+/** Lieu déjà résolu par le géocodage (suggestion choisie ou « Localiser »). */
+export const placeSchema = z
+  .object({
+    venueName: z.string().max(100, "Nom de salle trop long (100 caractères maximum).").nullable().optional(),
+    address: z.string({ error: "Adresse invalide." }).max(200, "Adresse trop longue."),
+    postalCode: z.string().max(20, "Code postal invalide.").nullable().optional(),
+    city: z.string({ error: "Ville invalide." }).max(100, "Ville trop longue."),
+    region: z.string().max(100).nullable().optional(),
+    country: countrySchema,
+    lat: z.number({ error: "Lieu non localisé." }).min(-90).max(90),
+    lng: z.number({ error: "Lieu non localisé." }).min(-180).max(180),
+  })
+  .transform((value, ctx): Place => {
+    const place = normalizePlace(value);
+    if (!place) {
+      ctx.addIssue({ code: "custom", message: "Lieu incomplet : précisez l'adresse et localisez-la." });
+      return z.NEVER;
+    }
+    return place;
+  });
+
+export const geocodeResolveSchema = z.object({
+  country: countrySchema,
+  street: z.string({ error: "Adresse invalide." }).trim().min(1, "Indiquez la rue.").max(200, "Adresse trop longue."),
+  postalCode: z.string().trim().max(20, "Code postal invalide.").optional(),
+  city: z.string({ error: "Ville invalide." }).trim().min(1, "Indiquez la ville.").max(100, "Ville trop longue."),
+});
+
+
+/** Texte facultatif : vide → null, trop long → refusé avec `message`. */
+const optionalText = (max: number, message: string) =>
+  z
+    .string({ error: message })
+    .transform((value, ctx) => {
+      const trimmed = value.trim();
+      if (trimmed.length > max) {
+        ctx.addIssue({ code: "custom", message });
+        return z.NEVER;
+      }
+      return trimmed || null;
+    })
+    .nullable()
+    .optional();
+
+/** Informations de présentation d'un tournoi (publics ou non), cf. specs/tournaments/public-listing. */
+export const tournamentListingFields = {
+  startsAt: z.iso
+    .datetime({ offset: true, error: "Date de début invalide." })
+    .transform((value) => new Date(value))
+    .nullable()
+    .optional(),
+  timeZone: z
+    .string({ error: "Fuseau horaire invalide." })
+    .max(64)
+    .refine((value) => {
+      try {
+        new Intl.DateTimeFormat("en", { timeZone: value });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Fuseau horaire invalide.")
+    .nullable()
+    .optional(),
+  place: placeSchema.nullable().optional(),
+  entryFeeCents: intIn(1, 100_000_00, "Prix d'entrée invalide.").nullable().optional(),
+  currency: z.enum(TOURNAMENT_CURRENCIES, { error: "Devise invalide." }).optional(),
+  maxPlayers: intIn(2, 512, "Nombre de places invalide (2 à 512).").nullable().optional(),
+  description: optionalText(DESCRIPTION_MAX, `Description trop longue (${DESCRIPTION_MAX} caractères maximum).`),
+  prizes: optionalText(PRIZES_MAX, `Lots trop longs (${PRIZES_MAX} caractères maximum).`),
+};
+
+const httpUrlSchema = z
+  .string({ error: "Lien invalide." })
+  .trim()
+  .max(300, "Lien trop long.")
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+      return false;
+    }
+  }, "Lien invalide : il doit commencer par https://.");
+
+export const SHOP_SOCIAL_KINDS = ["instagram", "facebook", "discord", "x", "youtube", "twitch", "tiktok", "autre"] as const;
+
+const shopNameSchema = z
+  .string({ error: "Nom de boutique invalide." })
+  .trim()
+  .min(2, "Le nom de la boutique doit contenir au moins 2 caractères.")
+  .max(80, "Nom de boutique trop long (80 caractères maximum).");
+
+const shopFields = {
+  name: shopNameSchema,
+  slug: z
+    .string({ error: "Adresse de page invalide." })
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Adresse de page invalide : lettres, chiffres et tirets.")
+    .min(2, "Adresse de page trop courte.")
+    .max(60, "Adresse de page trop longue."),
+  description: optionalText(2000, "Description trop longue (2000 caractères maximum)."),
+  website: httpUrlSchema.nullable().optional().or(z.literal("").transform(() => null)),
+  socials: z
+    .array(z.object({ kind: z.enum(SHOP_SOCIAL_KINDS, { error: "Réseau invalide." }), url: httpUrlSchema }))
+    .max(8, "8 liens au maximum.")
+    .optional(),
+  phone: optionalText(30, "Téléphone invalide."),
+  contactEmail: z
+    .string({ error: "E-mail invalide." })
+    .trim()
+    .max(254)
+    .nullable()
+    .optional()
+    .transform((value, ctx) => {
+      if (!value) return null;
+      const email = normalizeEmail(value);
+      if (!email) {
+        ctx.addIssue({ code: "custom", message: "E-mail de contact invalide." });
+        return z.NEVER;
+      }
+      return email;
+    }),
+  hours: optionalText(500, "Horaires trop longs (500 caractères maximum)."),
+  place: placeSchema,
+};
+
+export const shopCreateSchema = z.object({ ...shopFields, slug: shopFields.slug.optional() });
+export const shopUpdateSchema = z.object({
+  ...shopFields,
+  name: shopFields.name.optional(),
+  slug: shopFields.slug.optional(),
+  place: shopFields.place.optional(),
+  /** Boutique refusée corrigée : la soumettre de nouveau à la vérification. */
+  resubmit: z.boolean().optional(),
+});
+export type ShopCreateInput = z.output<typeof shopCreateSchema>;
+export type ShopUpdateInput = z.output<typeof shopUpdateSchema>;
+
+export const shopReviewSchema = z
+  .object({
+    decision: z.enum(["verify", "reject", "revoke"], { error: "Décision invalide." }),
+    note: z.string().trim().max(500, "Motif trop long (500 caractères maximum).").optional(),
+  })
+  .refine((value) => value.decision === "verify" || Boolean(value.note), {
+    message: "Indiquez le motif du refus.",
+    path: ["note"],
+  });
+
 const clientActionId = z.string({ error: "Requête invalide." }).trim().min(8).max(64);
 const entityId = id;
 
 /** Commandes organisateur (POST /api/tournaments/[id]/actions), rejouables par la file hors connexion. */
 export const organizerCommandSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("updateSettings"), clientActionId, settings: z.object({ ...tournamentSettingsFields, swissRounds: intIn(1, 20, "Nombre de rondes invalide (1 à 20).").optional() }) }),
+  z.object({
+    type: z.literal("updateSettings"),
+    clientActionId,
+    settings: z.object({
+      ...tournamentSettingsFields,
+      ...tournamentListingFields,
+      swissRounds: intIn(1, 20, "Nombre de rondes invalide (1 à 20).").optional(),
+    }),
+  }),
+  z.object({ type: z.literal("setVisibility"), clientActionId, public: z.boolean() }),
+  z.object({ type: z.literal("setShop"), clientActionId, shopId: entityId.nullable() }),
+  z.object({ type: z.literal("promoteWaitlisted"), clientActionId, playerId: entityId }),
   z.object({ type: z.literal("regenerateCode"), clientActionId }),
   z.object({ type: z.literal("setRegistration"), clientActionId, open: z.boolean() }),
   z.object({ type: z.literal("addPlayer"), clientActionId, name: playerNameSchema }),
@@ -293,6 +465,74 @@ export const playerCommandSchema = z.discriminatedUnion("type", [
 ]);
 
 export type PlayerCommand = z.output<typeof playerCommandSchema>;
+
+
+/** Paramètre d'URL facultatif : absent ou vide → undefined. */
+const param = <S extends z.ZodType>(schema: S) =>
+  z.preprocess((value) => (value === null || value === "" ? undefined : value), schema.optional());
+
+const numberParam = (min: number, max: number) =>
+  param(z.coerce.number({ error: "Paramètre invalide." }).min(min, "Paramètre invalide.").max(max, "Paramètre invalide."));
+
+const dayParam = param(z.iso.datetime({ offset: true, error: "Date invalide." }).or(z.iso.date({ error: "Date invalide." })));
+
+const flagParam = param(z.enum(["1", "0", "true", "false"]).transform((value) => value === "1" || value === "true"));
+
+/** Point de recherche : les trois paramètres ensemble, rayon parmi les valeurs proposées. */
+const nearParams = {
+  lat: numberParam(-90, 90),
+  lng: numberParam(-180, 180),
+  radius: param(
+    z.coerce
+      .number({ error: "Rayon invalide." })
+      .refine((value) => (SEARCH_RADII_KM as readonly number[]).includes(value), "Rayon invalide."),
+  ),
+};
+
+function withNear<T extends { lat?: number; lng?: number; radius?: number }>(value: T, ctx: z.RefinementCtx) {
+  const { lat, lng, radius, ...rest } = value;
+  const given = [lat, lng].filter((part) => part !== undefined).length;
+  if (given === 1) ctx.addIssue({ code: "custom", message: "Point de recherche incomplet." });
+  return {
+    ...rest,
+    near: lat !== undefined && lng !== undefined ? { lat, lng, radiusKm: radius ?? 25 } : undefined,
+  };
+}
+
+/** Filtres de l'annuaire des tournois publics (paramètres d'URL), cf. specs/tournaments/discovery. */
+export const directoryQuerySchema = z
+  .object({
+    country: param(countrySchema),
+    region: param(z.string().trim().max(100)),
+    city: param(z.string().trim().max(100)),
+    ...nearParams,
+    from: dayParam,
+    to: dayParam,
+    format: param(z.enum(["boutique", "competitif"], { error: "Format invalide." })),
+    match: param(z.enum(["bo1", "bo3"], { error: "Type de match invalide." })),
+    price: param(z.enum(["free", "paid"], { error: "Filtre de prix invalide." })),
+    seats: flagParam,
+    open: flagParam,
+    shop: param(z.string().trim().toLowerCase().max(60)),
+    sort: param(z.enum(["date", "distance"], { error: "Tri invalide." })),
+    page: numberParam(1, 1000),
+    view: param(z.enum(["list", "map"], { error: "Vue invalide." })),
+  })
+  .transform((value, ctx) => withNear(value, ctx));
+
+export const shopDirectoryQuerySchema = z
+  .object({
+    country: param(countrySchema),
+    city: param(z.string().trim().max(100)),
+    ...nearParams,
+    page: numberParam(1, 1000),
+  })
+  .transform((value, ctx) => withNear(value, ctx));
+
+/** Lit les paramètres d'URL (une valeur par clé) puis les valide. */
+export function validateSearchParams<S extends z.ZodType>(schema: S, params: URLSearchParams) {
+  return validate(schema, Object.fromEntries(params.entries()));
+}
 
 /** Inscription par code : pseudo obligatoire pour un invité, facultatif avec un compte. */
 export const tournamentJoinSchema = z.object({ name: playerNameSchema.optional() });

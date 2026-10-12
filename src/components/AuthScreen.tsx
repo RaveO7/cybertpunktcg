@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
@@ -132,6 +133,9 @@ export function AuthScreen() {
       <p className="font-mono text-xs tracking-[0.18em] text-cyan">{t.auth.eyebrow}</p>
       <h1 className="mt-1 text-3xl text-yellow">{t.auth.title}</h1>
       <p className="mt-2 text-sm text-muted">{t.auth.subtitle}</p>
+      <Link href="/tournois/publics" className="mt-3 text-sm text-cyan underline">
+        {t.publicTournaments.browse} →
+      </Link>
 
       <div className="mt-6 flex border border-line" role="tablist" aria-label={t.auth.modeLabel}>
         <button
