@@ -9,7 +9,8 @@ export function Footer() {
   const { t } = useI18n();
 
   return (
-    <footer className="mt-auto shrink-0 border-t border-line" aria-label={t.footer.label}>
+    // Masqué sur téléphone : la barre d'onglets du bas occupe déjà le bas de l'écran.
+    <footer className="mt-auto hidden shrink-0 border-t border-line sm:block" aria-label={t.footer.label}>
       {/* Une seule ligne : liens légaux à gauche, copyright au centre, réseaux à droite (empilés sur téléphone). */}
       <div className="mx-auto flex max-w-[1600px] flex-col items-center gap-2 px-4 py-3 text-xs text-muted md:grid md:grid-cols-[1fr_auto_1fr] md:gap-6">
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 md:justify-start">
