@@ -1,6 +1,6 @@
-// Génère les icônes de la webapp (manifest PWA + écran d'accueil iOS) à partir d'un SVG.
+// Génère les icônes de la webapp (manifest PWA + écran d'accueil iOS + favicon) à partir d'un SVG.
 // Usage : npx tsx scripts/generate-icons.ts
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
@@ -41,6 +41,29 @@ const targets = [
   { file: "src/app/apple-icon.png", size: 180, scale: 0.86 },
 ];
 
+// Favicon : motif presque plein cadre pour rester lisible en 16 px.
+const FAVICON = { file: "src/app/favicon.ico", sizes: [16, 32, 48], scale: 0.95 };
+
+// Un .ico peut embarquer directement des PNG : en-tête (6 octets) + une entrée de 16 octets par image.
+function toIco(pngs: { size: number; data: Buffer }[]) {
+  const header = Buffer.alloc(6 + 16 * pngs.length);
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(pngs.length, 4);
+  let offset = header.length;
+  pngs.forEach(({ size, data }, index) => {
+    const entry = 6 + 16 * index;
+    header.writeUInt8(size >= 256 ? 0 : size, entry);
+    header.writeUInt8(size >= 256 ? 0 : size, entry + 1);
+    header.writeUInt16LE(1, entry + 4);
+    header.writeUInt16LE(32, entry + 6);
+    header.writeUInt32LE(data.length, entry + 8);
+    header.writeUInt32LE(offset, entry + 12);
+    offset += data.length;
+  });
+  return Buffer.concat([header, ...pngs.map((png) => png.data)]);
+}
+
 async function main() {
   for (const target of targets) {
     const output = path.join(root, target.file);
@@ -48,6 +71,13 @@ async function main() {
     await sharp(Buffer.from(iconSvg(target.scale, target.shiftY))).resize(target.size, target.size).png().toFile(output);
     console.log(`✓ ${target.file}`);
   }
+
+  const svg = Buffer.from(iconSvg(FAVICON.scale));
+  const pngs = await Promise.all(
+    FAVICON.sizes.map(async (size) => ({ size, data: await sharp(svg).resize(size, size).png().toBuffer() })),
+  );
+  await writeFile(path.join(root, FAVICON.file), toIco(pngs));
+  console.log(`✓ ${FAVICON.file}`);
 }
 
 main().catch((error) => {
