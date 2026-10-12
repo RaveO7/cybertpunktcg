@@ -631,6 +631,7 @@ function DeckEditor({
     <div
       ref={rootRef}
       className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-4 px-3 pt-3 pb-8 sm:px-5 lg:pt-5"
+      data-swipe-zone=""
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >

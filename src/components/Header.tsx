@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
+import { isInHorizontalScroller } from "@/lib/swipe";
 
 type NavIcon = "dashboard" | "cards" | "investment" | "decks" | "tournaments" | "wishlist" | "howto" | "binder";
 
@@ -104,6 +105,7 @@ export function BottomNav() {
   const { pathname, t, showNav, links } = useNavigation();
   const keyboardOpen = useKeyboardOpen();
   const visible = showNav && !keyboardOpen;
+  usePageSwipe(links, pathname, visible);
 
   // Les barres fixes (mode ajout…) se placent au-dessus via --app-bottom-nav.
   useEffect(() => {
@@ -145,6 +147,62 @@ export function BottomNav() {
       </ul>
     </nav>
   );
+}
+
+/**
+ * Téléphone : balayer l'écran vers la gauche/droite passe à l'onglet suivant/précédent de la barre du bas.
+ * Ignoré dans les champs, les fenêtres modales, les zones défilant horizontalement ou ayant leurs
+ * propres balayages (`data-swipe-zone`), et près des bords (geste « retour » du système).
+ */
+function usePageSwipe(links: NavLink[], pathname: string, enabled: boolean) {
+  const router = useRouter();
+  const index = links.findIndex((link) => link.match === pathname);
+  const prevHref = index > 0 ? links[index - 1].href : null;
+  const nextHref = index >= 0 && index < links.length - 1 ? links[index + 1].href : null;
+
+  useEffect(() => {
+    if (!enabled || (!prevHref && !nextHref)) return;
+    const phone = window.matchMedia("(max-width: 639px)");
+    let start: { x: number; y: number; time: number } | null = null;
+
+    const onTouchStart = (event: TouchEvent) => {
+      start = null;
+      if (event.touches.length !== 1 || !phone.matches) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("input, textarea, select, [contenteditable], [role=dialog], [data-swipe-zone]")) return;
+      if (document.querySelector("[aria-modal=true]") || isInHorizontalScroller(target)) return;
+      const touch = event.touches[0];
+      if (touch.clientX < 24 || touch.clientX > window.innerWidth - 24) return;
+      start = { x: touch.clientX, y: touch.clientY, time: event.timeStamp };
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      const origin = start;
+      start = null;
+      if (!origin || event.timeStamp - origin.time > 800) return;
+      if (window.getSelection()?.toString()) return;
+      const touch = event.changedTouches[0];
+      const dx = touch.clientX - origin.x;
+      const dy = touch.clientY - origin.y;
+      if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      const href = dx < 0 ? nextHref : prevHref;
+      if (href) router.push(href);
+    };
+
+    const onTouchCancel = () => {
+      start = null;
+    };
+
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
+    document.addEventListener("touchcancel", onTouchCancel, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("touchcancel", onTouchCancel);
+    };
+  }, [enabled, prevHref, nextHref, router]);
 }
 
 /** Vrai quand un champ texte a le focus sur écran tactile, donc que le clavier virtuel est ouvert. */

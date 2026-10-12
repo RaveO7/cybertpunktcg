@@ -6,6 +6,7 @@ import { HowToPlayRules } from "@/components/HowToPlayRules";
 import { HowToPlayTutorial } from "@/components/HowToPlayTutorial";
 import { useI18n } from "@/components/LocaleProvider";
 import { tutorialCopy } from "@/lib/rules/tutorial";
+import { isInHorizontalScroller } from "@/lib/swipe";
 
 type Mode = "learn" | "rules";
 
@@ -123,6 +124,8 @@ export function HowToPlayScreen() {
   return (
     <div
       className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
+      // Ses propres balayages (règles ↔ parcours) priment sur le changement de page.
+      data-swipe-zone=""
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -203,16 +206,4 @@ export function HowToPlayScreen() {
         : null}
     </div>
   );
-}
-
-// Un balayage dans une zone défilant horizontalement (schéma du tapis, tableaux…) ne doit pas changer d'onglet.
-function isInHorizontalScroller(target: Element): boolean {
-  for (let el: Element | null = target; el; el = el.parentElement) {
-    if (el.hasAttribute("data-no-swipe")) return true;
-    if (el.scrollWidth > el.clientWidth) {
-      const overflowX = getComputedStyle(el).overflowX;
-      if (overflowX === "auto" || overflowX === "scroll") return true;
-    }
-  }
-  return false;
 }

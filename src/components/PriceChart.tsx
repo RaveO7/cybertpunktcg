@@ -159,6 +159,7 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
       <div
         ref={setContainer}
         className="relative w-full select-none"
+        data-no-swipe=""
         // touch-action est ignoré sur les éléments internes d'un SVG : il doit être porté par ce conteneur.
         // Au doigt : glisser horizontalement parcourt la courbe, verticalement fait défiler la page.
         style={{ height: resolvedHeight, touchAction: "pan-y", WebkitTouchCallout: "none" }}
