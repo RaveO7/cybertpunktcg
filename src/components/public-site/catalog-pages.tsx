@@ -1,24 +1,24 @@
 // Catalogue public des cartes, partagé par /cartes (fr) et /en/cards (en). Rendu serveur, sans JS requis.
 
 import type { Metadata } from "next";
+import Form from "next/form";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 import { TrackCardLink } from "@/components/public-site/TrackCardLink";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { JsonLd } from "@/components/site/JsonLd";
 import { latestPriceDate, loadPublicCards } from "@/lib/seo/catalog-data";
 import { colorLabel, COPY, typeLabel, typePlural } from "@/lib/seo/copy";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { cardWithNeighbours, COLOR_KEYS, filterCards, TYPE_KEYS, type PublicCard } from "@/lib/seo/public-catalog";
+import { cardWithNeighbours, COLOR_KEYS, costValues, filterCards, TYPE_KEYS, type PublicCard } from "@/lib/seo/public-catalog";
 import { localizedPath, type SiteLocale } from "@/lib/seo/routes";
-import { cardLd, itemListLd } from "@/lib/seo/structured-data";
+import { breadcrumbLd, cardLd, itemListLd } from "@/lib/seo/structured-data";
 import type { SearchParams } from "@/components/public-site/tournament-pages";
 
 const IMAGE = { width: 733, height: 1024 };
 const THUMB = { width: 400, height: 559 };
 
-const chipClass = "inline-flex h-9 items-center border px-3 text-sm";
 const actionClass = "inline-flex h-11 items-center border border-cyan px-4 text-sm text-cyan hover:bg-cyan/10";
 
 /** Texte de règles : les mots-clés entre accolades ({Call}, {Go Solo}) en gras. */
@@ -67,13 +67,17 @@ function formatDate(iso: string, locale: SiteLocale) {
   return new Intl.DateTimeFormat(COPY[locale].intl, { dateStyle: "long" }).format(new Date(iso));
 }
 
-function readFilters(raw: Record<string, string | string[] | undefined>) {
+function readFilters(raw: Record<string, string | string[] | undefined>, costs: number[]) {
   const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
   const color = first(raw.color);
   const type = first(raw.type);
+  const cost = Number(first(raw.cost) ?? Number.NaN);
+  const q = first(raw.q)?.trim().slice(0, 80);
   return {
     color: color && (COLOR_KEYS as readonly string[]).includes(color) ? color : undefined,
     type: type && (TYPE_KEYS as readonly string[]).includes(type) ? type : undefined,
+    cost: costs.includes(cost) ? cost : undefined,
+    q: q || undefined,
   };
 }
 
@@ -83,88 +87,269 @@ export async function catalogMetadata(locale: SiteLocale): Promise<Metadata> {
   return pageMetadata({ locale, page: { key: "cards" }, title: copy.metaTitle, description: copy.metaDescription(count) });
 }
 
-function CardTile({ card, locale, eager = false }: { card: PublicCard; locale: SiteLocale; eager?: boolean }) {
+/** Liseré de la puce de type, aux couleurs de la carte (comme dans l'explorateur). */
+const CHIP_COLORS: Record<string, string> = {
+  Red: "var(--cp-card-red)",
+  Blue: "var(--cp-card-blue)",
+  Green: "var(--cp-card-green)",
+  Yellow: "var(--cp-card-yellow)",
+};
+
+const DOT_CLASSES: Record<string, string> = {
+  Red: "bg-card-red",
+  Blue: "bg-card-blue",
+  Green: "bg-card-green",
+  Yellow: "bg-card-yellow",
+};
+
+/**
+ * Tuile de carte reprenant celle de l'explorateur : halo aux couleurs de l'illustration, balayage et
+ * zoom au survol (effets réservés à la souris, cf. globals.css). `compact` n'affiche que le nom.
+ */
+function CardTile({
+  card,
+  locale,
+  eager = false,
+  compact = false,
+}: {
+  card: PublicCard;
+  locale: SiteLocale;
+  eager?: boolean;
+  compact?: boolean;
+}) {
+  const stats = [
+    { label: "COST", value: card.cost, dot: false },
+    { label: "PWR", value: card.power, dot: false },
+    { label: "RAM", value: card.ram, dot: true },
+  ].filter((stat) => stat.value !== null);
   return (
-    <li>
-      <Link href={localizedPath("card", locale, { slug: card.slug })} className="group flex flex-col gap-1.5">
-        {card.thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées (aucune optimisation Vercel)
-          <img
-            src={card.thumb}
-            alt={COPY[locale].card.imageAlt(card.name)}
-            width={THUMB.width}
-            height={THUMB.height}
-            loading={eager ? "eager" : "lazy"}
-            decoding="async"
-            className="h-auto w-full border border-line transition group-hover:border-cyan"
-          />
-        ) : null}
-        <span className="text-xs leading-tight text-muted group-hover:text-foreground">{card.name}</span>
+    <li className="group relative">
+      {card.thumb ? (
+        <>
+          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 aspect-card" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
+            <img src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight" />
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] aspect-card overflow-visible" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
+            <img src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight card-ambilight-bottom" />
+          </div>
+        </>
+      ) : null}
+      <Link
+        href={localizedPath("card", locale, { slug: card.slug })}
+        className="hud-panel relative z-0 flex h-full flex-col overflow-hidden transition-colors hover:border-cyan/70 focus-visible:border-cyan"
+      >
+        <div className="relative aspect-card overflow-hidden bg-overlay scanlines scanbeam">
+          {card.thumb ? (
+            // eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées (aucune optimisation Vercel)
+            <img
+              src={card.thumb}
+              alt={COPY[locale].card.imageAlt(card.name)}
+              width={THUMB.width}
+              height={THUMB.height}
+              loading={eager ? "eager" : "lazy"}
+              decoding="async"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : null}
+        </div>
+        <div className={`flex flex-1 flex-col ${compact ? "p-2" : "p-2.5 sm:p-3"}`}>
+          <p className={`truncate font-bold text-foreground ${compact ? "text-xs" : "text-sm"}`}>{card.name}</p>
+          {!compact && card.cardType ? (
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="chip-wrap" style={{ "--chip-color": CHIP_COLORS[card.color ?? ""] ?? "var(--cyan)" } as CSSProperties}>
+                <span className="chip-cyber">{typeLabel(locale, card.cardType)}</span>
+              </span>
+            </div>
+          ) : null}
+          {!compact && stats.length ? (
+            <div className="mt-auto flex flex-wrap gap-x-2 gap-y-1 pt-2">
+              {stats.map((stat) => (
+                <span key={stat.label} className="hud-label inline-flex items-center gap-1">
+                  {stat.dot ? <span className={`h-2 w-2 rounded-full ${DOT_CLASSES[card.color ?? ""] ?? "bg-cyan"}`} /> : null}
+                  <span className="opacity-80">{stat.label}</span>
+                  <span className="text-foreground">{stat.value}</span>
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </Link>
     </li>
+  );
+}
+
+type ActiveFilters = ReturnType<typeof readFilters>;
+
+/** Panneau de filtres, à l'image de celui de l'explorateur. Des liens : fonctionne sans JS. */
+function CatalogFilterPanel({
+  locale,
+  filters,
+  costs,
+  filterHref,
+}: {
+  locale: SiteLocale;
+  filters: ActiveFilters;
+  costs: number[];
+  filterHref: (next: Partial<ActiveFilters>) => string;
+}) {
+  const copy = COPY[locale].catalog;
+  const chip = (active: boolean) =>
+    `inline-flex items-center gap-1.5 border px-2 py-1 text-xs ${
+      active ? "border-yellow bg-yellow/10 text-yellow" : "border-line text-muted hover:border-cyan hover:text-foreground"
+    }`;
+  // Un filtre actif se désactive en cliquant à nouveau dessus, comme dans l'explorateur.
+  const groups: { label: string; options: { key: string; label: ReactNode; active: boolean; href: string }[] }[] = [
+    {
+      label: copy.colorFilter,
+      options: COLOR_KEYS.map((color) => ({
+        key: color,
+        label: (
+          <>
+            <span className={`h-2 w-2 rounded-full ${DOT_CLASSES[color]}`} aria-hidden="true" />
+            {colorLabel(locale, color)}
+          </>
+        ),
+        active: filters.color === color,
+        href: filterHref({ ...filters, color: filters.color === color ? undefined : color }),
+      })),
+    },
+    {
+      label: copy.typeFilter,
+      options: TYPE_KEYS.map((type) => ({
+        key: type,
+        label: typePlural(locale, type),
+        active: filters.type === type,
+        href: filterHref({ ...filters, type: filters.type === type ? undefined : type }),
+      })),
+    },
+    {
+      label: copy.costFilter,
+      options: costs.map((cost) => ({
+        key: String(cost),
+        label: cost,
+        active: filters.cost === cost,
+        href: filterHref({ ...filters, cost: filters.cost === cost ? undefined : cost }),
+      })),
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-5">
+      <Link
+        href={filterHref({})}
+        rel="nofollow"
+        className="flex h-10 w-full items-center justify-center border border-cyan text-sm text-cyan hover:bg-cyan/10"
+      >
+        {copy.reset}
+      </Link>
+      {groups.map((group) => (
+        <fieldset key={group.label}>
+          <legend className="mb-2 text-sm text-muted">{group.label}</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {group.options.map((option) => (
+              <Link
+                key={option.key}
+                href={option.href}
+                rel="nofollow"
+                aria-current={option.active ? "true" : undefined}
+                className={chip(option.active)}
+              >
+                {option.label}
+              </Link>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+    </div>
   );
 }
 
 export async function CatalogPage({ locale, searchParams }: { locale: SiteLocale; searchParams: SearchParams }) {
   const copy = COPY[locale].catalog;
   const all = await loadPublicCards(locale);
-  const filters = readFilters(await searchParams);
+  const costs = costValues(all);
+  const filters = readFilters(await searchParams, costs);
   const cards = filterCards(all, filters);
-  const filterHref = (next: { color?: string; type?: string }) => {
+  const filterHref = (next: Partial<ActiveFilters>) => {
     const query = new URLSearchParams();
+    if (next.q) query.set("q", next.q);
     if (next.color) query.set("color", next.color);
     if (next.type) query.set("type", next.type);
+    if (next.cost !== undefined) query.set("cost", String(next.cost));
     return localizedPath("cards", locale, {}, query);
   };
-  const chip = (active: boolean) => `${chipClass} ${active ? "border-yellow bg-yellow text-black" : "border-line text-muted hover:border-cyan hover:text-foreground"}`;
+  const activeCount = [filters.color, filters.type, filters.cost].filter((value) => value !== undefined).length;
+  const panel = <CatalogFilterPanel locale={locale} filters={filters} costs={costs} filterHref={filterHref} />;
 
   return (
-    <div className="flex flex-col">
-      <Breadcrumbs locale={locale} items={[{ name: COPY[locale].nav.cards, path: localizedPath("cards", locale) }]} />
-      <JsonLd data={[itemListLd(cards.map((card) => ({ name: card.name, path: localizedPath("card", locale, { slug: card.slug }) })))]} />
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-5">
-        <header className="flex flex-col gap-2">
-          <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-yellow sm:text-3xl">{copy.title}</h1>
-          <p className="text-sm text-muted">{copy.intro(all.length)}</p>
-          <div>
-            <TrackCardLink label={copy.track} className={actionClass} />
+    <div className="mx-auto grid w-full max-w-[1600px] gap-6 px-4 py-4 lg:grid-cols-[280px_1fr]">
+      {/* Fil d'Ariane : données structurées seulement, pas d'affichage sur cette page. */}
+      <JsonLd
+        data={[
+          breadcrumbLd([
+            { name: COPY[locale].breadcrumb.home, path: localizedPath("home", locale) },
+            { name: COPY[locale].nav.cards, path: localizedPath("cards", locale) },
+          ]),
+          itemListLd(cards.map((card) => ({ name: card.name, path: localizedPath("card", locale, { slug: card.slug }) }))),
+        ]}
+      />
+      <aside className="hidden lg:block" aria-label={copy.filters}>
+        <div className="scrollbar-hud sticky top-0 max-h-[100cqh] overflow-y-auto pr-4 pb-4">
+          <h2 className="mb-5 flex h-10 items-center text-sm font-medium">{copy.filters}</h2>
+          {panel}
+        </div>
+      </aside>
+      <div className="flex min-w-0 flex-col">
+        <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-yellow sm:text-3xl">{copy.title}</h1>
+            <p className="text-sm text-muted">{copy.intro(all.length)}</p>
           </div>
+          <TrackCardLink label={copy.track} className={actionClass} />
         </header>
-        <nav className="flex flex-col gap-2" aria-label={`${copy.colorFilter} / ${copy.typeFilter}`}>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="hud-label w-16">{copy.colorFilter}</span>
-            <Link href={filterHref({ type: filters.type })} className={chip(!filters.color)} rel="nofollow">
-              {copy.all}
-            </Link>
-            {COLOR_KEYS.map((color) => (
-              <Link key={color} href={filterHref({ color, type: filters.type })} className={chip(filters.color === color)} rel="nofollow">
-                {colorLabel(locale, color)}
-              </Link>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="hud-label w-16">{copy.typeFilter}</span>
-            <Link href={filterHref({ color: filters.color })} className={chip(!filters.type)} rel="nofollow">
-              {copy.all}
-            </Link>
-            {TYPE_KEYS.map((type) => (
-              <Link key={type} href={filterHref({ color: filters.color, type })} className={chip(filters.type === type)} rel="nofollow">
-                {typePlural(locale, type)}
-              </Link>
-            ))}
-          </div>
-        </nav>
-        <p className="text-xs text-muted" aria-live="polite">
+        <div className="mb-4 flex flex-col gap-2 lg:flex-row">
+          {/* Téléphone et tablette : panneau repliable (sans JS) à la place du panneau latéral. */}
+          <details className="lg:hidden">
+            <summary className="flex h-10 cursor-pointer list-none items-center gap-2 border border-line px-3 text-sm text-cyan [&::-webkit-details-marker]:hidden">
+              <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M3 5h14M3 10h14M3 15h14" strokeLinecap="square" />
+              </svg>
+              {copy.filters}
+              {activeCount ? <span className="bg-yellow px-1.5 font-mono text-xs text-black">{activeCount}</span> : null}
+            </summary>
+            <div className="border border-t-0 border-line p-4">{panel}</div>
+          </details>
+          <Form action={localizedPath("cards", locale)} role="search" className="flex min-w-0 flex-1">
+            {filters.color ? <input type="hidden" name="color" value={filters.color} /> : null}
+            {filters.type ? <input type="hidden" name="type" value={filters.type} /> : null}
+            {filters.cost !== undefined ? <input type="hidden" name="cost" value={filters.cost} /> : null}
+            <input
+              name="q"
+              type="search"
+              defaultValue={filters.q ?? ""}
+              placeholder={copy.searchPlaceholder}
+              aria-label={copy.search}
+              enterKeyHint="search"
+              className="h-10 min-w-0 flex-1 border border-line bg-panel px-3 text-sm outline-none focus:border-cyan"
+            />
+            <button type="submit" className="h-10 shrink-0 border border-l-0 border-line bg-panel px-4 text-sm text-cyan hover:bg-cyan/10">
+              {copy.search}
+            </button>
+          </Form>
+        </div>
+        <p className="mb-3 text-sm text-muted" aria-live="polite">
           {copy.results(cards.length)}
         </p>
         {cards.length ? (
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          <ul className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4 2xl:grid-cols-5">
             {cards.map((card, index) => (
               <CardTile key={card.slug} card={card} locale={locale} eager={index < 6} />
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted">{copy.empty}</p>
+          <p className="border border-line px-4 py-10 text-center text-sm text-muted">{copy.empty}</p>
         )}
       </div>
     </div>
@@ -345,7 +530,7 @@ export async function CardPage({ locale, slug }: { locale: SiteLocale; slug: str
             <h2 className="font-display text-lg uppercase tracking-wide text-yellow">{copy.sameColor(color)}</h2>
             <ul className="grid grid-cols-3 gap-3 sm:grid-cols-6">
               {sameColor.map((other) => (
-                <CardTile key={other.slug} card={other} locale={locale} />
+                <CardTile key={other.slug} card={other} locale={locale} compact />
               ))}
             </ul>
           </section>

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { cardWithNeighbours, filterCards, publicCards } from "../../src/lib/seo/public-catalog";
+import { cardWithNeighbours, costValues, filterCards, publicCards } from "../../src/lib/seo/public-catalog";
 import type { CardDTO, CatalogDTO, PrintingDTO } from "../../src/lib/types";
 
 function card(id: string, overrides: Partial<CardDTO> = {}): CardDTO {
@@ -103,6 +103,15 @@ describe("seo : catalogue public", () => {
     const cards = publicCards(catalog, "en");
     assert.deepEqual(filterCards(cards, { color: "Red" }).map((c) => c.slug), ["adam", "v"]);
     assert.deepEqual(filterCards(cards, { type: "Legend" }), []);
+  });
+
+  it("filtre par coût et recherche par nom (casse et accents ignorés)", () => {
+    const cards = publicCards(catalog, "en");
+    assert.deepEqual(costValues(cards), [1]);
+    assert.equal(filterCards(cards, { cost: 1 }).length, cards.length);
+    assert.deepEqual(filterCards(cards, { cost: 2 }), []);
+    assert.deepEqual(filterCards(cards, { q: "stréetkid" }).map((c) => c.slug), ["v"]);
+    assert.deepEqual(filterCards(cards, { q: "zzz" }), []);
   });
 
   it("précédente, suivante et même couleur", () => {

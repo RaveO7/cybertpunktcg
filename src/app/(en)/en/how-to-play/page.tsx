@@ -3,5 +3,5 @@ import { HowToPlayPage, howToPlayMetadata } from "@/components/public-site/how-t
 export const metadata = howToPlayMetadata("en");
 
 export default function HowToPlayRoute() {
-  return <HowToPlayPage />;
+  return <HowToPlayPage locale="en" />;
 }

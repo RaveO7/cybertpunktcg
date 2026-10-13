@@ -115,6 +115,11 @@ const fr = {
     results: (count: number) => `${count} carte${count > 1 ? "s" : ""}`,
     empty: "Aucune carte ne correspond à ces filtres.",
     track: "Suivre ma collection",
+    filters: "Filtres",
+    reset: "Réinitialiser les filtres",
+    costFilter: "Coût",
+    search: "Rechercher",
+    searchPlaceholder: "Rechercher une carte…",
   },
   card: {
     metaTitle: (name: string) => `${name} — carte Cyberpunk TCG`,
@@ -153,6 +158,59 @@ const fr = {
     metaTitle: "Comment jouer à Cyberpunk TCG — règles et tutoriel",
     metaDescription:
       "Apprenez à jouer à Cyberpunk TCG : tutoriel pas à pas, déroulé d'un tour, Légendes, Unités, Programmes, Équipements et conditions de victoire.",
+    teaser: {
+      eyebrow: "Apprendre à jouer",
+      title: "Devenez une légende de Night City",
+      lead: "Cyberpunk TCG est un jeu de cartes à deux joueurs. Vous dirigez un crew de mercenaires face à un Rival, et chaque tour est une course pour rafler les meilleurs contrats de la ville. Des parties rapides et tendues, où une attaque bien placée peut tout renverser.",
+      goalTitle: "L'objectif : 7 Gigs",
+      goalBody:
+        "Les contrats de Night City, les Gigs, sont représentés par des dés, du d4 au d20. Commencez votre tour avec 7 dés Gig dans votre zone et vous gagnez. Le piège : chaque joueur n'en a que six. Pour gagner, il faut forcément aller en voler à son Rival.",
+      dice: ["d4", "d6", "d8", "d10", "d12", "d20"],
+      diceNote: "Petit dé, gain sûr. Gros dé, plus de Street Cred… mais une cible plus tentante.",
+      cardsTitle: "Quatre types de cartes",
+      cards: [
+        {
+          type: "Legend",
+          body: "Les figures de votre crew. Trois Légendes commencent face cachée : révélez-les au bon moment pour déclencher leurs pouvoirs, ou dépensez-les comme des Eddies.",
+        },
+        {
+          type: "Unit",
+          body: "Vos mercenaires sur le terrain. Ils attaquent les Unités adverses ou foncent directement sur les Gigs du Rival pour les lui prendre.",
+        },
+        {
+          type: "Program",
+          body: "Des hacks à effet immédiat : un coup de pouce décisif, une Unité adverse neutralisée, une attaque qui change tout.",
+        },
+        {
+          type: "Gear",
+          body: "Armes et implants à équiper sur une Unité ou une Légende pour la rendre plus redoutable.",
+        },
+      ],
+      turnTitle: "Un tour en trois temps",
+      turn: [
+        { title: "Piocher", body: "Redressez vos cartes et piochez une carte." },
+        { title: "Décrocher un Gig", body: "Choisissez un dé chez votre Fixer, lancez-le et ajoutez-le à vos Gigs." },
+        {
+          title: "Jouer et attaquer",
+          body: "Payez vos cartes en Eddies, appelez vos Légendes, puis lancez vos Unités à l'assaut.",
+        },
+      ],
+      fightTitle: "Attaquer, voler, survivre",
+      fightBody: [
+        "Une Unité qui attaque vole un dé Gig à votre Rival, et même plusieurs si sa Power est assez élevée.",
+        "Mais attaquer l'expose : couchée, elle devient une cible pour le prochain tour adverse. Une Unité plus puissante l'emporte, et le Rival peut riposter avec des cartes Quick ou un Blocker.",
+        "À vous de choisir quand frapper, et quand garder vos défenses debout.",
+      ],
+      deckTitle: "Votre deck, votre style",
+      deckBody:
+        "Trois Légendes et 40 à 50 cartes. Les couleurs de vos Légendes fixent la RAM disponible pour le reste du deck : chaque crew a sa propre identité.",
+      ctaTitle: "Prêt à jouer pour de vrai ?",
+      ctaBody:
+        "Connectez-vous pour lancer le parcours interactif : une vraie partie guidée contre un Rival, coup par coup, avec les règles complètes à portée de main. C'est gratuit.",
+      register: "Créer un compte gratuit",
+      login: "Se connecter",
+      browseCards: "Parcourir les cartes",
+    },
   },
   tournaments: {
     metaTitle: "Tournois Cyberpunk TCG près de chez vous",
@@ -254,6 +312,11 @@ const en: SiteCopy = {
     results: (count: number) => `${count} card${count > 1 ? "s" : ""}`,
     empty: "No card matches these filters.",
     track: "Track my collection",
+    filters: "Filters",
+    reset: "Reset filters",
+    costFilter: "Cost",
+    search: "Search",
+    searchPlaceholder: "Search a card…",
   },
   card: {
     metaTitle: (name: string) => `${name} — Cyberpunk TCG card`,
@@ -289,6 +352,56 @@ const en: SiteCopy = {
     metaTitle: "How to play Cyberpunk TCG — rules and tutorial",
     metaDescription:
       "Learn to play Cyberpunk TCG: step-by-step tutorial, turn structure, Legends, Units, Programs, Gear and how to win.",
+    teaser: {
+      eyebrow: "Learn to play",
+      title: "Become a Night City legend",
+      lead: "Cyberpunk TCG is a two-player card game. You lead a crew of mercs against a Rival, and every turn is a race for the best jobs in the city. Fast, tense games where one well-timed attack can turn everything around.",
+      goalTitle: "The goal: 7 Gigs",
+      goalBody:
+        "Night City's jobs, the Gigs, are represented by dice, from d4 to d20. Start your turn with 7 Gig dice in your area and you win. The catch: each player only has six. To win, you have to steal from your Rival.",
+      dice: ["d4", "d6", "d8", "d10", "d12", "d20"],
+      diceNote: "Small die, safe gain. Big die, more Street Cred… and a juicier target.",
+      cardsTitle: "Four card types",
+      cards: [
+        {
+          type: "Legend",
+          body: "The icons of your crew. Your three Legends start face down: reveal them at the right moment to trigger their powers, or spend them like Eddies.",
+        },
+        {
+          type: "Unit",
+          body: "Your mercs on the street. They fight enemy Units or go straight for your Rival's Gigs to take them.",
+        },
+        {
+          type: "Program",
+          body: "Instant hacks: a decisive boost, an enemy Unit shut down, an attack that changes everything.",
+        },
+        {
+          type: "Gear",
+          body: "Weapons and cyberware to equip on a Unit or Legend to make it even deadlier.",
+        },
+      ],
+      turnTitle: "A turn in three beats",
+      turn: [
+        { title: "Draw", body: "Ready your cards and draw one." },
+        { title: "Take a Gig", body: "Pick a die from your Fixer, roll it and add it to your Gigs." },
+        { title: "Play and attack", body: "Pay for cards with Eddies, call your Legends, then send your Units in." },
+      ],
+      fightTitle: "Attack, steal, survive",
+      fightBody: [
+        "An attacking Unit steals a Gig die from your Rival, even several if its Power is high enough.",
+        "But attacking exposes it: once spent, it becomes a target on your Rival's next turn. The stronger Unit wins a fight, and your Rival can strike back with Quick cards or a Blocker.",
+        "Your call: when to strike, and when to keep your defenses up.",
+      ],
+      deckTitle: "Your deck, your style",
+      deckBody:
+        "Three Legends and 40 to 50 cards. Your Legends' colors set the RAM available for the rest of the deck: every crew has its own identity.",
+      ctaTitle: "Ready to play for real?",
+      ctaBody:
+        "Sign in to start the interactive path: a real guided game against a Rival, move by move, with the full rules at hand. It's free.",
+      register: "Create a free account",
+      login: "Sign in",
+      browseCards: "Browse the cards",
+    },
   },
   tournaments: {
     metaTitle: "Cyberpunk TCG tournaments near you",
