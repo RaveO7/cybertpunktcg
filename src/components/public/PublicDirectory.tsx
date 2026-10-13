@@ -142,12 +142,8 @@ export function PublicDirectory({
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-6">
-      {embedded ? (
-        <div className="flex flex-col gap-1">
-          <h2 className="font-display text-xl uppercase tracking-wide text-yellow">{t.publicTournaments.title}</h2>
-          <p className="max-w-2xl text-sm text-muted">{t.publicTournaments.subtitle}</p>
-        </div>
-      ) : (
+      {/* Intégré à l'accueil : l'onglet tient lieu de titre. */}
+      {embedded ? null : (
         <div className="flex flex-col gap-1">
           <Link href="/tournois" className="text-xs text-muted hover:text-foreground">
             ← {t.tournaments.title}

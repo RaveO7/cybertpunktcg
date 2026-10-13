@@ -46,6 +46,13 @@ const fr = {
     seeTournaments: "Voir les tournois",
     seeShops: "Voir les boutiques",
     featuresTitle: "Ce que vous pouvez faire",
+    openTitle: "Ouvert à tous",
+    accountTitle: "Avec un compte gratuit",
+    findTitle: "Trouver une partie près de chez vous",
+    findBody: "Les tournois annoncés par les boutiques et les joueurs, et les boutiques qui font vivre le jeu.",
+    tabTournaments: "Tournois",
+    tabShops: "Boutiques",
+    fanLabel: "Quelques Légendes du jeu",
     features: [
       {
         key: "cards",
@@ -154,6 +161,13 @@ const en: SiteCopy = {
     seeTournaments: "See tournaments",
     seeShops: "See stores",
     featuresTitle: "What you can do",
+    openTitle: "Open to everyone",
+    accountTitle: "With a free account",
+    findTitle: "Find a game near you",
+    findBody: "Tournaments announced by stores and players, and the stores that keep the game alive.",
+    tabTournaments: "Tournaments",
+    tabShops: "Stores",
+    fanLabel: "Some of the game's Legends",
     features: [
       {
         key: "cards",
