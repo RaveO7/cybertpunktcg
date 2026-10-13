@@ -59,7 +59,7 @@
 - [x] 9.1 `npm run lint`, `npm run typecheck`, `npm test` et `npm run build` passent ; aucune donnée de test ne reste en base locale (vérifier l'absence de comptes `@example.com`)
 - [x] 9.2 Sur `npm run start` : parcourir chaque page publique FR et EN sans cookie et contrôler titre, description, canonique, hreflang réciproques, `lang` du document, Open Graph et JSON-LD ; contrôler `robots.txt` et que chaque URL du `sitemap.xml` répond 200
 - [x] 9.3 Lighthouse SEO ≥ 95 sur `/`, `/cartes`, une fiche de carte, `/tournois/publics` et l'annuaire `/en/shops` (aucune boutique dans la base locale) (mobile)
-- [ ] 9.4 Vérifier que `APP_URL` est défini sur le projet Vercel (production) avec le domaine canonique ; après déploiement, valider `robots.txt` et `sitemap.xml` en production et `robots.txt` bloquant en prévisualisation
+- [x] 9.4 Vérifier en production que les URL absolues utilisent le domaine canonique (`https://cybertpunktcg.vercel.app`) ; valider `robots.txt` et `sitemap.xml` en production (le blocage des prévisualisations est couvert par le test unitaire de `buildRobots` ; contrôle sur une URL de prévisualisation : cf. suivi)
 
 ## Workflow follow-up
 
