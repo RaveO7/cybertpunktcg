@@ -1,9 +1,10 @@
 // Page d'accueil des visiteurs (/ sans session, /en) : rendue côté serveur, contenu indexable. Seule page
-// publique de premier niveau : elle intègre les annuaires des tournois et des boutiques.
+// publique de premier niveau : elle intègre les annuaires des tournois et des boutiques. Style inspiré
+// des interfaces de Cyberpunk 2077 (classes .cp-* dans globals.css).
 
 import type { Metadata } from "next";
-import Link from "next/link";
 import { PublicDirectory } from "@/components/public/PublicDirectory";
+import { FeatureShowcase } from "@/components/public-site/FeatureShowcase";
 import { HeroCardFan } from "@/components/public-site/HeroCardFan";
 import { LandingActions } from "@/components/public-site/LandingActions";
 import { LandingFinder } from "@/components/public-site/LandingFinder";
@@ -27,7 +28,7 @@ export function landingMetadata(locale: SiteLocale): Metadata {
   });
 }
 
-/** Destination de chaque bloc de fonctionnalité : section de cette page, ou inscription pour l'application. */
+/** Destination de chaque module : section de cette page, ou inscription pour l'application. */
 const FEATURE_TARGET: Record<string, "tournaments" | "shops" | "register"> = {
   cards: "register",
   collection: "register",
@@ -37,48 +38,33 @@ const FEATURE_TARGET: Record<string, "tournaments" | "shops" | "register"> = {
   howToPlay: "register",
 };
 
+/** Trame HUD discrète. */
+const gridStyle = {
+  backgroundImage: "linear-gradient(var(--hud-border) 1px, transparent 1px), linear-gradient(90deg, var(--hud-border) 1px, transparent 1px)",
+  backgroundSize: "48px 48px",
+  maskImage: "radial-gradient(ellipse 60% 70% at 72% 50%, black, transparent)",
+  WebkitMaskImage: "radial-gradient(ellipse 60% 70% at 72% 50%, black, transparent)",
+};
+
 export async function Landing({ locale }: { locale: SiteLocale }) {
   const copy = COPY[locale].landing;
   const sections = LANDING_SECTIONS[locale];
   const [cards, tournaments, shops] = await Promise.all([loadPublicCards(locale), initialTournamentDirectory({}), initialShopDirectory({})]);
-  const fan = cards
-    .filter((card) => card.cardType === "Legend" && card.thumb)
-    .slice(0, 5)
-    .map((card) => ({
-      slug: card.slug,
-      name: card.name,
-      href: localizedPath("card", locale, { slug: card.slug }),
-      thumb: card.thumb!,
-      alt: COPY[locale].card.imageAlt(card.name),
-    }));
-  const tournamentCount = tournaments.initial?.total ?? null;
-  const shopCount = shops.initial?.total ?? null;
-  const open = copy.features.filter((feature) => FEATURE_TARGET[feature.key] !== "register" && FEATURE_TARGET[feature.key]);
-  const withAccount = copy.features.filter((feature) => (FEATURE_TARGET[feature.key] ?? "register") === "register");
-
-  const featureList = (title: string, features: typeof copy.features) => (
-    <div className="flex flex-col gap-3">
-      <h3 className="text-sm font-semibold text-cyan">{title}</h3>
-      <ul className="flex flex-col">
-        {features.map((feature) => {
-          const target = FEATURE_TARGET[feature.key] ?? "register";
-          const href = target === "register" ? "/connexion?mode=register" : `#${sections[target]}`;
-          return (
-            <li key={feature.key}>
-              <Link
-                href={href}
-                rel={target === "register" ? "nofollow" : undefined}
-                className="group flex flex-col gap-1 border-l-2 border-line py-3 pl-4 transition-colors hover:border-yellow focus-visible:border-yellow"
-              >
-                <span className="text-base text-foreground group-hover:text-yellow">{feature.title}</span>
-                <span className="text-sm leading-6 text-muted">{feature.body}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
+  const legends = cards.filter((card) => card.cardType === "Legend" && card.thumb);
+  const fan = legends.slice(0, 5).map((card) => ({
+    slug: card.slug,
+    name: card.name,
+    href: localizedPath("card", locale, { slug: card.slug }),
+    thumb: card.thumb!,
+    alt: COPY[locale].card.imageAlt(card.name),
+  }));
+  // Carte du module « Catalogue » : une vraie Unité, avec son prix si possible.
+  const sample = cards.find((card) => card.cardType === "Unit" && card.thumb && card.marketPrice) ?? cards.find((card) => card.thumb);
+  const money = new Intl.NumberFormat(COPY[locale].intl, { style: "currency", currency: "EUR" });
+  const features = copy.features.map((feature) => {
+    const target = FEATURE_TARGET[feature.key] ?? "register";
+    return { ...feature, href: target === "register" ? "/connexion?mode=register" : `#${sections[target]}`, external: target === "register" };
+  });
 
   return (
     <div className="flex flex-col">
@@ -91,57 +77,54 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
         ]}
       />
       <section className="relative overflow-hidden border-b border-line">
-        {/* Trame HUD discrète derrière l'éventail. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-60"
-          style={{
-            backgroundImage:
-              "linear-gradient(var(--hud-border) 1px, transparent 1px), linear-gradient(90deg, var(--hud-border) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-            maskImage: "radial-gradient(ellipse 60% 70% at 72% 50%, black, transparent)",
-            WebkitMaskImage: "radial-gradient(ellipse 60% 70% at 72% 50%, black, transparent)",
-          }}
-        />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-60" style={gridStyle} />
+        {/* Liseré rouge sur le bord, comme les écrans du jeu vidéo. */}
+        <div aria-hidden="true" className="pointer-events-none absolute top-0 bottom-0 left-0 hidden w-1 md:block" style={{ background: "var(--cp-red)" }} />
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 py-12 md:grid-cols-[1.05fr_1fr] md:py-20">
-          <div className="flex flex-col gap-5">
-            <p className="text-sm text-cyan">{copy.eyebrow}</p>
-            <h1 className="font-display text-3xl font-bold uppercase leading-[1.05] tracking-wide text-yellow sm:text-5xl">{copy.title}</h1>
-            <p className="max-w-xl text-base leading-7 text-muted">{copy.lead}</p>
+          <div className="flex flex-col gap-6">
+            <p className="cp-index">{"// "}{copy.eyebrow}</p>
+            <h1 className="cp-glitch font-display text-3xl font-bold uppercase leading-[1.05] tracking-wide text-yellow sm:text-5xl" data-text={copy.title}>
+              {copy.title}
+            </h1>
+            <p className="max-w-xl border-l-2 border-cyan/60 pl-4 text-base leading-7 text-muted">{copy.lead}</p>
             <div className="flex flex-wrap gap-3">
-              <LandingActions register={copy.register} login={copy.login} openApp={copy.openApp} />
+              <LandingActions register={copy.register} openApp={copy.openApp} />
             </div>
-            <p className="flex flex-wrap gap-2 text-sm">
-              {[
-                { id: sections.tournaments, label: copy.seeTournaments, count: tournamentCount },
-                { id: sections.shops, label: copy.seeShops, count: shopCount },
-              ].map((link) => (
-                <a
-                  key={link.id}
-                  href={`#${link.id}`}
-                  className="inline-flex h-9 items-center gap-2 border border-line px-3 text-muted transition-colors hover:border-cyan hover:text-foreground"
-                >
-                  {link.label}
-                  {link.count ? <span className="font-mono text-xs text-yellow">{link.count}</span> : null}
-                </a>
-              ))}
-            </p>
           </div>
           {fan.length ? <HeroCardFan cards={fan} label={copy.fanLabel} /> : null}
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-14">
-        <h2 className="font-display text-2xl uppercase tracking-wide text-yellow">{copy.featuresTitle}</h2>
-        <div className="mt-6 grid gap-10 md:grid-cols-2">
-          {featureList(copy.openTitle, open)}
-          {featureList(copy.accountTitle, withAccount)}
+      <section className="mx-auto w-full max-w-[1100px] px-3 sm:px-4 py-16">
+        <div className="mb-8 flex flex-col gap-2">
+          <p className="cp-index">{"01 // "}{copy.modulesLabel}</p>
+          <h2 className="font-display text-3xl font-bold uppercase tracking-wide text-yellow sm:text-4xl">{copy.featuresTitle}</h2>
         </div>
+        <FeatureShowcase
+          features={features}
+          labels={{ preview: copy.preview, example: copy.example, open: copy.open }}
+          data={{
+            locale,
+            legends: legends.slice(0, 3).map((card) => ({ name: card.name, thumb: card.thumb! })),
+            sample: sample?.thumb
+              ? {
+                  name: sample.name,
+                  thumb: sample.thumb,
+                  cost: sample.cost,
+                  power: sample.power,
+                  ram: sample.ram,
+                  price: sample.marketPrice ? money.format(Number(sample.marketPrice)) : null,
+                }
+              : null,
+            totalCards: cards.length,
+          }}
+        />
       </section>
 
-      <section id={sections.tournaments} className="scroll-mt-2 border-t border-line pt-12">
-        <div className="mx-auto mb-6 flex w-full max-w-[1100px] flex-col gap-2 px-3 sm:px-4">
-          <h2 className="font-display text-2xl uppercase tracking-wide text-yellow">{copy.findTitle}</h2>
+      <section id={sections.tournaments} className="scroll-mt-2 border-t border-line pt-16">
+        <div className="mx-auto mb-8 flex w-full max-w-[1100px] flex-col gap-2 px-3 sm:px-4">
+          <p className="cp-index">{"02 // "}{copy.findLabel}</p>
+          <h2 className="font-display text-3xl font-bold uppercase tracking-wide text-yellow sm:text-4xl">{copy.findTitle}</h2>
           <p className="max-w-2xl text-sm text-muted">{copy.findBody}</p>
         </div>
         <LandingFinder
@@ -149,23 +132,26 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
             tournaments: {
               id: sections.tournaments,
               label: copy.tabTournaments,
-              count: tournamentCount,
+              count: tournaments.initial?.total ?? null,
               panel: <PublicDirectory initialParams={tournaments.params} initial={tournaments.initial} embedded />,
             },
             shops: {
               id: sections.shops,
               label: copy.tabShops,
-              count: shopCount,
+              count: shops.initial?.total ?? null,
               panel: <ShopDirectory initialParams={shops.params} initial={shops.initial} embedded />,
             },
           }}
         />
       </section>
 
-      <section className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-start gap-3 px-4 py-14">
-          <h2 className="font-display text-2xl uppercase tracking-wide text-yellow">{copy.finalTitle}</h2>
-          <p className="max-w-xl text-sm text-muted">{copy.finalBody}</p>
+      {/* Bandeau final jaune plein, la couleur d'interface du jeu vidéo. */}
+      <section className="cp-on-yellow bg-yellow text-black">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-start gap-5 px-4 py-14 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-2">
+            <h2 className="font-display text-3xl font-bold uppercase tracking-wide">{copy.finalTitle}</h2>
+            <p className="max-w-xl text-sm">{copy.finalBody}</p>
+          </div>
           <div className="flex flex-wrap gap-3">
             <LandingActions register={copy.register} login={copy.login} openApp={copy.openApp} />
           </div>

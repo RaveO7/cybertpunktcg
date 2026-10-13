@@ -13,6 +13,7 @@
   --cyan: #3ee0ff;
   --danger: #ff5d6c;
   --gain: #3ecf8e;
+  --cp-red: #ff2a55;
   --body-glow: rgba(62, 224, 255, 0.08);
   --hud-panel: #0a0c16;
   --hud-border: rgba(0, 240, 255, 0.18);
@@ -35,6 +36,7 @@
   --yellow: #b89200;
   --cyan: #0b8fa8;
   --danger: #d63b4c;
+  --cp-red: #d1103f;
   --gain: #1f9d63;
   --body-glow: rgba(11, 143, 168, 0.14);
   --hud-panel: #f7fafc;
@@ -1268,4 +1270,154 @@ select option:disabled {
   .hero-fan-face {
     transform: none;
   }
+}
+
+/* ───────────── Accueil : kit d'interface façon Cyberpunk 2077 ───────────── */
+/* Coins coupés : la signature des panneaux et boutons du jeu vidéo. */
+.cp-cut {
+  clip-path: polygon(0 0, calc(100% - var(--cut, 14px)) 0, 100% var(--cut, 14px), 100% 100%, var(--cut, 14px) 100%, 0 calc(100% - var(--cut, 14px)));
+}
+
+/* Cadre à coins coupés avec liseré : l'extérieur dessine le trait, l'intérieur le fond. */
+.cp-frame {
+  --cut: 18px;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--yellow), var(--cyan) 55%, var(--cp-red));
+}
+.cp-frame > .cp-frame-inner {
+  --cut: 17px;
+  height: 100%;
+  background: var(--hud-panel);
+}
+
+.cp-btn {
+  --cut: 12px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 3.25rem;
+  padding: 0 1.6rem;
+  background: var(--yellow);
+  color: #000;
+  font-family: var(--font-chakra-petch), sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.cp-btn::after {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+.cp-btn:hover {
+  background: var(--cyan);
+}
+.cp-btn:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.cp-btn-ghost {
+  background: transparent;
+  color: var(--yellow);
+  box-shadow: inset 0 0 0 1.5px var(--yellow);
+}
+.cp-btn-ghost:hover {
+  background: rgba(245, 230, 66, 0.12);
+}
+
+/* Titre « glitch » : décalage rouge / cyan une fois au chargement, puis au survol. */
+.cp-glitch {
+  position: relative;
+}
+.cp-glitch::before,
+.cp-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+.cp-glitch::before {
+  color: var(--cp-red);
+  transform: translate(-3px, 1px);
+}
+.cp-glitch::after {
+  color: var(--cyan);
+  transform: translate(3px, -1px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cp-glitch::before {
+    animation: cp-glitch-a 0.9s steps(1) 0.2s 1;
+  }
+  .cp-glitch::after {
+    animation: cp-glitch-b 0.9s steps(1) 0.2s 1;
+  }
+  .cp-glitch:hover::before {
+    animation: cp-glitch-a 0.6s steps(1) 1;
+  }
+  .cp-glitch:hover::after {
+    animation: cp-glitch-b 0.6s steps(1) 1;
+  }
+}
+@keyframes cp-glitch-a {
+  0% { opacity: 0.9; clip-path: inset(10% 0 70% 0); }
+  20% { clip-path: inset(55% 0 20% 0); transform: translate(-5px, 1px); }
+  40% { clip-path: inset(30% 0 45% 0); transform: translate(-2px, -1px); }
+  60% { clip-path: inset(80% 0 5% 0); transform: translate(-6px, 0); }
+  80% { clip-path: inset(0 0 85% 0); }
+  100% { opacity: 0; }
+}
+@keyframes cp-glitch-b {
+  0% { opacity: 0.9; clip-path: inset(65% 0 10% 0); }
+  20% { clip-path: inset(15% 0 60% 0); transform: translate(5px, -1px); }
+  40% { clip-path: inset(45% 0 30% 0); transform: translate(2px, 1px); }
+  60% { clip-path: inset(5% 0 80% 0); transform: translate(6px, 0); }
+  80% { clip-path: inset(85% 0 0 0); }
+  100% { opacity: 0; }
+}
+
+/* Repère de section : index rouge, trait, titre. */
+.cp-index {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--cp-red);
+}
+
+/* Panneau de module : apparition brève quand on change de module (réponse à l'action). */
+@media (prefers-reduced-motion: no-preference) {
+  .cp-module-in {
+    animation: cp-module-in 0.35s cubic-bezier(0.2, 0.9, 0.25, 1) 1;
+  }
+}
+@keyframes cp-module-in {
+  0% { opacity: 0; transform: translateX(10px); clip-path: inset(0 0 100% 0); }
+  60% { opacity: 1; clip-path: inset(0 0 0 0); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* Boutons sur le bandeau jaune : noir sur jaune. */
+.cp-on-yellow .cp-btn {
+  background: #000;
+  color: var(--yellow);
+}
+.cp-on-yellow .cp-btn:hover {
+  background: #1a1a1a;
+  color: #fff;
+}
+.cp-on-yellow .cp-btn-ghost {
+  background: transparent;
+  color: #000;
+  box-shadow: inset 0 0 0 1.5px #000;
+}
+.cp-on-yellow .cp-btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #000;
 }
