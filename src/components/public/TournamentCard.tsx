@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useI18n } from "@/components/LocaleProvider";
+import { useLocalizedHref } from "@/components/site/useLocalizedHref";
 import { Tag } from "@/components/tournament/ui";
 import type { PublicTournamentSummary } from "@/lib/tournament/public-view";
 import { formatFee, formatKm, formatStart } from "./format";
@@ -25,10 +26,11 @@ export function VerifiedBadge() {
 
 export function TournamentCard({ tournament }: { tournament: PublicTournamentSummary }) {
   const { t, locale } = useI18n();
+  const href = useLocalizedHref();
   const started = tournament.status !== "inscriptions";
   return (
     <Link
-      href={`/tournois/publics/${tournament.id}`}
+      href={href("tournament", { id: tournament.id })}
       className={`flex h-full flex-col gap-2 border bg-panel p-3 transition hover:border-cyan ${tournament.shop?.verified ? "border-yellow/40" : "border-line"}`}
     >
       <span className="flex items-start justify-between gap-2">

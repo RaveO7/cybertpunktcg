@@ -38,7 +38,7 @@ const targets = [
   { file: "public/icons/icon-192.png", size: 192, scale: MASKABLE_SCALE, shiftY: ANY_SHIFT_Y },
   { file: "public/icons/icon-512.png", size: 512, scale: MASKABLE_SCALE, shiftY: ANY_SHIFT_Y },
   { file: "public/icons/maskable-512.png", size: 512, scale: MASKABLE_SCALE },
-  { file: "src/app/apple-icon.png", size: 180, scale: 0.86 },
+  { file: "public/icons/apple-icon.png", size: 180, scale: 0.86 },
 ];
 
 // Favicon : motif presque plein cadre pour rester lisible en 16 px.

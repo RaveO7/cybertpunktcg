@@ -45,9 +45,12 @@ const fr = {
     terms: "CGU",
     privacy: "Confidentialité",
     social: "Réseaux sociaux",
-    legalOnlyFrench: "",
+    legalOnlyFrench: "Cette page n’est disponible qu’en français.",
   },
   nav: {
+    shops: "Boutiques",
+    login: "Connexion",
+    language: "Langue",
     dashboard: "Tableau de bord",
     cards: "Cartes",
     investment: "Investissement",
@@ -169,6 +172,7 @@ const fr = {
     reference: "Référence",
   },
   auth: {
+    browseCards: "Voir toutes les cartes",
     eyebrow: "COMPTE",
     title: "Connexion",
     subtitle:
@@ -1077,6 +1081,9 @@ const en: MessagesShape = {
     legalOnlyFrench: "This page is only available in French.",
   },
   nav: {
+    shops: "Shops",
+    login: "Log in",
+    language: "Language",
     dashboard: "Dashboard",
     cards: "Cards",
     investment: "Investment",
@@ -1197,6 +1204,7 @@ const en: MessagesShape = {
     reference: "Reference",
   },
   auth: {
+    browseCards: "Browse all cards",
     eyebrow: "ACCOUNT",
     title: "Sign in",
     subtitle:
@@ -2093,6 +2101,9 @@ const de: MessagesShape = {
     legalOnlyFrench: "Diese Seite ist nur auf Französisch verfügbar.",
   },
   nav: {
+    shops: "Läden",
+    login: "Anmelden",
+    language: "Sprache",
     dashboard: "Übersicht",
     cards: "Karten",
     investment: "Investment",
@@ -2214,6 +2225,7 @@ const de: MessagesShape = {
     reference: "Referenz",
   },
   auth: {
+    browseCards: "Alle Karten ansehen",
     eyebrow: "KONTO",
     title: "Anmeldung",
     subtitle:
@@ -3110,6 +3122,9 @@ const es: MessagesShape = {
     legalOnlyFrench: "Esta página solo está disponible en francés.",
   },
   nav: {
+    shops: "Tiendas",
+    login: "Iniciar sesión",
+    language: "Idioma",
     dashboard: "Panel",
     cards: "Cartas",
     investment: "Inversión",
@@ -3231,6 +3246,7 @@ const es: MessagesShape = {
     reference: "Referencia",
   },
   auth: {
+    browseCards: "Ver todas las cartas",
     eyebrow: "CUENTA",
     title: "Iniciar sesión",
     subtitle:
@@ -4127,6 +4143,9 @@ const it: MessagesShape = {
     legalOnlyFrench: "Questa pagina è disponibile solo in francese.",
   },
   nav: {
+    shops: "Negozi",
+    login: "Accedi",
+    language: "Lingua",
     dashboard: "Dashboard",
     cards: "Carte",
     investment: "Investimento",
@@ -4248,6 +4267,7 @@ const it: MessagesShape = {
     reference: "Riferimento",
   },
   auth: {
+    browseCards: "Vedi tutte le carte",
     eyebrow: "ACCOUNT",
     title: "Accesso",
     subtitle:

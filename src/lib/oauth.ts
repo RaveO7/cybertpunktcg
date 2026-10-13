@@ -386,8 +386,9 @@ export async function loginWithOAuth(profile: OAuthProfile, localUserId: string 
   }
 }
 
+/** Échec : retour à la page de connexion (l'accueil des visiteurs est la page de présentation). */
 export function oauthErrorRedirect(origin: string, message: string) {
-  const url = new URL("/", origin);
+  const url = new URL("/connexion", origin);
   url.searchParams.set("authError", message);
   return url;
 }

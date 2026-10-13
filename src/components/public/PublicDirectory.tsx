@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { countryName } from "@/components/geo/countries";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
 import { useI18n } from "@/components/LocaleProvider";
+import { useLocalizedHref } from "@/components/site/useLocalizedHref";
 import { buttonClass, inputClass, panelClass } from "@/components/tournament/ui";
 import type { DirectoryFacets, DirectoryResult } from "@/lib/tournament/directory";
 import { isPeriod, PERIODS, type Period } from "@/lib/tournament/periods";
@@ -26,6 +27,7 @@ function nearOf(params: DirectoryParams): NearPoint | null {
 
 export function PublicDirectory({ initialParams, initial }: { initialParams: DirectoryParams; initial: DirectoryResult | null }) {
   const { t, locale } = useI18n();
+  const href = useLocalizedHref();
   const router = useRouter();
   const pathname = usePathname();
   const [params, setParams] = useState<DirectoryParams>(() => cleanParams(initialParams));
@@ -97,7 +99,7 @@ export function PublicDirectory({ initialParams, initial }: { initialParams: Dir
                 items: [
                   {
                     label: row.name,
-                    href: `/tournois/publics/${row.id}`,
+                    href: href("tournament", { id: row.id }),
                     detail: [formatStart(row.startsAt, row.timeZone, locale), row.venueName ?? row.city].filter(Boolean).join(" · "),
                   },
                 ],
@@ -105,7 +107,7 @@ export function PublicDirectory({ initialParams, initial }: { initialParams: Dir
             ]
           : [],
       ),
-    [result, locale],
+    [result, locale, href],
   );
   const circle = useMemo(() => (near ? { lat: near.lat, lng: near.lng, radiusKm: near.radius } : null), [near?.lat, near?.lng, near?.radius]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -136,7 +138,7 @@ export function PublicDirectory({ initialParams, initial }: { initialParams: Dir
         <h1 className="text-2xl text-yellow sm:text-4xl">{t.publicTournaments.title}</h1>
         <p className="max-w-2xl text-sm text-muted">{t.publicTournaments.subtitle}</p>
         <p className="flex flex-wrap gap-3 text-sm">
-          <Link href="/boutiques" className="text-cyan underline">
+          <Link href={href("shops")} className="text-cyan underline">
             {t.publicTournaments.shopsLink}
           </Link>
         </p>

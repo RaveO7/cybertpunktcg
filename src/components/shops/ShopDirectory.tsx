@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { countryName, countryOptions } from "@/components/geo/countries";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
 import { useI18n } from "@/components/LocaleProvider";
+import { useLocalizedHref } from "@/components/site/useLocalizedHref";
 import { formatKm } from "@/components/public/format";
 import { NearPicker, type NearPoint } from "@/components/public/NearPicker";
 import { VerifiedBadge } from "@/components/public/TournamentCard";
@@ -25,6 +26,7 @@ function clean(params: Params) {
 
 export function ShopDirectory({ initialParams, initial }: { initialParams: Params; initial: ShopDirectoryResult | null }) {
   const { t, locale } = useI18n();
+  const href = useLocalizedHref();
   const router = useRouter();
   const pathname = usePathname();
   const [params, setParams] = useState<Params>(() => clean(initialParams));
@@ -72,9 +74,9 @@ export function ShopDirectory({ initialParams, initial }: { initialParams: Param
         lat: shop.lat,
         lng: shop.lng,
         highlight: shop.verified,
-        items: [{ label: shop.name, href: `/boutiques/${shop.slug}`, detail: shop.city }],
+        items: [{ label: shop.name, href: href("shop", { slug: shop.slug }), detail: shop.city }],
       })),
-    [result],
+    [result, href],
   );
   const circle = useMemo(() => (near ? { lat: near.lat, lng: near.lng, radiusKm: near.radius } : null), [near?.lat, near?.lng, near?.radius]); // eslint-disable-line react-hooks/exhaustive-deps
   const pages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
@@ -83,7 +85,7 @@ export function ShopDirectory({ initialParams, initial }: { initialParams: Param
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-6">
       <div className="flex flex-col gap-1">
-        <Link href="/tournois/publics" className="text-xs text-muted hover:text-foreground">
+        <Link href={href("tournaments")} className="text-xs text-muted hover:text-foreground">
           ← {t.publicTournaments.title}
         </Link>
         <h1 className="text-2xl text-yellow sm:text-4xl">{t.shops.title}</h1>
@@ -139,7 +141,7 @@ export function ShopDirectory({ initialParams, initial }: { initialParams: Param
           {result?.shops.map((shop) => (
             <li key={shop.id}>
               <Link
-                href={`/boutiques/${shop.slug}`}
+                href={href("shop", { slug: shop.slug })}
                 className={`flex h-full items-center gap-3 border bg-panel p-3 transition hover:border-cyan ${shop.verified ? "border-yellow/40" : "border-line"}`}
               >
                 {shop.logoUrl ? (

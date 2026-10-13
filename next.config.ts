@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Plusieurs mises en page racines ((fr) et (en)) : la 404 des URL sans route est rendue à part.
+    globalNotFound: true,
+  },
   async headers() {
     return [
       {

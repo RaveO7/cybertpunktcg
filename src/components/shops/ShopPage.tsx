@@ -9,6 +9,7 @@ import { placeLabel } from "@/components/geo/AddressField";
 import { countryName } from "@/components/geo/countries";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
 import { useI18n } from "@/components/LocaleProvider";
+import { useLocalizedHref } from "@/components/site/useLocalizedHref";
 import { formatStart } from "@/components/public/format";
 import { TournamentCard, VerifiedBadge } from "@/components/public/TournamentCard";
 import { panelClass } from "@/components/tournament/ui";
@@ -21,6 +22,7 @@ const externalLink = { target: "_blank", rel: "nofollow noopener noreferrer" } a
 
 export function ShopPage({ shop, upcoming, past }: { shop: ShopDetail; upcoming: PublicTournamentSummary[]; past: ShopPastResult[] }) {
   const { t, locale } = useI18n();
+  const href = useLocalizedHref();
   const markers = useMemo<MapMarker[]>(
     () => [{ lat: shop.lat, lng: shop.lng, highlight: true, items: [{ label: shop.name, href: "#" }] }],
     [shop.lat, shop.lng, shop.name],
@@ -28,7 +30,7 @@ export function ShopPage({ shop, upcoming, past }: { shop: ShopDetail; upcoming:
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-4 px-3 py-4 sm:px-4 sm:py-6">
-      <Link href="/boutiques" className="text-xs text-muted hover:text-foreground">
+      <Link href={href("shops")} className="text-xs text-muted hover:text-foreground">
         ← {t.shops.title}
       </Link>
       <div className="flex flex-wrap items-center gap-4">
@@ -119,7 +121,7 @@ export function ShopPage({ shop, upcoming, past }: { shop: ShopDetail; upcoming:
           <ul className={`${panelClass} flex flex-col text-sm`}>
             {past.map((row) => (
               <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-line py-2 first:border-t-0">
-                <Link href={`/tournois/publics/${row.id}`} className="text-cyan underline">
+                <Link href={href("tournament", { id: row.id })} className="text-cyan underline">
                   {row.name}
                 </Link>
                 <span className="text-muted">

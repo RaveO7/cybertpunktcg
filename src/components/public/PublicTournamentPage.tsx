@@ -11,6 +11,7 @@ import { placeLabel } from "@/components/geo/AddressField";
 import { countryName } from "@/components/geo/countries";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
 import { useI18n } from "@/components/LocaleProvider";
+import { useLocalizedHref } from "@/components/site/useLocalizedHref";
 import { ApiError, postJson } from "@/components/tournament/hooks";
 import { buttonClass, inputClass, panelClass, primaryClass, Tag } from "@/components/tournament/ui";
 import type { PublicTournamentDetail } from "@/lib/tournament/public-view";
@@ -21,6 +22,7 @@ const DEFAULT_DISPLAY_NAME = "Ma collection";
 
 export function PublicTournamentPage({ tournament }: { tournament: PublicTournamentDetail }) {
   const { t, locale } = useI18n();
+  const href = useLocalizedHref();
   const [copied, setCopied] = useState(false);
   const place = tournament.place;
   const markers = useMemo<MapMarker[]>(
@@ -56,7 +58,7 @@ export function PublicTournamentPage({ tournament }: { tournament: PublicTournam
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1000px] flex-col gap-4 px-3 py-4 sm:px-4 sm:py-6">
       <div className="flex flex-col gap-2">
-        <Link href="/tournois/publics" className="text-xs text-muted hover:text-foreground">
+        <Link href={href("tournaments")} className="text-xs text-muted hover:text-foreground">
           ← {t.publicTournaments.back}
         </Link>
         <div className="flex flex-wrap items-center gap-2">
@@ -67,7 +69,7 @@ export function PublicTournamentPage({ tournament }: { tournament: PublicTournam
           {tournament.shop ? (
             <>
               {t.publicTournaments.organizedByLabel}{" "}
-              <Link href={`/boutiques/${tournament.shop.slug}`} className="text-cyan underline">
+              <Link href={href("shop", { slug: tournament.shop.slug })} className="text-cyan underline">
                 {tournament.shop.name}
               </Link>{" "}
               {tournament.shop.verified ? <VerifiedBadge /> : null}

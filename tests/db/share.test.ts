@@ -281,8 +281,8 @@ describe.sequential("partage du classeur", () => {
 
   it("les pages /classeur/[token] répondent 404 pour un lien inconnu", async () => {
     const pages = [
-      (await import("../../src/app/classeur/[token]/page")).default,
-      (await import("../../src/app/classeur/[token]/cartes/page")).default,
+      (await import("../../src/app/(fr)/classeur/[token]/page")).default,
+      (await import("../../src/app/(fr)/classeur/[token]/cartes/page")).default,
     ];
     for (const Page of pages) {
       await assert.rejects(

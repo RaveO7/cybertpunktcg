@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
+import { useLocalizedHref } from "@/components/site/useLocalizedHref";
+import { alternatePath, type SiteLocale } from "@/lib/seo/routes";
 import { isInHorizontalScroller } from "@/lib/swipe";
 
 type NavIcon = "dashboard" | "cards" | "investment" | "decks" | "tournaments" | "wishlist" | "howto" | "binder";
@@ -47,8 +49,64 @@ function useNavigation() {
   return { pathname, user, t, isSharedView, shareToken, showNav, links };
 }
 
+/** Navigation des visiteurs sans compte : pages publiques, langue et connexion. */
+function VisitorNav({ pathname }: { pathname: string }) {
+  const { t, routeLocale, setLocale } = useI18n();
+  const href = useLocalizedHref();
+  const links = [
+    { href: href("cards"), label: t.nav.cards },
+    { href: href("tournaments"), label: t.nav.tournaments },
+    { href: href("shops"), label: t.nav.shops },
+    { href: href("howToPlay"), label: t.nav.howto },
+  ];
+  const other: SiteLocale | null = routeLocale ? (routeLocale === "fr" ? "en" : "fr") : null;
+  const otherHref = other ? alternatePath(pathname, null, other) : null;
+  const loginHref = `/connexion?next=${encodeURIComponent(pathname)}`;
+  return (
+    <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-1 gap-y-1">
+      <nav className="flex min-w-0 flex-wrap items-center" aria-label={t.common.sections}>
+        {links.map((link) => {
+          const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`px-2 py-2 text-sm ${active ? "text-yellow" : "text-muted hover:text-foreground"}`}
+              aria-current={active ? "page" : undefined}
+            >
+              {link.label}
+            </Link>
+          );
+        })}
+      </nav>
+      {other && otherHref ? (
+        <a
+          href={otherHref}
+          hrefLang={other}
+          lang={other}
+          onClick={(event) => {
+            event.preventDefault();
+            setLocale(other);
+          }}
+          className="inline-flex h-9 items-center border border-line px-2 font-mono text-xs uppercase text-muted hover:border-cyan hover:text-foreground"
+          aria-label={`${t.nav.language} : ${other === "en" ? "English" : "Français"}`}
+        >
+          {other}
+        </a>
+      ) : null}
+      <Link href={loginHref} rel="nofollow" className="inline-flex h-9 items-center border border-cyan px-3 text-sm text-cyan hover:bg-cyan/10">
+        {t.nav.login}
+      </Link>
+    </div>
+  );
+}
+
 export function Header() {
   const { pathname, user, t, isSharedView, shareToken, showNav, links } = useNavigation();
+  const { routeLocale } = useI18n();
+  const href = useLocalizedHref();
+  // Visiteur sur une page publique (aussi au rendu serveur, pour les liens internes) : navigation publique.
+  const showVisitorNav = !user && !isSharedView && !showNav && pathname !== "/connexion";
   // Page d'où l'on a ouvert les paramètres : un second clic sur le bouton y ramène.
   const [settingsReturn, setSettingsReturn] = useState("/");
   const inSettings = pathname === "/parametres";
@@ -59,7 +117,7 @@ export function Header() {
   return (
     <header className="pt-safe px-safe relative z-30 shrink-0 border-b border-line bg-background">
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-2">
-        <Link href={isSharedView && shareToken ? `/classeur/${shareToken}` : "/"} className="shrink-0 text-sm text-yellow">
+        <Link href={isSharedView && shareToken ? `/classeur/${shareToken}` : routeLocale ? href("home") : "/"} className="shrink-0 text-sm text-yellow">
           TCG Tracker
         </Link>
         {showNav ? (
@@ -80,6 +138,8 @@ export function Header() {
               );
             })}
           </nav>
+        ) : showVisitorNav ? (
+          <VisitorNav pathname={pathname} />
         ) : null}
         {user && !isSharedView ? (
           <Link

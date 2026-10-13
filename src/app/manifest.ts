@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Collection Cyberpunk TCG",
-    short_name: "CPTCG",
-    description: "Gestion de collection Cyberpunk TCG",
+    name: "TCG Tracker",
+    short_name: "TCG Tracker",
+    description: "Cartes, collection, decks et tournois Cyberpunk TCG",
     start_url: "/",
     scope: "/",
     display: "standalone",

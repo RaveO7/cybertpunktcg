@@ -140,12 +140,12 @@ function location(response: Response) {
   return new URL(raw);
 }
 
-/** Échec : retour à l'accueil avec un message, sans cookie de session. */
+/** Échec : retour à la page de connexion avec un message, sans cookie de session. */
 function expectFailure(response: Response, message: RegExp) {
   assert.ok([302, 303, 307].includes(response.status), `redirection attendue, reçu ${response.status}`);
   const target = location(response);
   assert.equal(target.origin, ORIGIN);
-  assert.equal(target.pathname, "/");
+  assert.equal(target.pathname, "/connexion");
   assert.match(target.searchParams.get("authError") ?? "", message);
   assert.equal(
     response.headers.getSetCookie().some((line) => line.startsWith(`${SESSION_COOKIE}=`) && !/Max-Age=0/i.test(line)),
