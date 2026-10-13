@@ -19,5 +19,5 @@ export function LoginScreen() {
   }, [user, next, router]);
 
   if (user) return null;
-  return <AuthScreen initialMode={mode === "register" || mode === "login" ? mode : null} />;
+  return <AuthScreen initialMode={mode === "register" || mode === "login" ? mode : null} redirectTo={null} />;
 }

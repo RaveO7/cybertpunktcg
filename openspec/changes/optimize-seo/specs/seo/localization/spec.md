@@ -42,6 +42,17 @@ Les pages publiques localisées MUST proposer un lien vers la version de l'autre
 - **WHEN** un visiteur clique « English » sur `/comment-jouer`
 - **THEN** il arrive sur `/en/how-to-play` et l'application connectée s'affichera ensuite en anglais
 
+### Requirement: Langue des utilisateurs connectés
+Un utilisateur connecté choisit sa langue dans ses paramètres : le lien vers l'autre langue MUST NOT lui être proposé dans l'en-tête. S'il a choisi le français ou l'anglais et ouvre une page publique bilingue dans l'autre langue, il MUST être emmené sur la version de sa langue. Les visiteurs sans compte et les robots MUST NOT être redirigés.
+
+#### Scenario: Utilisateur anglophone sur une URL française
+- **WHEN** un utilisateur connecté qui a choisi l'anglais ouvre `/cartes/v-streetkid`
+- **THEN** il arrive sur `/en/cards/v-streetkid`
+
+#### Scenario: Changement de langue connecté
+- **WHEN** un utilisateur connecté passe en anglais dans ses paramètres puis ouvre `/tournois/publics`
+- **THEN** il arrive sur `/en/tournaments`
+
 ### Requirement: Suggestion de version anglaise
 Quand la langue enregistrée ou celle du navigateur d'un visiteur n'est pas le français et qu'il consulte une page publique française, le site MUST lui proposer un lien vers la version anglaise sans le rediriger automatiquement. Le visiteur MUST pouvoir fermer cette suggestion, qui ne réapparaît alors plus.
 

@@ -27,6 +27,12 @@ export const SITE = {
   legalUpdatedAt: "11 octobre 2026",
 };
 
+/**
+ * Liste de souhaits et alertes de prix : pas encore publiée. À false, le bloc de la fenêtre d'une
+ * carte est masqué et /souhaits répond 404 (l'API et les données restent en place).
+ */
+export const WISHLIST_ENABLED = false;
+
 export const LEGAL_LINKS = [
   { href: "/mentions-legales", key: "legal" },
   { href: "/cgu", key: "terms" },

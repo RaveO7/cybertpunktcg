@@ -4,6 +4,7 @@ import { BottomNav, Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { OfflineBanner } from "@/components/OfflineSupport";
 import { EnglishSuggestion } from "@/components/site/EnglishSuggestion";
+import { PreferredLanguageRedirect } from "@/components/site/PreferredLanguageRedirect";
 import { RequireUser } from "@/components/site/RequireUser";
 import { routeOfPath } from "@/lib/seo/routes";
 import { LEGAL_PATHS } from "@/lib/site";
@@ -29,6 +30,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
       <Header />
       <OfflineBanner />
       <EnglishSuggestion />
+      <PreferredLanguageRedirect />
       <main className="app-main @container/main px-safe relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain [container-type:size]">
         {content}
         {showFooter ? <Footer /> : null}

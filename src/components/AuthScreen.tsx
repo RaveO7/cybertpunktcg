@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
@@ -56,8 +57,16 @@ function AppleMark() {
   );
 }
 
-export function AuthScreen({ initialMode = null }: { initialMode?: "login" | "register" | null } = {}) {
+/**
+ * Connexion / inscription. Une fois connecté, l'utilisateur arrive sur son tableau de bord
+ * (`redirectTo`, null pour laisser l'appelant décider, cf. /connexion et son paramètre next).
+ */
+export function AuthScreen({
+  initialMode = null,
+  redirectTo = "/",
+}: { initialMode?: "login" | "register" | null; redirectTo?: string | null } = {}) {
   const { login, register } = useCollection();
+  const router = useRouter();
   const { t } = useI18n();
   const hasLocal = useSyncExternalStore(subscribeLocalCollection, localCollectionStored, noLocalCollection);
   const [chosenMode, setChosenMode] = useState<"login" | "register" | null>(initialMode);
@@ -119,6 +128,7 @@ export function AuthScreen({ initialMode = null }: { initialMode?: "login" | "re
       } else {
         await register({ email, password, displayName });
       }
+      if (redirectTo) router.replace(redirectTo);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t.auth.failed);
     } finally {

@@ -49,9 +49,32 @@ function useNavigation() {
   return { pathname, user, t, isSharedView, shareToken, showNav, links };
 }
 
+/** Lien vers la même page dans l'autre langue (pages publiques bilingues), qui enregistre aussi la préférence. */
+function LanguageToggle({ pathname }: { pathname: string }) {
+  const { t, routeLocale, setLocale } = useI18n();
+  const other: SiteLocale | null = routeLocale ? (routeLocale === "fr" ? "en" : "fr") : null;
+  const otherHref = other ? alternatePath(pathname, null, other) : null;
+  if (!other || !otherHref) return null;
+  return (
+    <a
+      href={otherHref}
+      hrefLang={other}
+      lang={other}
+      onClick={(event) => {
+        event.preventDefault();
+        setLocale(other);
+      }}
+      className="inline-flex h-9 shrink-0 items-center border border-line px-2 font-mono text-xs uppercase text-muted hover:border-cyan hover:text-foreground"
+      aria-label={`${t.nav.language} : ${other === "en" ? "English" : "Français"}`}
+    >
+      {other}
+    </a>
+  );
+}
+
 /** Navigation des visiteurs sans compte : pages publiques, langue et connexion. */
 function VisitorNav({ pathname }: { pathname: string }) {
-  const { t, routeLocale, setLocale } = useI18n();
+  const { t } = useI18n();
   const href = useLocalizedHref();
   const links = [
     { href: href("cards"), label: t.nav.cards },
@@ -59,8 +82,6 @@ function VisitorNav({ pathname }: { pathname: string }) {
     { href: href("shops"), label: t.nav.shops },
     { href: href("howToPlay"), label: t.nav.howto },
   ];
-  const other: SiteLocale | null = routeLocale ? (routeLocale === "fr" ? "en" : "fr") : null;
-  const otherHref = other ? alternatePath(pathname, null, other) : null;
   const loginHref = `/connexion?next=${encodeURIComponent(pathname)}`;
   return (
     <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-1 gap-y-1">
@@ -79,21 +100,7 @@ function VisitorNav({ pathname }: { pathname: string }) {
           );
         })}
       </nav>
-      {other && otherHref ? (
-        <a
-          href={otherHref}
-          hrefLang={other}
-          lang={other}
-          onClick={(event) => {
-            event.preventDefault();
-            setLocale(other);
-          }}
-          className="inline-flex h-9 items-center border border-line px-2 font-mono text-xs uppercase text-muted hover:border-cyan hover:text-foreground"
-          aria-label={`${t.nav.language} : ${other === "en" ? "English" : "Français"}`}
-        >
-          {other}
-        </a>
-      ) : null}
+      <LanguageToggle pathname={pathname} />
       <Link href={loginHref} rel="nofollow" className="inline-flex h-9 items-center border border-cyan px-3 text-sm text-cyan hover:bg-cyan/10">
         {t.nav.login}
       </Link>

@@ -38,6 +38,17 @@ La page de présentation MUST proposer la connexion et la création de compte. A
 - **WHEN** un visiteur crée un compte depuis l'accueil
 - **THEN** il arrive sur son tableau de bord
 
+### Requirement: Arrivée après connexion
+Après une connexion ou une inscription depuis n'importe quel écran de connexion (sauf un lien qui précise une page de retour), l'utilisateur MUST arriver sur son tableau de bord.
+
+#### Scenario: Connexion depuis les paramètres après déconnexion
+- **WHEN** un utilisateur se déconnecte depuis les paramètres puis se reconnecte sur l'écran de connexion affiché
+- **THEN** il arrive sur son tableau de bord
+
+#### Scenario: Page de retour explicite
+- **WHEN** un visiteur s'inscrit depuis « Ajouter à ma collection » d'une fiche de carte
+- **THEN** il arrive sur cette carte dans l'explorateur
+
 ### Requirement: Tutoriel public
 Le tutoriel « Comment jouer » MUST être consultable sans compte, en français sur `/comment-jouer` et en anglais sur `/en/how-to-play`, avec son texte principal présent dans le HTML rendu par le serveur.
 
