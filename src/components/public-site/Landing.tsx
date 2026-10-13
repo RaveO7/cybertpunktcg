@@ -1,16 +1,19 @@
-// Page d'accueil des visiteurs (/ sans session, /en) : rendue côté serveur, contenu indexable.
+// Page d'accueil des visiteurs (/ sans session, /en) : rendue côté serveur, contenu indexable. Seule page
+// publique de premier niveau : elle intègre les annuaires des tournois et des boutiques.
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { formatStart } from "@/components/public/format";
+import { PublicDirectory } from "@/components/public/PublicDirectory";
 import { LandingActions } from "@/components/public-site/LandingActions";
+import { initialShopDirectory } from "@/components/public-site/shop-pages";
+import { initialTournamentDirectory } from "@/components/public-site/tournament-pages";
+import { ShopDirectory } from "@/components/shops/ShopDirectory";
 import { JsonLd } from "@/components/site/JsonLd";
 import { loadPublicCards } from "@/lib/seo/catalog-data";
 import { COPY } from "@/lib/seo/copy";
 import { HOME_COPY, pageMetadata } from "@/lib/seo/metadata";
-import { localizedPath, type PublicRouteKey, type SiteLocale } from "@/lib/seo/routes";
-import { organizationLd, websiteLd } from "@/lib/seo/structured-data";
-import { searchPublicTournaments } from "@/lib/tournament/directory";
+import { LANDING_SECTIONS, localizedPath, type SiteLocale } from "@/lib/seo/routes";
+import { itemListLd, organizationLd, tournamentListLd, websiteLd } from "@/lib/seo/structured-data";
 
 export function landingMetadata(locale: SiteLocale): Metadata {
   return pageMetadata({
@@ -22,25 +25,32 @@ export function landingMetadata(locale: SiteLocale): Metadata {
   });
 }
 
-/** Destination de chaque bloc de fonctionnalité (pages publiques, ou inscription pour l'application). */
-const FEATURE_TARGET: Record<string, PublicRouteKey | "register"> = {
-  cards: "cards",
+/** Destination de chaque bloc de fonctionnalité : section de cette page, ou inscription pour l'application. */
+const FEATURE_TARGET: Record<string, "tournaments" | "shops" | "register"> = {
+  cards: "register",
   collection: "register",
   decks: "register",
   tournaments: "tournaments",
   shops: "shops",
-  howToPlay: "howToPlay",
+  howToPlay: "register",
 };
 
 export async function Landing({ locale }: { locale: SiteLocale }) {
   const copy = COPY[locale].landing;
-  const [cards, directory] = await Promise.all([loadPublicCards(locale), searchPublicTournaments({ sort: "date" })]);
-  const upcoming = directory.tournaments.slice(0, 3);
+  const sections = LANDING_SECTIONS[locale];
+  const [cards, tournaments, shops] = await Promise.all([loadPublicCards(locale), initialTournamentDirectory({}), initialShopDirectory({})]);
   const featured = cards.filter((card) => card.cardType === "Legend" && card.thumb).slice(0, 4);
 
   return (
     <div className="flex flex-col">
-      <JsonLd data={[websiteLd(locale), organizationLd()]} />
+      <JsonLd
+        data={[
+          websiteLd(locale),
+          organizationLd(),
+          tournamentListLd(tournaments.initial?.tournaments ?? [], locale),
+          itemListLd((shops.initial?.shops ?? []).map((shop) => ({ name: shop.name, path: localizedPath("shop", locale, { slug: shop.slug }) }))),
+        ]}
+      />
       <section className="border-b border-line">
         <div className="mx-auto grid w-full max-w-5xl items-center gap-8 px-4 py-10 md:grid-cols-[1.2fr_1fr] md:py-14">
           <div className="flex flex-col gap-4">
@@ -50,9 +60,14 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
             <div className="flex flex-wrap gap-3">
               <LandingActions register={copy.register} login={copy.login} openApp={copy.openApp} />
             </div>
-            <Link href={localizedPath("cards", locale)} className="text-sm text-cyan underline">
-              {copy.browseCards} — {copy.cardsCount(cards.length)} →
-            </Link>
+            <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              <a href={`#${sections.tournaments}`} className="text-cyan underline">
+                {copy.seeTournaments} ↓
+              </a>
+              <a href={`#${sections.shops}`} className="text-cyan underline">
+                {copy.seeShops} ↓
+              </a>
+            </p>
           </div>
           {featured.length ? (
             <ul className="grid grid-cols-4 gap-2 md:grid-cols-2" aria-label={COPY[locale].nav.cards}>
@@ -80,8 +95,8 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
         <h2 className="font-display text-xl uppercase tracking-wide text-yellow">{copy.featuresTitle}</h2>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {copy.features.map((feature) => {
-            const target = FEATURE_TARGET[feature.key];
-            const href = target === "register" ? "/connexion?mode=register" : localizedPath(target, locale);
+            const target = FEATURE_TARGET[feature.key] ?? "register";
+            const href = target === "register" ? "/connexion?mode=register" : `#${sections[target]}`;
             return (
               <li key={feature.key}>
                 <Link
@@ -98,30 +113,12 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
         </ul>
       </section>
 
-      <section className="mx-auto w-full max-w-5xl px-4 pb-10">
-        <h2 className="font-display text-xl uppercase tracking-wide text-yellow">{copy.upcomingTitle}</h2>
-        {upcoming.length ? (
-          <ul className="mt-4 flex flex-col gap-2">
-            {upcoming.map((t) => (
-              <li key={t.id}>
-                <Link
-                  href={localizedPath("tournament", locale, { id: t.id })}
-                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-line p-3 hover:border-cyan"
-                >
-                  <span className="text-foreground">{t.name}</span>
-                  <span className="text-sm text-muted">
-                    {[formatStart(t.startsAt, t.timeZone, locale), t.city, t.shop?.name].filter(Boolean).join(" · ")}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-muted">{copy.upcomingEmpty}</p>
-        )}
-        <Link href={localizedPath("tournaments", locale)} className="mt-3 inline-block text-sm text-cyan underline">
-          {copy.upcomingAll} →
-        </Link>
+      <section id={sections.tournaments} className="scroll-mt-2 border-t border-line">
+        <PublicDirectory initialParams={tournaments.params} initial={tournaments.initial} embedded />
+      </section>
+
+      <section id={sections.shops} className="scroll-mt-2 border-t border-line">
+        <ShopDirectory initialParams={shops.params} initial={shops.initial} embedded />
       </section>
 
       <section className="border-t border-line">

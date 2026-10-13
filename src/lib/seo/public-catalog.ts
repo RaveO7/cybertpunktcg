@@ -11,9 +11,6 @@ import type { CardDTO, CatalogDTO, PrintingDTO } from "@/lib/types";
 /** Types de produits scellés rangés parmi les cartes du catalogue. */
 const SEALED_CARD_TYPES = new Set(["Sealed", "Lot"]);
 
-export const COLOR_KEYS = ["Red", "Blue", "Green", "Yellow"] as const;
-export const TYPE_KEYS = ["Legend", "Unit", "Program", "Gear"] as const;
-
 export type PublicPrinting = {
   id: string;
   setCode: string;
@@ -155,29 +152,6 @@ export function publicCards(catalog: CatalogDTO, locale: SiteLocale): PublicCard
       const right = catalogOrder(b);
       return setRank(left.setCode) - setRank(right.setCode) || compareCollector(left.collectorNumber, right.collectorNumber) || a.slug.localeCompare(b.slug);
     });
-}
-
-export type CatalogFilters = { color?: string; type?: string; cost?: number; q?: string };
-
-/** Minuscules sans accents, pour la recherche par nom. */
-function searchable(value: string) {
-  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
-/** Coûts présents dans le catalogue, triés. */
-export function costValues(cards: PublicCard[]) {
-  return [...new Set(cards.map((card) => card.cost).filter((cost): cost is number => cost !== null))].sort((a, b) => a - b);
-}
-
-export function filterCards(cards: PublicCard[], filters: CatalogFilters) {
-  const query = filters.q ? searchable(filters.q.trim()) : "";
-  return cards.filter(
-    (card) =>
-      (!filters.color || card.color === filters.color) &&
-      (!filters.type || card.cardType === filters.type) &&
-      (filters.cost === undefined || card.cost === filters.cost) &&
-      (!query || searchable(card.name).includes(query)),
-  );
 }
 
 /** Fiche d'une carte et ses liens : précédente, suivante et jusqu'à 6 cartes de la même couleur. */

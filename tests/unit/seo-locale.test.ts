@@ -4,7 +4,7 @@ import { resolveLocale } from "../../src/components/LocaleProvider";
 
 describe("seo : langue imposée par l'URL", () => {
   it("URL française + préférence anglaise : français", () => {
-    assert.deepEqual(resolveLocale("/cartes", "en", false), { locale: "fr", routeLocale: "fr" });
+    assert.deepEqual(resolveLocale("/cartes/v-streetkid", "en", false), { locale: "fr", routeLocale: "fr" });
   });
 
   it("URL anglaise + préférence française : anglais", () => {

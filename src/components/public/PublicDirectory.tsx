@@ -1,7 +1,9 @@
 "use client";
 
-// Annuaire des tournois publics (cf. specs/tournaments/discovery) : filtres reflétés dans
-// l'URL (lien partageable), liste paginée ou carte. Le premier rendu vient du serveur.
+// Annuaire des tournois publics (cf. specs/tournaments/discovery) : liste paginée ou carte. Le premier
+// rendu vient du serveur. Sur sa page (/tournois/publics), les filtres sont reflétés dans l'URL (lien
+// partageable) ; intégré à l'accueil (`embedded`), ils restent locaux pour ne pas se mêler à l'annuaire
+// des boutiques affiché sur la même page.
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,7 +27,15 @@ function nearOf(params: DirectoryParams): NearPoint | null {
   return { lat, lng, radius: Number(params.radius) || 25, label: params.place || "" };
 }
 
-export function PublicDirectory({ initialParams, initial }: { initialParams: DirectoryParams; initial: DirectoryResult | null }) {
+export function PublicDirectory({
+  initialParams,
+  initial,
+  embedded = false,
+}: {
+  initialParams: DirectoryParams;
+  initial: DirectoryResult | null;
+  embedded?: boolean;
+}) {
   const { t, locale } = useI18n();
   const href = useLocalizedHref();
   const router = useRouter();
@@ -43,6 +53,7 @@ export function PublicDirectory({ initialParams, initial }: { initialParams: Dir
   function update(patch: DirectoryParams, keepPage = false) {
     const next = cleanParams({ ...params, ...patch, ...(keepPage ? {} : { page: "" }) });
     setParams(next);
+    if (embedded) return;
     const qs = new URLSearchParams(next).toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
@@ -131,18 +142,25 @@ export function PublicDirectory({ initialParams, initial }: { initialParams: Dir
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-6">
-      <div className="flex flex-col gap-1">
-        <Link href="/tournois" className="text-xs text-muted hover:text-foreground">
-          ← {t.tournaments.title}
-        </Link>
-        <h1 className="text-2xl text-yellow sm:text-4xl">{t.publicTournaments.title}</h1>
-        <p className="max-w-2xl text-sm text-muted">{t.publicTournaments.subtitle}</p>
-        <p className="flex flex-wrap gap-3 text-sm">
-          <Link href={href("shops")} className="text-cyan underline">
-            {t.publicTournaments.shopsLink}
+      {embedded ? (
+        <div className="flex flex-col gap-1">
+          <h2 className="font-display text-xl uppercase tracking-wide text-yellow">{t.publicTournaments.title}</h2>
+          <p className="max-w-2xl text-sm text-muted">{t.publicTournaments.subtitle}</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <Link href="/tournois" className="text-xs text-muted hover:text-foreground">
+            ← {t.tournaments.title}
           </Link>
-        </p>
-      </div>
+          <h1 className="text-2xl text-yellow sm:text-4xl">{t.publicTournaments.title}</h1>
+          <p className="max-w-2xl text-sm text-muted">{t.publicTournaments.subtitle}</p>
+          <p className="flex flex-wrap gap-3 text-sm">
+            <Link href="/boutiques" className="text-cyan underline">
+              {t.publicTournaments.shopsLink}
+            </Link>
+          </p>
+        </div>
+      )}
 
       <section className={`${panelClass} flex flex-col gap-3`} aria-label={t.publicTournaments.filters}>
         <NearPicker

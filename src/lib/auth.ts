@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { dummyPasswordHash, hashPassword, verifyPassword } from "@/lib/password";
 import type { AuthUser } from "@/lib/types";
 
-export const SESSION_COOKIE = "cptcg_session";
+import { SESSION_COOKIE } from "@/lib/session-cookie";
+
+export { SESSION_COOKIE };
 
 /** 400 jours : plafond courant des navigateurs. Prolongé à chaque ouverture. */
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;

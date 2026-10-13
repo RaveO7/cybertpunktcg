@@ -24,7 +24,16 @@ function clean(params: Params) {
   return Object.fromEntries(KEYS.flatMap((key) => (params[key] ? [[key, params[key]]] : []))) as Params;
 }
 
-export function ShopDirectory({ initialParams, initial }: { initialParams: Params; initial: ShopDirectoryResult | null }) {
+/** Annuaire des boutiques : sur sa page, filtres dans l'URL ; intégré à l'accueil (`embedded`), filtres locaux. */
+export function ShopDirectory({
+  initialParams,
+  initial,
+  embedded = false,
+}: {
+  initialParams: Params;
+  initial: ShopDirectoryResult | null;
+  embedded?: boolean;
+}) {
   const { t, locale } = useI18n();
   const href = useLocalizedHref();
   const router = useRouter();
@@ -39,6 +48,7 @@ export function ShopDirectory({ initialParams, initial }: { initialParams: Param
   function update(patch: Params, keepPage = false) {
     const next = clean({ ...params, ...patch, ...(keepPage ? {} : { page: "" }) });
     setParams(next);
+    if (embedded) return;
     const qs = new URLSearchParams(next).toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
@@ -84,13 +94,20 @@ export function ShopDirectory({ initialParams, initial }: { initialParams: Param
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-6">
-      <div className="flex flex-col gap-1">
-        <Link href={href("tournaments")} className="text-xs text-muted hover:text-foreground">
-          ← {t.publicTournaments.title}
-        </Link>
-        <h1 className="text-2xl text-yellow sm:text-4xl">{t.shops.title}</h1>
-        <p className="max-w-2xl text-sm text-muted">{t.shops.subtitle}</p>
-      </div>
+      {embedded ? (
+        <div className="flex flex-col gap-1">
+          <h2 className="font-display text-xl uppercase tracking-wide text-yellow">{t.shops.title}</h2>
+          <p className="max-w-2xl text-sm text-muted">{t.shops.subtitle}</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <Link href="/tournois/publics" className="text-xs text-muted hover:text-foreground">
+            ← {t.publicTournaments.title}
+          </Link>
+          <h1 className="text-2xl text-yellow sm:text-4xl">{t.shops.title}</h1>
+          <p className="max-w-2xl text-sm text-muted">{t.shops.subtitle}</p>
+        </div>
+      )}
 
       <section className={`${panelClass} flex flex-col gap-3`} aria-label={t.publicTournaments.filters}>
         <NearPicker

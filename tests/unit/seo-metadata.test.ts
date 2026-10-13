@@ -17,11 +17,11 @@ describe("seo : métadonnées", () => {
   });
 
   it("canonique sans query et versions linguistiques d'une page bilingue", () => {
-    const meta = pageMetadata({ locale: "en", page: { key: "tournaments" }, title: "Tournaments", description: "Find one." });
-    assert.equal(meta.alternates?.canonical, "/en/tournaments");
-    assert.deepEqual(meta.alternates?.languages, { fr: "/tournois/publics", en: "/en/tournaments", "x-default": "/tournois/publics" });
-    assert.equal((meta.openGraph as { url?: string }).url, "/en/tournaments");
-    assert.equal(meta.title, "Tournaments");
+    const meta = pageMetadata({ locale: "en", page: { key: "shop", params: { slug: "night" } }, title: "Night", description: "A store." });
+    assert.equal(meta.alternates?.canonical, "/en/shops/night");
+    assert.deepEqual(meta.alternates?.languages, { fr: "/boutiques/night", en: "/en/shops/night", "x-default": "/boutiques/night" });
+    assert.equal((meta.openGraph as { url?: string }).url, "/en/shops/night");
+    assert.equal(meta.title, "Night");
   });
 
   it("pas d'alternative pour une page uniquement française", () => {
@@ -43,7 +43,7 @@ describe("seo : métadonnées", () => {
     assert.ok(long.title.length <= 70);
     const veryLong = fitTitle("Un nom de tournoi extrêmement long qui dépasse largement la limite des moteurs de recherche");
     assert.ok(veryLong.title.length <= 70 && veryLong.title.endsWith("…"));
-    const meta = pageMetadata({ locale: "fr", page: { key: "cards" }, title: long.title, description: "x" });
+    const meta = pageMetadata({ locale: "fr", page: { key: "home" }, title: long.title, description: "x" });
     assert.deepEqual(meta.title, { absolute: long.title });
   });
 

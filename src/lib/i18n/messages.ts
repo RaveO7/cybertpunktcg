@@ -172,7 +172,6 @@ const fr = {
     reference: "Référence",
   },
   auth: {
-    browseCards: "Voir toutes les cartes",
     eyebrow: "COMPTE",
     title: "Connexion",
     subtitle:
@@ -1204,7 +1203,6 @@ const en: MessagesShape = {
     reference: "Reference",
   },
   auth: {
-    browseCards: "Browse all cards",
     eyebrow: "ACCOUNT",
     title: "Sign in",
     subtitle:
@@ -2225,7 +2223,6 @@ const de: MessagesShape = {
     reference: "Referenz",
   },
   auth: {
-    browseCards: "Alle Karten ansehen",
     eyebrow: "KONTO",
     title: "Anmeldung",
     subtitle:
@@ -3246,7 +3243,6 @@ const es: MessagesShape = {
     reference: "Referencia",
   },
   auth: {
-    browseCards: "Ver todas las cartas",
     eyebrow: "CUENTA",
     title: "Iniciar sesión",
     subtitle:
@@ -4267,7 +4263,6 @@ const it: MessagesShape = {
     reference: "Riferimento",
   },
   auth: {
-    browseCards: "Vedi tutte le carte",
     eyebrow: "ACCOUNT",
     title: "Accesso",
     subtitle:

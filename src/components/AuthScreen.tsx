@@ -144,10 +144,7 @@ export function AuthScreen({
       <h1 className="mt-1 text-3xl text-yellow">{t.auth.title}</h1>
       <p className="mt-2 text-sm text-muted">{t.auth.subtitle}</p>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <Link href="/cartes" className="text-cyan underline">
-          {t.auth.browseCards} →
-        </Link>
-        <Link href="/tournois/publics" className="text-cyan underline">
+        <Link href="/#tournois" className="text-cyan underline">
           {t.publicTournaments.browse} →
         </Link>
       </div>

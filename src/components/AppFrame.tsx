@@ -1,6 +1,5 @@
 "use client";
 
-import { useCollection } from "@/components/CollectionProvider";
 import { BottomNav, Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { OfflineBanner } from "@/components/OfflineSupport";
@@ -23,11 +22,8 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     routeOfPath(pathname) !== null ||
     pathname === "/connexion" ||
     LEGAL_PATHS.includes(pathname);
-  const { user } = useCollection();
-  // Le didacticiel (compte connecté) occupe toute la hauteur : pas de pied de page. Les visiteurs y
-  // voient une présentation du jeu, avec pied de page.
-  const isHowToPlay = pathname.startsWith("/comment-jouer") || pathname.startsWith("/en/how-to-play");
-  const showFooter = !(isHowToPlay && user);
+  // Le didacticiel occupe toute la hauteur : pas de pied de page.
+  const showFooter = !pathname.startsWith("/comment-jouer");
   const content = isPublicPage ? children : <RequireUser>{children}</RequireUser>;
   return (
     <div className="relative flex h-dvh flex-col overflow-clip">

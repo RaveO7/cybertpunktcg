@@ -9,7 +9,7 @@ import { placeLabel } from "@/components/geo/AddressField";
 import { countryName } from "@/components/geo/countries";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
 import { useI18n } from "@/components/LocaleProvider";
-import { useLocalizedHref } from "@/components/site/useLocalizedHref";
+import { useDirectoryHref, useLocalizedHref } from "@/components/site/useLocalizedHref";
 import { formatStart } from "@/components/public/format";
 import { TournamentCard, VerifiedBadge } from "@/components/public/TournamentCard";
 import { panelClass } from "@/components/tournament/ui";
@@ -23,6 +23,7 @@ const externalLink = { target: "_blank", rel: "nofollow noopener noreferrer" } a
 export function ShopPage({ shop, upcoming, past }: { shop: ShopDetail; upcoming: PublicTournamentSummary[]; past: ShopPastResult[] }) {
   const { t, locale } = useI18n();
   const href = useLocalizedHref();
+  const directoryHref = useDirectoryHref("shops");
   const markers = useMemo<MapMarker[]>(
     () => [{ lat: shop.lat, lng: shop.lng, highlight: true, items: [{ label: shop.name, href: "#" }] }],
     [shop.lat, shop.lng, shop.name],
@@ -30,7 +31,7 @@ export function ShopPage({ shop, upcoming, past }: { shop: ShopDetail; upcoming:
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-4 px-3 py-4 sm:px-4 sm:py-6">
-      <Link href={href("shops")} className="text-xs text-muted hover:text-foreground">
+      <Link href={directoryHref} className="text-xs text-muted hover:text-foreground">
         ← {t.shops.title}
       </Link>
       <div className="flex flex-wrap items-center gap-4">

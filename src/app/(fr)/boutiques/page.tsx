@@ -1,8 +1,10 @@
-import { ShopsDirectory, shopsDirectoryMetadata } from "@/components/public-site/shop-pages";
+import { ShopsDirectory } from "@/components/public-site/shop-pages";
 import type { SearchParams } from "@/components/public-site/tournament-pages";
+import { privateMetadata } from "@/lib/seo/metadata";
 
-export const metadata = shopsDirectoryMetadata("fr");
+// Annuaire réservé aux comptes (visiteurs renvoyés vers l'accueil par src/proxy.ts).
+export const metadata = privateMetadata;
 
 export default function ShopsPage({ searchParams }: { searchParams: SearchParams }) {
-  return <ShopsDirectory locale="fr" searchParams={searchParams} />;
+  return <ShopsDirectory searchParams={searchParams} />;
 }

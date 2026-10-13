@@ -1,16 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { alternatePath, languageAlternates, localizedPath, routeOfPath } from "../../src/lib/seo/routes";
+import { alternatePath, landingSectionPath, languageAlternates, localizedPath, routeOfPath } from "../../src/lib/seo/routes";
 
 describe("seo : routes localisées", () => {
   const pairs: [string, string][] = [
     ["/", "/en"],
-    ["/cartes", "/en/cards"],
     ["/cartes/v-streetkid", "/en/cards/v-streetkid"],
-    ["/comment-jouer", "/en/how-to-play"],
-    ["/tournois/publics", "/en/tournaments"],
     ["/tournois/publics/abc123", "/en/tournaments/abc123"],
-    ["/boutiques", "/en/shops"],
     ["/boutiques/arasaka-games", "/en/shops/arasaka-games"],
   ];
 
@@ -30,19 +26,25 @@ describe("seo : routes localisées", () => {
   });
 
   it("conserve la query", () => {
-    assert.equal(alternatePath("/tournois/publics", "?country=FR&period=week", "en"), "/en/tournaments?country=FR&period=week");
-    assert.equal(localizedPath("cards", "en", {}, new URLSearchParams({ color: "red" })), "/en/cards?color=red");
+    assert.equal(alternatePath("/boutiques/x", "?view=map", "en"), "/en/shops/x?view=map");
+    assert.equal(localizedPath("home", "en", {}, new URLSearchParams({ ref: "a" })), "/en?ref=a");
   });
 
   it("ignore la barre finale", () => {
-    assert.equal(routeOfPath("/cartes/")?.key, "cards");
+    assert.equal(routeOfPath("/cartes/v/")?.key, "card");
   });
 
   it("ne localise pas l'application ni les pages légales", () => {
-    for (const path of ["/cards", "/decks", "/tournois", "/tournois/abc", "/mentions-legales", "/en/decks", "/classeur/x"]) {
+    // Annuaires et règles : réservés aux comptes, les visiteurs les trouvent sur l'accueil.
+    for (const path of ["/cards", "/decks", "/tournois", "/tournois/abc", "/mentions-legales", "/en/decks", "/classeur/x", "/cartes", "/tournois/publics", "/boutiques", "/comment-jouer"]) {
       assert.equal(routeOfPath(path), null, path);
       assert.equal(alternatePath(path, null, "en"), null, path);
     }
+  });
+
+  it("ancres des annuaires sur l'accueil", () => {
+    assert.equal(landingSectionPath("tournaments", "fr"), "/#tournois");
+    assert.equal(landingSectionPath("shops", "en"), "/en#shops");
   });
 
   it("déclare fr, en et x-default", () => {

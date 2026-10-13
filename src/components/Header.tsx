@@ -72,34 +72,12 @@ function LanguageToggle({ pathname }: { pathname: string }) {
   );
 }
 
-/** Navigation des visiteurs sans compte : pages publiques, langue et connexion. */
+/** Barre des visiteurs sans compte : tout est sur l'accueil, donc seulement la langue et la connexion. */
 function VisitorNav({ pathname }: { pathname: string }) {
   const { t } = useI18n();
-  const href = useLocalizedHref();
-  const links = [
-    { href: href("cards"), label: t.nav.cards },
-    { href: href("tournaments"), label: t.nav.tournaments },
-    { href: href("shops"), label: t.nav.shops },
-    { href: href("howToPlay"), label: t.nav.howto },
-  ];
   const loginHref = `/connexion?next=${encodeURIComponent(pathname)}`;
   return (
     <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-1 gap-y-1">
-      <nav className="flex min-w-0 flex-wrap items-center" aria-label={t.common.sections}>
-        {links.map((link) => {
-          const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`px-2 py-2 text-sm ${active ? "text-yellow" : "text-muted hover:text-foreground"}`}
-              aria-current={active ? "page" : undefined}
-            >
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
       <LanguageToggle pathname={pathname} />
       <Link href={loginHref} rel="nofollow" className="inline-flex h-9 items-center border border-cyan px-3 text-sm text-cyan hover:bg-cyan/10">
         {t.nav.login}

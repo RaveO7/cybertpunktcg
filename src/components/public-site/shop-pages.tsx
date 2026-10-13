@@ -1,4 +1,5 @@
-// Pages publiques des boutiques, partagées par /boutiques (fr) et /en/shops (en).
+// Boutiques : fiche partagée par /boutiques/[slug] (fr) et /en/shops/[slug] (en), annuaire affiché
+// sur l'accueil des visiteurs et sur /boutiques pour les comptes connectés.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -12,20 +13,15 @@ import { shopDirectoryQuerySchema, validateSearchParams } from "@/lib/api-schema
 import { COPY } from "@/lib/seo/copy";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { localizedPath, type SiteLocale } from "@/lib/seo/routes";
-import { itemListLd, storeLd, tournamentListLd } from "@/lib/seo/structured-data";
+import { storeLd, tournamentListLd } from "@/lib/seo/structured-data";
 import { findPublicShop, listPublicShops, toDetail } from "@/lib/shops/shops";
 import { shopTournaments } from "@/lib/tournament/directory";
 
 // Métadonnées et page lisent la même boutique : une seule requête par rendu.
 const findShop = cache(findPublicShop);
 
-export function shopsDirectoryMetadata(locale: SiteLocale): Metadata {
-  const copy = COPY[locale].shops;
-  return pageMetadata({ locale, page: { key: "shops" }, title: copy.metaTitle, description: copy.metaDescription });
-}
-
-export async function ShopsDirectory({ locale, searchParams }: { locale: SiteLocale; searchParams: SearchParams }) {
-  const raw = await searchParams;
+/** Premier rendu côté serveur de l'annuaire des boutiques. */
+export async function initialShopDirectory(raw: Record<string, string | string[] | undefined>) {
   const params = Object.fromEntries(
     Object.entries(raw).flatMap(([key, value]) => {
       const first = Array.isArray(value) ? value[0] : value;
@@ -37,15 +33,13 @@ export async function ShopsDirectory({ locale, searchParams }: { locale: SiteLoc
   query.delete("view");
   const parsed = validateSearchParams(shopDirectoryQuerySchema, query);
   const initial = parsed.ok ? await listPublicShops(parsed.data) : null;
-  return (
-    <>
-      <Breadcrumbs locale={locale} items={[{ name: COPY[locale].shops.crumb, path: localizedPath("shops", locale) }]} />
-      <JsonLd
-        data={[itemListLd((initial?.shops ?? []).map((shop) => ({ name: shop.name, path: localizedPath("shop", locale, { slug: shop.slug }) })))]}
-      />
-      <ShopDirectory initialParams={params} initial={initial} />
-    </>
-  );
+  return { params, initial };
+}
+
+/** Annuaire complet, réservé aux comptes connectés (les visiteurs le voient sur l'accueil). */
+export async function ShopsDirectory({ searchParams }: { searchParams: SearchParams }) {
+  const { params, initial } = await initialShopDirectory(await searchParams);
+  return <ShopDirectory initialParams={params} initial={initial} />;
 }
 
 export async function shopMetadata(locale: SiteLocale, slug: string): Promise<Metadata> {
@@ -70,10 +64,7 @@ export async function ShopDetailPage({ locale, slug }: { locale: SiteLocale; slu
     <>
       <Breadcrumbs
         locale={locale}
-        items={[
-          { name: COPY[locale].shops.crumb, path: localizedPath("shops", locale) },
-          { name: detail.name, path: localizedPath("shop", locale, { slug }) },
-        ]}
+        items={[{ name: detail.name, path: localizedPath("shop", locale, { slug }) }]}
       />
       <JsonLd data={[storeLd(detail, locale), tournamentListLd(upcoming, locale)]} />
       <ShopPage shop={detail} upcoming={upcoming} past={past} />

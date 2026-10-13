@@ -1,7 +1,9 @@
-import { TournamentsDirectory, tournamentsDirectoryMetadata, type SearchParams } from "@/components/public-site/tournament-pages";
+import { TournamentsDirectory, type SearchParams } from "@/components/public-site/tournament-pages";
+import { privateMetadata } from "@/lib/seo/metadata";
 
-export const metadata = tournamentsDirectoryMetadata("fr");
+// Annuaire réservé aux comptes (visiteurs renvoyés vers l'accueil par src/proxy.ts).
+export const metadata = privateMetadata;
 
 export default function PublicTournamentsPage({ searchParams }: { searchParams: SearchParams }) {
-  return <TournamentsDirectory locale="fr" searchParams={searchParams} />;
+  return <TournamentsDirectory searchParams={searchParams} />;
 }

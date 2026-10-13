@@ -7,20 +7,27 @@ export type SiteLocale = "fr" | "en";
 
 export const SITE_LOCALES: readonly SiteLocale[] = ["fr", "en"];
 
-export type PublicRouteKey = "home" | "cards" | "card" | "howToPlay" | "tournaments" | "tournament" | "shops" | "shop";
+export type PublicRouteKey = "home" | "card" | "tournament" | "shop";
 
 type RouteParams = Record<string, string>;
 
 const PUBLIC_ROUTES: { key: PublicRouteKey; fr: string; en: string }[] = [
   { key: "home", fr: "/", en: "/en" },
-  { key: "cards", fr: "/cartes", en: "/en/cards" },
   { key: "card", fr: "/cartes/[slug]", en: "/en/cards/[slug]" },
-  { key: "howToPlay", fr: "/comment-jouer", en: "/en/how-to-play" },
-  { key: "tournaments", fr: "/tournois/publics", en: "/en/tournaments" },
   { key: "tournament", fr: "/tournois/publics/[id]", en: "/en/tournaments/[id]" },
-  { key: "shops", fr: "/boutiques", en: "/en/shops" },
   { key: "shop", fr: "/boutiques/[slug]", en: "/en/shops/[slug]" },
 ];
+
+/** Ancres des annuaires (tournois, boutiques) sur l'accueil des visiteurs. */
+export const LANDING_SECTIONS: Record<SiteLocale, Record<"tournaments" | "shops", string>> = {
+  fr: { tournaments: "tournois", shops: "boutiques" },
+  en: { tournaments: "tournaments", shops: "shops" },
+};
+
+/** Lien vers une section de l'accueil des visiteurs (« /#tournois », « /en#shops »). */
+export function landingSectionPath(section: "tournaments" | "shops", locale: SiteLocale): string {
+  return `${localizedPath("home", locale)}#${LANDING_SECTIONS[locale][section]}`;
+}
 
 /** Pages publiques qui n'existent qu'en français (pages légales). */
 export const FRENCH_ONLY_PATHS: readonly string[] = ["/mentions-legales", "/cgu", "/confidentialite"];

@@ -5,6 +5,18 @@ const nextConfig: NextConfig = {
     // Plusieurs mises en page racines ((fr) et (en)) : la 404 des URL sans route est rendue à part.
     globalNotFound: true,
   },
+  async redirects() {
+    // Anciennes pages publiques de liste : tout est désormais sur l'accueil (les fiches détail restent).
+    // /tournois/publics, /boutiques et /comment-jouer existent encore pour les comptes connectés et
+    // renvoient eux-mêmes les visiteurs vers l'accueil.
+    return [
+      { source: "/cartes", destination: "/", permanent: true },
+      { source: "/en/cards", destination: "/en", permanent: true },
+      { source: "/en/tournaments", destination: "/en#tournaments", permanent: true },
+      { source: "/en/shops", destination: "/en#shops", permanent: true },
+      { source: "/en/how-to-play", destination: "/en", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

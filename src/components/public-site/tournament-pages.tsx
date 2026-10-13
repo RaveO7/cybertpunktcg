@@ -1,4 +1,5 @@
-// Pages publiques des tournois, partagées par /tournois/publics (fr) et /en/tournaments (en).
+// Tournois publics : fiche partagée par /tournois/publics/[id] (fr) et /en/tournaments/[id] (en),
+// annuaire affiché sur l'accueil des visiteurs et sur /tournois/publics pour les comptes connectés.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -13,7 +14,7 @@ import { directoryQuerySchema, validateSearchParams } from "@/lib/api-schemas";
 import { COPY } from "@/lib/seo/copy";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { localizedPath, type SiteLocale } from "@/lib/seo/routes";
-import { eventLd, tournamentListLd } from "@/lib/seo/structured-data";
+import { eventLd } from "@/lib/seo/structured-data";
 import { directoryQueryFromParams, findPublicTournament, searchPublicTournaments } from "@/lib/tournament/directory";
 import { buildPublicView } from "@/lib/tournament/public-view";
 
@@ -22,23 +23,18 @@ const findTournament = cache(findPublicTournament);
 
 export type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-export function tournamentsDirectoryMetadata(locale: SiteLocale): Metadata {
-  const copy = COPY[locale].tournaments;
-  return pageMetadata({ locale, page: { key: "tournaments" }, title: copy.metaTitle, description: copy.metaDescription });
-}
-
-/** Premier rendu côté serveur (indexable, sans attente) ; le client prend ensuite le relais. */
-export async function TournamentsDirectory({ locale, searchParams }: { locale: SiteLocale; searchParams: SearchParams }) {
-  const params = cleanParams(await searchParams);
+/** Premier rendu côté serveur de l'annuaire (paramètres d'URL nettoyés et validés). */
+export async function initialTournamentDirectory(raw: Record<string, string | string[] | undefined>) {
+  const params = cleanParams(raw);
   const parsed = validateSearchParams(directoryQuerySchema, apiParams(params, new Date()));
   const initial = parsed.ok ? await searchPublicTournaments(directoryQueryFromParams(parsed.data)) : null;
-  return (
-    <>
-      <Breadcrumbs locale={locale} items={[{ name: COPY[locale].tournaments.crumb, path: localizedPath("tournaments", locale) }]} />
-      <JsonLd data={[tournamentListLd(initial?.tournaments ?? [], locale)]} />
-      <PublicDirectory initialParams={params} initial={initial} />
-    </>
-  );
+  return { params, initial };
+}
+
+/** Annuaire complet, réservé aux comptes connectés (les visiteurs le voient sur l'accueil). */
+export async function TournamentsDirectory({ searchParams }: { searchParams: SearchParams }) {
+  const { params, initial } = await initialTournamentDirectory(await searchParams);
+  return <PublicDirectory initialParams={params} initial={initial} />;
 }
 
 export async function tournamentMetadata(locale: SiteLocale, id: string): Promise<Metadata> {
@@ -68,10 +64,7 @@ export async function TournamentDetail({ locale, id }: { locale: SiteLocale; id:
     <>
       <Breadcrumbs
         locale={locale}
-        items={[
-          { name: COPY[locale].tournaments.crumb, path: localizedPath("tournaments", locale) },
-          { name: view.name, path: localizedPath("tournament", locale, { id }) },
-        ]}
+        items={[{ name: view.name, path: localizedPath("tournament", locale, { id }) }]}
       />
       <JsonLd data={[eventLd(view, locale)]} />
       <PublicTournamentPage tournament={view} />
