@@ -7,7 +7,7 @@ import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { useI18n } from "@/components/LocaleProvider";
 import { useLocalizedHref } from "@/components/site/useLocalizedHref";
-import { alternatePath, type SiteLocale } from "@/lib/seo/routes";
+import { LOCALES, type Locale } from "@/lib/i18n/messages";
 import { isInHorizontalScroller } from "@/lib/swipe";
 
 type NavIcon = "dashboard" | "cards" | "investment" | "decks" | "tournaments" | "wishlist" | "howto" | "binder";
@@ -49,26 +49,35 @@ function useNavigation() {
   return { pathname, user, t, isSharedView, shareToken, showNav, links };
 }
 
-/** Lien vers la même page dans l'autre langue (pages publiques bilingues), qui enregistre aussi la préférence. */
-function LanguageToggle({ pathname }: { pathname: string }) {
-  const { t, routeLocale, setLocale } = useI18n();
-  const other: SiteLocale | null = routeLocale ? (routeLocale === "fr" ? "en" : "fr") : null;
-  const otherHref = other ? alternatePath(pathname, null, other) : null;
-  if (!other || !otherHref) return null;
+/**
+ * Choix de la langue parmi toutes celles de l'application. Sur une page publique bilingue, le français
+ * et l'anglais mènent à la version correspondante ; les autres langues sont enregistrées (application
+ * après connexion) et affichent la version anglaise. Le `<select>` natif, transparent, couvre le
+ * bouton affiché : clavier, lecteurs d'écran et sélecteur du téléphone fonctionnent tels quels.
+ */
+function LanguageSelect() {
+  const { t, locale, routeLocale, preferredLocale, setLocale } = useI18n();
+  // Page anglaise lue avec l'allemand, l'espagnol ou l'italien choisi : on montre ce choix.
+  const current = routeLocale === "en" && preferredLocale !== "fr" ? preferredLocale : locale;
   return (
-    <a
-      href={otherHref}
-      hrefLang={other}
-      lang={other}
-      onClick={(event) => {
-        event.preventDefault();
-        setLocale(other);
-      }}
-      className="inline-flex h-9 shrink-0 items-center border border-line px-2 font-mono text-xs uppercase text-muted hover:border-cyan hover:text-foreground"
-      aria-label={`${t.nav.language} : ${other === "en" ? "English" : "Français"}`}
-    >
-      {other}
-    </a>
+    <label className="relative inline-flex h-9 shrink-0 items-center gap-1 border border-line px-2 font-mono text-xs uppercase text-muted focus-within:border-cyan hover:border-cyan hover:text-foreground">
+      <span aria-hidden="true">{current}</span>
+      <svg viewBox="0 0 10 6" className="h-1.5 w-2.5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M1 1l4 4 4-4" />
+      </svg>
+      <select
+        value={current}
+        onChange={(event) => setLocale(event.target.value as Locale)}
+        aria-label={t.nav.language}
+        className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+      >
+        {LOCALES.map((entry) => (
+          <option key={entry.id} value={entry.id} lang={entry.id}>
+            {entry.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -78,7 +87,7 @@ function VisitorNav({ pathname }: { pathname: string }) {
   const loginHref = `/connexion?next=${encodeURIComponent(pathname)}`;
   return (
     <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-1 gap-y-1">
-      <LanguageToggle pathname={pathname} />
+      <LanguageSelect />
       <Link href={loginHref} rel="nofollow" className="inline-flex h-9 items-center border border-cyan px-3 text-sm text-cyan hover:bg-cyan/10">
         {t.nav.login}
       </Link>

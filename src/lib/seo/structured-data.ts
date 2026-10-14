@@ -41,6 +41,24 @@ export function websiteLd(locale: SiteLocale): JsonLdObject {
   };
 }
 
+/** L'application elle-même (accueil) : outil web gratuit autour du jeu, avec ses fonctionnalités. */
+export function webApplicationLd(locale: SiteLocale, description: string, features: string[]): JsonLdObject {
+  return compact({
+    "@context": CONTEXT,
+    "@type": "WebApplication",
+    name: SITE.name,
+    url: absoluteUrl(localizedPath("home", locale)),
+    description,
+    inLanguage: locale,
+    applicationCategory: "GameApplication",
+    operatingSystem: "Web",
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+    featureList: features,
+    about: { "@type": "Game", name: GAME_NAME },
+  });
+}
+
 export function organizationLd(socials: { href: string }[] = SOCIAL_LINKS): JsonLdObject {
   return compact({
     "@context": CONTEXT,

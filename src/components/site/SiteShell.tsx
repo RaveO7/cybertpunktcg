@@ -10,6 +10,7 @@ import { LocaleProvider } from "@/components/LocaleProvider";
 import { ServiceWorkerRegister } from "@/components/OfflineSupport";
 import { PreferencesProvider } from "@/components/PreferencesProvider";
 import { WishlistProvider } from "@/components/WishlistProvider";
+import { REVEAL_BOOT_SCRIPT } from "@/components/public-site/reveal-boot";
 import { PREFERENCES_STORAGE_KEY } from "@/lib/preferences";
 
 const geistSans = Geist({
@@ -52,7 +53,7 @@ export function SiteShell({ lang, children }: { lang: "fr" | "en"; children: Rea
       {/* Mise en page racine (App Router) : <head> est attendu ici, la règle vise le routeur Pages. */}
       {/* eslint-disable-next-line @next/next/no-head-element */}
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript + REVEAL_BOOT_SCRIPT }} />
       </head>
       <body className="h-dvh overflow-clip">
         <LocaleProvider>

@@ -6,12 +6,11 @@ const nextConfig: NextConfig = {
     globalNotFound: true,
   },
   async redirects() {
-    // Anciennes pages publiques de liste : tout est désormais sur l'accueil (les fiches détail restent).
+    // Anciennes pages publiques de liste : tout est désormais sur l'accueil (les fiches détail restent),
+    // sauf la liste des cartes (/cartes, /en/cards), qui relie toutes les fiches.
     // /tournois/publics, /boutiques et /comment-jouer existent encore pour les comptes connectés et
     // renvoient eux-mêmes les visiteurs vers l'accueil.
     return [
-      { source: "/cartes", destination: "/", permanent: true },
-      { source: "/en/cards", destination: "/en", permanent: true },
       { source: "/en/tournaments", destination: "/en#tournaments", permanent: true },
       { source: "/en/shops", destination: "/en#shops", permanent: true },
       { source: "/en/how-to-play", destination: "/en", permanent: true },

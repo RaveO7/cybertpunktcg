@@ -1194,7 +1194,16 @@ select option:disabled {
   aspect-ratio: 2.5 / 3.5;
   transform-origin: 50% 115%;
   transform: translate(calc(-50% + var(--fan-x, 0%)), var(--fan-y, 0%)) rotate(var(--fan-r, 0deg)) scale(var(--fan-s, 1));
-  transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.15);
+  transition:
+    transform 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.15),
+    opacity 0.3s ease;
+}
+
+/* Donne : chaque carte vole depuis le bas et se pose avec un léger rebond (délai par carte en JS). */
+.hero-fan[data-phase="dealing"] .hero-fan-card {
+  transition:
+    transform 0.9s cubic-bezier(0.18, 1.25, 0.4, 1),
+    opacity 0.25s ease;
 }
 
 .hero-fan-face {
@@ -1332,7 +1341,12 @@ select option:disabled {
   background: rgba(245, 230, 66, 0.12);
 }
 
-/* Titre « glitch » : décalage rouge / cyan une fois au chargement, puis au survol. */
+/*
+ * Glitch façon Cyberpunk 2077. Texte (.cp-glitch, avec data-text) : deux copies rouge et cyan découpées
+ * en bandes qui sautent, et le texte lui-même tremble, se penche et clignote. Bloc (.cp-glitch-block) :
+ * tranches décalées, couleurs inversées. Déclenché par la classe .is-glitching (GlitchDirector, au
+ * hasard) et au survol des titres ; jamais si l'utilisateur préfère réduire les animations.
+ */
 .cp-glitch {
   position: relative;
 }
@@ -1346,41 +1360,76 @@ select option:disabled {
 }
 .cp-glitch::before {
   color: var(--cp-red);
-  transform: translate(-3px, 1px);
 }
 .cp-glitch::after {
   color: var(--cyan);
-  transform: translate(3px, -1px);
 }
 @media (prefers-reduced-motion: no-preference) {
-  .cp-glitch::before {
-    animation: cp-glitch-a 0.9s steps(1) 0.2s 1;
+  .cp-glitch.is-glitching,
+  .cp-glitch:hover {
+    animation: cp-glitch-shake 0.9s steps(1) 1;
   }
-  .cp-glitch::after {
-    animation: cp-glitch-b 0.9s steps(1) 0.2s 1;
-  }
+  .cp-glitch.is-glitching::before,
   .cp-glitch:hover::before {
-    animation: cp-glitch-a 0.6s steps(1) 1;
+    animation: cp-glitch-a 0.9s steps(1) 1;
   }
+  .cp-glitch.is-glitching::after,
   .cp-glitch:hover::after {
-    animation: cp-glitch-b 0.6s steps(1) 1;
+    animation: cp-glitch-b 0.9s steps(1) 1;
+  }
+  .cp-glitch-block.is-glitching {
+    animation: cp-glitch-block 0.6s steps(1) 1;
   }
 }
+@keyframes cp-glitch-shake {
+  0% { transform: translateX(-4px) skewX(-12deg); text-shadow: -4px 0 var(--cp-red), 4px 0 var(--cyan); }
+  8% { transform: translateX(5px) skewX(8deg); opacity: 0.6; }
+  16% { transform: none; opacity: 1; text-shadow: 3px 0 var(--cp-red), -3px 0 var(--cyan); }
+  24% { transform: translateX(-7px) skewX(-4deg); }
+  32% { transform: translateX(2px); opacity: 0.35; }
+  40% { transform: none; opacity: 1; text-shadow: none; }
+  52% { transform: translateX(6px) skewX(10deg); text-shadow: -5px 0 var(--cp-red), 5px 0 var(--cyan); }
+  60% { transform: translateX(-3px); opacity: 0.8; }
+  72% { transform: none; opacity: 1; text-shadow: 2px 0 var(--cp-red), -2px 0 var(--cyan); }
+  84% { transform: translateX(-2px) skewX(-3deg); opacity: 0.7; }
+  100% { transform: none; opacity: 1; text-shadow: none; }
+}
 @keyframes cp-glitch-a {
-  0% { opacity: 0.9; clip-path: inset(10% 0 70% 0); }
-  20% { clip-path: inset(55% 0 20% 0); transform: translate(-5px, 1px); }
-  40% { clip-path: inset(30% 0 45% 0); transform: translate(-2px, -1px); }
-  60% { clip-path: inset(80% 0 5% 0); transform: translate(-6px, 0); }
-  80% { clip-path: inset(0 0 85% 0); }
+  0% { opacity: 1; clip-path: inset(8% 0 78% 0); transform: translate(-10px, -1px); }
+  10% { clip-path: inset(62% 0 18% 0); transform: translate(8px, 1px); }
+  20% { clip-path: inset(35% 0 50% 0); transform: translate(-14px, 0); }
+  30% { clip-path: inset(86% 0 2% 0); transform: translate(5px, -2px); }
+  40% { clip-path: inset(14% 0 70% 0); transform: translate(-7px, 2px); }
+  50% { clip-path: inset(46% 0 38% 0); transform: translate(12px, 0); }
+  60% { clip-path: inset(0 0 90% 0); transform: translate(-4px, 0); }
+  70% { clip-path: inset(70% 0 12% 0); transform: translate(-11px, 1px); }
+  80% { clip-path: inset(24% 0 60% 0); transform: translate(6px, 0); }
+  90% { clip-path: inset(55% 0 30% 0); transform: translate(-5px, -1px); }
   100% { opacity: 0; }
 }
 @keyframes cp-glitch-b {
-  0% { opacity: 0.9; clip-path: inset(65% 0 10% 0); }
-  20% { clip-path: inset(15% 0 60% 0); transform: translate(5px, -1px); }
-  40% { clip-path: inset(45% 0 30% 0); transform: translate(2px, 1px); }
-  60% { clip-path: inset(5% 0 80% 0); transform: translate(6px, 0); }
-  80% { clip-path: inset(85% 0 0 0); }
+  0% { opacity: 1; clip-path: inset(66% 0 10% 0); transform: translate(10px, 1px); }
+  10% { clip-path: inset(12% 0 72% 0); transform: translate(-8px, -1px); }
+  20% { clip-path: inset(80% 0 6% 0); transform: translate(13px, 0); }
+  30% { clip-path: inset(28% 0 55% 0); transform: translate(-6px, 2px); }
+  40% { clip-path: inset(52% 0 33% 0); transform: translate(9px, -1px); }
+  50% { clip-path: inset(4% 0 84% 0); transform: translate(-12px, 0); }
+  60% { clip-path: inset(40% 0 44% 0); transform: translate(7px, 1px); }
+  70% { clip-path: inset(18% 0 66% 0); transform: translate(11px, 0); }
+  80% { clip-path: inset(75% 0 10% 0); transform: translate(-6px, -1px); }
+  90% { clip-path: inset(32% 0 52% 0); transform: translate(4px, 0); }
   100% { opacity: 0; }
+}
+@keyframes cp-glitch-block {
+  0% { clip-path: inset(0); transform: translateX(-8px); filter: hue-rotate(-70deg) saturate(2.4); }
+  10% { clip-path: inset(18% 0 56% 0); transform: translateX(14px) skewX(-6deg); filter: none; }
+  20% { clip-path: inset(0); transform: none; filter: invert(1) hue-rotate(180deg); }
+  30% { clip-path: inset(58% 0 12% 0); transform: translateX(-16px); filter: hue-rotate(120deg) saturate(3); }
+  40% { clip-path: inset(0); transform: translateX(4px); filter: brightness(1.8) contrast(1.6); }
+  55% { clip-path: inset(38% 0 36% 0); transform: translateX(10px) skewX(8deg); filter: none; }
+  70% { clip-path: inset(0); transform: translateX(-3px); filter: hue-rotate(60deg); opacity: 0.6; }
+  85% { clip-path: inset(6% 0 78% 0); transform: translateX(-9px); filter: none; opacity: 1; }
+  100% { clip-path: inset(0); transform: none; filter: none; }
 }
 
 /* Repère de section : index rouge, trait, titre. */
@@ -1420,4 +1469,222 @@ select option:disabled {
 .cp-on-yellow .cp-btn-ghost:hover {
   background: rgba(0, 0, 0, 0.08);
   color: #000;
+}
+
+/* Carrousel des modules : barre de progression du minuteur (largeur pilotée en JS). */
+.cp-progress {
+  transform-origin: left center;
+  transition: transform 0.1s linear;
+}
+
+/*
+ * Accueil : apparition des blocs au défilement (RevealDirector). Les blocs ne sont masqués que si le
+ * script les prend en charge (classe reveal-ready sur <html>) et que l'utilisateur accepte les
+ * animations. « up » : balayage vertical façon scan + montée ; « left »/« right » : glissement ;
+ * « fade » : fondu ; « bar » : liseré qui se trace ; « wipe » : bandeau qui se déploie vers la droite.
+ * L'état final du balayage déborde largement de la boîte, pour ne rien rogner (ombres, glitch).
+ * Au départ, une fine bande reste découpée : un bloc entièrement rogné par clip-path est ignoré
+ * par IntersectionObserver, qui ne le verrait jamais entrer à l'écran.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-ready [data-reveal] {
+    opacity: 0;
+    transition:
+      opacity 0.6s ease,
+      transform 0.8s cubic-bezier(0.2, 0.9, 0.25, 1),
+      clip-path 0.75s cubic-bezier(0.65, 0, 0.35, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  .reveal-ready [data-reveal="up"] {
+    transform: translateY(32px);
+    clip-path: inset(0 0 94% 0);
+  }
+  .reveal-ready [data-reveal="left"] {
+    transform: translateX(-56px);
+  }
+  .reveal-ready [data-reveal="right"] {
+    transform: translateX(56px);
+  }
+  .reveal-ready [data-reveal="bar"] {
+    opacity: 1;
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .reveal-ready [data-reveal="wipe"] {
+    opacity: 1;
+    clip-path: inset(0 94% 0 0);
+    transition: clip-path 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .reveal-ready [data-reveal].is-revealed {
+    opacity: 1;
+    transform: none;
+  }
+  .reveal-ready [data-reveal="up"].is-revealed {
+    clip-path: inset(-40% -40% -40% -40%);
+  }
+  .reveal-ready [data-reveal="wipe"].is-revealed {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/*
+ * Accueil, haut de page : apparition au chargement (data-intro), en CSS seul. Contrairement à
+ * data-reveal, rien n'attend le script : le titre principal s'affiche dès le premier rendu (LCP).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-intro] {
+    animation: cp-intro-up 0.7s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+  [data-intro="left"] {
+    animation-name: cp-intro-left;
+  }
+}
+@keyframes cp-intro-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cp-intro-left {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: none; }
+}
+
+/*
+ * Accueil : fiche d'une carte de l'éventail (CardDialog).
+ * Ouverture : la carte quitte l'éventail et grandit jusqu'au centre (FLIP en JS sur .card-dialog-card)
+ * en faisant un tour complet sur elle-même (.card-dialog-flip, son dos apparaît à mi-tour) ; une fois
+ * le tour fini, la fiche glisse depuis son bord : vers la droite sur grand écran, vers le bas sur
+ * téléphone. Fermeture : la fiche se replie, puis la carte repart en tournant dans l'autre sens.
+ * Seuls transform et opacity sont animés (pris en charge par la carte graphique).
+ */
+.card-dialog-backdrop {
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card-dialog[data-state="open"] .card-dialog-backdrop {
+  opacity: 1;
+}
+.card-dialog[data-state="leave"] .card-dialog-backdrop {
+  transition: opacity 0.55s cubic-bezier(0.45, 0, 0.2, 1);
+}
+.card-dialog-card {
+  transform-origin: center;
+  transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  perspective: 1400px;
+}
+.card-dialog[data-state="leave"] .card-dialog-card {
+  transition: transform 0.6s cubic-bezier(0.45, 0, 0.2, 1);
+}
+.card-dialog-flip {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.card-dialog[data-state="open"] .card-dialog-flip {
+  animation: card-dialog-spin 0.95s cubic-bezier(0.45, 0.05, 0.25, 1) both;
+}
+.card-dialog[data-state="leave"] .card-dialog-flip {
+  animation: card-dialog-spin-back 0.6s cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+@keyframes card-dialog-spin {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+@keyframes card-dialog-spin-back {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(-360deg); }
+}
+.card-dialog-face,
+.card-dialog-back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 4.5% / 3.2%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.9);
+}
+/* Dos de carte : panneau HUD jaune et noir, comme les écrans du jeu vidéo. */
+.card-dialog-back {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  background:
+    repeating-linear-gradient(135deg, rgba(245, 230, 66, 0.12) 0 10px, transparent 10px 20px),
+    linear-gradient(160deg, #10141c, #05060a);
+  box-shadow:
+    inset 0 0 0 3px var(--yellow),
+    inset 0 0 0 7px #05060a,
+    inset 0 0 0 8px var(--cyan),
+    0 30px 60px -20px rgba(0, 0, 0, 0.9);
+}
+/* Vrai dos du jeu : recouvre le dos HUD de secours quand l'image est présente. */
+.card-dialog-back-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card-dialog-back-mark {
+  font-family: var(--font-chakra-petch), sans-serif;
+  font-size: clamp(2.5rem, 9vw, 4.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--yellow);
+  text-shadow: -3px 0 var(--cp-red), 3px 0 var(--cyan);
+}
+.card-dialog-back-sub {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.card-dialog-panel {
+  --panel-from: translate3d(-56px, 0, 0);
+  opacity: 0;
+  transform: var(--panel-from);
+  transition:
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.8s,
+    opacity 0.4s ease 0.8s;
+  will-change: transform, opacity;
+}
+@media (max-width: 767.98px) {
+  .card-dialog-panel {
+    --panel-from: translate3d(0, -40px, 0);
+  }
+}
+.card-dialog[data-state="open"] .card-dialog-panel {
+  opacity: 1;
+  transform: none;
+}
+/* Le nom glitche une fois la fiche arrivée, pour ne rien repeindre pendant le mouvement. */
+.card-dialog-panel .cp-glitch.is-glitching,
+.card-dialog-panel .cp-glitch.is-glitching::before,
+.card-dialog-panel .cp-glitch.is-glitching::after {
+  animation-delay: 1.25s;
+}
+/* Fermeture : la fiche se replie derrière la carte, qui repart aussitôt. */
+.card-dialog[data-state="leave"] .card-dialog-panel {
+  transition:
+    transform 0.25s cubic-bezier(0.45, 0, 0.55, 1),
+    opacity 0.2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-dialog-backdrop,
+  .card-dialog-card,
+  .card-dialog-panel {
+    transition: none;
+  }
+  .card-dialog[data-state] .card-dialog-flip {
+    animation: none;
+  }
 }

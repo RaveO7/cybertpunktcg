@@ -128,14 +128,14 @@ describe("sitemap", () => {
     assert.ok(upcoming?.lastModified instanceof Date);
   });
 
-  it("accueil, pages légales sans alternative et fiches de carte hors scellés", async () => {
+  it("accueil, liste des cartes, pages légales sans alternative et fiches de carte hors scellés", async () => {
     const entries = await sitemap.buildSitemap();
     const byUrl = new Map(entries.map((entry) => [entry.url, entry]));
-    for (const path of ["/", "/en"]) {
+    for (const path of ["/", "/en", "/cartes", "/en/cards"]) {
       assert.ok(byUrl.has(`${SITE}${path}`), path);
     }
-    // Plus de pages de liste publiques : tout est sur l'accueil.
-    for (const path of ["/cartes", "/en/cards", "/comment-jouer", "/en/how-to-play", "/tournois/publics", "/boutiques"]) {
+    // Plus d'autres pages de liste publiques (la liste des cartes reste) : tout est sur l'accueil.
+    for (const path of ["/comment-jouer", "/en/how-to-play", "/tournois/publics", "/boutiques"]) {
       assert.ok(!byUrl.has(`${SITE}${path}`), path);
     }
     const legal = byUrl.get(`${SITE}/cgu`);

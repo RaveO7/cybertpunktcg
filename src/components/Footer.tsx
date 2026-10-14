@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useI18n } from "@/components/LocaleProvider";
+import { useLocalizedHref } from "@/components/site/useLocalizedHref";
 import { LEGAL_LINKS, SITE, SOCIAL_LINKS, type SocialNetwork } from "@/lib/site";
 
-/** Pied de page : liens légaux et réseaux sociaux. */
+/** Pied de page : liste des cartes, liens légaux et réseaux sociaux. */
 export function Footer() {
   const { t } = useI18n();
+  const localizedHref = useLocalizedHref();
 
   return (
     // Masqué sur téléphone : la barre d'onglets du bas occupe déjà le bas de l'écran.
@@ -14,6 +16,10 @@ export function Footer() {
       {/* Une seule ligne : liens légaux à gauche, copyright au centre, réseaux à droite (empilés sur téléphone). */}
       <div className="mx-auto flex max-w-[1600px] flex-col items-center gap-2 px-4 py-3 text-xs text-muted md:grid md:grid-cols-[1fr_auto_1fr] md:gap-6">
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 md:justify-start">
+          {/* Liste publique des cartes : relie toutes les fiches au reste du site (référencement). */}
+          <Link href={localizedHref("cards")} className="py-1 hover:text-foreground">
+            {t.footer.cards}
+          </Link>
           {LEGAL_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className="py-1 hover:text-foreground">
               {t.footer[link.key]}

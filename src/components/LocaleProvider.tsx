@@ -18,6 +18,8 @@ type LocaleContextValue = {
   t: Messages;
   /** Langue imposée par l'URL d'une page publique bilingue (null : langue enregistrée). */
   routeLocale: SiteLocale | null;
+  /** Langue choisie par l'utilisateur (peut différer de `locale` sur une page publique bilingue). */
+  preferredLocale: Locale;
 };
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
@@ -73,22 +75,29 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   }, [locale]);
 
   function setLocale(next: Locale) {
-    setChosen(next);
     try {
       window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
     } catch {
       // ignore
     }
-    // Page publique bilingue : changer de langue, c'est aller sur l'URL de l'autre version.
-    if (routeLocale && (next === "fr" || next === "en") && next !== routeLocale) {
-      const target = alternatePath(pathname, window.location.search, next);
-      if (target) window.location.assign(target);
+    // Page publique bilingue : changer de langue, c'est aller sur l'URL de l'autre version (l'anglaise
+    // pour l'allemand, l'espagnol et l'italien, qui n'ont pas de pages publiques). Aucun rendu d'ici
+    // là : la page actuelle, relue avec la nouvelle préférence, afficherait le temps du chargement le
+    // bandeau « Cette page existe en … » (LanguageSuggestion).
+    const siteLocale: SiteLocale = next === "fr" ? "fr" : "en";
+    if (routeLocale && siteLocale !== routeLocale) {
+      const target = alternatePath(pathname, window.location.search, siteLocale);
+      if (target) {
+        window.location.assign(target);
+        return;
+      }
     }
+    setChosen(next);
   }
 
   return (
     <StoredLocaleOverride.Provider value={setStoredOverride}>
-      <LocaleContext.Provider value={{ locale, setLocale, t: messages[locale], routeLocale }}>{children}</LocaleContext.Provider>
+      <LocaleContext.Provider value={{ locale, setLocale, t: messages[locale], routeLocale, preferredLocale: chosen }}>{children}</LocaleContext.Provider>
     </StoredLocaleOverride.Provider>
   );
 }

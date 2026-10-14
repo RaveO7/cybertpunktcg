@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 export type ShowcaseFeature = { key: string; title: string; body: string; points: string[]; href: string; external: boolean };
 
@@ -14,86 +14,249 @@ export type ShowcaseData = {
 
 type Labels = { preview: string; example: string; open: string };
 
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onChange: () => void) {
+  const list = window.matchMedia(REDUCED_MOTION);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
+}
+
+/** Durée d'affichage d'un module avant de passer au suivant (défilement automatique). */
+const SLIDE_MS = 7000;
+/** Pas du minuteur (et de la barre de progression). */
+const TICK_MS = 100;
+/** Molette : défilement cumulé qui fait changer de module, puis délai avant le changement suivant. */
+const WHEEL_STEP = 50;
+const WHEEL_COOLDOWN_MS = 450;
+
 /**
- * Modules de l'accueil : un menu à gauche (comme les menus du jeu vidéo), et pour le module choisi
- * une mini-interface qui montre ce que l'on fait dans l'application. Les visuels sont des exemples
- * (sauf les cartes, réelles) et sont signalés comme tels.
+ * Modules de l'accueil, en carrousel : un menu à gauche (comme les menus du jeu vidéo) et, pour le
+ * module affiché, une mini-interface qui montre ce que l'on fait dans l'application.
+ * - Molette au-dessus du carrousel : passe au module suivant ou précédent, un module par geste ; au
+ *   premier ou au dernier module, la molette fait de nouveau défiler la page. Ailleurs, la page défile
+ *   normalement.
+ * - Le carrousel avance aussi seul, s'arrête au survol, au focus et hors écran, et ne défile pas seul
+ *   si l'utilisateur préfère réduire les animations.
+ * Les visuels sont des exemples (sauf les cartes, réelles) et sont signalés comme tels.
  */
-export function FeatureShowcase({ features, data, labels }: { features: ShowcaseFeature[]; data: ShowcaseData; labels: Labels }) {
+export function FeatureShowcase({
+  features,
+  data,
+  labels,
+  header,
+}: {
+  features: ShowcaseFeature[];
+  data: ShowcaseData;
+  labels: Labels;
+  /** Titre de la section. */
+  header: ReactNode;
+}) {
   const [current, setCurrent] = useState(0);
-  const feature = features[current];
+  const reducedMotion = useSyncExternalStore(subscribeReducedMotion, () => window.matchMedia(REDUCED_MOTION).matches, () => false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const count = features.length;
+  const running = !reducedMotion && !hovered && !focused && visible;
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.35 });
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    // Téléphone : l'onglet actif reste visible dans la bande défilante (sans faire défiler la page).
+    const list = listRef.current;
+    const tab = document.getElementById(`module-tab-${current}`);
+    if (!list || !tab || list.scrollWidth <= list.clientWidth) return;
+    list.scrollTo({ left: tab.offsetLeft - 16, behavior: "smooth" });
+  }, [current]);
+
+  const elapsed = useRef(0);
+  const [progress, setProgress] = useState(0);
+
+  // Défilement automatique : avance par pas de TICK_MS, puis passe au module suivant.
+  useEffect(() => {
+    if (!running) return;
+    const id = window.setInterval(() => {
+      elapsed.current += TICK_MS;
+      if (elapsed.current >= SLIDE_MS) {
+        elapsed.current = 0;
+        setCurrent((value) => (value + 1) % count);
+      }
+      setProgress(elapsed.current / SLIDE_MS);
+    }, TICK_MS);
+    return () => window.clearInterval(id);
+  }, [running, count]);
+
+  // Molette au-dessus du carrousel : change de module au lieu de faire défiler la page.
+  const currentRef = useRef(current);
+  useEffect(() => {
+    currentRef.current = current;
+  }, [current]);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    let accumulated = 0;
+    let lockedUntil = 0;
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
+      const direction = Math.sign(event.deltaY);
+      const index = currentRef.current;
+      // Au bout du carrousel, la molette fait défiler la page.
+      if ((direction > 0 && index >= count - 1) || (direction < 0 && index <= 0)) {
+        accumulated = 0;
+        return;
+      }
+      event.preventDefault();
+      const now = performance.now();
+      if (now < lockedUntil) return;
+      // Pavé tactile : petits deltas cumulés ; molette : un cran suffit.
+      const delta = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? event.deltaY : event.deltaY * 40;
+      accumulated = Math.sign(accumulated) === direction ? accumulated + delta : delta;
+      if (Math.abs(accumulated) < WHEEL_STEP) return;
+      accumulated = 0;
+      lockedUntil = now + WHEEL_COOLDOWN_MS;
+      elapsed.current = 0;
+      setProgress(0);
+      setCurrent(index + direction);
+    };
+    root.addEventListener("wheel", onWheel, { passive: false });
+    return () => root.removeEventListener("wheel", onWheel);
+  }, [count]);
 
   function select(index: number, focus = false) {
-    setCurrent(index);
-    if (focus) document.getElementById(`module-tab-${index}`)?.focus();
+    const next = (index + count) % count;
+    if (focus) document.getElementById(`module-tab-${next}`)?.focus({ preventScroll: true });
+    elapsed.current = 0;
+    setProgress(0);
+    setCurrent(next);
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,300px)_1fr] lg:gap-10">
-      <div
-        role="tablist"
-        aria-orientation="vertical"
-        aria-label={labels.preview}
-        className="scrollbar-hud -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0"
-      >
-        {features.map((item, index) => {
-          const selected = index === current;
-          return (
-            <button
-              key={item.key}
-              id={`module-tab-${index}`}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              aria-controls="module-panel"
-              tabIndex={selected ? 0 : -1}
-              onClick={() => select(index)}
-              onKeyDown={(event) => {
-                const step = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 0;
-                if (!step) return;
-                event.preventDefault();
-                select((index + step + features.length) % features.length, true);
-              }}
-              className={`group relative flex shrink-0 items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors lg:py-4 ${
-                selected ? "border-yellow bg-yellow/10 text-yellow" : "border-line text-muted hover:border-cyan hover:text-foreground"
-              }`}
-            >
-              <span className={`font-mono text-xs ${selected ? "" : "text-muted"}`} style={selected ? { color: "var(--cp-red)" } : undefined}>
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <span className="font-display text-sm font-semibold uppercase tracking-wider whitespace-nowrap lg:text-base">{item.title}</span>
-              {selected ? <span aria-hidden="true" className="ml-auto hidden h-2 w-2 bg-yellow lg:block" /> : null}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="cp-frame cp-cut">
-        <div id="module-panel" role="tabpanel" aria-labelledby={`module-tab-${current}`} className="cp-frame-inner cp-cut">
-          <div key={feature.key} className="cp-module-in grid gap-6 p-5 sm:p-7 xl:grid-cols-[1fr_1.1fr]">
-            <div className="flex flex-col gap-4">
-              <p className="cp-index">
-                {`${String(current + 1).padStart(2, "0")} // ${labels.preview}`}
-              </p>
-              <h3 className="font-display text-2xl font-bold uppercase leading-tight tracking-wide text-yellow sm:text-3xl">{feature.title}</h3>
-              <p className="text-base leading-7 text-muted">{feature.body}</p>
-              <ul className="flex flex-col gap-2.5">
-                {feature.points.map((point) => (
-                  <li key={point} className="flex items-start gap-3 text-sm text-foreground">
-                    <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rotate-45 bg-cyan" />
-                    {point}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-auto pt-2">
-                <Link href={feature.href} rel={feature.external ? "nofollow" : undefined} className="cp-btn">
-                  {labels.open}
-                </Link>
+    <div className="relative">
+      <div>
+        <div className="mx-auto w-full max-w-[1100px] px-3 py-16 sm:px-4">
+          {header}
+          <div
+            ref={rootRef}
+            className="grid gap-6 lg:grid-cols-[minmax(0,300px)_1fr] lg:gap-10"
+            aria-roledescription="carousel"
+            onPointerEnter={(event) => event.pointerType === "mouse" && setHovered(true)}
+            onPointerLeave={() => setHovered(false)}
+            onFocus={() => setFocused(true)}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+            }}
+          >
+            <div className="flex flex-col gap-4" data-reveal="left">
+              <div
+                ref={listRef}
+                role="tablist"
+                aria-orientation="vertical"
+                aria-label={labels.preview}
+                className="scrollbar-hud -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0"
+              >
+                {features.map((item, index) => {
+                  const selected = index === current;
+                  return (
+                    <button
+                      key={item.key}
+                      id={`module-tab-${index}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      aria-controls={`module-panel-${index}`}
+                      tabIndex={selected ? 0 : -1}
+                      onClick={() => select(index)}
+                      onKeyDown={(event) => {
+                        const step = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 0;
+                        if (!step) return;
+                        event.preventDefault();
+                        select(index + step, true);
+                      }}
+                      className={`group relative flex shrink-0 items-center gap-3 overflow-hidden border-l-2 px-4 py-3 text-left transition-colors lg:py-4 ${
+                        selected ? "border-yellow bg-yellow/10 text-yellow" : "border-line text-muted hover:border-cyan hover:text-foreground"
+                      }`}
+                    >
+                      <span className={`font-mono text-xs ${selected ? "" : "text-muted"}`} style={selected ? { color: "var(--cp-red)" } : undefined}>
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span className="font-display text-sm font-semibold uppercase tracking-wider whitespace-nowrap lg:text-base">{item.title}</span>
+                      {selected ? (
+                        // Barre de progression du minuteur.
+                        <span
+                          aria-hidden="true"
+                          className="cp-progress absolute bottom-0 left-0 h-0.5 w-full bg-yellow"
+                          style={{ transform: `scaleX(${progress})` } as CSSProperties}
+                        />
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <div className="relative min-h-64 border border-line bg-background/60 p-4">
-              <span className="absolute top-2 right-3 font-mono text-[10px] tracking-[0.2em] text-muted uppercase">{labels.example}</span>
-              <Visual feature={feature.key} data={data} />
+
+            {/* Enveloppe d'apparition : le cadre a déjà son propre clip-path (coins coupés). */}
+            <div data-reveal="right" style={{ "--reveal-delay": "150ms" } as CSSProperties}>
+              <div className="cp-frame cp-cut">
+                {/* Tous les modules sont rendus (texte indexable) ; seul l'actif est affiché. Son animation
+                    d'entrée rejoue à chaque affichage (display none → visible). Le visuel, décoratif,
+                    n'est rendu que pour le module actif, qui porte seul les cibles de GlitchDirector. */}
+                {features.map((item, index) => {
+                  const selected = index === current;
+                  return (
+                    <div
+                      key={item.key}
+                      id={`module-panel-${index}`}
+                      role="tabpanel"
+                      aria-labelledby={`module-tab-${index}`}
+                      hidden={!selected}
+                      className="cp-frame-inner cp-cut"
+                    >
+                      <div className="cp-module-in grid gap-6 p-5 sm:p-7 xl:grid-cols-[1fr_1.1fr]">
+                        <div className="flex flex-col gap-4">
+                          <p className="cp-index">
+                            {`${String(index + 1).padStart(2, "0")} // ${labels.preview}`}
+                          </p>
+                          <h3
+                            className="cp-glitch self-start font-display text-2xl font-bold uppercase leading-tight tracking-wide text-yellow sm:text-3xl"
+                            data-text={item.title}
+                            data-glitch={selected ? "module-title" : undefined}
+                          >
+                            {item.title}
+                          </h3>
+                          <p className="text-base leading-7 text-muted">{item.body}</p>
+                          <ul className="flex flex-col gap-2.5">
+                            {item.points.map((point) => (
+                              <li key={point} className="flex items-start gap-3 text-sm text-foreground">
+                                <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rotate-45 bg-cyan" />
+                                {point}
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="mt-auto pt-2">
+                            <Link href={item.href} rel={item.external ? "nofollow" : undefined} className="cp-btn">
+                              {labels.open}
+                              <span className="sr-only">{` — ${item.title}`}</span>
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="cp-glitch-block relative min-h-64 border border-line bg-background/60 p-4" data-glitch={selected ? "module-visual" : undefined}>
+                          <span className="absolute top-2 right-3 font-mono text-[10px] tracking-[0.2em] text-muted uppercase">{labels.example}</span>
+                          {selected ? <Visual feature={item.key} data={data} /> : null}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

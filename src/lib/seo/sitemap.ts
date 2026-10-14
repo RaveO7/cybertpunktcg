@@ -42,7 +42,7 @@ export async function buildSitemap(now = new Date()): Promise<MetadataRoute.Site
     }),
   ]);
 
-  const staticPages: PublicRouteKey[] = ["home"];
+  const staticPages: PublicRouteKey[] = ["home", "cards"];
   return [
     ...staticPages.flatMap((key) => bilingual(key)),
     ...FRENCH_ONLY_PATHS.map((path) => ({ url: absoluteUrl(path) })),

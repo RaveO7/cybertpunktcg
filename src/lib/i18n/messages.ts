@@ -41,6 +41,7 @@ const fr = {
   },
   footer: {
     label: "Pied de page",
+    cards: "Catalogue",
     legal: "Mentions légales",
     terms: "CGU",
     privacy: "Confidentialité",
@@ -1073,6 +1074,7 @@ const en: MessagesShape = {
   },
   footer: {
     label: "Footer",
+    cards: "Catalog",
     legal: "Legal notice",
     terms: "Terms of use",
     privacy: "Privacy",
@@ -2092,6 +2094,7 @@ const de: MessagesShape = {
   },
   footer: {
     label: "Fußzeile",
+    cards: "Katalog",
     legal: "Impressum",
     terms: "Nutzungsbedingungen",
     privacy: "Datenschutz",
@@ -3112,6 +3115,7 @@ const es: MessagesShape = {
   },
   footer: {
     label: "Pie de página",
+    cards: "Catálogo",
     legal: "Aviso legal",
     terms: "Condiciones de uso",
     privacy: "Privacidad",
@@ -4132,6 +4136,7 @@ const it: MessagesShape = {
   },
   footer: {
     label: "Piè di pagina",
+    cards: "Catalogo",
     legal: "Note legali",
     terms: "Condizioni d’uso",
     privacy: "Privacy",

@@ -7,12 +7,13 @@ export type SiteLocale = "fr" | "en";
 
 export const SITE_LOCALES: readonly SiteLocale[] = ["fr", "en"];
 
-export type PublicRouteKey = "home" | "card" | "tournament" | "shop";
+export type PublicRouteKey = "home" | "cards" | "card" | "tournament" | "shop";
 
 type RouteParams = Record<string, string>;
 
 const PUBLIC_ROUTES: { key: PublicRouteKey; fr: string; en: string }[] = [
   { key: "home", fr: "/", en: "/en" },
+  { key: "cards", fr: "/cartes", en: "/en/cards" },
   { key: "card", fr: "/cartes/[slug]", en: "/en/cards/[slug]" },
   { key: "tournament", fr: "/tournois/publics/[id]", en: "/en/tournaments/[id]" },
   { key: "shop", fr: "/boutiques/[slug]", en: "/en/shops/[slug]" },

@@ -10,6 +10,7 @@ import {
   parseOpeningHours,
   serializeJsonLd,
   storeLd,
+  webApplicationLd,
   websiteLd,
 } from "../../src/lib/seo/structured-data";
 import type { PublicTournamentDetail } from "../../src/lib/tournament/public-view";
@@ -169,6 +170,15 @@ describe("seo : données structurées", () => {
       [2, "https://tcgtracker.test/cartes"],
     ]);
     assert.equal(itemListLd([]), null);
+  });
+
+  it("application : gratuite, avec ses fonctionnalités", () => {
+    const ld = webApplicationLd("en", "Description", ["Deck building", "Tournaments"]);
+    assert.equal(ld["@type"], "WebApplication");
+    assert.equal(ld.url, "https://tcgtracker.test/en");
+    assert.equal((ld.offers as { price: string }).price, "0");
+    assert.deepEqual(ld.featureList, ["Deck building", "Tournaments"]);
+    assert.ok(!("featureList" in webApplicationLd("fr", "Description", [])));
   });
 
   it("carte : illustrateur absent → pas d'auteur", () => {

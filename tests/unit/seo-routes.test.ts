@@ -5,6 +5,7 @@ import { alternatePath, landingSectionPath, languageAlternates, localizedPath, r
 describe("seo : routes localisées", () => {
   const pairs: [string, string][] = [
     ["/", "/en"],
+    ["/cartes", "/en/cards"],
     ["/cartes/v-streetkid", "/en/cards/v-streetkid"],
     ["/tournois/publics/abc123", "/en/tournaments/abc123"],
     ["/boutiques/arasaka-games", "/en/shops/arasaka-games"],
@@ -36,7 +37,7 @@ describe("seo : routes localisées", () => {
 
   it("ne localise pas l'application ni les pages légales", () => {
     // Annuaires et règles : réservés aux comptes, les visiteurs les trouvent sur l'accueil.
-    for (const path of ["/cards", "/decks", "/tournois", "/tournois/abc", "/mentions-legales", "/en/decks", "/classeur/x", "/cartes", "/tournois/publics", "/boutiques", "/comment-jouer"]) {
+    for (const path of ["/cards", "/decks", "/tournois", "/tournois/abc", "/mentions-legales", "/en/decks", "/classeur/x", "/tournois/publics", "/boutiques", "/comment-jouer"]) {
       assert.equal(routeOfPath(path), null, path);
       assert.equal(alternatePath(path, null, "en"), null, path);
     }

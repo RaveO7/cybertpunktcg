@@ -17,11 +17,23 @@ export function countryName(code: string, locale: string) {
   }
 }
 
-/** Pays triés par nom dans la langue affichée, la France en tête. */
+/**
+ * Clé de tri d'un nom : minuscules, sans accents, comparée caractère par caractère. localeCompare
+ * dépend de l'ICU embarqué, qui ne classe pas pareil les espaces (« Hong Kong » / « Hongrie ») dans
+ * Node et dans les navigateurs ; l'ordre est ainsi le même partout.
+ */
+function sortKey(name: string) {
+  return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+/** Pays triés par nom dans la langue affichée, la France en tête. Même ordre côté serveur et client. */
 export function countryOptions(locale: string, extra: readonly string[] = []) {
   const codes = [...new Set([...COUNTRY_CODES, ...extra])];
-  const named = codes.map((code) => ({ code, name: countryName(code, locale) }));
+  const named = codes.map((code) => {
+    const name = countryName(code, locale);
+    return { code, name, key: sortKey(name) };
+  });
   const [france, rest] = [named.filter((entry) => entry.code === "FR"), named.filter((entry) => entry.code !== "FR")];
-  rest.sort((a, b) => a.name.localeCompare(b.name, intlLocale(locale)));
-  return [...france, ...rest];
+  rest.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : a.code < b.code ? -1 : 1));
+  return [...france, ...rest].map(({ code, name }) => ({ code, name }));
 }

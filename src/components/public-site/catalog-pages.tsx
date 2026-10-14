@@ -1,4 +1,4 @@
-// Fiches publiques des cartes, partagées par /cartes/[slug] (fr) et /en/cards/[slug] (en). Rendu serveur, sans JS requis.
+// Liste et fiches publiques des cartes, partagées par /cartes (fr) et /en/cards (en). Rendu serveur, sans JS requis.
 
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -8,11 +8,11 @@ import { TrackCardLink } from "@/components/public-site/TrackCardLink";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { JsonLd } from "@/components/site/JsonLd";
 import { latestPriceDate, loadPublicCards } from "@/lib/seo/catalog-data";
-import { colorLabel, COPY, typeLabel } from "@/lib/seo/copy";
+import { CARD_TYPES, colorLabel, COPY, typeLabel, typePlural } from "@/lib/seo/copy";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { cardWithNeighbours, type PublicCard } from "@/lib/seo/public-catalog";
 import { localizedPath, type SiteLocale } from "@/lib/seo/routes";
-import { cardLd } from "@/lib/seo/structured-data";
+import { cardLd, itemListLd } from "@/lib/seo/structured-data";
 
 const IMAGE = { width: 733, height: 1024 };
 const THUMB = { width: 400, height: 559 };
@@ -69,7 +69,7 @@ function formatDate(iso: string, locale: SiteLocale) {
  * Tuile de carte reprenant celle de l'explorateur : halo aux couleurs de l'illustration, balayage et
  * zoom au survol (effets réservés à la souris, cf. globals.css).
  */
-function CardTile({ card, locale }: { card: PublicCard; locale: SiteLocale }) {
+function CardTile({ card, locale, eager = false }: { card: PublicCard; locale: SiteLocale; eager?: boolean }) {
   return (
     <li className="group relative">
       {card.thumb ? (
@@ -96,7 +96,7 @@ function CardTile({ card, locale }: { card: PublicCard; locale: SiteLocale }) {
               alt={COPY[locale].card.imageAlt(card.name)}
               width={THUMB.width}
               height={THUMB.height}
-              loading="lazy"
+              loading={eager ? "eager" : "lazy"}
               decoding="async"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -105,6 +105,76 @@ function CardTile({ card, locale }: { card: PublicCard; locale: SiteLocale }) {
         <p className="truncate p-2 text-xs font-bold text-foreground">{card.name}</p>
       </Link>
     </li>
+  );
+}
+
+/** Ancre d'une section de type (« legendes », « units ») : nom au pluriel, sans accents. */
+function sectionId(label: string) {
+  return label
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export async function catalogMetadata(locale: SiteLocale): Promise<Metadata> {
+  const copy = COPY[locale].catalog;
+  const count = (await loadPublicCards(locale)).length;
+  return pageMetadata({ locale, page: { key: "cards" }, title: copy.metaTitle, description: copy.metaDescription(count) });
+}
+
+/**
+ * Liste de toutes les cartes, une section par type : relie chaque fiche à deux clics de l'accueil
+ * (lien du pied de page). Pas de filtres en query : une seule URL à indexer.
+ */
+export async function CatalogPage({ locale }: { locale: SiteLocale }) {
+  const copy = COPY[locale].catalog;
+  const cards = await loadPublicCards(locale);
+  const known = new Set<string>(CARD_TYPES);
+  const groups = [
+    ...CARD_TYPES.map((type) => ({ label: typePlural(locale, type), cards: cards.filter((card) => card.cardType === type) })),
+    { label: copy.other, cards: cards.filter((card) => !card.cardType || !known.has(card.cardType)) },
+  ].filter((group) => group.cards.length > 0);
+
+  return (
+    <div className="flex flex-col">
+      <Breadcrumbs locale={locale} items={[{ name: COPY[locale].nav.cards, path: localizedPath("cards", locale) }]} />
+      <JsonLd data={[itemListLd(cards.map((card) => ({ name: card.name, path: localizedPath("card", locale, { slug: card.slug }) })))]} />
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-5">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex max-w-3xl min-w-0 flex-col gap-2">
+            <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-yellow sm:text-3xl">{copy.title}</h1>
+            <p className="text-sm leading-6 text-muted">{copy.intro(cards.length)}</p>
+          </div>
+          <TrackCardLink label={copy.track} className={actionClass} />
+        </header>
+        <nav aria-label={copy.sections}>
+          <ul className="flex flex-wrap gap-2 text-sm">
+            {groups.map((group) => (
+              <li key={group.label}>
+                <a href={`#${sectionId(group.label)}`} className="inline-flex items-center gap-2 border border-line px-3 py-1.5 text-muted hover:border-cyan hover:text-foreground">
+                  {group.label}
+                  <span className="font-mono text-xs text-cyan">{group.cards.length}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        {groups.map((group, groupIndex) => (
+          <section key={group.label} id={sectionId(group.label)} className="flex scroll-mt-4 flex-col gap-3">
+            <h2 className="font-display text-lg uppercase tracking-wide text-yellow">
+              {group.label} <span className="font-mono text-sm text-muted">({group.cards.length})</span>
+            </h2>
+            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+              {group.cards.map((card, index) => (
+                <CardTile key={card.slug} card={card} locale={locale} eager={groupIndex === 0 && index < 6} />
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -151,7 +221,10 @@ export async function CardPage({ locale, slug }: { locale: SiteLocale; slug: str
     <div className="flex flex-col">
       <Breadcrumbs
         locale={locale}
-        items={[{ name: card.name, path: localizedPath("card", locale, { slug }) }]}
+        items={[
+          { name: COPY[locale].nav.cards, path: localizedPath("cards", locale) },
+          { name: card.name, path: localizedPath("card", locale, { slug }) },
+        ]}
       />
       <JsonLd
         data={[cardLd({ name: card.name, slug: card.slug, description: plainRules(card.rulesText), image: card.image, artist: card.artist }, locale)]}
@@ -221,7 +294,7 @@ export async function CardPage({ locale, slug }: { locale: SiteLocale; slug: str
             ) : null}
             <div className="flex flex-wrap gap-3">
               <TrackCardLink printingId={card.mainPrintingId} label={copy.addToCollection} className={actionClass} />
-              <Link href={localizedPath("home", locale)} className="inline-flex h-11 items-center border border-line px-4 text-sm text-muted hover:border-cyan hover:text-foreground">
+              <Link href={localizedPath("cards", locale)} className="inline-flex h-11 items-center border border-line px-4 text-sm text-muted hover:border-cyan hover:text-foreground">
                 {copy.backToList}
               </Link>
             </div>

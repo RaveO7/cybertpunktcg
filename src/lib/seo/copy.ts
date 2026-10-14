@@ -21,6 +21,18 @@ const TYPE_LABELS: Record<SiteLocale, Record<string, string>> = {
   en: { Legend: "Legend", Unit: "Unit", Program: "Program", Gear: "Gear" },
 };
 
+const TYPE_PLURALS: Record<SiteLocale, Record<string, string>> = {
+  fr: { Legend: "Légendes", Unit: "Unités", Program: "Programmes", Gear: "Équipements" },
+  en: { Legend: "Legends", Unit: "Units", Program: "Programs", Gear: "Gear" },
+};
+
+/** Types de carte du jeu, dans l'ordre des sections de la liste des cartes. */
+export const CARD_TYPES = ["Legend", "Unit", "Program", "Gear"] as const;
+
+export function typePlural(locale: SiteLocale, type: string) {
+  return TYPE_PLURALS[locale][type] ?? type;
+}
+
 export function colorLabel(locale: SiteLocale, color: string | null) {
   return color ? (COLOR_LABELS[locale][color] ?? color) : null;
 }
@@ -34,6 +46,17 @@ const fr = {
   breadcrumb: { label: "Fil d'Ariane", home: "Accueil" },
   nav: {
     cards: "Cartes",
+  },
+  catalog: {
+    title: "Liste des cartes Cyberpunk TCG",
+    metaTitle: "Liste des cartes Cyberpunk TCG",
+    metaDescription: (count: number) =>
+      `Les ${count} cartes du jeu Cyberpunk TCG : Légendes, Unités, Programmes et Équipements, avec texte de règles, coût, puissance, RAM, impressions et prix.`,
+    intro: (count: number) =>
+      `Les ${count} cartes du jeu de cartes Cyberpunk TCG, classées par type puis dans l'ordre de la liste officielle. Chaque fiche donne le texte de règles, le coût, la puissance, la RAM, les impressions et le prix de marché Cardmarket.`,
+    sections: "Types de cartes",
+    other: "Autres cartes",
+    track: "Suivre ma collection",
   },
   landing: {
     eyebrow: "Cyberpunk TCG · outil de fans gratuit",
@@ -51,6 +74,7 @@ const fr = {
     tabTournaments: "Tournois",
     tabShops: "Boutiques",
     fanLabel: "Quelques Légendes du jeu",
+    cardClose: "Fermer la fiche",
     features: [
       {
         key: "collection",
@@ -158,6 +182,17 @@ const en: SiteCopy = {
   nav: {
     cards: "Cards",
   },
+  catalog: {
+    title: "Cyberpunk TCG card list",
+    metaTitle: "Cyberpunk TCG card list",
+    metaDescription: (count: number) =>
+      `All ${count} Cyberpunk TCG cards: Legends, Units, Programs and Gear, with rules text, cost, power, RAM, printings and prices.`,
+    intro: (count: number) =>
+      `All ${count} cards of the Cyberpunk TCG card game, sorted by type, then in official list order. Each card page shows its rules text, cost, power, RAM, printings and Cardmarket market price.`,
+    sections: "Card types",
+    other: "Other cards",
+    track: "Track my collection",
+  },
   landing: {
     eyebrow: "Cyberpunk TCG · free fan-made tool",
     title: "Every Cyberpunk TCG card, your collection and tournaments near you",
@@ -173,6 +208,7 @@ const en: SiteCopy = {
     tabTournaments: "Tournaments",
     tabShops: "Stores",
     fanLabel: "Some of the game's Legends",
+    cardClose: "Close",
     features: [
       {
         key: "collection",

@@ -5,7 +5,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countryName, countryOptions } from "@/components/geo/countries";
+import { countryName } from "@/components/geo/countries";
+import { useCountryOptions } from "@/components/geo/useCountryOptions";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
 import { useI18n } from "@/components/LocaleProvider";
 import { useLocalizedHref } from "@/components/site/useLocalizedHref";
@@ -43,6 +44,7 @@ export function ShopDirectory({
   const [error, setError] = useState(false);
   const firstLoad = useRef(initial !== null);
   const view = params.view === "map" ? "map" : "list";
+  const countries = useCountryOptions(locale, params.country);
   const near: NearPoint | null = params.lat && params.lng ? { lat: Number(params.lat), lng: Number(params.lng), radius: Number(params.radius) || 25, label: params.place ?? "" } : null;
 
   function update(patch: Params, keepPage = false) {
@@ -116,7 +118,7 @@ export function ShopDirectory({
           <span className="hud-label">{t.geo.country}</span>
           <select className={inputClass} value={params.country ?? ""} onChange={(event) => update({ country: event.target.value, city: "" })}>
             <option value="">{t.publicTournaments.allCountries}</option>
-            {countryOptions(locale).map((entry) => (
+            {countries.map((entry) => (
               <option key={entry.code} value={entry.code}>
                 {entry.name}
               </option>
