@@ -3,14 +3,13 @@
 import { BottomNav, Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { OfflineBanner } from "@/components/OfflineSupport";
-import { LanguageSuggestion, type SuggestionCopy } from "@/components/site/LanguageSuggestion";
 import { LegacyLocalePreference, PreferredLanguageRedirect } from "@/components/site/PreferredLanguageRedirect";
 import { RequireUser } from "@/components/site/RequireUser";
 import { LEGAL_PATHS } from "@/lib/site";
 import { publicRouteOfPath } from "@/i18n/paths";
 import { useInternalPathname } from "@/i18n/useInternalPathname";
 
-export function AppFrame({ children, suggestionCopy }: { children: React.ReactNode; suggestionCopy: SuggestionCopy }) {
+export function AppFrame({ children }: { children: React.ReactNode }) {
   // Chemin interne (segments français, sans préfixe de langue) : mêmes règles dans toutes les langues.
   const pathname = useInternalPathname();
   const isSharedView = pathname.startsWith("/classeur/");
@@ -30,7 +29,6 @@ export function AppFrame({ children, suggestionCopy }: { children: React.ReactNo
     <div className="relative flex h-dvh flex-col overflow-clip">
       <Header />
       <OfflineBanner />
-      <LanguageSuggestion copy={suggestionCopy} />
       <LegacyLocalePreference />
       <PreferredLanguageRedirect />
       <main className="app-main @container/main px-safe relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain [container-type:size]">

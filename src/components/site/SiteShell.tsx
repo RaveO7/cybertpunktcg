@@ -13,7 +13,7 @@ import { WishlistProvider } from "@/components/WishlistProvider";
 import { REVEAL_BOOT_SCRIPT } from "@/components/public-site/reveal-boot";
 import { CLIENT_BLOCKS, pickBlocks } from "@/i18n/client-messages";
 import { IntlClientProvider } from "@/i18n/IntlClientProvider";
-import { loadBlockInAllLocales, type Messages } from "@/i18n/load";
+import { type Messages } from "@/i18n/load";
 import { PREFERENCES_STORAGE_KEY } from "@/lib/preferences";
 import type { Locale } from "@/i18n/config";
 
@@ -53,8 +53,6 @@ const themeBootScript = `(function(){try{var raw=localStorage.getItem(${JSON.str
 /** Document HTML de toutes les pages, dans la langue de l'URL (/fr, /en, /de…). */
 export async function SiteShell({ lang, children }: { lang: Locale; children: ReactNode }) {
   const messages = pickBlocks((await getMessages()) as Messages, CLIENT_BLOCKS);
-  // Bandeau de suggestion de langue : affiché dans la langue proposée, d'où les textes de toutes les langues.
-  const suggestionCopy = await loadBlockInAllLocales("languageSuggestion");
   return (
     <html lang={lang} className={`${fontVariables} h-dvh overflow-hidden antialiased`} data-theme="dark" suppressHydrationWarning>
       {/* Mise en page racine (App Router) : <head> est attendu ici, la règle vise le routeur Pages. */}
@@ -68,7 +66,7 @@ export async function SiteShell({ lang, children }: { lang: Locale; children: Re
             <CollectionProvider>
               <WishlistProvider>
                 <BrowseSelectionProvider>
-                  <AppFrame suggestionCopy={suggestionCopy}>{children}</AppFrame>
+                  <AppFrame>{children}</AppFrame>
                 </BrowseSelectionProvider>
               </WishlistProvider>
             </CollectionProvider>
