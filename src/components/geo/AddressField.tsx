@@ -5,7 +5,7 @@
 // montré sur une carte avant l'enregistrement.
 
 import { useEffect, useId, useMemo, useState } from "react";
-import { useI18n } from "@/components/LocaleProvider";
+import { useLocale, useTranslations } from "next-intl";
 import { buttonClass, inputClass } from "@/components/tournament/ui";
 import type { AddressSuggestion } from "@/lib/geo/geocode";
 import type { Place } from "@/lib/geo/location";
@@ -27,7 +27,8 @@ export function AddressField({
   disabled?: boolean;
   allowClear?: boolean;
 }) {
-  const { t, locale } = useI18n();
+  const t = useTranslations();
+  const locale = useLocale();
   const listId = useId();
   const [editing, setEditing] = useState(value === null);
   const [country, setCountry] = useState(value?.country ?? "FR");
@@ -49,10 +50,10 @@ export function AddressField({
         const response = await fetch(`/api/geocode/suggest?country=FR&q=${encodeURIComponent(query.trim())}`, { signal: controller.signal });
         const body = (await response.json().catch(() => ({}))) as { suggestions?: AddressSuggestion[]; error?: string };
         if (!response.ok) {
-          setMessage(body.error ?? t.geo.retry);
+          setMessage(body.error ?? t("geo.retry"));
           return;
         }
-        setMessage(body.suggestions?.length ? null : t.geo.noSuggestion);
+        setMessage(body.suggestions?.length ? null : t("geo.noSuggestion"));
         setSuggestions(body.suggestions ?? []);
       } catch {
         // Requête annulée par une frappe plus récente.
@@ -84,12 +85,12 @@ export function AddressField({
       });
       const body = (await response.json().catch(() => ({}))) as { place?: AddressSuggestion; error?: string };
       if (!response.ok || !body.place) {
-        setMessage(body.error ?? (response.status === 404 ? t.geo.notFound : t.geo.retry));
+        setMessage(body.error ?? (response.status === 404 ? t("geo.notFound") : t("geo.retry")));
         return;
       }
       choose(body.place);
     } catch {
-      setMessage(t.geo.retry);
+      setMessage(t("geo.retry"));
     } finally {
       setBusy(false);
     }
@@ -110,9 +111,9 @@ export function AddressField({
           <span className="text-foreground">{placeLabel(value)}</span>
           <span className="text-muted"> · {countries.find((entry) => entry.code === value.country)?.name ?? value.country}</span>
         </p>
-        <LazyMap markers={markers} zoom={16} label={t.geo.mapLabel} className="h-48" />
+        <LazyMap markers={markers} zoom={16} label={t("geo.mapLabel")} className="h-48" />
         <label className="flex flex-col gap-1">
-          <span className="hud-label">{t.geo.venueName}</span>
+          <span className="hud-label">{t("geo.venueName")}</span>
           <input
             className={inputClass}
             value={venueName}
@@ -125,11 +126,11 @@ export function AddressField({
         {!disabled ? (
           <div className="flex flex-wrap gap-2">
             <button type="button" className={buttonClass} onClick={() => setEditing(true)}>
-              {t.geo.change}
+              {t("geo.change")}
             </button>
             {allowClear ? (
               <button type="button" className={buttonClass} onClick={() => onChange(null)}>
-                {t.geo.clear}
+                {t("geo.clear")}
               </button>
             ) : null}
           </div>
@@ -141,7 +142,7 @@ export function AddressField({
   return (
     <div className="flex flex-col gap-2">
       <label className="flex flex-col gap-1">
-        <span className="hud-label">{t.geo.country}</span>
+        <span className="hud-label">{t("geo.country")}</span>
         <select
           className={inputClass}
           value={country}
@@ -163,11 +164,11 @@ export function AddressField({
       {country === "FR" ? (
         <div className="flex flex-col gap-1">
           <label className="flex flex-col gap-1">
-            <span className="hud-label">{t.geo.address}</span>
+            <span className="hud-label">{t("geo.address")}</span>
             <input
               className={inputClass}
               value={query}
-              placeholder={t.geo.addressPlaceholder}
+              placeholder={t("geo.addressPlaceholder")}
               autoComplete="off"
               disabled={disabled}
               role="combobox"
@@ -195,20 +196,20 @@ export function AddressField({
       ) : (
         <div className="grid gap-2 sm:grid-cols-[2fr_1fr_2fr]">
           <label className="flex flex-col gap-1">
-            <span className="hud-label">{t.geo.street}</span>
+            <span className="hud-label">{t("geo.street")}</span>
             <input className={inputClass} value={street} maxLength={200} disabled={disabled} onChange={(event) => setStreet(event.target.value)} />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="hud-label">{t.geo.postalCode}</span>
+            <span className="hud-label">{t("geo.postalCode")}</span>
             <input className={inputClass} value={postalCode} maxLength={20} disabled={disabled} onChange={(event) => setPostalCode(event.target.value)} />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="hud-label">{t.geo.city}</span>
+            <span className="hud-label">{t("geo.city")}</span>
             <input className={inputClass} value={city} maxLength={100} disabled={disabled} onChange={(event) => setCity(event.target.value)} />
           </label>
           <div className="sm:col-span-3">
             <button type="button" className={buttonClass} disabled={disabled || busy || !street.trim() || !city.trim()} onClick={() => void locate()}>
-              {busy ? t.geo.locating : t.geo.locate}
+              {busy ? t("geo.locating") : t("geo.locate")}
             </button>
           </div>
         </div>
@@ -221,7 +222,7 @@ export function AddressField({
       ) : null}
       {value ? (
         <button type="button" className={`${buttonClass} self-start`} onClick={() => setEditing(false)}>
-          {t.geo.keep}
+          {t("geo.keep")}
         </button>
       ) : null}
     </div>

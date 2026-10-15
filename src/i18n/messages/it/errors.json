@@ -1,0 +1,11 @@
+{
+  "eyebrow": "ERRORE",
+  "title": "Si è verificato un errore",
+  "body": "Impossibile caricare questa pagina. Riprova tra un momento.",
+  "retry": "Riprova",
+  "home": "Torna alla home",
+  "notFoundEyebrow": "404",
+  "notFoundTitle": "Pagina non trovata",
+  "notFoundBody": "Questa pagina non esiste o è stata spostata.",
+  "reference": "Riferimento"
+}

@@ -1,0 +1,391 @@
+{
+  "eyebrow": "REGLAS",
+  "title": "Cómo jugar",
+  "intro": [
+    "En el Cyberpunk Trading Card Game diriges tu banda y compites contra tu Rival para convertirte en una Leyenda de Night City. Acepta Gigs, equipa Unidades, despliega Programas y aumenta tu Street Cred.",
+    "Necesitas un juego de seis dados (d4, d6, d8, d10, d12, d20) y un mazo de Cyberpunk TCG. Ganas si controlas la mayoría de los dados de Gig y los conservas hasta el inicio de tu turno."
+  ],
+  "sourceLabel": "Guía oficial",
+  "sourcePdfLabel": "PDF para imprimir",
+  "toc": [
+    {
+      "label": "Condición de victoria"
+    },
+    {
+      "label": "Tapete"
+    },
+    {
+      "label": "Leer tus cartas"
+    },
+    {
+      "label": "Tipos de carta"
+    },
+    {
+      "label": "Activadores y palabras clave"
+    },
+    {
+      "label": "Preparación"
+    },
+    {
+      "label": "Estructura del turno"
+    },
+    {
+      "label": "Atacar"
+    },
+    {
+      "label": "Construcción del mazo"
+    },
+    {
+      "label": "Glosario"
+    }
+  ],
+  "win": {
+    "title": "Condición de victoria",
+    "body": "Controla la mayoría de los Gigs de Night City, representados por los dados de Gig. Protege los tuyos y ataca a tu Rival para arrebatarle los suyos. Cada dado es un Gig: dos dados siempre te acercan más a la victoria que uno, sea cual sea su valor.",
+    "highlight": "Empieza tu turno con 7 Gigs para ganar",
+    "highlightBody": "Si un jugador tiene al menos 7 dados de Gig en su zona de Gigs al inicio de su turno, gana.",
+    "overtime": "Prórroga: 7 Gigs ganan al instante",
+    "overtimeBody": "La prórroga empieza tras el 7.º turno del último jugador. Muerte súbita: en cuanto un jugador tiene la mayoría de los dados de Gig, gana.",
+    "deckOut": "Mazo vacío: si tienes que robar y tu mazo está vacío, tu Rival gana de inmediato."
+  },
+  "areas": {
+    "title": "Zonas del tapete",
+    "items": [
+      {
+        "name": "Fixer",
+        "body": "Todos los dados de Gig empiezan aquí. Tras robar al inicio de tu turno, elige un dado (salvo el d20, siempre el último), lánzalo y muévelo a tu zona de Gigs.",
+        "tips": [
+          "Los dados son las ofertas de trabajo que tu fixer te ha conseguido.",
+          "Dado pequeño = valor bajo pero seguro; dado grande = más Street Cred potencial.",
+          "El d20 solo se puede elegir cuando ya no queda ningún otro dado."
+        ]
+      },
+      {
+        "name": "Gigs del Rival",
+        "body": "Los dados de Gig que controla tu Rival. Es el objetivo de tus Unidades cuando atacan directamente: cada ataque con éxito toma un dado de aquí y lo mueve a tu zona de Gigs aliados.",
+        "tips": [
+          "Una Unidad arrebata 1 Gig, +1 por cada 10 de Power (Power 10+ → 2 Gigs).",
+          "Si un Blocker desvía el ataque, no se arrebata ningún Gig aunque ganes el combate.",
+          "Vigila su número: con 7 dados al inicio de su turno, tu Rival gana."
+        ]
+      },
+      {
+        "name": "Gigs aliados",
+        "body": "Los Gigs que controlas, incluidos los arrebatados. Si empiezas tu turno con 7 dados aquí (antes de tomar uno del Fixer), ganas. La Street Cred es la suma de las caras superiores.",
+        "tips": [
+          "Cada dado = 1 Gig sea cual sea su valor: lo que gana es el número de dados.",
+          "Las Unidades rivales atacan esta zona para arrebatarte dados.",
+          "Algunas cartas necesitan un mínimo de ☆ Street Cred para activarse."
+        ]
+      },
+      {
+        "name": "Campo",
+        "body": "Donde viven las Unidades. Pueden atacar a una Unidad rival agotada para combatir, o la zona de Gigs rival para arrebatar un Gig. El Gear se equipa aquí a las Unidades.",
+        "tips": [
+          "Las Unidades entran preparadas pero con Lag: no atacan el turno en que se juegan (salvo con Adrenaline).",
+          "Atacar agota la Unidad (de lado), y eso permite que tu Rival la ataque.",
+          "Las Unidades preparadas no pueden ser atacadas; solo Quick / Blocker pueden interrumpir un ataque."
+        ]
+      },
+      {
+        "name": "Eddies (€$)",
+        "body": "La moneda de Night City. Paga el coste de arriba a la izquierda de una carta agotando ese número de Eddies. Empieza vacía: vende cartas de tu mano para crear Eddies.",
+        "tips": [
+          "Vender: una vez por turno, una carta con símbolo de venta (€$) → 1 Eddie boca abajo.",
+          "Pagar = agotar (girar) Eddies; se preparan al inicio de tu turno.",
+          "Una carta vendida vale siempre 1 €$, aunque costara 8."
+        ]
+      },
+      {
+        "name": "Leyendas",
+        "body": "Tus 3 Leyendas empiezan boca abajo en orden aleatorio. Una vez por turno puedes hacer Call a una Leyenda agotando 1 €$ para girar una sin mirarla. Boca arriba o boca abajo, una Leyenda también puede pagar 1 €$.",
+        "tips": [
+          "También puedes hacer Call a una Leyenda como reacción a un ataque rival.",
+          "El primer jugador empieza con sus 2 Leyendas de más a la izquierda agotadas.",
+          "Las Leyendas con Go Solo pueden entrar al Campo como Unidad."
+        ]
+      },
+      {
+        "name": "Mazo",
+        "body": "Roba de la parte superior de tu mazo.",
+        "tips": [
+          "40–50 cartas, sin contar las Leyendas.",
+          "Mazo vacío: si tienes que robar de un mazo vacío, tu Rival gana."
+        ]
+      },
+      {
+        "name": "Descarte",
+        "body": "Aquí van boca arriba las cartas descartadas, derrotadas o desechadas.",
+        "tips": [
+          "Los Programas van aquí en cuanto se resuelve su efecto.",
+          "Una Unidad derrotada va aquí con todo su Gear equipado."
+        ]
+      }
+    ]
+  },
+  "playmat": {
+    "hint": "Tapete interactivo a mitad de partida con cartas reales de Welcome to Night City. Pasa el cursor o haz clic en una zona para leer para qué sirve.",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "fixer": "Fixer",
+    "rivalGig": "Gigs del Rival",
+    "gig": "Gigs aliados",
+    "streetCred": "Street Cred = 4+6+10 = 20",
+    "legends": "Leyendas",
+    "field": "Campo",
+    "eddies": "Eddies",
+    "deck": "Mazo",
+    "trash": "Descarte"
+  },
+  "examplesTitle": "Ejemplo real",
+  "fightExample": {
+    "title": "Ejemplo de combate",
+    "body": "Jackie (Unidad) ataca a Meredith (Unidad rival agotada). Comparad el Power: el mayor gana; en caso de empate, ambas van al descarte.",
+    "attackerLabel": "Atacante",
+    "defenderLabel": "Defensora (agotada)",
+    "outcome": "Si Jackie tiene más Power, Meredith va al descarte con todo su Gear equipado."
+  },
+  "stealExample": {
+    "title": "Ejemplo de robo de Gig",
+    "body": "Adam Smasher: Metal Over Meat tiene Power 15. Si ataca la zona de Gigs rival sin ser bloqueado, arrebata 2 Gigs (umbral 10+)."
+  },
+  "cardTypes": {
+    "title": "Tipos de carta",
+    "note": "Si el texto de una carta contradice esta guía, sigue la carta. Cada tipo de abajo muestra una carta real del catálogo.",
+    "items": [
+      {
+        "name": "Leyenda",
+        "body": "Los personajes principales. Las 3 empiezan boca abajo. Hacer Call a una Leyenda (1 €$, una vez por turno) gira una al azar. Cualquier Leyenda también puede pagar 1 €$."
+      },
+      {
+        "name": "Unidad",
+        "body": "Miembros de tu banda. Paga el coste y colócala preparada en el Campo. Las Unidades no pueden atacar el turno en que se juegan (salvo con Adrenaline)."
+      },
+      {
+        "name": "Programa",
+        "body": "Efecto inmediato. Paga el coste, resuélvelo y luego pon la carta en el descarte."
+      },
+      {
+        "name": "Gear",
+        "body": "Se equipa a una Unidad o Leyenda aliada. Cuando su portadora sale de su zona, el Gear la acompaña."
+      }
+    ]
+  },
+  "triggers": {
+    "title": "Activadores",
+    "intro": "Los activadores te dicen cuándo ocurre un efecto.",
+    "items": [
+      {
+        "name": "Play",
+        "body": "Cuando juegas esta carta."
+      },
+      {
+        "name": "Call",
+        "body": "Cuando giras esta Leyenda al hacerle Call."
+      },
+      {
+        "name": "Attack",
+        "body": "Cuando esta Unidad ataca (antes de que reaccione tu Rival)."
+      },
+      {
+        "name": "Defeated",
+        "body": "Cuando esta Unidad es derrotada."
+      }
+    ]
+  },
+  "keywords": {
+    "title": "Palabras clave",
+    "intro": "Efectos estándar comunes a muchas cartas, con un ejemplo del catálogo.",
+    "items": [
+      {
+        "name": "Adrenaline",
+        "body": "Esta Unidad puede atacar el turno en que se juega."
+      },
+      {
+        "name": "Go Solo",
+        "body": "Paga el coste de esta Leyenda para jugarla como una Unidad preparada. Puede atacar este turno. Si sale del campo, retírala de la partida."
+      },
+      {
+        "name": "Quick",
+        "body": "También puedes activar este efecto (o jugar este Programa) como reacción cuando ataca una Unidad rival."
+      },
+      {
+        "name": "Blocker",
+        "body": "Cuando una Unidad rival ataca, puedes agotar esta Unidad para desviar el ataque hacia ella."
+      }
+    ]
+  },
+  "setup": {
+    "title": "Preparación",
+    "intro": "Cada jugador sigue estos pasos antes de la partida.",
+    "steps": [
+      {
+        "title": "1. Barajar",
+        "body": "Baraja tu mazo y coloca tus Leyendas boca abajo en orden aleatorio en la zona de Leyendas."
+      },
+      {
+        "title": "2. Orden de juego",
+        "body": "Ambos jugadores lanzan un d20 (se repite en caso de empate). El resultado más alto decide quién empieza. El primer jugador agota sus 2 Leyendas de más a la izquierda y no las prepara en su primer turno."
+      },
+      {
+        "title": "3. Robar 6",
+        "body": "Puedes hacer mulligan una vez: baraja tu mano en el mazo y roba 6 cartas nuevas."
+      }
+    ]
+  },
+  "turn": {
+    "title": "Estructura del turno",
+    "intro": "Cada turno tiene dos fases: la fase de inicio y luego la fase principal.",
+    "startTitle": "Fase de inicio (en orden)",
+    "startSteps": [
+      {
+        "title": "Preparar",
+        "body": "Devuelve todas las cartas agotadas (de lado) a la posición preparada (en vertical)."
+      },
+      {
+        "title": "Robar 1",
+        "body": "Añade a tu mano la carta superior de tu mazo."
+      },
+      {
+        "title": "Ganar un Gig",
+        "body": "Toma un dado de tu zona del Fixer, lánzalo y añádelo a tu zona de Gigs. Cualquier dado salvo el d20, que siempre es el último."
+      }
+    ],
+    "mainTitle": "Fase principal (en cualquier orden)",
+    "mainIntro": "Haz tantas de estas acciones como permitan las reglas.",
+    "mainActions": [
+      {
+        "title": "Vender por un Eddie (una vez por turno)",
+        "body": "Vende una carta de tu mano con símbolo de venta. Revélala y colócala boca abajo en la zona de Eddies. Como Eddie siempre vale 1 €$."
+      },
+      {
+        "title": "Jugar una carta",
+        "body": "Agota Eddies (y/o Leyendas, 1 €$ cada una) por un valor igual al coste. Las Unidades entran con Lag hasta el final del turno: no pueden atacar ni activar efectos que las agoten a sí mismas."
+      },
+      {
+        "title": "Hacer Call a una Leyenda (una vez por turno)",
+        "body": "Agota 1 €$ para girar una Leyenda boca arriba sin mirarla antes."
+      },
+      {
+        "title": "Atacar",
+        "body": "Agota la Unidad atacante. Ataca a una Unidad rival agotada o la zona de Gigs rival para arrebatar un Gig."
+      }
+    ]
+  },
+  "attack": {
+    "title": "Atacar",
+    "intro": "Cada Unidad ataca por separado y completa toda la secuencia antes de que otra pueda atacar. Objetivo: una Unidad rival agotada o la zona de Gigs de tu Rival.",
+    "steps": [
+      {
+        "title": "1. Agotar al atacante",
+        "body": "Gira la Unidad de lado y resuelve los efectos {Attack}. Las Unidades no pueden atacar el turno en que se juegan (salvo con Adrenaline)."
+      },
+      {
+        "title": "2. Declarar un objetivo",
+        "body": "Unidad rival agotada → combate. Zona de Gigs rival → robo."
+      }
+    ],
+    "reactTitle": "3. El Rival reacciona",
+    "reactIntro": "El Rival atacado puede usar tantas de estas reacciones como quiera.",
+    "reactions": [
+      {
+        "title": "Hacer Call a una Leyenda (una vez por turno)",
+        "body": "Agota 1 €$ para girar una Leyenda boca arriba."
+      },
+      {
+        "title": "Quick",
+        "body": "Activa efectos o juega cartas con Quick."
+      },
+      {
+        "title": "Blocker",
+        "body": "Agota una Unidad con Blocker para desviar el ataque hacia ella."
+      }
+    ],
+    "fightTitle": "Combate (objetivo = Unidad agotada)",
+    "fightBody": [
+      "Comparad el Power de ambas Unidades.",
+      "El Power más alto derrota al otro. En caso de empate, ambas son derrotadas.",
+      "Pon las Unidades derrotadas en el descarte y resuelve los efectos {Defeated}."
+    ],
+    "stealTitle": "Robo (objetivo = zona de Gigs)",
+    "stealBody": "Elige un dado de Gig rival y muévelo a tu zona de Gigs. Arrebatas un Gig adicional por cada 10 de Power (0 Gigs con Power 0).",
+    "stealTiers": [
+      "Power 1+ → 1 Gig",
+      "Power 10+ → 2 Gigs",
+      "Power 20+ → 3 Gigs, etc."
+    ],
+    "tip": "Las Unidades preparadas no pueden ser atacadas. Solo Quick / Blocker (y similares) pueden interrumpir ataques: suelen ser las Unidades que conviene mantener preparadas. Si un Blocker desvía un ataque directo a tu Rival, hay un combate contra el Blocker: aunque lo derrotes, no arrebatas ningún Gig."
+  },
+  "deckbuilding": {
+    "title": "Construcción del mazo y RAM",
+    "intro": "Requisitos de un mazo válido:",
+    "rules": [
+      "Exactamente 3 Leyendas con nombres distintos.",
+      "40–50 cartas (sin contar las Leyendas).",
+      "Como máximo 3 copias de la misma carta.",
+      "Respetar el límite de RAM que fijan tus Leyendas."
+    ],
+    "ramTitle": "RAM",
+    "ramBody": [
+      "Cada Leyenda tiene un color y un valor de RAM. Su RAM combinada por color limita las cartas que puedes incluir: la RAM de cada carta debe ser ≤ al total de tus Leyendas en ese color.",
+      "Ejemplo: Goro Takemura (2 Verde) + Saburo Arasaka (2 Verde) + Yorinobu Arasaka (2 Rojo) → cartas verdes hasta 4 de RAM, cartas rojas hasta 2 de RAM."
+    ]
+  },
+  "glossary": {
+    "title": "Glosario",
+    "items": [
+      {
+        "term": "Agotar / Agotada",
+        "definition": "Girar una carta de lado. Las cartas agotadas no pueden volver a agotarse hasta que se preparen. Los Eddies y las Leyendas se agotan para pagar; las Unidades, para atacar."
+      },
+      {
+        "term": "Preparada",
+        "definition": "Carta en vertical. Solo las Unidades preparadas pueden atacar; las Unidades preparadas no pueden ser atacadas."
+      },
+      {
+        "term": "Eddies (€$)",
+        "definition": "Eurodólares. Cada carta boca abajo en la zona de Eddies es 1 Eddie. Las Leyendas pueden pagar 1 €$, pero no son Eddies."
+      },
+      {
+        "term": "Coste",
+        "definition": "Número de arriba a la izquierda. Agota esa cantidad de €$ para jugar la carta."
+      },
+      {
+        "term": "Vender",
+        "definition": "Una vez por turno: revela una carta con símbolo de venta y colócala boca abajo como 1 Eddie."
+      },
+      {
+        "term": "Gigs",
+        "definition": "Dados de trabajo. El primer jugador que empieza su turno con 7+ Gigs gana. Se arrebatan atacando la zona de Gigs rival."
+      },
+      {
+        "term": "Street Cred",
+        "definition": "Suma de las caras de tus dados de Gig. Algunos efectos exigen un mínimo."
+      },
+      {
+        "term": "Fixer",
+        "definition": "Zona de ofertas de trabajo. Cada turno, toma un dado (el d20 el último), lánzalo y muévelo a la zona de Gigs."
+      },
+      {
+        "term": "Lag",
+        "definition": "Las Unidades entran con Lag hasta el final del turno: no atacan ni activan efectos que las agoten a sí mismas."
+      },
+      {
+        "term": "Power",
+        "definition": "Número de abajo a la derecha. Cuenta en los combates y al arrebatar Gigs (+1 Gig por cada 10 de Power)."
+      },
+      {
+        "term": "Hacer Call a una Leyenda",
+        "definition": "Una vez por turno, agota 1 €$ para girar una Leyenda. Permitido en la fase principal o como reacción a un ataque."
+      },
+      {
+        "term": "Poner al fondo del mazo",
+        "definition": "Colocar cartas al fondo de tu mazo en el orden que quieras."
+      },
+      {
+        "term": "Desechar",
+        "definition": "Poner la carta o cartas superiores del mazo en el descarte, que es también la zona de las cartas derrotadas."
+      }
+    ]
+  }
+}

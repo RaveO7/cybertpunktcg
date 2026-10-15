@@ -1,0 +1,240 @@
+{
+  "table": {
+    "eyebrow": "DEMO-DUELL",
+    "title": "Deine erste Partie",
+    "subtitle": "Fahre über eine Karte (auf dem Handy lange drücken), um sie zu vergrößern. Klicke auf die pulsierenden Ziele — wie in einem Online-Client.",
+    "tipLabel": "Coach",
+    "yourHand": "Hand",
+    "endTurn": "Zug beenden",
+    "begin": "Partie starten",
+    "next": "Weiter",
+    "rivalPhase": "Zug des Rivalen",
+    "restart": "Nochmal spielen",
+    "openRules": "Ausführliche Regeln",
+    "exit": "Tutorial verlassen",
+    "fixer": "Fixer",
+    "yourGigs": "Deine Gigs",
+    "rivalGigs": "Gigs des Rivalen",
+    "legends": "Legenden",
+    "eddies": "Eddies",
+    "yourField": "Dein Spielfeld",
+    "rivalField": "Spielfeld des Rivalen",
+    "deck": "Deck",
+    "trash": "Ablage",
+    "spent": "erschöpft",
+    "paying": "Zu bezahlen",
+    "wrong": "Nicht jetzt — folge dem pulsierenden Ziel.",
+    "fx": {
+      "begin": "Du bist dran",
+      "gig": "Gig erhalten",
+      "streetCred": "Street Cred {face}",
+      "sell": "+1 €$",
+      "legend": "Legende aufgedeckt",
+      "deployed": "Ins Spiel gebracht",
+      "equip": "Gear angelegt",
+      "steal": "Gig gestohlen!",
+      "fight": "Kampf!",
+      "rivalTurn": "Zug des Rivalen",
+      "rivalPlay": "Der Rivale spielt",
+      "attack": "Angriff!",
+      "lost": "Gig verloren",
+      "block": "Geblockt!",
+      "win": "Demo beendet",
+      "winSub": "3 Gigs — du brauchst 7 zu Beginn deines Zuges, um zu gewinnen"
+    },
+    "turnYou": "Zug {n}",
+    "turnRival": "Rivale · Zug {n}"
+  },
+  "steps": {
+    "begin": {
+      "tip": "Du spielst als Zweiter. Klicke, um die Partie zu starten.",
+      "title": "Willkommen am Tisch",
+      "explain": "Du spielst als Zweiter. Ziel: 7 Gigs zu Beginn deines Zuges. Fahre über die Karten (auf dem Handy lange drücken), um ihren Text zu lesen. Danach sehen wir uns die Kartentypen und Bereiche an."
+    },
+    "intro-types": {
+      "tip": "Weiter: Kartentypen.",
+      "title": "4 Kartentypen",
+      "explain": "Einheit = Crew auf dem Spielfeld (greift an). Programm = einmaliger Effekt (danach meist auf die Ablage). Gear = wird an eine Einheit/Legende angelegt. Legende = 3 Figuren deines Decks (Bereich links). Eddies = Geld, das du durch Verkaufen erhältst."
+    },
+    "intro-legends": {
+      "tip": "Sieh dir den Legenden-Bereich an.",
+      "title": "Deine 3 Legenden",
+      "explain": "Sie beginnen verdeckt. Einmal pro Zug kannst du Call auf eine Legende ausführen (1 €$), um eine zufällige umzudrehen. Offen oder verdeckt kann eine Legende außerdem 1 €$ bezahlen (wie ein Eddie)."
+    },
+    "t1-die": {
+      "tip": "Klicke den d6 des Fixers an.",
+      "title": "Einen Gig erhalten",
+      "explain": "Jeder Zug: Bereitmachen → Ziehen → Gig. Nimm einen Würfel des Fixers (der d20 immer zuletzt), wirf ihn und lege ihn in deinen Gig-Bereich. 1 Würfel = 1 Gig. Die Augenzahl = Street Cred."
+    },
+    "t1-sell": {
+      "tip": "Klicke Afterparty an, um sie zu verkaufen.",
+      "title": "Verkaufen → 1 Eddie",
+      "explain": "Einmal pro Zug: Verkaufe eine Karte mit Verkaufssymbol. Sie kommt verdeckt zu den Eddies und ist immer 1 €$ wert (nicht ihre aufgedruckten Kosten)."
+    },
+    "t1-play": {
+      "tip": "Klicke Meredith an, um sie zu spielen.",
+      "title": "Eine Einheit spielen (Kosten 4)",
+      "explain": "Die Kosten stehen oben links: Meredith Stout kostet 4 €$. Wähle sie aus der Hand und bezahle dann 4 €$: deinen Eddie, dann deine 3 Legenden (je 1 €$)."
+    },
+    "t1-pay-eddie": {
+      "tip": "Klicke deinen Eddie an, um 1 €$ zu bezahlen.",
+      "title": "Mit einem Eddie bezahlen",
+      "explain": "Jeder verdeckte Eddie ist 1 €$ wert. Klicke ihn an, um ihn zu erschöpfen (er wird gedreht). Zu Beginn deines nächsten Zuges ist er wieder bereit."
+    },
+    "t1-pay-legend-1": {
+      "tip": "Klicke eine Legende an (noch 3 €$).",
+      "title": "Mit Legenden fertig bezahlen",
+      "explain": "Noch 3 €$. Auch Legenden bezahlen je 1 €$, wenn sie erschöpft werden. Klicke eine Legende an."
+    },
+    "t1-pay-legend-2": {
+      "tip": "Noch eine Legende (noch 2 €$).",
+      "title": "Zweite Legende",
+      "explain": "Wieder 1 €$ bezahlt. Es bleibt 1 €$: deine letzte Legende."
+    },
+    "t1-pay-legend-3": {
+      "tip": "Letzte Legende — Meredith kommt ins Spiel.",
+      "title": "Letzter €$ → die Einheit kommt ins Spiel",
+      "explain": "Meredith kommt bereit auf dein Spielfeld, aber mit Lag: Ohne Adrenaline kann eine Einheit in dem Zug, in dem sie gespielt wird, nicht angreifen. Sie hat Blocker: Im Zug des Rivalen kann sie deine Gigs schützen."
+    },
+    "t1-end": {
+      "tip": "Zug beenden.",
+      "title": "Den Zug abgeben",
+      "explain": "Dein ganzes €$ ist ausgegeben und Meredith hat Lag: Es gibt nichts mehr zu tun. Beende deinen Zug: Der Rivale spielt dann seine Start- und Hauptphase."
+    },
+    "r1-ready": {
+      "tip": "Weiter: Startphase des Rivalen.",
+      "title": "Startphase des Rivalen",
+      "explain": "Wie du macht der Rivale seine erschöpften Karten bereit (seine Meredith steht wieder auf), zieht eine Karte und nimmt dann einen Würfel vom Fixer für einen Gig."
+    },
+    "r1-gig": {
+      "tip": "Weiter: Gig des Rivalen.",
+      "title": "Der Rivale erhält einen Gig",
+      "explain": "Er wirft einen d8 aus dem Fixer und legt eine 8 in seinen Gig-Bereich. Jeder Gig zählt für den Sieg."
+    },
+    "r1-play": {
+      "tip": "Weiter: Der Rivale spielt eine Einheit.",
+      "title": "Hauptphase — Jackie",
+      "explain": "Der Rivale bezahlt die Kosten und spielt Jackie Welles (Power 8) auf sein Spielfeld. Sie kommt bereit ins Spiel, aber mit Lag: Sie kann in diesem Zug nicht angreifen."
+    },
+    "r1-attack": {
+      "tip": "Weiter: Angriff ansagen.",
+      "title": "Die gegnerische Meredith greift an",
+      "explain": "Der Rivale erschöpft seine Meredith (Power 5), die seit Beginn seines Zuges im Spiel ist, und zielt auf deinen Gig-Bereich. Deine Meredith könnte blocken, aber 5 gegen 5 ist ein Gleichstand: Beide kämen auf die Ablage. Du lässt den Angriff durch."
+    },
+    "r1-steal": {
+      "tip": "Weiter: Gig gestohlen.",
+      "title": "Du verlierst einen Gig",
+      "explain": "Erfolgreicher Angriff auf die Gigs: Ein Würfel wandert aus deinem Bereich in den des Rivalen (Power 5 → 1 Gig gestohlen)."
+    },
+    "t2-die": {
+      "tip": "Klicke den d8 an.",
+      "title": "Startphase (Zug 2)",
+      "explain": "Bereitmachen (Karten aufrecht) + Ziehen + neuer Gig. Klicke den d8 an: Der d20 kommt immer zuletzt."
+    },
+    "t2-sell": {
+      "tip": "Verkaufe Detonate (ein Programm).",
+      "title": "Programm → Eddie",
+      "explain": "Detonate ist ein Programm: In einer echten Partie kannst du es auch wegen seines Effekts spielen (danach auf die Ablage). Hier verkaufen wir es für 1 Eddie — so hast du 2 Eddies, um Gear zu bezahlen."
+    },
+    "t2-gear": {
+      "tip": "Spiele das Gear (Kosten 2).",
+      "title": "Gear anlegen",
+      "explain": "Adrenaline Converter kostet 2 €$ und gibt der Einheit, die es trägt, +3 Power. Klicke das Gear an und bezahle dann mit deinen 2 Eddies."
+    },
+    "t2-gear-pay-1": {
+      "tip": "Erschöpfe einen Eddie (1/2).",
+      "title": "Zuerst die Eddies",
+      "explain": "Erschöpfe in der Regel Eddies vor Legenden. Klicke einen bereiten Eddie an."
+    },
+    "t2-gear-pay-2": {
+      "tip": "Erschöpfe den 2. Eddie — anlegen.",
+      "title": "Gear an Meredith",
+      "explain": "Das Gear wird an Meredith angelegt: Power 5 + 3 = 8. Es folgt ihr, wenn sie den Bereich wechselt."
+    },
+    "t2-call-pay": {
+      "tip": "Call auf eine Legende: Erschöpfe 1 Legende.",
+      "title": "Call auf eine Legende (einmal/Zug)",
+      "explain": "Deine Eddies sind erschöpft, aber deine 3 Legenden sind bereit. Erschöpfe eine (1 €$), um Call auf eine Legende auszuführen: Dreh eine Legende offen um, ohne hinzusehen."
+    },
+    "t2-call-flip": {
+      "tip": "Klicke eine verdeckte Legende an.",
+      "title": "Eine Legende umdrehen",
+      "explain": "Die Legende wird offen umgedreht. Handle ihre {Call}-Effekte ab. Sie kann später trotzdem 1 €$ bezahlen."
+    },
+    "t2-end": {
+      "tip": "Zug beenden.",
+      "title": "Ende von Zug 2",
+      "explain": "Meredith könnte angreifen, bliebe dann aber im Zug des Rivalen erschöpft. Halte sie bereit: Mit Blocker und 8 Power schützt sie deine Gigs."
+    },
+    "r2-ready": {
+      "tip": "Weiter: Zug des Rivalen.",
+      "title": "Startphase des Rivalen",
+      "explain": "Neuer Zug des Rivalen: Seine Meredith wird wieder bereit. Jackie ist bereit geblieben und konnte daher nicht angegriffen werden."
+    },
+    "r2-gig": {
+      "tip": "Weiter: Gig des Rivalen.",
+      "title": "Der Rivale erhält einen Gig",
+      "explain": "Er zieht und wirft dann einen d4 aus dem Fixer: Eine 4 kommt in seinen Gig-Bereich."
+    },
+    "r2-attack": {
+      "tip": "Weiter: Angriff auf deine Gigs.",
+      "title": "Angriff auf deine Gigs",
+      "explain": "Die gegnerische Meredith (Power 5) wird erschöpft und zielt auf deinen Gig-Bereich. Du kannst mit einem bereiten Blocker reagieren — deiner Meredith!"
+    },
+    "r2-block": {
+      "tip": "Klicke Meredith an, um zu blocken.",
+      "title": "Reaktion mit Blocker",
+      "explain": "Erschöpfe Meredith, um den Angriff auf sie umzuleiten. Kampf: 8 (5 + Gear) gegen 5, die Meredith des Rivalen kommt auf die Ablage. Kein Gig wird gestohlen — das ist deine wichtigste Verteidigung."
+    },
+    "t3-die": {
+      "tip": "Klicke den d10 an.",
+      "title": "Zug 3 — neuer Gig",
+      "explain": "Bereitmachen → Ziehen → Gig. Meredith, deine Eddies und deine Legenden sind wieder bereit."
+    },
+    "t3-play": {
+      "tip": "Spiele Riding Nomad (Kosten 5).",
+      "title": "Eine Einheit mit Adrenaline",
+      "explain": "Riding Nomad kostet 5 €$: deine 2 Eddies + deine 3 Legenden. Sie hat Adrenaline: Sie kann noch in diesem Zug angreifen. Klicke Nomad an."
+    },
+    "t3-pay-eddie-1": {
+      "tip": "Erschöpfe einen Eddie (1/5).",
+      "title": "Nomad bezahlen",
+      "explain": "Klicke einen bereiten Eddie an."
+    },
+    "t3-pay-eddie-2": {
+      "tip": "Erschöpfe den 2. Eddie (2/5).",
+      "title": "Zweiter Eddie",
+      "explain": "Dein 2. Eddie bezahlt wieder 1 €$. Noch 3 €$, die du mit deinen Legenden bezahlst."
+    },
+    "t3-pay-legend-1": {
+      "tip": "Klicke eine Legende an (3/5).",
+      "title": "Dann die Legenden",
+      "explain": "Offen oder verdeckt bezahlt jede Legende 1 €$. Klicke eine Legende an."
+    },
+    "t3-pay-legend-2": {
+      "tip": "Noch eine Legende (4/5).",
+      "title": "Noch 1 €$",
+      "explain": "Wieder 1 €$ bezahlt. Eine letzte Legende, und Nomad kommt ins Spiel."
+    },
+    "t3-pay-legend-3": {
+      "tip": "Letzte Legende — Nomad kommt ins Spiel.",
+      "title": "Nomad kommt ins Spiel",
+      "explain": "Bezahlt. Dank Adrenaline ignoriert Nomad das Lag: Sie kann sofort angreifen."
+    },
+    "t3-atk-select": {
+      "tip": "Klicke Nomad an, um anzugreifen.",
+      "title": "Angreifer ansagen",
+      "explain": "Um anzugreifen, erschöpfe eine bereite Einheit (dreh sie). Ziel: eine erschöpfte gegnerische Einheit oder der gegnerische Gig-Bereich. Jackie ist bereit und kann daher nicht angegriffen werden: Nimm die Gigs ins Visier."
+    },
+    "t3-atk-target": {
+      "tip": "Klicke die Gigs des Rivalen an.",
+      "title": "Einen Gig stehlen",
+      "explain": "Ein Angriff auf den Gig-Bereich stiehlt Würfel: Power 1+ → 1 Gig, 10+ → 2, 20+ → 3. Nomad (P4) stiehlt 1 Gig. Eine echte Partie geht weiter, bis jemand seinen Zug mit 7 Gigs beginnt."
+    },
+    "done": {
+      "tip": "Demo beendet.",
+      "title": "Du kennst die Grundlagen",
+      "explain": "Du hast gesehen: die Typen (Einheit/Programm/Gear/Legende), Eddies, Kosten, Lag und Adrenaline, Call auf eine Legende, Angriff, Blocker, Kämpfe, Gear. Zu RAM, Deckbau und allen Schlüsselwörtern → Ausführliche Regeln."
+    }
+  }
+}

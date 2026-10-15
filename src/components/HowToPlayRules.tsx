@@ -4,15 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { CardAnatomy } from "@/components/CardAnatomy";
 import { PlaymatDiagram } from "@/components/PlaymatDiagram";
 import { RulesExampleCard } from "@/components/RulesExampleCard";
-import { useI18n } from "@/components/LocaleProvider";
-import { anatomyCopy } from "@/lib/rules/card-anatomy";
 import { EXAMPLE_CARDS } from "@/lib/rules/examples";
-import { howtoPlayContent } from "@/lib/rules/howto-play";
+import { useAnatomyCopy, useHowToPlayContent } from "@/lib/rules/use-rules";
 
 export function HowToPlayRules() {
-  const { locale } = useI18n();
-  const contentLocale = locale === "fr" ? "fr" : "en";
-  const c = howtoPlayContent(contentLocale);
+  const c = useHowToPlayContent();
+  const anatomy = useAnatomyCopy();
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState<string>(c.toc[0]?.id ?? "");
 
@@ -109,12 +106,12 @@ export function HowToPlayRules() {
 
         <section id="zones" className="scroll-mt-24 space-y-4">
           <h2 className="text-xl text-foreground">{c.areas.title}</h2>
-          <PlaymatDiagram areas={c.areas.items} labels={c.playmat} locale={contentLocale} />
+          <PlaymatDiagram areas={c.areas.items} labels={c.playmat} />
         </section>
 
         <section id="anatomie" className="scroll-mt-24 space-y-4">
-          <h2 className="text-xl text-foreground">{anatomyCopy(contentLocale).title}</h2>
-          <CardAnatomy locale={contentLocale} />
+          <h2 className="text-xl text-foreground">{anatomy.title}</h2>
+          <CardAnatomy />
         </section>
 
         <section id="cartes" className="scroll-mt-24 space-y-4">
@@ -321,15 +318,7 @@ export function HowToPlayRules() {
             ))}
             <div className="mt-4 flex flex-wrap gap-3">
               <RulesExampleCard card={EXAMPLE_CARDS.legendJackie} size="sm" note="Jackie" />
-              <RulesExampleCard
-                card={{
-                  ...EXAMPLE_CARDS.legendJohnny,
-                  noteFr: "Johnny",
-                  noteEn: "Johnny",
-                }}
-                size="sm"
-                note="Johnny"
-              />
+              <RulesExampleCard card={EXAMPLE_CARDS.legendJohnny} size="sm" note="Johnny" />
               <RulesExampleCard card={EXAMPLE_CARDS.legendJudy} size="sm" note="Judy" />
             </div>
           </div>

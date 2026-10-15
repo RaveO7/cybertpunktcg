@@ -1,0 +1,16 @@
+{
+  "shops": "Boutiques",
+  "login": "Connexion",
+  "language": "Langue",
+  "dashboard": "Tableau de bord",
+  "cards": "Cartes",
+  "investment": "Investissement",
+  "decks": "Decks",
+  "wishlist": "Souhaits",
+  "howto": "Apprendre",
+  "tournaments": "Tournois",
+  "breadcrumb": {
+    "label": "Fil d'Ariane",
+    "home": "Accueil"
+  }
+}

@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useState } from "react";
-import { useI18n } from "@/components/LocaleProvider";
-import type { Messages } from "@/lib/i18n/messages";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import type { Translator } from "@/i18n/translator";
 import type { CommandWarning } from "@/lib/tournament/commands";
 import type { TournamentView } from "@/lib/tournament/view";
 import { useOrganizerActions, useServerNow, useTournamentState, type ActionOutcome } from "./hooks";
@@ -19,22 +19,22 @@ export type Notice = { tone: "info" | "error"; text: string };
 /** Exécute une commande organisateur et traduit le résultat en message pour l'écran. */
 export type RunCommand = (command: { type: string } & Record<string, unknown>) => Promise<ActionOutcome>;
 
-export function warningText(warning: CommandWarning, view: TournamentView, t: Messages) {
+export function warningText(warning: CommandWarning, view: TournamentView, t: Translator) {
   const name = (id: string) => view.players.find((player) => player.id === id)?.name ?? "?";
   switch (warning.type) {
     case "rematch":
-      return t.tournaments.rematch(name(warning.a), name(warning.b));
+      return t("tournaments.rematch", { a: name(warning.a), b: name(warning.b) });
     case "second_bye":
-      return t.tournaments.secondBye(name(warning.playerId));
+      return t("tournaments.secondBye", { name: name(warning.playerId) });
     case "draft_outdated":
-      return t.tournaments.draftOutdated;
+      return t("tournaments.draftOutdated");
     case "correction_after_pairing":
-      return t.tournaments.correctionWarning;
+      return t("tournaments.correctionWarning");
   }
 }
 
 export function TournamentConsole({ tournamentId }: { tournamentId: string }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const { view, error, offsetMs, refresh } = useTournamentState(tournamentId);
   const { act, pending, conflicts, dismissConflict } = useOrganizerActions(tournamentId, refresh);
   const now = useServerNow(offsetMs);
@@ -54,15 +54,15 @@ export function TournamentConsole({ tournamentId }: { tournamentId: string }) {
     [act, view, t],
   );
 
-  if (error === "notFound") return <Centered>{t.tournaments.notFound}</Centered>;
-  if (!view) return <Centered>{error === "failed" ? t.tournaments.loadFailed : t.common.loading}</Centered>;
+  if (error === "notFound") return <Centered>{t("tournaments.notFound")}</Centered>;
+  if (!view) return <Centered>{error === "failed" ? t("tournaments.loadFailed") : t("common.loading")}</Centered>;
   if (view.role !== "organizer") {
     return (
       <Centered>
-        <p>{t.tournaments.organizersOnly}</p>
+        <p>{t("tournaments.organizersOnly")}</p>
         {view.tournament.code ? (
-          <Link className="mt-3 inline-block text-cyan underline" href={`/t/${view.tournament.code}`}>
-            {t.tournaments.openPlayerView}
+          <Link className="mt-3 inline-block text-cyan underline" href={{ pathname: "/t/[code]", params: { code: view.tournament.code } }}>
+            {t("tournaments.openPlayerView")}
           </Link>
         ) : null}
       </Centered>
@@ -71,10 +71,10 @@ export function TournamentConsole({ tournamentId }: { tournamentId: string }) {
 
   const current: Tab = tab ?? (view.tournament.status === "inscriptions" && view.rounds.length === 0 ? "players" : "round");
   const tabs: { id: Tab; label: string }[] = [
-    { id: "players", label: t.tournaments.tabs.players },
-    { id: "round", label: t.tournaments.tabs.round },
-    { id: "standings", label: t.tournaments.tabs.standings },
-    { id: "settings", label: t.tournaments.tabs.settings },
+    { id: "players", label: t("tournaments.tabs.players") },
+    { id: "round", label: t("tournaments.tabs.round") },
+    { id: "standings", label: t("tournaments.tabs.standings") },
+    { id: "settings", label: t("tournaments.tabs.settings") },
   ];
   const corrections = view.logs.filter((log) => log.action === "correct_after");
 
@@ -82,11 +82,11 @@ export function TournamentConsole({ tournamentId }: { tournamentId: string }) {
     <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-4 px-3 py-4 sm:px-4 sm:py-6">
       <div className="flex flex-col gap-1">
         <Link href="/tournois" className="text-xs text-muted hover:text-foreground">
-          ← {t.tournaments.back}
+          ← {t("tournaments.back")}
         </Link>
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl text-yellow sm:text-3xl">{view.tournament.name}</h1>
-          <Tag tone="cyan">{t.tournaments.statuses[view.tournament.status]}</Tag>
+          <Tag tone="cyan">{t(`tournaments.statuses.${view.tournament.status}`)}</Tag>
           {view.tournament.code ? <span className="font-mono text-lg tracking-[0.25em] text-cyan">{view.tournament.code}</span> : null}
         </div>
         <SyncStatus pending={pending.length} offline={error === "failed"} />
@@ -94,9 +94,9 @@ export function TournamentConsole({ tournamentId }: { tournamentId: string }) {
 
       {conflicts.map((conflict) => (
         <div key={conflict.clientActionId} role="alert" className="flex items-center justify-between gap-2 border border-danger/60 bg-panel p-2 text-sm text-danger">
-          <span>{t.tournaments.conflict(conflict.error)}</span>
+          <span>{t("tournaments.conflict", { error: conflict.error })}</span>
           <button type="button" className="text-xs underline" onClick={() => dismissConflict(conflict.clientActionId)}>
-            {t.tournaments.dismiss}
+            {t("tournaments.dismiss")}
           </button>
         </div>
       ))}
@@ -106,7 +106,7 @@ export function TournamentConsole({ tournamentId }: { tournamentId: string }) {
         </p>
       ))}
 
-      <nav className="flex border border-line" aria-label={t.tournaments.title}>
+      <nav className="flex border border-line" aria-label={t("tournaments.title")}>
         {tabs.map((entry) => (
           <button
             key={entry.id}
@@ -128,10 +128,10 @@ export function TournamentConsole({ tournamentId }: { tournamentId: string }) {
       {current === "standings" ? (
         <div className="flex flex-col gap-3">
           <FinalStandings view={view} />
-          {corrections.length ? <p className="text-sm text-yellow">{t.tournaments.correctionWarning}</p> : null}
+          {corrections.length ? <p className="text-sm text-yellow">{t("tournaments.correctionWarning")}</p> : null}
           {view.tournament.cutDraws.map((draw) => (
             <p key={draw.at} className="text-sm text-muted">
-              {t.tournaments.drawTitle} · {t.tournaments.drawLine(draw.picked.length, draw.tied.length)} ·{" "}
+              {t("tournaments.drawTitle")} · {t("tournaments.drawLine", { picked: draw.picked.length, tied: draw.tied.length })} ·{" "}
               {draw.picked.map((id) => view.players.find((player) => player.id === id)?.name ?? "?").join(", ")}
             </p>
           ))}
@@ -146,10 +146,10 @@ export function TournamentConsole({ tournamentId }: { tournamentId: string }) {
 }
 
 function SyncStatus({ pending, offline }: { pending: number; offline: boolean }) {
-  const { t } = useI18n();
-  if (pending > 0) return <p className="text-xs text-danger">{t.tournaments.unsynced(pending)}</p>;
-  if (offline) return <p className="text-xs text-danger">{t.tournaments.offline}</p>;
-  return <p className="text-xs text-muted">{t.tournaments.synced}</p>;
+  const t = useTranslations();
+  if (pending > 0) return <p className="text-xs text-danger">{t("tournaments.unsynced", { n: pending })}</p>;
+  if (offline) return <p className="text-xs text-danger">{t("tournaments.offline")}</p>;
+  return <p className="text-xs text-muted">{t("tournaments.synced")}</p>;
 }
 
 export function Centered({ children }: { children: React.ReactNode }) {

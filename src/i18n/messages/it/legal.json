@@ -1,0 +1,137 @@
+{
+  "updated": "Ultimo aggiornamento: {date}",
+  "frenchPrevails": "Questa traduzione è fornita solo a titolo informativo: fa fede unicamente la <french>versione francese</french>.",
+  "contactFallback": "i social network indicati a piè di pagina",
+  "legalNotice": {
+    "title": "Note legali",
+    "description": "Editore, hosting, proprietà intellettuale e origine dei prezzi di {site}, sito di fan del gioco di carte Cyberpunk TCG.",
+    "sections": [
+      {
+        "title": "Editore",
+        "blocks": ["{site} è un sito di fan pubblicato a titolo personale e senza scopo commerciale da {publisher}. Contatto: <contact></contact>."]
+      },
+      {
+        "title": "Hosting",
+        "blocks": ["{hostName}, {hostAddress}, Stati Uniti — <host>{hostDomain}</host>."]
+      },
+      {
+        "title": "Proprietà intellettuale",
+        "blocks": [
+          "Cyberpunk, Cyberpunk 2077, i nomi, le illustrazioni e le immagini delle carte e i loghi associati sono di proprietà di CD PROJEKT S.A. e dei rispettivi titolari dei diritti. Sono riprodotti qui a scopo informativo e di riferimento per i giocatori.",
+          "Questo sito non è affiliato, sponsorizzato né approvato da CD PROJEKT RED né dall’editore del gioco di carte Cyberpunk TCG. Qualsiasi titolare di diritti che desideri la rimozione di un contenuto può scrivere tramite <contact></contact>: la richiesta sarà gestita rapidamente."
+        ]
+      },
+      {
+        "title": "Prezzi",
+        "blocks": ["I prezzi mostrati provengono dalla guida dei prezzi pubblica di Cardmarket. Sono forniti a titolo indicativo, senza garanzia di esattezza né di aggiornamento, e non costituiscono un consiglio di investimento."]
+      }
+    ]
+  },
+  "terms": {
+    "title": "Termini di utilizzo",
+    "description": "Termini di utilizzo di {site}: account, uso consentito, condivisione, tornei, dati mostrati e responsabilità.",
+    "sections": [
+      {
+        "title": "1. Oggetto",
+        "blocks": ["I presenti termini disciplinano l’utilizzo di {site}, uno strumento gratuito per consultare le carte del gioco Cyberpunk TCG, seguire la propria collezione, costruire mazzi e organizzare tornei. Utilizzare il sito implica l’accettazione di questi termini."]
+      },
+      {
+        "title": "2. Account",
+        "blocks": [
+          {
+            "list": [
+              "La creazione di un account è gratuita (e-mail e password, oppure accesso con Google / Apple).",
+              "Sei responsabile della riservatezza della tua password e delle azioni compiute dal tuo account.",
+              "Le informazioni fornite devono essere esatte; un nome visualizzato non deve usurpare l’identità di altri."
+            ]
+          }
+        ]
+      },
+      {
+        "title": "3. Uso consentito",
+        "blocks": [
+          "È vietato:",
+          {
+            "list": [
+              "disturbare il servizio (richieste automatizzate massicce, aggiramento dei limiti, tentativi di intrusione);",
+              "pubblicare nomi di mazzo, di torneo o di giocatore offensivi, d’odio o illeciti;",
+              "riutilizzare i dati del sito a fini commerciali senza autorizzazione."
+            ]
+          },
+          "Un account che non rispetta queste regole può essere sospeso o eliminato."
+        ]
+      },
+      {
+        "title": "4. Condivisione e tornei",
+        "blocks": ["Un link di condivisione del raccoglitore rende la tua collezione visibile in sola lettura a chiunque lo possieda (senza prezzi di acquisto né note). Puoi rigenerarlo o revocarlo in qualsiasi momento dalle impostazioni. I nomi dei partecipanti e i risultati di un torneo sono visibili agli altri giocatori di quel torneo."]
+      },
+      {
+        "title": "5. Dati e prezzi mostrati",
+        "blocks": ["I dati delle carte e i prezzi (guida Cardmarket) sono forniti a titolo indicativo. I valori della collezione e le curve di investimento sono stime e non costituiscono un consiglio finanziario."]
+      },
+      {
+        "title": "6. Disponibilità e responsabilità",
+        "blocks": ["Il servizio è fornito gratuitamente, «così com’è», senza garanzia di disponibilità continua. L’editore non può essere ritenuto responsabile di una perdita di dati: ricordati di esportare regolarmente la tua collezione (esportazione CSV)."]
+      },
+      {
+        "title": "7. Dati personali",
+        "blocks": ["Il trattamento dei tuoi dati è descritto nell’<privacy>informativa sulla privacy</privacy>."]
+      },
+      {
+        "title": "8. Modifiche e legge applicabile",
+        "blocks": ["Questi termini possono cambiare; la data di aggiornamento è indicata in cima alla pagina. Sono soggetti alla legge francese. Per qualsiasi domanda: <contact></contact>."]
+      }
+    ]
+  },
+  "privacy": {
+    "title": "Informativa sulla privacy",
+    "description": "Dati raccolti da {site}, finalità, cookie, hosting, durata di conservazione e i tuoi diritti.",
+    "sections": [
+      {
+        "title": "Titolare del trattamento",
+        "blocks": ["{publisher}, editore di {site}. Contatto: <contact></contact>."]
+      },
+      {
+        "title": "Dati raccolti",
+        "blocks": [
+          {
+            "list": [
+              "<strong>Account</strong>: indirizzo e-mail, nome visualizzato, password o identificativo Google / Apple se usi questi accessi.",
+              "<strong>Contenuti</strong>: collezione, prezzi di acquisto e note, lista dei desideri, mazzi, link di condivisione, partecipazione ai tornei.",
+              "<strong>Dati tecnici</strong>: indirizzo IP usato temporaneamente per limitare i tentativi di accesso, log tecnici del provider di hosting."
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Finalità e base giuridica",
+        "blocks": ["Questi dati servono unicamente a fornire il servizio (esecuzione dei termini di utilizzo) e a proteggerlo dagli abusi (legittimo interesse). Non vengono venduti né utilizzati a fini pubblicitari."]
+      },
+      {
+        "title": "Cookie e archiviazione locale",
+        "blocks": [
+          {
+            "list": [
+              "Un cookie di sessione, strettamente necessario, ti mantiene connesso (circa un anno, rinnovato a ogni visita).",
+              "L’archiviazione del browser conserva le tue preferenze (lingua, tema) e una copia offline del catalogo.",
+              "La misurazione del pubblico (Vercel Web Analytics e Speed Insights) funziona senza cookie e produce statistiche aggregate e anonime."
+            ]
+          },
+          "Non viene utilizzato alcun cookie pubblicitario o di tracciamento: per questo non viene richiesto alcun consenso."
+        ]
+      },
+      {
+        "title": "Destinatari e hosting",
+        "blocks": ["I dati sono ospitati da {hostName} (Stati Uniti), che agisce come responsabile del trattamento nell’ambito delle clausole contrattuali tipo della Commissione europea. Google o Apple ricevono la tua richiesta di accesso se scegli questi metodi."]
+      },
+      {
+        "title": "Durata di conservazione",
+        "blocks": ["I dati dell’account sono conservati finché l’account esiste. I contatori anti-abuso legati all’indirizzo IP vengono eliminati automaticamente alla scadenza."]
+      },
+      {
+        "title": "I tuoi diritti",
+        "blocks": ["Puoi accedere ai tuoi dati, rettificarli, esportarli (esportazione CSV della collezione) o chiedere la cancellazione del tuo account e di tutti i dati associati scrivendo tramite <contact></contact>. Puoi anche presentare un reclamo all’autorità francese per la protezione dei dati, la CNIL (<cnil>cnil.fr</cnil>)."]
+      }
+    ]
+  }
+}

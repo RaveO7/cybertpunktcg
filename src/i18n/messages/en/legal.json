@@ -1,0 +1,137 @@
+{
+  "updated": "Last updated: {date}",
+  "frenchPrevails": "This translation is provided for information only: the <french>French version</french> is the only legally binding one.",
+  "contactFallback": "the social networks listed in the footer",
+  "legalNotice": {
+    "title": "Legal notice",
+    "description": "Publisher, hosting, intellectual property and price sources of {site}, a fan site for the Cyberpunk TCG card game.",
+    "sections": [
+      {
+        "title": "Publisher",
+        "blocks": ["{site} is a fan site published personally and on a non-commercial basis by {publisher}. Contact: <contact></contact>."]
+      },
+      {
+        "title": "Hosting",
+        "blocks": ["{hostName}, {hostAddress}, United States — <host>{hostDomain}</host>."]
+      },
+      {
+        "title": "Intellectual property",
+        "blocks": [
+          "Cyberpunk, Cyberpunk 2077, card names, artwork and visuals, and the associated logos are the property of CD PROJEKT S.A. and their respective rights holders. They are reproduced here for information and reference purposes for players.",
+          "This site is not affiliated with, sponsored or endorsed by CD PROJEKT RED or by the publisher of the Cyberpunk TCG card game. Any rights holder who wants content removed can write via <contact></contact>: the request will be handled promptly."
+        ]
+      },
+      {
+        "title": "Prices",
+        "blocks": ["Displayed prices come from Cardmarket’s public price guide. They are provided for information only, with no guarantee of accuracy or timeliness, and do not constitute investment advice."]
+      }
+    ]
+  },
+  "terms": {
+    "title": "Terms of use",
+    "description": "Terms of use of {site}: account, acceptable use, sharing, tournaments, displayed data and liability.",
+    "sections": [
+      {
+        "title": "1. Purpose",
+        "blocks": ["These terms govern the use of {site}, a free tool for browsing Cyberpunk TCG cards, tracking your collection, building decks and running tournaments. Using the site means you accept these terms."]
+      },
+      {
+        "title": "2. Account",
+        "blocks": [
+          {
+            "list": [
+              "Creating an account is free (email and password, or Google / Apple sign-in).",
+              "You are responsible for keeping your password confidential and for the actions taken from your account.",
+              "The information you provide must be accurate; a display name must not impersonate someone else."
+            ]
+          }
+        ]
+      },
+      {
+        "title": "3. Acceptable use",
+        "blocks": [
+          "It is forbidden:",
+          {
+            "list": [
+              "to disrupt the service (mass automated requests, bypassing limits, intrusion attempts);",
+              "to publish offensive, hateful or illegal deck, tournament or player names;",
+              "to reuse the site’s data for commercial purposes without permission."
+            ]
+          },
+          "An account that breaks these rules may be suspended or deleted."
+        ]
+      },
+      {
+        "title": "4. Sharing and tournaments",
+        "blocks": ["A binder share link makes your collection visible, read-only, to anyone who has it (without purchase prices or notes). You can regenerate or revoke it at any time from the settings. Participants’ names and tournament results are visible to the other players in that tournament."]
+      },
+      {
+        "title": "5. Displayed data and prices",
+        "blocks": ["Card data and prices (Cardmarket guide) are provided for information only. Collection values and investment charts are estimates and do not constitute financial advice."]
+      },
+      {
+        "title": "6. Availability and liability",
+        "blocks": ["The service is provided free of charge, “as is”, with no guarantee of continuous availability. The publisher cannot be held liable for any data loss: remember to export your collection regularly (CSV export)."]
+      },
+      {
+        "title": "7. Personal data",
+        "blocks": ["How your data is processed is described in the <privacy>privacy policy</privacy>."]
+      },
+      {
+        "title": "8. Changes and governing law",
+        "blocks": ["These terms may change; the date of the last update is shown at the top of the page. They are governed by French law. For any question: <contact></contact>."]
+      }
+    ]
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "description": "Data collected by {site}, purposes, cookies, hosting, retention period and your rights.",
+    "sections": [
+      {
+        "title": "Data controller",
+        "blocks": ["{publisher}, publisher of {site}. Contact: <contact></contact>."]
+      },
+      {
+        "title": "Data collected",
+        "blocks": [
+          {
+            "list": [
+              "<strong>Account</strong>: email address, display name, password or Google / Apple identifier if you use those sign-in methods.",
+              "<strong>Content</strong>: collection, purchase prices and notes, wishlist, decks, share links, tournament participation.",
+              "<strong>Technical</strong>: IP address used temporarily to limit sign-in attempts, the host’s technical logs."
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Purposes and legal basis",
+        "blocks": ["This data is used solely to provide the service (performance of the terms of use) and to protect it against abuse (legitimate interest). It is neither sold nor used for advertising."]
+      },
+      {
+        "title": "Cookies and local storage",
+        "blocks": [
+          {
+            "list": [
+              "A strictly necessary session cookie keeps you signed in (about one year, renewed on each visit).",
+              "Browser storage keeps your preferences (language, theme) and an offline copy of the catalog.",
+              "Audience measurement (Vercel Web Analytics and Speed Insights) works without cookies and produces aggregated, anonymous statistics."
+            ]
+          },
+          "No advertising or tracking cookies are used, so no consent is requested."
+        ]
+      },
+      {
+        "title": "Recipients and hosting",
+        "blocks": ["The data is hosted by {hostName} (United States), acting as a processor under the European Commission’s standard contractual clauses. Google or Apple receive your sign-in request if you choose those methods."]
+      },
+      {
+        "title": "Retention period",
+        "blocks": ["Account data is kept as long as the account exists. Anti-abuse counters linked to IP addresses are purged automatically once they expire."]
+      },
+      {
+        "title": "Your rights",
+        "blocks": ["You can access, correct or export your data (CSV export of the collection), or request the deletion of your account and all associated data by writing via <contact></contact>. You can also lodge a complaint with the CNIL, the French data protection authority (<cnil>cnil.fr</cnil>)."]
+      }
+    ]
+  }
+}

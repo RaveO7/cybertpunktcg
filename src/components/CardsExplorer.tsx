@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useNumberFormat } from "@/i18n/number-format";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { CardModal } from "@/components/CardModal";
 import { useCollection } from "@/components/CollectionProvider";
@@ -16,8 +18,6 @@ import {
   buildFacets,
   defaultFilters,
   filterPrintings,
-  formatInt,
-  formatMoney,
   ownershipOf,
   printingsPriceTotal,
   parseFilters,
@@ -33,10 +33,9 @@ import {
   MAIN_SET_CODE,
 } from "@/lib/reference-data";
 import type { CatalogDTO, CollectionItemDTO, Filters, PrintingDTO } from "@/lib/types";
-import { useI18n } from "@/components/LocaleProvider";
 import { usePreferences } from "@/components/PreferencesProvider";
 import { conditionOptionLabel } from "@/lib/condition-label";
-import type { Messages } from "@/lib/i18n/messages";
+import type { Translator } from "@/i18n/translator";
 import { filterDefaultsFrom } from "@/lib/preferences";
 
 function collectorRank(value: string) {
@@ -97,16 +96,16 @@ type SortField = {
   keys: { asc: Filters["sort"]; desc?: Filters["sort"] };
 };
 
-function sortFields(t: Messages): SortField[] {
+function sortFields(t: Translator): SortField[] {
   return [
-    { id: "default", label: t.cards.sortDefault, keys: { asc: "default" } },
-    { id: "number", label: t.cards.sortFieldNumber, keys: { asc: "number-asc", desc: "number-desc" } },
-    { id: "cost", label: t.cards.sortFieldCost, keys: { asc: "cost-asc", desc: "cost-desc" } },
-    { id: "qty", label: t.cards.sortFieldQty, keys: { asc: "qty-asc", desc: "qty-desc" } },
-    { id: "name", label: t.cards.sortFieldName, keys: { asc: "name-asc", desc: "name-desc" } },
-    { id: "owned", label: t.cards.sortFieldOwned, keys: { asc: "missing-first", desc: "owned-first" } },
-    { id: "rarity", label: t.cards.sortRarity, keys: { asc: "rarity" } },
-    { id: "set", label: t.cards.groupSet, keys: { asc: "set" } },
+    { id: "default", label: t("cards.sortDefault"), keys: { asc: "default" } },
+    { id: "number", label: t("cards.sortFieldNumber"), keys: { asc: "number-asc", desc: "number-desc" } },
+    { id: "cost", label: t("cards.sortFieldCost"), keys: { asc: "cost-asc", desc: "cost-desc" } },
+    { id: "qty", label: t("cards.sortFieldQty"), keys: { asc: "qty-asc", desc: "qty-desc" } },
+    { id: "name", label: t("cards.sortFieldName"), keys: { asc: "name-asc", desc: "name-desc" } },
+    { id: "owned", label: t("cards.sortFieldOwned"), keys: { asc: "missing-first", desc: "owned-first" } },
+    { id: "rarity", label: t("cards.sortRarity"), keys: { asc: "rarity" } },
+    { id: "set", label: t("cards.groupSet"), keys: { asc: "set" } },
   ];
 }
 
@@ -122,15 +121,14 @@ export function CardsExplorer({
   readOnly = false,
   catalog: catalogProp,
   items: itemsProp,
-  urlBase = "/cards",
   syncBrowseSelection = true,
 }: {
   readOnly?: boolean;
   catalog?: CatalogDTO | null;
   items?: CollectionItemDTO[];
-  urlBase?: string;
   syncBrowseSelection?: boolean;
 } = {}) {
+  const fmt = useNumberFormat();
   const searchParams = useSearchParams();
   const {
     ready: collectionReady,
@@ -147,7 +145,7 @@ export function CardsExplorer({
   const ready = catalogProp != null ? true : collectionReady;
   const error = catalogProp != null ? null : collectionError;
   const { setCardsLocation } = useBrowseSelection();
-  const { t } = useI18n();
+  const t = useTranslations();
   const { prefs } = usePreferences();
   const filterDefaults = useMemo(() => filterDefaultsFrom(prefs), [prefs.collection, prefs.sort]);
   const SORT_FIELDS = sortFields(t);
@@ -198,10 +196,12 @@ export function CardsExplorer({
   useEffect(() => {
     const params = serializeFilters(activeFilters, true, filterDefaults);
     const query = params.toString();
-    const nextUrl = query ? `${urlBase}?${query}` : urlBase;
+    // Page affichée, dans sa langue (« /de/explorer », « /classeur/…/cartes ») : seule la query change.
+    const base = window.location.pathname;
+    const nextUrl = query ? `${base}?${query}` : base;
     urlSyncRef.current = query;
     if (syncBrowseSelection) {
-      setCardsLocation({ set: activeFilters.set, language: activeFilters.language }, nextUrl);
+      setCardsLocation({ set: activeFilters.set, language: activeFilters.language }, query);
     }
     const currentUrl = `${window.location.pathname}${window.location.search}`;
     const push = pushUrlRef.current;
@@ -216,7 +216,7 @@ export function CardsExplorer({
         window.history.replaceState(window.history.state, "", nextUrl);
       }
     }
-  }, [activeFilters, filterDefaults, setCardsLocation, syncBrowseSelection, urlBase]);
+  }, [activeFilters, filterDefaults, setCardsLocation, syncBrowseSelection]);
 
   useEffect(() => {
     if (!filtersDrawer) return;
@@ -681,18 +681,18 @@ export function CardsExplorer({
       await saveBatch({ conditionCode: addCondition, lines });
       exitAddMode();
     } catch (commitError) {
-      setAddError(commitError instanceof Error ? commitError.message : t.cards.addFailed);
+      setAddError(commitError instanceof Error ? commitError.message : t("cards.addFailed"));
     } finally {
       setAdding(false);
     }
   }
 
   if (error) return <p className="p-6 text-danger">{error}</p>;
-  if (!ready || !catalog || !facets) return <p className="p-6 text-muted">{t.common.loading}</p>;
+  if (!ready || !catalog || !facets) return <p className="p-6 text-muted">{t("common.loading")}</p>;
   if (catalog.printings.length === 0) {
     return (
       <p className="p-6 text-sm text-muted">
-        {t.investment.emptyCatalog} <code className="text-cyan">npm run import:cards</code>.
+        {t("investment.emptyCatalog")} <code className="text-cyan">npm run import:cards</code>.
       </p>
     );
   }
@@ -719,7 +719,7 @@ export function CardsExplorer({
           className="pt-safe flex h-full w-[min(22rem,88vw)] flex-col border-r border-line bg-background lg:sticky lg:top-0 lg:block lg:h-auto lg:max-h-[100cqh] lg:w-auto lg:overflow-auto lg:border-0 lg:bg-transparent lg:pt-0 lg:pb-4 lg:pr-4 scrollbar-hud"
           role={filtersDrawer ? "dialog" : undefined}
           aria-modal={filtersDrawer ? true : undefined}
-          aria-label={filtersDrawer ? t.cards.filters : undefined}
+          aria-label={filtersDrawer ? t("cards.filters") : undefined}
         >
           <div className="scrollbar-hud min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 lg:overflow-visible lg:p-0">
             <FilterPanel
@@ -740,8 +740,8 @@ export function CardsExplorer({
                 onClick={() => setFiltersDrawer(false)}
               >
                 {filtered.length === 0
-                  ? t.cards.noCards
-                  : t.cards.cardCount(formatInt(filtered.length), t.common.cards(filtered.length))}
+                  ? t("cards.noCards")
+                  : t("cards.cardCount", { count: fmt.int(filtered.length), noun: t("common.cards", { n: filtered.length }) })}
               </button>
             </div>
           </div>
@@ -751,7 +751,7 @@ export function CardsExplorer({
         <div className="mb-4 flex flex-wrap gap-2 sm:flex-nowrap sm:gap-3">
           <button
             type="button"
-            aria-label={t.cards.filters}
+            aria-label={t("cards.filters")}
             aria-expanded={filtersDrawer}
             className={`grid h-10 w-10 shrink-0 place-items-center border border-line text-cyan sm:border-0 ${
               filtersVisibility === "closed" ? "" : "lg:hidden"
@@ -765,8 +765,8 @@ export function CardsExplorer({
           <input
             value={activeFilters.q}
             onChange={(event) => update({ q: event.target.value, page: 1 })}
-            placeholder={t.cards.searchPlaceholder}
-            aria-label={t.common.search}
+            placeholder={t("cards.searchPlaceholder")}
+            aria-label={t("common.search")}
             type="search"
             enterKeyHint="search"
             className="h-10 min-w-0 flex-1 basis-[calc(100%-3rem)] border border-line bg-panel px-3 text-sm outline-none focus:border-cyan sm:basis-40"
@@ -777,7 +777,7 @@ export function CardsExplorer({
             return (
               <div className="flex h-10 min-w-0 flex-1 sm:flex-none">
                 <select
-                  aria-label={t.cards.sort}
+                  aria-label={t("cards.sort")}
                   className="h-10 min-w-0 flex-1 border border-line bg-panel px-3 text-sm"
                   value={field.id}
                   onChange={(event) => {
@@ -794,8 +794,8 @@ export function CardsExplorer({
                 <button
                   type="button"
                   disabled={!directional}
-                  aria-label={`${t.cards.sortToggleDirection} (${dir === "asc" ? t.cards.sortAscending : t.cards.sortDescending})`}
-                  title={dir === "asc" ? t.cards.sortAscending : t.cards.sortDescending}
+                  aria-label={`${t("cards.sortToggleDirection")} (${dir === "asc" ? t("cards.sortAscending") : t("cards.sortDescending")})`}
+                  title={dir === "asc" ? t("cards.sortAscending") : t("cards.sortDescending")}
                   className="grid h-10 w-10 shrink-0 place-items-center border border-l-0 border-line bg-panel text-cyan disabled:text-muted disabled:opacity-40"
                   onClick={() => {
                     if (!field.keys.desc) return;
@@ -831,27 +831,27 @@ export function CardsExplorer({
                 update({ printingId: null });
               }}
             >
-              {t.cards.addMode}
+              {t("cards.addMode")}
             </button>
           ) : null}
         </div>
         {effectiveAddMode ? (
           <div className="mb-3 flex flex-col gap-3 border border-yellow/50 bg-panel p-3">
-            <p className="text-sm text-muted pointer-coarse:hidden">{t.cards.addModeHelp}</p>
-            <p className="hidden text-sm text-muted pointer-coarse:block">{t.cards.addModeHelpTouch}</p>
+            <p className="text-sm text-muted pointer-coarse:hidden">{t("cards.addModeHelp")}</p>
+            <p className="hidden text-sm text-muted pointer-coarse:block">{t("cards.addModeHelpTouch")}</p>
             {rangeAnchor ? (
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-sm text-cyan">
-                  {t.cards.rangeStart(filtered.find((printing) => printing.id === rangeAnchor)?.collectorNumber ?? "")}
+                  {t("cards.rangeStart", { number: filtered.find((printing) => printing.id === rangeAnchor)?.collectorNumber ?? "" })}
                 </p>
                 <button type="button" className="h-9 border border-line px-3 text-sm" onClick={clearSelection}>
-                  {t.cards.cancelSelection}
+                  {t("cards.cancelSelection")}
                 </button>
               </div>
             ) : null}
             <div className="flex flex-wrap gap-2">
               <select
-                aria-label={t.cards.addCondition}
+                aria-label={t("cards.addCondition")}
                 className="h-10 min-w-0 flex-1 border border-line bg-panel-2 px-3 font-mono text-sm sm:flex-none"
                 value={addCondition}
                 onChange={(event) => setAddCondition(event.target.value)}
@@ -868,7 +868,7 @@ export function CardsExplorer({
                 onClick={selectAllFiltered}
                 disabled={filtered.length === 0}
               >
-                {t.cards.selectAll}
+                {t("cards.selectAll")}
               </button>
             </div>
           </div>
@@ -876,19 +876,19 @@ export function CardsExplorer({
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm text-muted">
           <p>
             {filtered.length === 0
-              ? t.cards.noCards
-              : t.cards.cardCount(formatInt(filtered.length), t.common.cards(filtered.length))}
+              ? t("cards.noCards")
+              : t("cards.cardCount", { count: fmt.int(filtered.length), noun: t("common.cards", { n: filtered.length }) })}
           </p>
           {missingPrice && filtered.length > 0 ? (
             <p className="font-mono text-yellow">
               {missingPrice.unpriced > 0
-                ? t.cards.missingTotalPartial(formatMoney(missingPrice.total), formatInt(missingPrice.unpriced))
-                : t.cards.missingTotal(formatMoney(missingPrice.total))}
+                ? t("cards.missingTotalPartial", { total: fmt.money(missingPrice.total), unpriced: fmt.int(missingPrice.unpriced) })
+                : t("cards.missingTotal", { total: fmt.money(missingPrice.total) })}
             </p>
           ) : null}
         </div>
         {filtered.length === 0 ? (
-          <p className="border border-line px-4 py-10 text-center text-sm text-muted">{t.cards.noMatch}</p>
+          <p className="border border-line px-4 py-10 text-center text-sm text-muted">{t("cards.noMatch")}</p>
         ) : (
           <VirtualCardGrid
             items={filtered}
@@ -949,17 +949,17 @@ export function CardsExplorer({
         >
           <div className="w-full max-w-md border border-yellow bg-panel p-5">
             <h2 id="leave-add-mode-title" className="text-lg text-yellow">
-              {t.cards.leaveTitle}
+              {t("cards.leaveTitle")}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              {t.cards.leaveBody(formatInt(draftCards), t.common.cards(draftCards))}
+              {t("cards.leaveBody", { count: fmt.int(draftCards), noun: t("common.cards", { n: draftCards }) })}
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button type="button" className="h-10 border border-line px-4 text-sm" onClick={() => setLeaveConfirm(false)}>
-                {t.cards.stay}
+                {t("cards.stay")}
               </button>
               <button type="button" className="h-10 bg-yellow px-4 text-sm font-semibold text-black" onClick={exitAddMode}>
-                {t.cards.leave}
+                {t("cards.leave")}
               </button>
             </div>
           </div>
@@ -981,13 +981,8 @@ export function CardsExplorer({
             <div>
               <p className="font-medium">
                 {draftCopies === 0
-                  ? t.cards.noneSelected
-                  : t.cards.selectionSummary(
-                      formatInt(draftCopies),
-                      t.common.copies(draftCopies),
-                      formatInt(draftCards),
-                      t.common.cards(draftCards),
-                    )}
+                  ? t("cards.noneSelected")
+                  : t("cards.selectionSummary", { copies: fmt.int(draftCopies), copyNoun: t("common.copies", { n: draftCopies }), cards: fmt.int(draftCards), cardNoun: t("common.cards", { n: draftCards }) })}
               </p>
               {addError ? <p className="text-sm text-danger">{addError}</p> : null}
             </div>
@@ -998,7 +993,7 @@ export function CardsExplorer({
                 onClick={clearSelection}
                 disabled={(draftCards === 0 && !rangeAnchor) || adding}
               >
-                {t.cards.cancelSelection}
+                {t("cards.cancelSelection")}
               </button>
               <button
                 type="button"
@@ -1006,7 +1001,7 @@ export function CardsExplorer({
                 disabled={draftCards === 0 || adding}
                 onClick={() => void commitDraft()}
               >
-                {adding ? t.cards.adding : t.cards.addSelection}
+                {adding ? t("cards.adding") : t("cards.addSelection")}
               </button>
             </div>
           </div>

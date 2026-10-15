@@ -1,0 +1,74 @@
+{
+  "title": "Lire une carte",
+  "intro": "Toutes les cartes partagent la même structure. Survolez ou cliquez un repère pour lire l’explication reliée à la carte.",
+  "hint": "Choisissez un type de carte :",
+  "cards": {
+    "unit": {
+      "tab": "Unit",
+      "caption": "Jackie Welles: Ride or Die Choom"
+    },
+    "program": {
+      "tab": "Program (sell tag)",
+      "caption": "Afterparty at Lizzie's"
+    },
+    "legend": {
+      "tab": "Legend",
+      "caption": "Jackie Welles: Mama's Favorite"
+    }
+  },
+  "parts": {
+    "cost": {
+      "name": "Coût",
+      "body": "Spendez autant d’Eddies que ce chiffre pour jouer la carte. (Vous pouvez aussi spender des Legends face visible ou cachée à 1 €$ chacune.)"
+    },
+    "sell": {
+      "name": "Sell tag",
+      "body": "Vous pouvez vendre les cartes avec ce symbole pour des Eddies. Une Legend avec sell tag peut aussi payer 1 €$ dans la zone Legends."
+    },
+    "type": {
+      "name": "Type",
+      "body": "Indique si la carte est une Legend, Unit, Program ou Gear."
+    },
+    "ram": {
+      "name": "RAM",
+      "body": "La RAM cumulée et la couleur de vos Legends déterminent quelles autres cartes peuvent entrer dans votre deck."
+    },
+    "art": {
+      "name": "Illustration",
+      "body": "L’artwork de la carte. La couleur du cadre rappelle la couleur de RAM."
+    },
+    "name": {
+      "name": "Nom",
+      "body": "Nom de la carte, avec parfois un sous-titre. Maximum 3 exemplaires d’une même carte ; vos 3 Legends doivent avoir des noms uniques."
+    },
+    "classes": {
+      "name": "Tags",
+      "body": "Affiliations de la carte (Merc, Valentino, Braindance…). Elles peuvent être référencées par des effets."
+    },
+    "keyword": {
+      "name": "Mot-clé",
+      "body": "Effet standard (Go Solo, Adrenaline, Quick, Blocker). L’explication est souvent rappelée entre parenthèses."
+    },
+    "text": {
+      "name": "Texte d’effet",
+      "body": "Ce que fait la carte. Les timing triggers (Play, Call, Attack, Defeated) disent quand l’effet se déclenche. En cas de conflit, le texte de la carte prime."
+    },
+    "power": {
+      "name": "Power",
+      "body": "Utilisée en attaque. Détermine le succès en combat contre une Unit adverse. Une Unit vole 2 Gigs à Power 10, 3 à 20, etc."
+    },
+    "set": {
+      "name": "Set & numéro",
+      "body": "Code de l’extension (MS01 – WNC) et numéro de collection, utiles pour retrouver la carte dans le catalogue."
+    },
+    "illustrator": {
+      "name": "Crédit artiste",
+      "body": "Nom de l’illustrateur, imprimé sur le bord de la carte."
+    }
+  },
+  "legendOverrides": {
+    "cost": "Sur une Legend, c’est le coût à payer pour la jouer comme Unit via Go Solo. Sinon elle reste dans sa zone et peut payer 1 €$.",
+    "ram": "Sur une Legend, c’est la RAM qu’elle apporte à votre deck. Additionnez la RAM de vos 3 Legends par couleur pour vos limites de construction.",
+    "power": "Power utilisée si la Legend entre sur le Field en Go Solo."
+  }
+}

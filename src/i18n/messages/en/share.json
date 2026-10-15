@@ -1,0 +1,14 @@
+{
+  "eyebrow": "SHARED BINDER",
+  "binderNav": "Binder",
+  "title": "{name}'s binder",
+  "subtitle": "Read-only view — nothing can be modified.",
+  "cardsBanner": "{name}'s cards · read-only",
+  "openOwned": "View owned cards",
+  "openAll": "Browse full catalog",
+  "editionsNote": "Progress on Welcome to Night City",
+  "marketHint": "{n} cop(y/ies) with market price.",
+  "notFoundTitle": "Link not found",
+  "notFoundBody": "This link was revoked or does not exist.",
+  "loadFailed": "Unable to load this binder."
+}

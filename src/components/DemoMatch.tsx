@@ -11,17 +11,16 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { useDemoSteps, useDemoTableCopy } from "@/lib/rules/use-rules";
 import { CoachCallout } from "@/components/CoachCallout";
 import { playCardMoves, takeFlipSnapshot, type FlipSnapshot } from "@/components/demo-card-moves";
 import { GameCard } from "@/components/GameCard";
 import {
-  buildInteractiveSteps,
   cardOf,
-  demoTableCopy,
   initialMatchState,
   matchesExpect,
   type CardRef,
-  type DemoLocale,
+  type DemoTableCopy,
   type ExpectAction,
   type MatchState,
 } from "@/lib/rules/demo-match";
@@ -124,7 +123,7 @@ type Fx = {
 };
 
 /** Effet visuel associé à chaque action du tutoriel (state.flash). */
-function fxFor(flash: string | null, copy: ReturnType<typeof demoTableCopy>): Fx | null {
+function fxFor(flash: string | null, copy: DemoTableCopy): Fx | null {
   if (!flash) return null;
   const f = copy.fx;
   if (flash.startsWith("gig-")) return { tone: "you", banner: f.gig, sub: f.streetCred(flash.slice(4)) };
@@ -177,16 +176,14 @@ const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export function DemoMatch({
-  locale,
   onOpenRules,
   onProgress,
 }: {
-  locale: DemoLocale;
   onOpenRules: () => void;
   onProgress?: (step: number, total: number) => void;
 }) {
-  const copy = useMemo(() => demoTableCopy(locale), [locale]);
-  const steps = useMemo(() => buildInteractiveSteps(locale), [locale]);
+  const copy = useDemoTableCopy();
+  const steps = useDemoSteps();
   const [stepIndex, setStepIndex] = useState(0);
   const [state, setState] = useState<MatchState>(() => initialMatchState());
   const [toast, setToast] = useState<string | null>(null);
@@ -426,7 +423,6 @@ export function DemoMatch({
                   state.rivalAttackerId === c.id ||
                   (expect.kind === "target-rival" && (expect.ref == null || expect.ref === c.ref))
                 }
-                locale={locale}
                 coachId={c.ref === "unitJackie" ? "coach-rival-unitJackie" : undefined}
                 onClick={
                   expect.kind === "target-rival"
@@ -490,7 +486,6 @@ export function DemoMatch({
               selected={state.selectedAttackerId === c.id}
               pulse={pulseField(expect, c.ref) && !c.spent}
               equipped={c.equipped ? cardOf(c.equipped) : null}
-              locale={locale}
               coachId={`coach-field-${c.ref}`}
               onClick={
                 pulseField(expect, c.ref)
@@ -504,7 +499,7 @@ export function DemoMatch({
         {state.pendingPlay ? (
           <div className="demo-match-card-row__slot" style={{ zIndex: state.field.length + 1 }}>
             <div data-flip="field:pending" className="dm-pending">
-              <GameCard card={cardOf(state.pendingPlay)} size="fluid-md" locale={locale} />
+              <GameCard card={cardOf(state.pendingPlay)} size="fluid-md" />
               <span className="dm-pending__tag">{copy.paying}</span>
             </div>
           </div>
@@ -565,7 +560,6 @@ export function DemoMatch({
               size="fluid-xs"
               faceDown={c.faceDown}
               spent={c.spent}
-              locale={locale}
               dimmed={c.spent}
               pulse={canPay || canCall}
               coachId={isCallAnchor ? "coach-legend-call" : isPayAnchor ? "coach-legend" : undefined}
@@ -597,7 +591,7 @@ export function DemoMatch({
       </div>
       {lastTrash ? (
         <div key={`${lastTrash}-${state.trash.length}`} data-flip="trash" className="dm-drop-in">
-          <GameCard card={cardOf(lastTrash)} size="fluid-pile" locale={locale} dimmed />
+          <GameCard card={cardOf(lastTrash)} size="fluid-pile" dimmed />
         </div>
       ) : (
         <div data-flip="trash" className="aspect-card w-full border border-dashed border-line/40 bg-black/20" aria-hidden />
@@ -620,7 +614,6 @@ export function DemoMatch({
               size="fluid-pile"
               faceDown
               spent={c.spent}
-              locale={locale}
               dimmed={c.spent}
               pulse={canPay}
               coachId={isAnchor ? "coach-eddie" : undefined}
@@ -662,7 +655,6 @@ export function DemoMatch({
                 card={cardOf(ref)}
                 size="fluid-hand"
                 pulse={pulseHand(expect, ref)}
-                locale={locale}
                 coachId={`coach-hand-${ref}`}
                 onClick={pulseHand(expect, ref) ? () => tryAction({ type: "hand", card: ref }) : undefined}
               />
@@ -837,7 +829,7 @@ export function DemoMatch({
                     [...state.field.map((c) => c.ref), ...(state.pendingPlay ? [state.pendingPlay] : [])].map(
                       (ref, i) => (
                         <div key={`ph-${i}`} className="demo-match-card-row__slot">
-                          <GameCard card={cardOf(ref)} size="fluid-md" locale={locale} dimmed />
+                          <GameCard card={cardOf(ref)} size="fluid-md" dimmed />
                         </div>
                       ),
                     )

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getLocale } from "next-intl/server";
 import { CardPage, cardMetadata, cardStaticParams } from "@/components/public-site/catalog-pages";
 
 type PageProps = { params: Promise<{ slug: string }> };
@@ -12,9 +13,9 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  return cardMetadata("fr", (await params).slug);
+  return cardMetadata(await getLocale(), (await params).slug);
 }
 
 export default async function PublicCardPage({ params }: PageProps) {
-  return <CardPage locale="fr" slug={(await params).slug} />;
+  return <CardPage locale={await getLocale()} slug={(await params).slug} />;
 }

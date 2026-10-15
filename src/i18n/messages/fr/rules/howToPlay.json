@@ -1,0 +1,391 @@
+{
+  "eyebrow": "RÈGLES",
+  "title": "Comment jouer",
+  "intro": [
+    "Dans le Cyberpunk Trading Card Game, vous dirigez votre propre crew face à un Rival pour devenir une légende de Night City. Remportez des Gigs, équipez vos Units, déployez des Programs et boostez votre Street Cred.",
+    "Matériel : un jeu de six dés (d4, d6, d8, d10, d12, d20) et un deck Cyberpunk TCG. Objectif : contrôler la majorité des dés Gig et les sécuriser jusqu’au début de votre tour."
+  ],
+  "sourceLabel": "Guide officiel",
+  "sourcePdfLabel": "PDF imprimable",
+  "toc": [
+    {
+      "label": "Victoire"
+    },
+    {
+      "label": "Zones"
+    },
+    {
+      "label": "Lire une carte"
+    },
+    {
+      "label": "Types de cartes"
+    },
+    {
+      "label": "Triggers & mots-clés"
+    },
+    {
+      "label": "Mise en place"
+    },
+    {
+      "label": "Tour de jeu"
+    },
+    {
+      "label": "Attaque"
+    },
+    {
+      "label": "Construction de deck"
+    },
+    {
+      "label": "Glossaire"
+    }
+  ],
+  "win": {
+    "title": "Condition de victoire",
+    "body": "Contrôlez la majorité des Gigs de Night City, représentés par les dés Gig. Protégez les vôtres et attaquez votre Rival pour lui voler les siens. Chaque dé compte comme un Gig : deux dés rapprochent toujours plus de la victoire qu’un seul, même si la valeur affichée est plus faible.",
+    "highlight": "Commencez votre tour avec 7 Gigs pour gagner",
+    "highlightBody": "Si un joueur a au moins 7 dés Gig dans sa zone Gig au début de son tour, il gagne immédiatement.",
+    "overtime": "Prolongations : 7 Gigs = victoire instantanée",
+    "overtimeBody": "Les prolongations commencent après le 7e tour du dernier joueur. C’est une mort subite : dès qu’un joueur a la majorité des dés Gig, il gagne.",
+    "deckOut": "Deck out : si vous devez piocher et que votre deck est vide, votre Rival gagne immédiatement."
+  },
+  "areas": {
+    "title": "Zones du tapis",
+    "items": [
+      {
+        "name": "Fixer",
+        "body": "Tous vos dés Gig commencent ici. Au début de votre tour, après avoir pioché, choisissez un dé (sauf le d20, toujours en dernier), lancez-le, puis placez-le dans votre zone Gig.",
+        "tips": [
+          "Les dés représentent les offres de jobs que votre fixer vous a trouvées.",
+          "Petit dé = valeur faible mais sûre ; gros dé = plus de Street Cred potentielle.",
+          "Le d20 ne peut être choisi qu’une fois tous les autres dés pris."
+        ]
+      },
+      {
+        "name": "Gigs rivaux",
+        "body": "Les dés Gig contrôlés par votre Rival. C’est la cible de vos Units quand elles attaquent directement : chaque attaque réussie y prend un dé pour le déplacer dans votre zone Gigs alliés.",
+        "tips": [
+          "Une Unit vole 1 Gig, +1 par tranche de 10 Power (Power 10+ → 2 Gigs).",
+          "Si un Blocker redirige l’attaque, aucun Gig n’est volé, même si vous gagnez le combat.",
+          "Surveillez son total : à 7 dés au début de son tour, votre Rival gagne."
+        ]
+      },
+      {
+        "name": "Gigs alliés",
+        "body": "Gigs que vous contrôlez, y compris ceux volés. Avoir 7 dés ici au début du tour (avant d’en prendre un au Fixer) fait gagner. La Street Cred est la somme des faces visibles de ces dés.",
+        "tips": [
+          "Chaque dé = 1 Gig, quelle que soit sa valeur : c’est le nombre de dés qui fait gagner.",
+          "Les Units adverses attaquent cette zone pour vous voler des dés.",
+          "Certaines cartes exigent un seuil de ☆ Street Cred pour s’activer."
+        ]
+      },
+      {
+        "name": "Field",
+        "body": "Zone des Units. Elles peuvent attaquer une Unit adverse spent pour engager un combat, ou la zone Gig adverse pour voler un Gig. Le Gear s’équipe ici sur une Unit.",
+        "tips": [
+          "Les Units arrivent ready mais avec Lag : pas d’attaque le tour où elles sont jouées (sauf Adrenaline).",
+          "Attaquer spend l’Unit (à l’horizontale) : elle devient attaquable par le Rival.",
+          "Une Unit ready ne peut pas être attaquée ; seules Quick / Blocker interrompent une attaque."
+        ]
+      },
+      {
+        "name": "Eddies (€$)",
+        "body": "La monnaie de Night City. Pour jouer une carte, dépensez autant d’Eddies que son coût (coin supérieur gauche). La zone commence vide : vendez des cartes de votre main pour créer des Eddies.",
+        "tips": [
+          "Vente : 1×/tour, une carte avec sell tag (€$) → 1 Eddie face cachée.",
+          "Payer = spender (tourner) les Eddies ; ils se redressent au début de votre tour.",
+          "Une carte vendue vaut toujours 1 €$, même si elle coûtait 8."
+        ]
+      },
+      {
+        "name": "Legends",
+        "body": "Vos 3 Legends commencent face cachée, dans un ordre aléatoire. Une fois par tour, vous pouvez Call a Legend en dépensant 1 €$ pour en retourner une sans regarder. Face visible ou non, une Legend peut aussi servir de 1 €$.",
+        "tips": [
+          "Call a Legend est aussi possible en réaction à une attaque adverse.",
+          "Le premier joueur commence avec ses 2 Legends de gauche spent.",
+          "Les Legends avec Go Solo peuvent entrer sur le Field comme Unit."
+        ]
+      },
+      {
+        "name": "Deck",
+        "body": "Piochez toujours depuis le dessus de votre deck.",
+        "tips": [
+          "40 à 50 cartes, hors Legends.",
+          "Deck out : si vous devez piocher avec un deck vide, votre Rival gagne."
+        ]
+      },
+      {
+        "name": "Trash",
+        "body": "Cartes défaussées, vaincues ou trashées, face visible.",
+        "tips": [
+          "Les Programs y vont dès que leur effet est résolu.",
+          "Une Unit vaincue y part avec tout son Gear équipé."
+        ]
+      }
+    ]
+  },
+  "playmat": {
+    "hint": "Tapis interactif avec de vraies cartes du set Welcome to Night City, en milieu de partie. Survolez ou cliquez une zone pour lire son rôle.",
+    "prev": "Précédente",
+    "next": "Suivante",
+    "fixer": "Fixer",
+    "rivalGig": "Gigs rivaux",
+    "gig": "Gigs alliés",
+    "streetCred": "Street Cred = 4+6+10 = 20",
+    "legends": "Legends",
+    "field": "Field",
+    "eddies": "Eddies",
+    "deck": "Deck",
+    "trash": "Trash"
+  },
+  "examplesTitle": "Exemple réel",
+  "fightExample": {
+    "title": "Exemple de combat",
+    "body": "Jackie (Unit) attaque Meredith (Unit spent adverse). On compare la Power : le plus haut vainc, égalité = les deux Trash.",
+    "attackerLabel": "Attaquant",
+    "defenderLabel": "Défenseur (spent)",
+    "outcome": "Si Jackie a plus de Power, Meredith part à la Trash avec son éventuel Gear."
+  },
+  "stealExample": {
+    "title": "Exemple de vol de Gig",
+    "body": "Adam Smasher: Metal Over Meat a Power 15. S’il attaque la zone Gig adverse sans être bloqué, il vole 2 Gigs (seuil 10+)."
+  },
+  "cardTypes": {
+    "title": "Types de cartes",
+    "note": "En cas de conflit entre le texte d’une carte et ce guide, le texte de la carte prime. Chaque type ci-dessous montre une carte réelle du catalogue.",
+    "items": [
+      {
+        "name": "Legend",
+        "body": "Personnages centraux du deck. Les 3 commencent face cachée. Call a Legend (1 €$, 1×/tour) en retourne une au hasard. Toute Legend peut aussi payer 1 €$."
+      },
+      {
+        "name": "Unit",
+        "body": "Membres du crew. Payez le coût et placez-la ready sur le Field. Une Unit ne peut pas attaquer le tour où elle est jouée (sauf Adrenaline)."
+      },
+      {
+        "name": "Program",
+        "body": "Effet immédiat. Payez le coût, résolvez l’effet, puis placez la carte dans la Trash."
+      },
+      {
+        "name": "Gear",
+        "body": "Équipement pour une Unit ou Legend alliée. Quand la carte équipée change de zone, le Gear la suit."
+      }
+    ]
+  },
+  "triggers": {
+    "title": "Timing triggers",
+    "intro": "Les triggers indiquent quand un effet se déclenche.",
+    "items": [
+      {
+        "name": "Play",
+        "body": "Quand vous jouez cette carte."
+      },
+      {
+        "name": "Call",
+        "body": "Quand vous retournez cette Legend via Call a Legend."
+      },
+      {
+        "name": "Attack",
+        "body": "Quand cette Unit attaque (avant la réaction du Rival)."
+      },
+      {
+        "name": "Defeated",
+        "body": "Quand cette Unit est vaincue."
+      }
+    ]
+  },
+  "keywords": {
+    "title": "Mots-clés",
+    "intro": "Effets standards partagés par plusieurs cartes — avec un exemple du catalogue.",
+    "items": [
+      {
+        "name": "Adrenaline",
+        "body": "Cette Unit peut attaquer le tour où elle est jouée."
+      },
+      {
+        "name": "Go Solo",
+        "body": "Payez le coût de cette Legend pour la jouer comme Unit ready. Elle peut attaquer ce tour. Si elle quitte le Field, retirez-la de la partie."
+      },
+      {
+        "name": "Quick",
+        "body": "Vous pouvez aussi activer cet effet (ou jouer ce Program) en réaction quand une Unit adverse attaque."
+      },
+      {
+        "name": "Blocker",
+        "body": "Quand une Unit adverse attaque, vous pouvez spender cette Unit pour rediriger l’attaque vers elle."
+      }
+    ]
+  },
+  "setup": {
+    "title": "Mise en place",
+    "intro": "Chaque joueur suit ces étapes avant la partie.",
+    "steps": [
+      {
+        "title": "1. Mélanger",
+        "body": "Mélangez votre deck et placez vos 3 Legends face cachée, dans un ordre aléatoire, dans la zone Legends."
+      },
+      {
+        "title": "2. Ordre de jeu",
+        "body": "Les deux joueurs lancent un d20 (relance en cas d’égalité). Le plus haut décide qui commence. Le premier joueur spend ses 2 Legends les plus à gauche et ne les ready pas à son premier tour."
+      },
+      {
+        "title": "3. Piocher 6",
+        "body": "Vous pouvez mulligan une seule fois : mélangez la main dans le deck et piochez 6 nouvelles cartes."
+      }
+    ]
+  },
+  "turn": {
+    "title": "Structure du tour",
+    "intro": "Chaque tour a deux phases : Start Phase puis Main Phase.",
+    "startTitle": "Start Phase (dans l’ordre)",
+    "startSteps": [
+      {
+        "title": "Ready",
+        "body": "Remettez toutes vos cartes spent (à l’horizontale) en position ready (verticale)."
+      },
+      {
+        "title": "Piocher 1",
+        "body": "Ajoutez la carte du dessus de votre deck à votre main."
+      },
+      {
+        "title": "Gagner un Gig",
+        "body": "Prenez un dé de la zone Fixer, lancez-le et placez-le dans votre zone Gig. N’importe lequel sauf le d20, toujours en dernier."
+      }
+    ],
+    "mainTitle": "Main Phase (dans n’importe quel ordre)",
+    "mainIntro": "Vous pouvez faire chacune de ces actions autant de fois que les règles le permettent.",
+    "mainActions": [
+      {
+        "title": "Vendre pour 1 Eddie (1×/tour)",
+        "body": "Vendez une carte de votre main qui a le sell tag. Révélez-la, puis placez-la face cachée dans la zone Eddies. Quelle que soit son coût, elle ne vaut que 1 €$."
+      },
+      {
+        "title": "Jouer une carte",
+        "body": "Dépensez des Eddies (et/ou des Legends à 1 €$ chacune) égaux au coût. Les Units arrivent avec Lag jusqu’à la fin du tour : elles ne peuvent ni attaquer ni activer d’effets self-spend."
+      },
+      {
+        "title": "Call a Legend (1×/tour)",
+        "body": "Spendez 1 €$ pour retourner une Legend face visible, sans regarder avant."
+      },
+      {
+        "title": "Attaquer",
+        "body": "Spendez l’Unit attaquante. Elle peut attaquer une Unit adverse spent, ou la zone Gig adverse pour voler un Gig."
+      }
+    ]
+  },
+  "attack": {
+    "title": "Attaque",
+    "intro": "Chaque Unit attaque individuellement et termine toute la séquence avant qu’une autre n’attaque. Cible : Unit adverse spent, ou zone Gig du Rival.",
+    "steps": [
+      {
+        "title": "1. Spender l’attaquant",
+        "body": "Tournez l’Unit à l’horizontale et résolvez ses effets {Attack}. Une Unit ne peut pas attaquer le tour où elle est jouée (sauf Adrenaline)."
+      },
+      {
+        "title": "2. Déclarer la cible",
+        "body": "Unit adverse spent → combat. Zone Gig adverse → vol de Gig."
+      }
+    ],
+    "reactTitle": "3. Réactions du Rival",
+    "reactIntro": "Le Rival attaqué peut faire n’importe lequel de ces choix, dans n’importe quel ordre.",
+    "reactions": [
+      {
+        "title": "Call a Legend (1×/tour)",
+        "body": "Spendez 1 €$ pour retourner une Legend."
+      },
+      {
+        "title": "Quick",
+        "body": "Activez des effets ou jouez des cartes avec Quick."
+      },
+      {
+        "title": "Blocker",
+        "body": "Spendez une Unit Blocker pour rediriger l’attaque vers elle."
+      }
+    ],
+    "fightTitle": "Combat (cible = Unit spent)",
+    "fightBody": [
+      "Comparez la Power des deux Units.",
+      "La plus haute vainc l’autre. En cas d’égalité, les deux sont vaincues.",
+      "Placez les Units vaincues dans la Trash et résolvez leurs effets {Defeated}."
+    ],
+    "stealTitle": "Vol de Gig (cible = zone Gig)",
+    "stealBody": "Choisissez un dé Gig adverse et déplacez-le vers votre zone Gig. L’Unit vole un Gig supplémentaire tous les 10 de Power (0 Gig à Power 0).",
+    "stealTiers": [
+      "Power 1+ → 1 Gig",
+      "Power 10+ → 2 Gigs",
+      "Power 20+ → 3 Gigs, etc."
+    ],
+    "tip": "Les Units ready ne peuvent pas être attaquées. Seules Quick / Blocker (et effets similaires) peuvent interrompre une attaque : ce sont souvent les seules Units utiles à garder ready. Si un Blocker redirige une attaque directe sur votre Rival, un combat a lieu contre le Blocker — même en le vainquant, vous ne volez aucun Gig."
+  },
+  "deckbuilding": {
+    "title": "Construction de deck & RAM",
+    "intro": "Pour construire un deck légal :",
+    "rules": [
+      "Exactement 3 Legends aux noms uniques.",
+      "Entre 40 et 50 cartes (hors Legends).",
+      "Maximum 3 exemplaires d’une même carte.",
+      "Respecter la limite de RAM fixée par vos Legends."
+    ],
+    "ramTitle": "RAM",
+    "ramBody": [
+      "Chaque Legend a une couleur et une valeur RAM. La RAM cumulée de vos 3 Legends fixe le plafond par couleur pour le reste du deck : chaque carte d’une couleur doit avoir une RAM ≤ total de cette couleur.",
+      "Exemple : Goro Takemura (2 Green) + Saburo Arasaka (2 Green) + Yorinobu Arasaka (2 Red) → cartes Green jusqu’à 4 RAM, cartes Red jusqu’à 2 RAM."
+    ]
+  },
+  "glossary": {
+    "title": "Glossaire",
+    "items": [
+      {
+        "term": "Spend / Spent",
+        "definition": "Tourner une carte à l’horizontale. Une carte spent ne peut plus être spendée avant d’être ready. Eddies et Legends spendent pour payer ; les Units spendent pour attaquer."
+      },
+      {
+        "term": "Ready",
+        "definition": "Carte verticale. Seules les Units ready peuvent attaquer ; une Unit ready ne peut pas être attaquée."
+      },
+      {
+        "term": "Eddies (€$)",
+        "definition": "Eurodollars. Chaque carte face cachée dans la zone Eddies vaut 1 Eddie. Les Legends peuvent payer 1 €$ mais ne sont pas des Eddies."
+      },
+      {
+        "term": "Cost",
+        "definition": "Chiffre en haut à gauche. Spendez autant d’€$ pour jouer la carte."
+      },
+      {
+        "term": "Sell",
+        "definition": "1×/tour : révéler une carte avec sell tag, la placer face cachée comme 1 Eddie."
+      },
+      {
+        "term": "Gigs",
+        "definition": "Dés de jobs. Premier joueur à commencer son tour avec 7+ Gigs gagne. Volables en attaquant la zone Gig adverse."
+      },
+      {
+        "term": "Street Cred",
+        "definition": "Somme des faces de vos dés Gig. Certains effets en exigent un seuil."
+      },
+      {
+        "term": "Fixer",
+        "definition": "Zone des offres de jobs. Au début du tour, prenez un dé (d20 en dernier), lancez-le, placez-le en zone Gig."
+      },
+      {
+        "term": "Lag",
+        "definition": "Les Units entrent avec Lag jusqu’à la fin du tour : pas d’attaque ni d’effet self-spend."
+      },
+      {
+        "term": "Power",
+        "definition": "Chiffre en bas à droite. Sert au combat et au vol de Gigs (+1 Gig tous les 10 Power)."
+      },
+      {
+        "term": "Call a Legend",
+        "definition": "1×/tour, spend 1 €$ pour retourner une Legend. Possible en Main Phase ou en réaction à une attaque."
+      },
+      {
+        "term": "Bottom-deck",
+        "definition": "Mettre des cartes sous le deck, dans n’importe quel ordre."
+      },
+      {
+        "term": "Trash",
+        "definition": "Mettre la (ou les) carte(s) du dessus du deck dans la Trash, ou la zone où vont les cartes vaincues."
+      }
+    ]
+  }
+}

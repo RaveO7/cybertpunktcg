@@ -1,0 +1,16 @@
+{
+  "shops": "Tiendas",
+  "login": "Iniciar sesión",
+  "language": "Idioma",
+  "dashboard": "Panel",
+  "cards": "Cartas",
+  "investment": "Inversión",
+  "decks": "Mazos",
+  "wishlist": "Deseos",
+  "howto": "Aprender",
+  "tournaments": "Torneos",
+  "breadcrumb": {
+    "label": "Ruta de navegación",
+    "home": "Inicio"
+  }
+}

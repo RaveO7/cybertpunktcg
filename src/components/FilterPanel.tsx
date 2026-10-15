@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { extensionValue, sealedBrowseFilters } from "@/lib/logic";
 import { ALL_SETS_ID, isSealedSetCode, partitionCatalogSets } from "@/lib/reference-data";
 import type { ConditionDTO, Facets, Filters } from "@/lib/types";
-import { useI18n } from "@/components/LocaleProvider";
 
 const fieldClass =
   "h-10 w-full border border-line bg-panel-2 px-3 text-sm outline-none focus:border-cyan";
@@ -26,19 +26,19 @@ export function FilterPanel({
   onReset: () => void;
   onClose?: () => void;
 }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const languageLabels: Record<string, string> = {
-    en: t.common.english,
-    fr: t.common.french,
-    de: t.common.german,
-    es: t.common.spanish,
-    it: t.common.italian,
+    en: t("common.english"),
+    fr: t("common.french"),
+    de: t("common.german"),
+    es: t("common.spanish"),
+    it: t("common.italian"),
   };
   const collectionHelp: Record<Filters["collection"], string> = {
-    all: t.filters.helpAll,
-    owned: t.filters.helpOwned,
-    missing: t.filters.helpMissing,
-    duplicates: t.filters.helpDuplicates,
+    all: t("filters.helpAll"),
+    owned: t("filters.helpOwned"),
+    missing: t("filters.helpMissing"),
+    duplicates: t("filters.helpDuplicates"),
   };
 
   const { cardSets, sealedSets } = useMemo(
@@ -47,14 +47,14 @@ export function FilterPanel({
   );
   const isSealed = isSealedSetCode(filters.set);
   const setOptions = isSealed ? sealedSets : cardSets;
-  const resetLabel = t.filters.reset || t.common.reset;
+  const resetLabel = t("filters.reset") || t("common.reset");
 
   return (
     <div className="flex flex-col gap-5 pb-2">
       <div className="flex h-10 shrink-0 items-center justify-between gap-2">
-        <h2 className="text-sm font-medium leading-none">{t.filters.title}</h2>
+        <h2 className="text-sm font-medium leading-none">{t("filters.title")}</h2>
         {onClose ? (
-          <button type="button" aria-label={t.filters.close} className="grid h-10 w-10 place-items-center text-cyan" onClick={onClose}>
+          <button type="button" aria-label={t("filters.close")} className="grid h-10 w-10 place-items-center text-cyan" onClick={onClose}>
             <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.75">
               <path d="M12 4 6 10l6 6" strokeLinecap="square" strokeLinejoin="miter" />
             </svg>
@@ -71,11 +71,11 @@ export function FilterPanel({
       </button>
 
       <Select
-        label={t.filters.language}
+        label={t("filters.language")}
         value={filters.language}
         onChange={(language) => onChange({ language, page: 1 })}
         options={[
-          ...(filters.set === ALL_SETS_ID ? [{ value: "", label: t.common.all }] : []),
+          ...(filters.set === ALL_SETS_ID ? [{ value: "", label: t("common.all") }] : []),
           ...facets.languages.map((language) => ({
             value: language,
             label: languageLabels[language] ?? language,
@@ -85,7 +85,7 @@ export function FilterPanel({
 
 
       <Select
-        label={isSealed ? t.filters.sealedSet : t.filters.set}
+        label={isSealed ? t("filters.sealedSet") : t("filters.set")}
         value={isSealed ? filters.set : extensionValue(filters.set)}
         onChange={(set) =>
           onChange(isSealedSetCode(set) ? sealedBrowseFilters(set, { language: filters.language }) : { set, page: 1 })
@@ -94,10 +94,10 @@ export function FilterPanel({
           isSealed
             ? sealedSets.map((set) => ({ value: set.code, label: set.name }))
             : [
-                { value: ALL_SETS_ID, label: t.filters.allSets },
+                { value: ALL_SETS_ID, label: t("filters.allSets") },
                 ...setOptions.map((set) => ({
                   value: set.code,
-                  label: set.status === "upcoming" ? t.filters.setUpcoming(set.name) : set.name,
+                  label: set.status === "upcoming" ? t("filters.setUpcoming", { name: set.name }) : set.name,
                 })),
               ]
         }
@@ -105,48 +105,48 @@ export function FilterPanel({
       {!isSealed ? (
         <>
           <Select
-            label={t.filters.rarity}
+            label={t("filters.rarity")}
             value={filters.rarity}
             onChange={(rarity) => onChange({ rarity, page: 1 })}
-            options={[{ value: "", label: t.common.all }, ...facets.rarities.map((rarity) => ({ value: rarity, label: rarity }))]}
+            options={[{ value: "", label: t("common.all") }, ...facets.rarities.map((rarity) => ({ value: rarity, label: rarity }))]}
           />
           <TagList
-            label={t.filters.artist}
+            label={t("filters.artist")}
             options={facets.artists}
             selected={filters.artists}
             onChange={(artists) => onChange({ artists, page: 1 })}
-            filterPlaceholder={t.filters.filterList}
+            filterPlaceholder={t("filters.filterList")}
           />
-          <Chips label={t.filters.color} options={facets.colors} selected={filters.colors} onChange={(colors) => onChange({ colors, page: 1 })} />
-          <Chips label={t.filters.type} options={facets.types} selected={filters.types} onChange={(types) => onChange({ types, page: 1 })} />
+          <Chips label={t("filters.color")} options={facets.colors} selected={filters.colors} onChange={(colors) => onChange({ colors, page: 1 })} />
+          <Chips label={t("filters.type")} options={facets.types} selected={filters.types} onChange={(types) => onChange({ types, page: 1 })} />
           <TagList
-            label={t.filters.tags}
+            label={t("filters.tags")}
             options={facets.tags}
             selected={filters.tags}
             onChange={(tags) => onChange({ tags, page: 1 })}
-            filterPlaceholder={t.filters.filterList}
+            filterPlaceholder={t("filters.filterList")}
           />
           {facets.keywords.length > 0 ? (
             <TagList
-              label={t.filters.keyword}
+              label={t("filters.keyword")}
               options={facets.keywords}
               selected={filters.keywords}
               onChange={(keywords) => onChange({ keywords, page: 1 })}
-              filterPlaceholder={t.filters.filterList}
+              filterPlaceholder={t("filters.filterList")}
             />
           ) : null}
-          <Chips label={t.filters.cost} options={facets.costs} selected={filters.costs} onChange={(costs) => onChange({ costs, page: 1 })} />
-          <Chips label={t.filters.power} options={facets.powers} selected={filters.powers} onChange={(powers) => onChange({ powers, page: 1 })} />
-          <Chips label={t.filters.ram} options={facets.rams} selected={filters.rams} onChange={(rams) => onChange({ rams, page: 1 })} />
+          <Chips label={t("filters.cost")} options={facets.costs} selected={filters.costs} onChange={(costs) => onChange({ costs, page: 1 })} />
+          <Chips label={t("filters.power")} options={facets.powers} selected={filters.powers} onChange={(powers) => onChange({ powers, page: 1 })} />
+          <Chips label={t("filters.ram")} options={facets.rams} selected={filters.rams} onChange={(rams) => onChange({ rams, page: 1 })} />
           {facets.eddiable ? (
             <Select
-              label={t.filters.eddies}
+              label={t("filters.eddies")}
               value={filters.eddiable}
               onChange={(eddiable) => onChange({ eddiable: eddiable as Filters["eddiable"], page: 1 })}
               options={[
-                { value: "", label: t.common.allMasculine },
-                { value: "true", label: t.filters.sellable },
-                { value: "false", label: t.filters.notSellable },
+                { value: "", label: t("common.allMasculine") },
+                { value: "true", label: t("filters.sellable") },
+                { value: "false", label: t("filters.notSellable") },
               ]}
             />
           ) : null}
@@ -154,24 +154,24 @@ export function FilterPanel({
       ) : null}
       <div>
         <Select
-          label={t.filters.collection}
+          label={t("filters.collection")}
           value={filters.collection}
           onChange={(collection) => onChange({ collection: collection as Filters["collection"], page: 1 })}
           options={[
-            { value: "all", label: isSealed ? t.filters.allSealed : t.filters.allCards },
-            { value: "owned", label: t.filters.owned },
-            { value: "missing", label: t.filters.missing },
-            { value: "duplicates", label: t.filters.duplicates },
+            { value: "all", label: isSealed ? t("filters.allSealed") : t("filters.allCards") },
+            { value: "owned", label: t("filters.owned") },
+            { value: "missing", label: t("filters.missing") },
+            { value: "duplicates", label: t("filters.duplicates") },
           ]}
         />
         <p className="mt-1 text-xs text-muted">{collectionHelp[filters.collection]}</p>
       </div>
       <Select
-        label={t.filters.condition}
+        label={t("filters.condition")}
         value={filters.condition}
         onChange={(condition) => onChange({ condition, page: 1 })}
         options={[
-          { value: "", label: t.common.allMasculine },
+          { value: "", label: t("common.allMasculine") },
           ...conditions.map((condition) => ({ value: condition.code, label: `${condition.code} — ${condition.name}` })),
         ]}
       />

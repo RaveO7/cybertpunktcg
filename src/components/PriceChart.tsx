@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState, type PointerEvent } from "react";
-import { useI18n } from "@/components/LocaleProvider";
-import { intlLocale } from "@/lib/i18n/messages";
-import { formatMoney } from "@/lib/logic";
+import { useLocale, useTranslations } from "next-intl";
+import { useNumberFormat } from "@/i18n/number-format";
+import { intlLocale } from "@/i18n/config";
 
 export type ChartPoint = {
   day: string;
@@ -25,9 +25,11 @@ const AXIS_TEXT = "#93a0b4";
 const BACKGROUND = "#07080d";
 
 export function PriceChart({ points, label, emptyHint, height, compact = false }: PriceChartProps) {
-  const { t, locale } = useI18n();
-  const resolvedLabel = label ?? t.chart.label;
-  const resolvedEmpty = emptyHint ?? t.chart.empty;
+  const fmt = useNumberFormat();
+  const t = useTranslations();
+  const locale = useLocale();
+  const resolvedLabel = label ?? t("chart.label");
+  const resolvedEmpty = emptyHint ?? t("chart.empty");
   const resolvedHeight = height ?? (compact ? 150 : 280);
   const uid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
@@ -133,9 +135,9 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
           <div className="min-w-0">
             <p className="font-mono text-[10px] tracking-[0.14em] text-cyan uppercase">{resolvedLabel}</p>
             <p className="mt-2.5 font-mono text-lg leading-none text-yellow">
-              {formatMoney(active?.value ?? geometry?.last ?? points[points.length - 1].value)}
+              {fmt.money(active?.value ?? geometry?.last ?? points[points.length - 1].value)}
             </p>
-            <p className="mt-2.5 text-xs text-muted">{active ? formatDay(active.day, localeTag, true) : t.chart.period}</p>
+            <p className="mt-2.5 text-xs text-muted">{active ? formatDay(active.day, localeTag, true) : t("chart.period")}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2 text-sm">
             <span
@@ -146,13 +148,13 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
               </span>
               <span>
                 {delta > 0 ? "+" : delta < 0 ? "−" : ""}
-                {formatMoney(Math.abs(delta))}
+                {fmt.money(Math.abs(delta))}
               </span>
               {geometry?.deltaPct != null ? (
                 <span className="opacity-75">({formatPct(geometry.deltaPct, localeTag)})</span>
               ) : null}
             </span>
-            {points.length > 1 ? <span className="text-xs text-muted">{t.chart.days(points.length)}</span> : null}
+            {points.length > 1 ? <span className="text-xs text-muted">{t("chart.days", { n: points.length })}</span> : null}
           </div>
         </div>
       ) : null}
@@ -178,7 +180,7 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
             viewBox={`0 0 ${width} ${resolvedHeight}`}
             className="absolute inset-0 block select-none"
             role="img"
-            aria-label={`${resolvedLabel} : ${formatMoney(geometry.last)}`}
+            aria-label={`${resolvedLabel} : ${fmt.money(geometry.last)}`}
           >
             <defs>
               <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="0" y2="1">
@@ -317,7 +319,7 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
               {formatDay(active.day, localeTag, true)}
             </p>
             <p className={`font-mono leading-none text-yellow ${compact ? "mt-0.5 text-sm" : "mt-1 text-base"}`}>
-              {formatMoney(active.value)}
+              {fmt.money(active.value)}
             </p>
           </div>
         ) : null}

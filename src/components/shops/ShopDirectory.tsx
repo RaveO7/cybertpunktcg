@@ -2,14 +2,14 @@
 
 // Annuaire public des boutiques (vérifiées d'abord), en liste ou sur la carte.
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { countryName } from "@/components/geo/countries";
 import { useCountryOptions } from "@/components/geo/useCountryOptions";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
-import { useI18n } from "@/components/LocaleProvider";
-import { useLocalizedHref } from "@/components/site/useLocalizedHref";
+import { localizedPath } from "@/i18n/paths";
 import { formatKm } from "@/components/public/format";
 import { NearPicker, type NearPoint } from "@/components/public/NearPicker";
 import { VerifiedBadge } from "@/components/public/TournamentCard";
@@ -35,8 +35,8 @@ export function ShopDirectory({
   initial: ShopDirectoryResult | null;
   embedded?: boolean;
 }) {
-  const { t, locale } = useI18n();
-  const href = useLocalizedHref();
+  const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [params, setParams] = useState<Params>(() => clean(initialParams));
@@ -86,9 +86,9 @@ export function ShopDirectory({
         lat: shop.lat,
         lng: shop.lng,
         highlight: shop.verified,
-        items: [{ label: shop.name, href: href("shop", { slug: shop.slug }), detail: shop.city }],
+        items: [{ label: shop.name, href: localizedPath("shop", locale, { slug: shop.slug }), detail: shop.city }],
       })),
-    [result, href],
+    [result, locale],
   );
   const circle = useMemo(() => (near ? { lat: near.lat, lng: near.lng, radiusKm: near.radius } : null), [near?.lat, near?.lng, near?.radius]); // eslint-disable-line react-hooks/exhaustive-deps
   const pages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
@@ -100,14 +100,14 @@ export function ShopDirectory({
       {embedded ? null : (
         <div className="flex flex-col gap-1">
           <Link href="/tournois/publics" className="text-xs text-muted hover:text-foreground">
-            ← {t.publicTournaments.title}
+            ← {t("publicTournaments.title")}
           </Link>
-          <h1 className="text-2xl text-yellow sm:text-4xl">{t.shops.title}</h1>
-          <p className="max-w-2xl text-sm text-muted">{t.shops.subtitle}</p>
+          <h1 className="text-2xl text-yellow sm:text-4xl">{t("shops.title")}</h1>
+          <p className="max-w-2xl text-sm text-muted">{t("shops.subtitle")}</p>
         </div>
       )}
 
-      <section className={`${panelClass} flex flex-col gap-3`} aria-label={t.publicTournaments.filters}>
+      <section className={`${panelClass} flex flex-col gap-3`} aria-label={t("publicTournaments.filters")}>
         <NearPicker
           value={near}
           onChange={(point) =>
@@ -115,9 +115,9 @@ export function ShopDirectory({
           }
         />
         <label className="flex max-w-xs flex-col gap-1">
-          <span className="hud-label">{t.geo.country}</span>
+          <span className="hud-label">{t("geo.country")}</span>
           <select className={inputClass} value={params.country ?? ""} onChange={(event) => update({ country: event.target.value, city: "" })}>
-            <option value="">{t.publicTournaments.allCountries}</option>
+            <option value="">{t("publicTournaments.allCountries")}</option>
             {countries.map((entry) => (
               <option key={entry.code} value={entry.code}>
                 {entry.name}
@@ -129,7 +129,7 @@ export function ShopDirectory({
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="hud-label" aria-live="polite">
-          {result ? t.shops.count(result.total) : t.common.loading}
+          {result ? t("shops.count", { n: result.total }) : t("common.loading")}
         </p>
         <div className="flex border border-line" role="group">
           {(["list", "map"] as const).map((mode) => (
@@ -140,23 +140,23 @@ export function ShopDirectory({
               className={`h-9 px-3 text-sm ${view === mode ? "bg-panel-2 text-yellow" : "text-muted hover:text-foreground"}`}
               onClick={() => update({ view: mode === "map" ? "map" : "" }, true)}
             >
-              {mode === "map" ? t.geo.map : t.geo.list}
+              {mode === "map" ? t("geo.map") : t("geo.list")}
             </button>
           ))}
         </div>
       </div>
-      {error ? <p className="text-sm text-danger">{t.shops.loadFailed}</p> : null}
+      {error ? <p className="text-sm text-danger">{t("shops.loadFailed")}</p> : null}
 
       {view === "map" ? (
-        <LazyMap markers={markers} circle={circle} label={t.geo.mapLabel} className="h-[60vh] min-h-80" />
+        <LazyMap markers={markers} circle={circle} label={t("geo.mapLabel")} className="h-[60vh] min-h-80" />
       ) : result && result.shops.length === 0 ? (
-        <p className={`${panelClass} text-sm text-muted`}>{t.shops.noShops}</p>
+        <p className={`${panelClass} text-sm text-muted`}>{t("shops.noShops")}</p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {result?.shops.map((shop) => (
             <li key={shop.id}>
               <Link
-                href={href("shop", { slug: shop.slug })}
+                href={{ pathname: "/boutiques/[slug]", params: { slug: shop.slug } }}
                 className={`flex h-full items-center gap-3 border bg-panel p-3 transition hover:border-cyan ${shop.verified ? "border-yellow/40" : "border-line"}`}
               >
                 {shop.logoUrl ? (
@@ -171,7 +171,7 @@ export function ShopDirectory({
                   <span className="truncate">{shop.name}</span>
                   <span className="text-xs text-muted">
                     {shop.city} · {countryName(shop.country, locale)}
-                    {shop.distanceKm !== null ? ` · ${t.geo.distance(formatKm(shop.distanceKm, locale))}` : ""}
+                    {shop.distanceKm !== null ? ` · ${t("geo.distance", { km: formatKm(shop.distanceKm, locale) })}` : ""}
                   </span>
                   {shop.verified ? <VerifiedBadge /> : null}
                 </span>
@@ -182,13 +182,13 @@ export function ShopDirectory({
       )}
 
       {view === "list" && pages > 1 ? (
-        <nav className="flex items-center justify-center gap-3 text-sm" aria-label={t.publicTournaments.pagination}>
+        <nav className="flex items-center justify-center gap-3 text-sm" aria-label={t("publicTournaments.pagination")}>
           <button type="button" className={buttonClass} disabled={page <= 1} onClick={() => update({ page: String(page - 1) }, true)}>
-            {t.publicTournaments.previous}
+            {t("publicTournaments.previous")}
           </button>
-          <span className="text-muted">{t.publicTournaments.page(page, pages)}</span>
+          <span className="text-muted">{t("publicTournaments.page", { n: page, total: pages })}</span>
           <button type="button" className={buttonClass} disabled={page >= pages} onClick={() => update({ page: String(page + 1) }, true)}>
-            {t.publicTournaments.next}
+            {t("publicTournaments.next")}
           </button>
         </nav>
       ) : null}

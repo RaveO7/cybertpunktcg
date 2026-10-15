@@ -1,0 +1,27 @@
+{
+  "title": "Cyberpunk TCG card list",
+  "metaTitle": "Cyberpunk TCG card list",
+  "metaDescription": "All {count} Cyberpunk TCG cards: Legends, Units, Programs and Gear, with rules text, cost, power, RAM, printings and prices.",
+  "intro": "All {count} cards of the Cyberpunk TCG card game, sorted by type, then in official list order. Each card page shows its rules text, cost, power, RAM, printings and Cardmarket market price.",
+  "sections": "Card types",
+  "other": "Other cards",
+  "track": "Track my collection",
+  "types": {
+    "Legend": "Legend",
+    "Unit": "Unit",
+    "Program": "Program",
+    "Gear": "Gear"
+  },
+  "typePlurals": {
+    "Legend": "Legends",
+    "Unit": "Units",
+    "Program": "Programs",
+    "Gear": "Gear"
+  },
+  "colors": {
+    "Red": "Red",
+    "Blue": "Blue",
+    "Green": "Green",
+    "Yellow": "Yellow"
+  }
+}

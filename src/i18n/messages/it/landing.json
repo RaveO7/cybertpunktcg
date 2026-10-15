@@ -1,0 +1,105 @@
+{
+  "eyebrow": "Cyberpunk TCG · strumento gratuito creato dai fan",
+  "title": "Tutte le carte di Cyberpunk TCG, la tua collezione e i tornei vicino a te",
+  "lead": "TCG Tracker riunisce l'elenco completo delle carte di Cyberpunk TCG, la gestione della tua collezione e del suo valore, la costruzione dei mazzi e un elenco di tornei e negozi di giochi. Gratis e senza pubblicità.",
+  "register": "Crea un account gratuito",
+  "login": "Accedi",
+  "openApp": "Apri l'app",
+  "featuresTitle": "Cosa puoi fare",
+  "modulesLabel": "Moduli",
+  "findLabel": "Per le strade",
+  "findTitle": "Trova una partita vicino a te",
+  "findBody": "I tornei annunciati da negozi e giocatori, e i negozi che tengono vivo il gioco.",
+  "tabTournaments": "Tornei",
+  "tabShops": "Negozi",
+  "fanLabel": "Alcune Leggende del gioco",
+  "cardClose": "Chiudi",
+  "features": [
+    {
+      "key": "collection",
+      "title": "Gestione della collezione",
+      "body": "Aggiungi le tue carte in pochi clic, anche intere serie in una volta, e scopri quanto vale la tua collezione.",
+      "points": [
+        "Condizione e prezzo d'acquisto di ogni copia",
+        "Valore ai prezzi di Cardmarket e il suo andamento",
+        "Importazione CSV e condivisione del raccoglitore con un link"
+      ]
+    },
+    {
+      "key": "decks",
+      "title": "Costruzione dei mazzi",
+      "body": "Costruisci i tuoi mazzi: l'app verifica le regole di costruzione per te.",
+      "points": [
+        "3 Leggende, da 40 a 50 carte, al massimo 3 copie",
+        "Limite di RAM per colore calcolato automaticamente",
+        "Le carte che ti mancano e quanto costano"
+      ]
+    },
+    {
+      "key": "tournaments",
+      "title": "Tornei",
+      "body": "Trova un torneo vicino a te oppure organizza il tuo in negozio o con gli amici.",
+      "points": [
+        "Iscrizione con un clic o con un codice",
+        "Turni svizzeri in Bo1 o Bo3, timer del turno",
+        "Abbinamenti e classifica in tempo reale"
+      ]
+    },
+    {
+      "key": "cards",
+      "title": "Elenco completo delle carte",
+      "body": "Tutte le carte del gioco, con testo, stampe e prezzo di mercato.",
+      "points": [
+        "Carte in inglese e in francese",
+        "Costo, potenza, RAM e testo delle regole",
+        "Stampe, rarità e prezzi di Cardmarket"
+      ]
+    },
+    {
+      "key": "shops",
+      "title": "Negozi di giochi",
+      "body": "I negozi che tengono vivo il gioco e i loro prossimi eventi.",
+      "points": [
+        "Indirizzo, orari e mappa",
+        "Prossimi tornei di ogni negozio",
+        "Badge dei negozi verificati"
+      ]
+    },
+    {
+      "key": "howToPlay",
+      "title": "Imparare a giocare",
+      "body": "Una vera partita guidata contro un Rivale, mossa dopo mossa, poi le regole complete.",
+      "points": [
+        "Percorso interattivo passo dopo passo",
+        "Zone del tappetino e come leggere una carta",
+        "Regole complete e glossario"
+      ]
+    }
+  ],
+  "preview": "Anteprima",
+  "example": "Esempio",
+  "open": "Scopri",
+  "finalTitle": "Pronto a seguire la tua collezione?",
+  "finalBody": "Crea un account gratuito e ritrova le tue carte su tutti i tuoi dispositivi, anche offline.",
+  "showcase": {
+    "completion": "Completamento",
+    "value": "Valore",
+    "legal": [
+      "3 Leggende",
+      "45 carte",
+      "RAM rispettata"
+    ],
+    "missing": "Mancano 3 carte",
+    "round": "Turno 3 / 5",
+    "table": "Tavolo",
+    "live": "Classifica in tempo reale",
+    "verified": "Verificato",
+    "nextEvent": "Prossimo torneo: sabato ore 14",
+    "store": "Negozio di Night City",
+    "gigs": "Gigs",
+    "win": "7 Gigs all'inizio del tuo turno: vittoria",
+    "price": "Prezzo",
+    "red": "Rosso",
+    "green": "Verde"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "title": "Leer tus cartas",
+  "intro": "Todas las cartas comparten la misma estructura. Pasa el cursor o haz clic en un marcador para leer la explicación vinculada a la carta.",
+  "hint": "Elige un tipo de carta:",
+  "cards": {
+    "unit": {
+      "tab": "Unidad",
+      "caption": "Jackie Welles: Ride or Die Choom"
+    },
+    "program": {
+      "tab": "Programa (símbolo de venta)",
+      "caption": "Afterparty at Lizzie's"
+    },
+    "legend": {
+      "tab": "Leyenda",
+      "caption": "Jackie Welles: Mama's Favorite"
+    }
+  },
+  "parts": {
+    "cost": {
+      "name": "Coste",
+      "body": "Agota tantos Eddies como el coste de una carta para jugarla. (También puedes agotar Leyendas boca arriba o boca abajo, 1 €$ cada una.)"
+    },
+    "sell": {
+      "name": "Símbolo de venta",
+      "body": "Puedes vender las cartas con este símbolo para obtener Eddies. Las Leyendas con símbolo de venta pueden agotarse en la zona de Leyendas para pagar 1 €$."
+    },
+    "type": {
+      "name": "Tipo",
+      "body": "Indica si la carta es una Leyenda, una Unidad, un Programa o un Gear."
+    },
+    "ram": {
+      "name": "RAM",
+      "body": "La cantidad total de RAM y el color de tus Leyendas determinan qué otras cartas puedes incluir en tu mazo."
+    },
+    "art": {
+      "name": "Ilustración",
+      "body": "La imagen de la carta. El color del marco coincide con el color de la RAM."
+    },
+    "name": {
+      "name": "Nombre",
+      "body": "Nombre de la carta, a veces con un subtítulo. Hasta 3 copias de la misma carta; tus 3 Leyendas deben tener nombres distintos."
+    },
+    "classes": {
+      "name": "Afiliaciones",
+      "body": "Indica las afiliaciones de una carta. Los efectos pueden hacer referencia a ellas."
+    },
+    "keyword": {
+      "name": "Palabra clave",
+      "body": "Un efecto estándar (Go Solo, Adrenaline, Quick, Blocker). Suele ir seguido de un texto recordatorio entre paréntesis."
+    },
+    "text": {
+      "name": "Texto de efecto",
+      "body": "Lo que hace la carta. Los activadores (Play, Call, Attack, Defeated) te dicen cuándo ocurre el efecto. Si el texto de la carta contradice las reglas, sigue la carta."
+    },
+    "power": {
+      "name": "Power",
+      "body": "Cuenta al atacar. Decide los combates contra Unidades rivales. Una Unidad arrebata dos Gigs a partir de 10 de Power, tres a partir de 20, y así sucesivamente."
+    },
+    "set": {
+      "name": "Expansión y número",
+      "body": "Código de la expansión (MS01 – WNC) y número de coleccionista, útil para encontrar la carta en el catálogo."
+    },
+    "illustrator": {
+      "name": "Ilustrador",
+      "body": "El nombre del ilustrador, impreso en el borde de la carta."
+    }
+  },
+  "legendOverrides": {
+    "cost": "En una Leyenda, es lo que pagas para jugarla como Unidad con Go Solo. Si no, la Leyenda se queda en su zona y puede pagar 1 €$.",
+    "ram": "En una Leyenda, es la RAM que aporta a tu mazo. Suma la RAM de tus 3 Leyendas por color para obtener tus límites de construcción.",
+    "power": "Power que cuenta si la Leyenda entra al Campo con Go Solo."
+  }
+}

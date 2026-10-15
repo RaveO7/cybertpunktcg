@@ -1,19 +1,20 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { JsonLd } from "@/components/site/JsonLd";
-import { COPY } from "@/lib/seo/copy";
-import { localizedPath, type SiteLocale } from "@/lib/seo/routes";
 import { breadcrumbLd, type Crumb } from "@/lib/seo/structured-data";
+import type { Locale } from "@/i18n/config";
+import { localizedPath } from "@/i18n/paths";
 
 /**
  * Fil d'Ariane visible et son équivalent JSON-LD (mêmes données). L'accueil est ajouté en tête ;
  * le dernier élément est la page courante.
  */
-export function Breadcrumbs({ locale, items }: { locale: SiteLocale; items: Crumb[] }) {
-  const copy = COPY[locale].breadcrumb;
-  const crumbs: Crumb[] = [{ name: copy.home, path: localizedPath("home", locale) }, ...items];
+export async function Breadcrumbs({ locale, items }: { locale: Locale; items: Crumb[] }) {
+  const t = await getTranslations({ locale, namespace: "nav.breadcrumb" });
+  const crumbs: Crumb[] = [{ name: t("home"), path: localizedPath("home", locale) }, ...items];
   return (
     <>
-      <nav aria-label={copy.label} className="mx-auto w-full max-w-5xl px-4 pt-3 text-xs text-muted">
+      <nav aria-label={t("label")} className="mx-auto w-full max-w-5xl px-4 pt-3 text-xs text-muted">
         <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
           {crumbs.map((crumb, index) => {
             const last = index === crumbs.length - 1;

@@ -1,0 +1,14 @@
+{
+  "eyebrow": "ALBUM CONDIVISO",
+  "binderNav": "Album",
+  "title": "Album di {name}",
+  "subtitle": "Vista in sola lettura — nessuna modifica possibile.",
+  "cardsBanner": "Carte di {name} · sola lettura",
+  "openOwned": "Vedi le carte possedute",
+  "openAll": "Sfoglia tutto il catalogo",
+  "editionsNote": "Progresso su Welcome to Night City",
+  "marketHint": "{n} esemplare/i con prezzo di mercato.",
+  "notFoundTitle": "Link non trovato",
+  "notFoundBody": "Questo link è stato revocato o non esiste.",
+  "loadFailed": "Impossibile caricare questo album."
+}

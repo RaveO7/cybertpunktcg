@@ -1,0 +1,16 @@
+{
+  "shops": "Läden",
+  "login": "Anmelden",
+  "language": "Sprache",
+  "dashboard": "Übersicht",
+  "cards": "Karten",
+  "investment": "Investment",
+  "decks": "Decks",
+  "wishlist": "Wunschliste",
+  "howto": "Lernen",
+  "tournaments": "Turniere",
+  "breadcrumb": {
+    "label": "Brotkrümelnavigation",
+    "home": "Startseite"
+  }
+}

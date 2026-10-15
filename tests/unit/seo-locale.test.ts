@@ -1,25 +1,38 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { resolveLocale } from "../../src/components/LocaleProvider";
+import { matchRoute, splitLocale } from "../../src/i18n/match";
 
+/** La langue d'une page est celle de son URL, sur toutes les pages : la préférence n'y joue aucun rôle. */
 describe("seo : langue imposée par l'URL", () => {
-  it("URL française + préférence anglaise : français", () => {
-    assert.deepEqual(resolveLocale("/cartes/v-streetkid", "en", false), { locale: "fr", routeLocale: "fr" });
+  it("URL française (sans préfixe) : français", () => {
+    assert.equal(matchRoute("/cartes/v-streetkid")?.locale, "fr");
   });
 
-  it("URL anglaise + préférence française : anglais", () => {
-    assert.deepEqual(resolveLocale("/en/shops/arasaka", "fr", false), { locale: "en", routeLocale: "en" });
+  it("URL anglaise : anglais", () => {
+    assert.deepEqual(matchRoute("/en/shops/arasaka"), { locale: "en", route: "/boutiques/[slug]", params: { slug: "arasaka" } });
   });
 
-  it("page de l'application + préférence italienne : italien", () => {
-    assert.deepEqual(resolveLocale("/decks", "it", false), { locale: "it", routeLocale: null });
+  it("URL italienne : italien", () => {
+    assert.equal(matchRoute("/it/carte/v-streetkid")?.locale, "it");
   });
 
-  it("page légale : langue enregistrée", () => {
-    assert.deepEqual(resolveLocale("/cgu", "de", false), { locale: "de", routeLocale: null });
+  it("écrans de l'application : français sans préfixe, autre langue sous son préfixe", () => {
+    assert.deepEqual(matchRoute("/decks"), { locale: "fr", route: "/decks", params: {} });
+    assert.deepEqual(matchRoute("/it/decks"), { locale: "it", route: "/decks", params: {} });
   });
 
-  it("tableau de bord sur / : langue enregistrée", () => {
-    assert.deepEqual(resolveLocale("/", "es", true), { locale: "es", routeLocale: null });
+  it("pages légales : URL traduite de chaque langue", () => {
+    assert.equal(matchRoute("/cgu")?.locale, "fr");
+    assert.deepEqual(matchRoute("/de/impressum"), { locale: "de", route: "/mentions-legales", params: {} });
+  });
+
+  it("accueil", () => {
+    assert.deepEqual(splitLocale("/"), { locale: "fr", rest: "/", prefixed: false });
+    assert.deepEqual(splitLocale("/es"), { locale: "es", rest: "/", prefixed: true });
+    assert.equal(matchRoute("/es")?.route, "/");
+  });
+
+  it("préfixe de langue inconnu : aucune page", () => {
+    assert.equal(matchRoute("/nl/cards"), null);
   });
 });

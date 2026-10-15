@@ -1,0 +1,15 @@
+{
+  "notes": {
+    "legendJackie": "Legend with Go Solo — can enter the Field as a Unit.",
+    "legendJohnny": "Face-up Legend in the Legends area.",
+    "legendJudy": "Blue Legend — boosts BRAINDANCE Programs.",
+    "unitJackie": "Unit on the Field — attacks and steals Gigs.",
+    "unitBlocker": "Unit with Blocker — redirects an attack.",
+    "unitAdrenaline": "Adrenaline — can attack the turn it’s played.",
+    "unitSmasher": "Power 15 → steals 2 Gigs when attacking the Gig area.",
+    "programDetonate": "Quick Program — playable as a reaction to an attack.",
+    "programReaper": "Program — instant effect, then Trash.",
+    "gearConverter": "Gear — equips to a Unit or Legend.",
+    "eddieFace": "Sold face-down = 1 Eddie in the Eddies area."
+  }
+}

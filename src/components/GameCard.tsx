@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useExampleNote } from "@/lib/rules/use-rules";
 import type { ExampleCard } from "@/lib/rules/examples";
 import { CardImage } from "@/components/CardImage";
 
@@ -15,7 +16,6 @@ export function GameCard({
   dimmed = false,
   equipped,
   onClick,
-  locale = "fr",
   coachId,
 }: {
   card: ExampleCard;
@@ -27,9 +27,9 @@ export function GameCard({
   dimmed?: boolean;
   equipped?: ExampleCard | null;
   onClick?: () => void;
-  locale?: "fr" | "en";
   coachId?: string;
 }) {
+  const exampleNote = useExampleNote();
   const width =
     size === "fluid-hand"
       ? "w-[var(--dm-card-hand)]"
@@ -113,7 +113,7 @@ export function GameCard({
     };
   }, [hover, updatePos]);
 
-  const note = locale === "fr" ? card.noteFr : card.noteEn;
+  const note = exampleNote(card);
   const clickable = Boolean(onClick);
 
   return (

@@ -1,0 +1,6 @@
+{
+  "label": "Andamento",
+  "empty": "Nessuno storico ancora. Riesegui l’import dei prezzi nei giorni successivi.",
+  "period": "Nel periodo visualizzato",
+  "days": "{n, plural, one {# giorno} other {# giorni}}"
+}

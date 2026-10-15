@@ -1,0 +1,346 @@
+{
+  "eyebrow": "NIGHT-CITY-TRAINING",
+  "title": "Spielen lernen",
+  "subtitle": "6 kurze Missionen. Klicken, ausprobieren, gewinnen. Keine TCG-Erfahrung nötig.",
+  "learnTab": "Einsteigerkurs",
+  "rulesTab": "Alle Regeln",
+  "startCta": "Training starten",
+  "continueCta": "Weiter",
+  "nextCta": "Nächste Mission",
+  "backCta": "Zurück",
+  "skipCta": "Überspringen",
+  "retryCta": "Nochmal versuchen",
+  "hintCta": "Hinweis",
+  "progressLabel": "Mission {current} / {total}",
+  "streetCred": "Street Cred",
+  "correct": "Gut gemacht, Choom.",
+  "almost": "Nicht ganz — versuch es nochmal.",
+  "missions": [
+    {
+      "badge": "00",
+      "title": "Briefing",
+      "blurb": "Das Ziel in 30 Sekunden."
+    },
+    {
+      "badge": "01",
+      "title": "Gigs",
+      "blurb": "Wie du gewinnst."
+    },
+    {
+      "badge": "02",
+      "title": "Spielmatte",
+      "blurb": "Wohin was gehört."
+    },
+    {
+      "badge": "03",
+      "title": "Karten",
+      "blurb": "4 Typen, 4 Aufgaben."
+    },
+    {
+      "badge": "04",
+      "title": "Dein Zug",
+      "blurb": "In welcher Reihenfolge du handelst."
+    },
+    {
+      "badge": "05",
+      "title": "Kampf",
+      "blurb": "Kämpfen oder stehlen."
+    },
+    {
+      "badge": "06",
+      "title": "Straßenprüfung",
+      "blurb": "Was hängen geblieben ist."
+    },
+    {
+      "badge": "OK",
+      "title": "Diplom",
+      "blurb": "Du bist bereit."
+    }
+  ],
+  "intro": {
+    "needTitle": "Was du brauchst",
+    "needItems": [
+      "Ein Cyberpunk-TCG-Deck (40–50 Karten + 3 Legenden)",
+      "6 Würfel: d4, d6, d8, d10, d12, d20",
+      "Einen Rivalen am anderen Ende des Tisches"
+    ],
+    "promise": "Du führst eine Crew in Night City. Du gewinnst, indem du die Jobs kontrollierst: die Gigs (Würfel).",
+    "tip": "Tipp: ein Gig = ein Würfel. Die Augenzahlen zählen für die Street Cred, nicht für die Anzahl zum Sieg."
+  },
+  "goal": {
+    "title": "Ziel: 7 Gigs",
+    "explain": "Nimm jeden Zug einen Würfel von deinem Fixer, wirf ihn und lege ihn in deinen Gig-Bereich. Beginnst du deinen Zug bereits mit 7 Gig-Würfeln → du gewinnst.",
+    "challenge": "Simuliere eine Partie: Füge Gigs bis 7 hinzu und „beginne dann deinen Zug“.",
+    "winLine": "7 Gigs zu Beginn deines Zuges = Sieg.",
+    "addGig": "Einen Gig nehmen (Zugbeginn)",
+    "stealGig": "1 Gig vom Rivalen stehlen",
+    "fixerEmpty": "Fixer leer — stiehl den 7. beim Rivalen",
+    "reset": "Zurücksetzen",
+    "diceLeft": "{n, plural, one {Noch # Würfel im Fixer} other {Noch # Würfel im Fixer}}",
+    "yourGigs": "Deine Gigs"
+  },
+  "board": {
+    "title": "Bereichssuche",
+    "explain": "Die Spielmatte hat 7 Bereiche. Klicke bei jeder Frage auf den richtigen Bereich.",
+    "challenge": "Finde alle 4 gefragten Bereiche. Falsche Klicks kosten nichts.",
+    "prompts": [
+      {
+        "ask": "Wohin kommen Einheiten, um zu kämpfen?",
+        "hint": "Der große Bereich in der Mitte …",
+        "success": "Spielfeld: Hier leben deine Einheiten."
+      },
+      {
+        "ask": "Wohin kommen verkaufte Karten zum Bezahlen (Eddies)?",
+        "hint": "Deine verdeckte „Bank“.",
+        "success": "Eddie-Bereich: Jede verdeckte Karte = 1 €$."
+      },
+      {
+        "ask": "Wo liegen deine 3 besonderen Figuren zu Beginn?",
+        "hint": "Sie beginnen verdeckt …",
+        "success": "Legenden-Bereich: 3 Karten in zufälliger Reihenfolge."
+      },
+      {
+        "ask": "Wohin kommen die Würfel, nachdem du sie geworfen hast?",
+        "hint": "So gewinnst du.",
+        "success": "Gig-Bereich: Schütze deine, stiehl seine."
+      }
+    ],
+    "foundAll": "Spielmatte erkundet. Du weißt, wo deine Crew sitzt."
+  },
+  "cards": {
+    "title": "4 Kartentypen",
+    "explain": "Dreh jede Karte um, um ihre Aufgabe zu erfahren. Eine Idee pro Typ.",
+    "challenge": "Entdecke alle 4 Typen.",
+    "flipHint": "Tippe auf die Karte",
+    "roles": [
+      {
+        "typeLabel": "Legende",
+        "oneLiner": "Die Bosse deines Decks",
+        "detail": "Genau 3, beginnen verdeckt. Dreh eine pro Zug um (1 €$) oder erschöpfe eine beliebige als 1 €$."
+      },
+      {
+        "typeLabel": "Einheit",
+        "oneLiner": "Deine Crew",
+        "detail": "Bleibt auf dem Spielfeld. Greift erschöpfte Einheiten an oder stiehlt Gigs. Kann im Zug, in dem sie gespielt wird, nicht angreifen (außer mit Adrenaline)."
+      },
+      {
+        "typeLabel": "Programm",
+        "oneLiner": "Sofortiger Effekt",
+        "detail": "Bezahlen, abhandeln, auf die Ablage. Manche haben Quick (als Reaktion spielbar)."
+      },
+      {
+        "typeLabel": "Gear",
+        "oneLiner": "Ausrüstung",
+        "detail": "Wird an eine Einheit oder Legende angelegt. Geht mit ihrem Träger."
+      }
+    ],
+    "allSeen": "Du kennst die vier Rollen. Als Nächstes: der Ablauf eines Zuges."
+  },
+  "turn": {
+    "title": "Einen Zug spielen",
+    "explain": "Jeder Zug = Startphase (feste Reihenfolge), dann Hauptphase (du entscheidest).",
+    "challenge": "Klicke dich mit „Ausführen“ durch jeden Schritt.",
+    "steps": [
+      {
+        "title": "1. Bereitmachen",
+        "body": "Erschöpfte Karten wieder aufrecht stellen.",
+        "action": "Meine Karten bereitmachen"
+      },
+      {
+        "title": "2. Ziehen",
+        "body": "Nimm die oberste Karte deines Decks.",
+        "action": "1 Karte ziehen"
+      },
+      {
+        "title": "3. Einen Gig erhalten",
+        "body": "Nimm einen Fixer-Würfel (den d20 zuletzt), wirf ihn und lege ihn zu den Gigs.",
+        "action": "Meinen Gig werfen"
+      },
+      {
+        "title": "4. Verkaufen (optional, einmal)",
+        "body": "Decke eine verkaufbare Karte auf und lege sie verdeckt hin = +1 Eddie.",
+        "action": "Für 1 €$ verkaufen"
+      },
+      {
+        "title": "5. Karten spielen",
+        "body": "Erschöpfe Eddies (oder Legenden), um Einheiten, Gear und Programme zu spielen.",
+        "action": "Jackie spielen (Beispiel)"
+      },
+      {
+        "title": "6. Angreifen",
+        "body": "Erschöpfe eine Einheit, um eine erschöpfte gegnerische Einheit oder den gegnerischen Gig-Bereich anzugreifen.",
+        "action": "Angreifen"
+      }
+    ],
+    "done": "Zug beendet. Der Rhythmus: Bereitmachen → Ziehen → Gig → danach, was du willst."
+  },
+  "combat": {
+    "title": "Kämpfen oder stehlen?",
+    "explain": "Zwei mögliche Ziele. Wähle in jeder Situation den richtigen Zug.",
+    "scenarios": [
+      {
+        "setup": "Adam Smasher (Power 15) ist bereit. Der Rivale hat Gigs und keine erschöpften Einheiten.",
+        "question": "Wie kommst du dem Sieg am besten näher?",
+        "choices": [
+          {
+            "label": "Den Gig-Bereich angreifen → 2 Gigs stehlen",
+            "feedback": "Power 15 = 2 Gigs (1 ab 1+, +1 ab 10+)."
+          },
+          {
+            "label": "Eine bereite gegnerische Einheit angreifen",
+            "feedback": "Bereite Einheiten kannst du nicht angreifen (außer eine Karte erlaubt es)."
+          },
+          {
+            "label": "Nichts tun — zu riskant",
+            "feedback": "Erlaubt, aber Gigs zu stehlen ist hier der wichtigste Weg zum Sieg."
+          }
+        ]
+      },
+      {
+        "setup": "Jackie (stark) gegen die erschöpfte gegnerische Meredith.",
+        "question": "Wie räumst du das Spielfeld?",
+        "choices": [
+          {
+            "label": "Meredith angreifen → Power gegen Power",
+            "feedback": "Die höhere Power gewinnt. Gleichstand = beide auf die Ablage."
+          },
+          {
+            "label": "Einheiten immer ignorieren und nur stehlen",
+            "feedback": "Manchmal richtig — aber eine gefährliche erschöpfte Einheit loszuwerden lohnt sich oft."
+          },
+          {
+            "label": "Gear an den Rivalen anlegen",
+            "feedback": "Gear wird nur an deine Einheiten / Legenden angelegt."
+          }
+        ]
+      },
+      {
+        "setup": "Der Rivale greift deinen Gig-Bereich an. Du hast eine bereite Meredith mit Blocker.",
+        "question": "Kannst du reagieren?",
+        "choices": [
+          {
+            "label": "Meredith (Blocker) erschöpfen, um den Angriff abzufangen",
+            "feedback": "Blocker leitet den Angriff um. Selbst wenn du den Kampf gewinnst, wird kein Gig gestohlen."
+          },
+          {
+            "label": "Nein — Gigs kann man nicht schützen",
+            "feedback": "Genau dafür gibt es Blocker (und Quick)."
+          },
+          {
+            "label": "Als kostenlose Reaktion 3 Karten ziehen",
+            "feedback": "Keine Grundregel — nur wenn eine Karte es sagt."
+          }
+        ]
+      }
+    ],
+    "allClear": "Kampf und Diebstahl: sitzt. Letzte Station: das Quiz."
+  },
+  "quiz": {
+    "title": "Straßenprüfung",
+    "explain": "5 Fragen. Mit 4+ richtigen Antworten hast du Night City bestanden.",
+    "questions": [
+      {
+        "prompt": "Wann gewinnst du?",
+        "choices": [
+          {
+            "label": "Sobald du 7 Gigs hast, auch mitten im Zug des Rivalen",
+            "feedback": "Du musst DEINEN Zug mit 7 beginnen (außer in der Verlängerung)."
+          },
+          {
+            "label": "Zu Beginn deines Zuges, wenn du bereits 7 Gigs hast",
+            "feedback": "Richtig."
+          },
+          {
+            "label": "Wenn die Augenzahlen zusammen 50 ergeben",
+            "feedback": "Das ist die Street Cred, nicht die Siegbedingung."
+          }
+        ]
+      },
+      {
+        "prompt": "Wofür sind Eddies da?",
+        "choices": [
+          {
+            "label": "Um die Kosten von Karten zu bezahlen",
+            "feedback": "Jede verdeckte Karte im Eddie-Bereich = 1 €$."
+          },
+          {
+            "label": "Um deinen Rivalen anzugreifen",
+            "feedback": "Einheiten greifen an."
+          },
+          {
+            "label": "Um Gig-Würfel zu ersetzen",
+            "feedback": "Gigs bleiben Würfel."
+          }
+        ]
+      },
+      {
+        "prompt": "Eine Einheit wurde gerade gespielt. Kann sie angreifen?",
+        "choices": [
+          {
+            "label": "Ja, immer",
+            "feedback": "Sie hat Lag bis zum Ende des Zuges."
+          },
+          {
+            "label": "Nein, außer sie hat Adrenaline (oder Ähnliches)",
+            "feedback": "Lag verhindert den Angriff im Zug, in dem sie kommt."
+          },
+          {
+            "label": "Nur wenn sie eine Legende ist",
+            "feedback": "Legenden mit Go Solo sind ein Sonderfall."
+          }
+        ]
+      },
+      {
+        "prompt": "Reihenfolge der Startphase?",
+        "choices": [
+          {
+            "label": "Ziehen → Bereitmachen → Gig",
+            "feedback": "Bereitmachen kommt zuerst."
+          },
+          {
+            "label": "Bereitmachen → Ziehen → Gig",
+            "feedback": "Immer in dieser Reihenfolge."
+          },
+          {
+            "label": "Gig → Ziehen → Angreifen",
+            "feedback": "Angreifen gehört zur Hauptphase."
+          }
+        ]
+      },
+      {
+        "prompt": "Wie viele Gigs stiehlt Power 20 bei einem Angriff auf den Gig-Bereich?",
+        "choices": [
+          {
+            "label": "1",
+            "feedback": "1 ab Power 1+, +1 je 10."
+          },
+          {
+            "label": "2",
+            "feedback": "20+ = 3 Gigs."
+          },
+          {
+            "label": "3",
+            "feedback": "1+ → 1, 10+ → 2, 20+ → 3."
+          }
+        ]
+      }
+    ],
+    "scoreLine": "{score} / {total} richtig",
+    "pass": "Diplom freigeschaltet. Tauche in die vollständigen Regeln ein, wann immer du willst.",
+    "retry": "Knapp — mach das Quiz nochmal."
+  },
+  "done": {
+    "title": "Willkommen in Night City",
+    "body": "Du kennst die Grundlagen: Gigs, Bereiche, Kartentypen, Züge, Kampf. Der Rest kommt beim Spielen — und mit den ausführlichen Regeln.",
+    "restart": "Kurs wiederholen",
+    "openRules": "Ausführliche Regeln öffnen",
+    "source": "Offizieller Cyberpunk-TCG-Leitfaden"
+  },
+  "backToTop": "Nach oben",
+  "leave": {
+    "title": "Einsteigerkurs verlassen?",
+    "body": "Dein Fortschritt im Kurs geht verloren und du musst wieder von vorne beginnen.",
+    "stay": "Weitermachen",
+    "leave": "Verlassen"
+  }
+}

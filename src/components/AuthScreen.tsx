@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
+import { useDirectoryHref } from "@/components/site/useDirectoryHref";
+import { Link } from "@/i18n/navigation";
 import { useCollection } from "@/components/CollectionProvider";
-import { useI18n } from "@/components/LocaleProvider";
 
 const LOCAL_USER_KEY = "cptcg-user-id";
 
@@ -67,7 +68,8 @@ export function AuthScreen({
 }: { initialMode?: "login" | "register" | null; redirectTo?: string | null } = {}) {
   const { login, register } = useCollection();
   const router = useRouter();
-  const { t } = useI18n();
+  const t = useTranslations();
+  const directoryHref = useDirectoryHref("tournaments");
   const hasLocal = useSyncExternalStore(subscribeLocalCollection, localCollectionStored, noLocalCollection);
   const [chosenMode, setChosenMode] = useState<"login" | "register" | null>(initialMode);
   const mode = chosenMode ?? (hasLocal ? "register" : "login");
@@ -130,7 +132,7 @@ export function AuthScreen({
       }
       if (redirectTo) router.replace(redirectTo);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t.auth.failed);
+      setError(caught instanceof Error ? caught.message : t("auth.failed"));
     } finally {
       setPending(false);
     }
@@ -140,16 +142,16 @@ export function AuthScreen({
 
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-4.5rem)] w-full max-w-md flex-col justify-center px-4 py-8">
-      <p className="font-mono text-xs tracking-[0.18em] text-cyan">{t.auth.eyebrow}</p>
-      <h1 className="mt-1 text-3xl text-yellow">{t.auth.title}</h1>
-      <p className="mt-2 text-sm text-muted">{t.auth.subtitle}</p>
+      <p className="font-mono text-xs tracking-[0.18em] text-cyan">{t("auth.eyebrow")}</p>
+      <h1 className="mt-1 text-3xl text-yellow">{t("auth.title")}</h1>
+      <p className="mt-2 text-sm text-muted">{t("auth.subtitle")}</p>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <Link href="/#tournois" className="text-cyan underline">
-          {t.publicTournaments.browse} →
+        <Link href={directoryHref} className="text-cyan underline">
+          {t("publicTournaments.browse")} →
         </Link>
       </div>
 
-      <div className="mt-6 flex border border-line" role="tablist" aria-label={t.auth.modeLabel}>
+      <div className="mt-6 flex border border-line" role="tablist" aria-label={t("auth.modeLabel")}>
         <button
           type="button"
           role="tab"
@@ -157,7 +159,7 @@ export function AuthScreen({
           className={`h-12 flex-1 text-sm ${mode === "login" ? "bg-yellow text-black" : "text-muted"}`}
           onClick={() => switchMode("login")}
         >
-          {t.auth.login}
+          {t("auth.login")}
         </button>
         <button
           type="button"
@@ -166,15 +168,15 @@ export function AuthScreen({
           className={`h-12 flex-1 text-sm ${mode === "register" ? "bg-yellow text-black" : "text-muted"}`}
           onClick={() => switchMode("register")}
         >
-          {t.auth.register}
+          {t("auth.register")}
         </button>
       </div>
 
-      {hasLocal ? <p className="mt-4 text-sm text-cyan">{t.auth.localMerge}</p> : null}
+      {hasLocal ? <p className="mt-4 text-sm text-cyan">{t("auth.localMerge")}</p> : null}
 
       <form className="mt-4 flex flex-col gap-3" onSubmit={(event) => void submit(event)}>
         <label className="flex flex-col gap-1 text-sm">
-          {t.auth.email}
+          {t("auth.email")}
           <input
             className={fieldClass}
             type="email"
@@ -190,7 +192,7 @@ export function AuthScreen({
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          {t.auth.password}
+          {t("auth.password")}
           <input
             className={fieldClass}
             type="password"
@@ -204,20 +206,20 @@ export function AuthScreen({
         </label>
         {mode === "register" ? (
           <label className="flex flex-col gap-1 text-sm">
-            {t.auth.displayName}
+            {t("auth.displayName")}
             <input
               className={fieldClass}
               type="text"
               name="name"
               autoComplete="nickname"
               maxLength={40}
-              placeholder={t.auth.displayPlaceholder}
+              placeholder={t("auth.displayPlaceholder")}
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
             />
           </label>
         ) : null}
-        {mode === "register" ? <p className="text-xs text-muted">{t.auth.passwordHint}</p> : null}
+        {mode === "register" ? <p className="text-xs text-muted">{t("auth.passwordHint")}</p> : null}
         {error ? (
           <p className="text-sm text-danger" role="alert">
             {error}
@@ -228,7 +230,7 @@ export function AuthScreen({
           disabled={pending}
           className="mt-1 h-12 bg-yellow text-sm font-semibold text-black disabled:opacity-60"
         >
-          {pending ? t.auth.submitting : mode === "login" ? t.auth.login : t.auth.createAccount}
+          {pending ? t("auth.submitting") : mode === "login" ? t("auth.login") : t("auth.createAccount")}
         </button>
       </form>
 
@@ -236,7 +238,7 @@ export function AuthScreen({
         <div className="mt-4 flex flex-col gap-2">
           <div className="relative my-2 flex items-center gap-3 text-xs uppercase tracking-[0.16em] text-muted">
             <span className="h-px flex-1 bg-line" />
-            {t.auth.or}
+            {t("auth.or")}
             <span className="h-px flex-1 bg-line" />
           </div>
           {oauth.google ? (
@@ -247,7 +249,7 @@ export function AuthScreen({
               onClick={() => startOAuth("google")}
             >
               <GoogleMark />
-              {t.auth.continueGoogle}
+              {t("auth.continueGoogle")}
             </button>
           ) : null}
           {oauth.apple ? (
@@ -258,7 +260,7 @@ export function AuthScreen({
               onClick={() => startOAuth("apple")}
             >
               <AppleMark />
-              {t.auth.continueApple}
+              {t("auth.continueApple")}
             </button>
           ) : null}
         </div>

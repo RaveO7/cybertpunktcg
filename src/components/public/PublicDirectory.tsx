@@ -5,13 +5,13 @@
 // partageable) ; intégré à l'accueil (`embedded`), ils restent locaux pour ne pas se mêler à l'annuaire
 // des boutiques affiché sur la même page.
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { countryName } from "@/components/geo/countries";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
-import { useI18n } from "@/components/LocaleProvider";
-import { useLocalizedHref } from "@/components/site/useLocalizedHref";
+import { localizedPath } from "@/i18n/paths";
 import { buttonClass, inputClass, panelClass } from "@/components/tournament/ui";
 import type { DirectoryFacets, DirectoryResult } from "@/lib/tournament/directory";
 import { isPeriod, PERIODS, type Period } from "@/lib/tournament/periods";
@@ -36,8 +36,8 @@ export function PublicDirectory({
   initial: DirectoryResult | null;
   embedded?: boolean;
 }) {
-  const { t, locale } = useI18n();
-  const href = useLocalizedHref();
+  const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [params, setParams] = useState<DirectoryParams>(() => cleanParams(initialParams));
@@ -110,7 +110,7 @@ export function PublicDirectory({
                 items: [
                   {
                     label: row.name,
-                    href: href("tournament", { id: row.id }),
+                    href: localizedPath("tournament", locale, { id: row.id }),
                     detail: [formatStart(row.startsAt, row.timeZone, locale), row.venueName ?? row.city].filter(Boolean).join(" · "),
                   },
                 ],
@@ -118,7 +118,7 @@ export function PublicDirectory({
             ]
           : [],
       ),
-    [result, locale, href],
+    [result, locale],
   );
   const circle = useMemo(() => (near ? { lat: near.lat, lng: near.lng, radiusKm: near.radius } : null), [near?.lat, near?.lng, near?.radius]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -146,19 +146,19 @@ export function PublicDirectory({
       {embedded ? null : (
         <div className="flex flex-col gap-1">
           <Link href="/tournois" className="text-xs text-muted hover:text-foreground">
-            ← {t.tournaments.title}
+            ← {t("tournaments.title")}
           </Link>
-          <h1 className="text-2xl text-yellow sm:text-4xl">{t.publicTournaments.title}</h1>
-          <p className="max-w-2xl text-sm text-muted">{t.publicTournaments.subtitle}</p>
+          <h1 className="text-2xl text-yellow sm:text-4xl">{t("publicTournaments.title")}</h1>
+          <p className="max-w-2xl text-sm text-muted">{t("publicTournaments.subtitle")}</p>
           <p className="flex flex-wrap gap-3 text-sm">
             <Link href="/boutiques" className="text-cyan underline">
-              {t.publicTournaments.shopsLink}
+              {t("publicTournaments.shopsLink")}
             </Link>
           </p>
         </div>
       )}
 
-      <section className={`${panelClass} flex flex-col gap-3`} aria-label={t.publicTournaments.filters}>
+      <section className={`${panelClass} flex flex-col gap-3`} aria-label={t("publicTournaments.filters")}>
         <NearPicker
           value={near}
           onChange={(point) =>
@@ -172,24 +172,24 @@ export function PublicDirectory({
         <div className="grid gap-3 sm:grid-cols-3">
           {select(
             "country",
-            t.geo.country,
+            t("geo.country"),
             (facets?.countries ?? (params.country ? [params.country] : [])).map((code) => ({ value: code, label: countryName(code, locale) })),
-            t.publicTournaments.allCountries,
+            t("publicTournaments.allCountries"),
           )}
           {params.country
-            ? select("region", t.publicTournaments.region, (facets?.regions ?? []).map((region) => ({ value: region, label: region })), t.publicTournaments.allRegions)
+            ? select("region", t("publicTournaments.region"), (facets?.regions ?? []).map((region) => ({ value: region, label: region })), t("publicTournaments.allRegions"))
             : null}
           {params.country
-            ? select("city", t.geo.city, (facets?.cities ?? []).map((city) => ({ value: city.key, label: city.name })), t.publicTournaments.allCities)
+            ? select("city", t("geo.city"), (facets?.cities ?? []).map((city) => ({ value: city.key, label: city.name })), t("publicTournaments.allCities"))
             : null}
         </div>
         <div className="grid gap-3 sm:grid-cols-4">
           <label className="flex flex-col gap-1">
-            <span className="hud-label">{t.publicTournaments.period}</span>
+            <span className="hud-label">{t("publicTournaments.period")}</span>
             <select className={inputClass} value={period} onChange={(event) => update({ period: event.target.value === "any" ? "" : event.target.value, from: "", to: "" })}>
               {PERIODS.map((value) => (
                 <option key={value} value={value}>
-                  {t.publicTournaments.periods[value]}
+                  {t(`publicTournaments.periods.${value}`)}
                 </option>
               ))}
             </select>
@@ -197,64 +197,64 @@ export function PublicDirectory({
           {period === "custom" ? (
             <>
               <label className="flex flex-col gap-1">
-                <span className="hud-label">{t.publicTournaments.from}</span>
+                <span className="hud-label">{t("publicTournaments.from")}</span>
                 <input type="date" className={inputClass} value={params.from ?? ""} onChange={(event) => update({ from: event.target.value })} />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="hud-label">{t.publicTournaments.to}</span>
+                <span className="hud-label">{t("publicTournaments.to")}</span>
                 <input type="date" className={inputClass} value={params.to ?? ""} onChange={(event) => update({ to: event.target.value })} />
               </label>
             </>
           ) : null}
           {select(
             "format",
-            t.tournaments.formatLabel,
+            t("tournaments.formatLabel"),
             [
-              { value: "boutique", label: t.tournaments.formats.boutique },
-              { value: "competitif", label: t.tournaments.formats.competitif },
+              { value: "boutique", label: t("tournaments.formats.boutique") },
+              { value: "competitif", label: t("tournaments.formats.competitif") },
             ],
-            t.publicTournaments.anyFormat,
+            t("publicTournaments.anyFormat"),
           )}
           {select(
             "match",
-            t.tournaments.matchTypeLabel,
+            t("tournaments.matchTypeLabel"),
             [
-              { value: "bo1", label: t.tournaments.bo1 },
-              { value: "bo3", label: t.tournaments.bo3 },
+              { value: "bo1", label: t("tournaments.bo1") },
+              { value: "bo3", label: t("tournaments.bo3") },
             ],
-            t.publicTournaments.anyMatch,
+            t("publicTournaments.anyMatch"),
           )}
           {select(
             "price",
-            t.publicTournaments.price,
+            t("publicTournaments.price"),
             [
-              { value: "free", label: t.publicTournaments.free },
-              { value: "paid", label: t.publicTournaments.paid },
+              { value: "free", label: t("publicTournaments.free") },
+              { value: "paid", label: t("publicTournaments.paid") },
             ],
-            t.publicTournaments.anyPrice,
+            t("publicTournaments.anyPrice"),
           )}
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={params.seats === "1"} onChange={(event) => update({ seats: event.target.checked ? "1" : "" })} />
-            {t.publicTournaments.seatsOnly}
+            {t("publicTournaments.seatsOnly")}
           </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={params.open === "1"} onChange={(event) => update({ open: event.target.checked ? "1" : "" })} />
-            {t.publicTournaments.openOnly}
+            {t("publicTournaments.openOnly")}
           </label>
           {near ? (
             <label className="flex items-center gap-2">
-              <span className="hud-label">{t.publicTournaments.sort}</span>
+              <span className="hud-label">{t("publicTournaments.sort")}</span>
               <select className={`${inputClass} h-8 w-auto`} value={params.sort === "date" ? "date" : "distance"} onChange={(event) => update({ sort: event.target.value })}>
-                <option value="distance">{t.publicTournaments.sortDistance}</option>
-                <option value="date">{t.publicTournaments.sortDate}</option>
+                <option value="distance">{t("publicTournaments.sortDistance")}</option>
+                <option value="date">{t("publicTournaments.sortDate")}</option>
               </select>
             </label>
           ) : null}
           {hasFilters ? (
             <button type="button" className="text-xs text-muted underline" onClick={() => update({ ...Object.fromEntries(PAGE_KEYS.map((key) => [key, ""])), view: params.view ?? "" })}>
-              {t.publicTournaments.resetFilters}
+              {t("publicTournaments.resetFilters")}
             </button>
           ) : null}
         </div>
@@ -262,7 +262,7 @@ export function PublicDirectory({
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="hud-label" aria-live="polite">
-          {loading ? t.common.loading : result ? t.publicTournaments.results(result.total) : ""}
+          {loading ? t("common.loading") : result ? t("publicTournaments.results", { n: result.total }) : ""}
         </p>
         <div className="flex border border-line" role="group">
           {(["list", "map"] as const).map((mode) => (
@@ -273,18 +273,18 @@ export function PublicDirectory({
               className={`h-9 px-3 text-sm ${view === mode ? "bg-panel-2 text-yellow" : "text-muted hover:text-foreground"}`}
               onClick={() => update({ view: mode === "map" ? "map" : "" })}
             >
-              {mode === "map" ? t.geo.map : t.geo.list}
+              {mode === "map" ? t("geo.map") : t("geo.list")}
             </button>
           ))}
         </div>
       </div>
 
-      {error ? <p className="text-sm text-danger">{t.publicTournaments.loadFailed}</p> : null}
+      {error ? <p className="text-sm text-danger">{t("publicTournaments.loadFailed")}</p> : null}
 
       {view === "map" ? (
-        <LazyMap markers={markers} circle={circle} label={t.geo.mapLabel} className="h-[60vh] min-h-80" />
+        <LazyMap markers={markers} circle={circle} label={t("geo.mapLabel")} className="h-[60vh] min-h-80" />
       ) : result && result.tournaments.length === 0 ? (
-        <p className={`${panelClass} text-sm text-muted`}>{t.publicTournaments.noResults}</p>
+        <p className={`${panelClass} text-sm text-muted`}>{t("publicTournaments.noResults")}</p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {result?.tournaments.map((row) => (
@@ -296,13 +296,13 @@ export function PublicDirectory({
       )}
 
       {view === "list" && pages > 1 ? (
-        <nav className="flex items-center justify-center gap-3 text-sm" aria-label={t.publicTournaments.pagination}>
+        <nav className="flex items-center justify-center gap-3 text-sm" aria-label={t("publicTournaments.pagination")}>
           <button type="button" className={buttonClass} disabled={page <= 1} onClick={() => update({ page: String(page - 1) }, true)}>
-            {t.publicTournaments.previous}
+            {t("publicTournaments.previous")}
           </button>
-          <span className="text-muted">{t.publicTournaments.page(page, pages)}</span>
+          <span className="text-muted">{t("publicTournaments.page", { n: page, total: pages })}</span>
           <button type="button" className={buttonClass} disabled={page >= pages} onClick={() => update({ page: String(page + 1) }, true)}>
-            {t.publicTournaments.next}
+            {t("publicTournaments.next")}
           </button>
         </nav>
       ) : null}

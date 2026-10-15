@@ -1,0 +1,27 @@
+{
+  "title": "Cyberpunk TCG Kartenliste",
+  "metaTitle": "Cyberpunk TCG Kartenliste",
+  "metaDescription": "Alle {count} Karten von Cyberpunk TCG: Legenden, Einheiten, Programme und Ausrüstung, mit Regeltext, Kosten, Stärke, RAM, Drucken und Preisen.",
+  "intro": "Alle {count} Karten des Kartenspiels Cyberpunk TCG, nach Typ und dann in der Reihenfolge der offiziellen Liste sortiert. Jede Kartenseite zeigt Regeltext, Kosten, Stärke, RAM, Drucke und den Cardmarket-Marktpreis.",
+  "sections": "Kartentypen",
+  "other": "Weitere Karten",
+  "track": "Sammlung verfolgen",
+  "types": {
+    "Legend": "Legende",
+    "Unit": "Einheit",
+    "Program": "Programm",
+    "Gear": "Ausrüstung"
+  },
+  "typePlurals": {
+    "Legend": "Legenden",
+    "Unit": "Einheiten",
+    "Program": "Programme",
+    "Gear": "Ausrüstung"
+  },
+  "colors": {
+    "Red": "Rot",
+    "Blue": "Blau",
+    "Green": "Grün",
+    "Yellow": "Gelb"
+  }
+}

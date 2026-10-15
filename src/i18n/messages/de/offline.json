@@ -1,0 +1,14 @@
+{
+  "banner": "Offline: nur Ansicht. Änderungen sind wieder möglich, sobald du online bist.",
+  "title": "Offline-Modus",
+  "hint": "Katalog und Sammlung bleiben ohne Verbindung verfügbar (Laden, Turnier). Lade die Kartenbilder herunter, um sie auch offline zu sehen.",
+  "download": "Bilder herunterladen ({n})",
+  "downloading": "Wird heruntergeladen… {done} / {total}",
+  "status": "{cached} / {total} Bilder auf diesem Gerät gespeichert",
+  "failed": "{n} Bild(er) konnten nicht heruntergeladen werden. Erneut starten, um es nochmal zu versuchen.",
+  "cancel": "Stoppen",
+  "clear": "Offline-Bilder löschen",
+  "cleared": "Bilder von diesem Gerät gelöscht.",
+  "unsupported": "Dieser Browser unterstützt den Offline-Modus nicht.",
+  "hdNote": "Bilder in voller Größe werden beim Öffnen gespeichert."
+}

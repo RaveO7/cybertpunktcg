@@ -1,27 +1,23 @@
-// Langue à proposer à un visiteur d'une page publique bilingue, d'après le pays d'où il se connecte.
+// Langue à proposer à un visiteur d'une page publique, d'après sa préférence, son pays et son navigateur.
 
-import type { SiteLocale } from "@/lib/seo/routes";
+import { INTERNATIONAL_LOCALE, isLocale, localeOfCountry, MIXED_COUNTRIES, type Locale } from "@/i18n/config";
 
 /** Cookie posé par le proxy depuis l'en-tête de géolocalisation de Vercel (code ISO 3166-1 alpha-2). */
 export const COUNTRY_COOKIE = "cptcg-country";
 
-/** Pays où le français est la langue courante du site : France, outre-mer, Monaco, Afrique francophone. */
-const FRENCH_COUNTRIES = new Set([
-  "FR", "MC", "RE", "GP", "MQ", "GF", "YT", "PM", "BL", "MF", "NC", "PF", "WF",
-  "MA", "DZ", "TN", "SN", "CI", "ML", "BF", "NE", "TG", "BJ", "GN", "GA", "CG", "CD", "CM", "CF", "TD",
-  "MG", "DJ", "KM", "BI", "HT",
-]);
-
-/** Pays bilingues (ou plus) : le pays ne tranche pas, la langue du navigateur décide. */
-const MIXED_COUNTRIES = new Set(["BE", "CH", "LU", "CA"]);
+/** Langue du site d'un code de langue du navigateur (« de-AT » → de), ou null. */
+function siteLocaleOf(language: string): Locale | null {
+  const code = language.toLowerCase().slice(0, 2);
+  return isLocale(code) ? code : null;
+}
 
 export function isCountryCode(value: string | null | undefined): value is string {
   return !!value && /^[A-Z]{2}$/.test(value);
 }
 
 /**
- * Langue du site à proposer : celle choisie dans l'app si c'est le français ou l'anglais, sinon celle
- * du pays de connexion, sinon celle du navigateur. Une autre langue de l'app (allemand…) donne l'anglais.
+ * Langue du site à proposer : celle choisie par l'utilisateur, sinon celle du pays de connexion, sinon
+ * la première langue du navigateur que le site propose, sinon l'anglais.
  */
 export function suggestedSiteLocale({
   stored,
@@ -31,10 +27,30 @@ export function suggestedSiteLocale({
   stored: string | null;
   country: string | null;
   languages: readonly string[];
-}): SiteLocale {
-  if (stored === "fr" || stored === "en") return stored;
-  if (stored) return "en";
-  const browser: SiteLocale = languages.some((language) => language.toLowerCase().startsWith("fr")) ? "fr" : "en";
-  if (!isCountryCode(country) || MIXED_COUNTRIES.has(country)) return browser;
-  return FRENCH_COUNTRIES.has(country) ? "fr" : "en";
+}): Locale {
+  if (isLocale(stored)) return stored;
+  const browser = languages.map(siteLocaleOf).find((locale) => locale !== null) ?? INTERNATIONAL_LOCALE;
+  if (!isCountryCode(country) || MIXED_COUNTRIES.includes(country)) return browser;
+  return localeOfCountry(country) ?? INTERNATIONAL_LOCALE;
+}
+
+/**
+ * Langue à suggérer sur une page affichée en `current` : celle du visiteur (cf. suggestedSiteLocale)
+ * si elle diffère de la page et que le visiteur n'a pas refusé cette suggestion ; sinon null.
+ */
+export function languageSuggestion({
+  current,
+  preference,
+  country,
+  languages,
+  dismissed,
+}: {
+  current: Locale;
+  preference: string | null;
+  country: string | null;
+  languages: readonly string[];
+  dismissed: (locale: Locale) => boolean;
+}): Locale | null {
+  const suggested = suggestedSiteLocale({ stored: preference, country, languages });
+  return suggested === current || dismissed(suggested) ? null : suggested;
 }

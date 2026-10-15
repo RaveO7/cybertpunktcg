@@ -1,12 +1,17 @@
 import { unstable_cache } from "next/cache";
 import { CATALOG_CACHE_TAG, loadCatalogCached } from "@/lib/catalog";
 import { prisma } from "@/lib/prisma";
+import { loadCardTranslations } from "@/i18n/cards";
+import type { Locale } from "@/i18n/config";
 import { publicCards } from "@/lib/seo/public-catalog";
-import type { SiteLocale } from "@/lib/seo/routes";
 
-/** Cartes du catalogue public dans une langue (lecture du catalogue en cache, invalidé à l'import des prix). */
-export async function loadPublicCards(locale: SiteLocale) {
-  return publicCards(await loadCatalogCached(), locale);
+/**
+ * Cartes du catalogue public dans une langue (lecture du catalogue en cache, invalidé à l'import des
+ * prix), avec les traductions du texte de règles du site pour cette langue.
+ */
+export async function loadPublicCards(locale: Locale) {
+  const [catalog, translations] = await Promise.all([loadCatalogCached(), loadCardTranslations(locale)]);
+  return publicCards(catalog, locale, translations);
 }
 
 /** Date du dernier import des prix Cardmarket (ISO), ou null. */

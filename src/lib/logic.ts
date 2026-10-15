@@ -700,21 +700,6 @@ export function resolveRulesText(
 }
 
 
-export function formatPercent(value: number, digits = 0) {
-  return `${new Intl.NumberFormat("fr-FR", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(value)} %`;
-}
-
-export function formatInt(value: number) {
-  return new Intl.NumberFormat("fr-FR").format(value);
-}
-
-export function formatMoney(amount: number, currency = "EUR") {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(amount);
-}
-
 /** Somme des prix Cardmarket d'une liste d'impressions (un exemplaire chacune). */
 export function printingsPriceTotal(printings: PrintingDTO[]) {
   let total = 0;

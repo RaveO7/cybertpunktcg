@@ -1,0 +1,16 @@
+{
+  "shops": "Shops",
+  "login": "Log in",
+  "language": "Language",
+  "dashboard": "Dashboard",
+  "cards": "Cards",
+  "investment": "Investment",
+  "decks": "Decks",
+  "wishlist": "Wishlist",
+  "howto": "Learn",
+  "tournaments": "Tournaments",
+  "breadcrumb": {
+    "label": "Breadcrumb",
+    "home": "Home"
+  }
+}

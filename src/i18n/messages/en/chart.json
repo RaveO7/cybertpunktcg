@@ -1,0 +1,6 @@
+{
+  "label": "Trend",
+  "empty": "No history yet. Re-run the price import over successive days.",
+  "period": "Over the displayed period",
+  "days": "{n, plural, one {# day} other {# days}}"
+}

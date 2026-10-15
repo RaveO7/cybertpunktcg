@@ -1,0 +1,21 @@
+{
+  "loading": "Laden…",
+  "search": "Suchen",
+  "all": "Alle",
+  "allMasculine": "Alle",
+  "reset": "Zurücksetzen",
+  "share": "Teilen",
+  "settings": "Einstellungen",
+  "sections": "Bereiche",
+  "english": "Englisch",
+  "french": "Französisch",
+  "german": "Deutsch",
+  "spanish": "Spanisch",
+  "italian": "Italienisch",
+  "optional": "Optional",
+  "copies": "{n, plural, one {Exemplar} other {Exemplare}}",
+  "cards": "{n, plural, one {Karte} other {Karten}}",
+  "lines": "{n, plural, one {Zeile} other {Zeilen}}",
+  "trendUp": "gestiegen",
+  "trendDown": "gefallen"
+}

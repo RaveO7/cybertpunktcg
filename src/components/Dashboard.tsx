@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useNumberFormat } from "@/i18n/number-format";
+import { Link, useRouter, type Href } from "@/i18n/navigation";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
@@ -10,9 +11,6 @@ import {
   aggregateCollection,
   buildInvestmentLines,
   computeProgress,
-  formatInt,
-  formatMoney,
-  formatPercent,
   investmentBySet,
   priceMovement,
   progressByRarity,
@@ -28,8 +26,7 @@ import {
   MIN_EXTENSION_CARDS,
   partitionCatalogSets,
 } from "@/lib/reference-data";
-import { useI18n } from "@/components/LocaleProvider";
-import { intlLocale } from "@/lib/i18n/messages";
+import { intlLocale } from "@/i18n/config";
 import { rarityFill } from "@/lib/rarity-color";
 import type { CatalogDTO, Ownership, PrintingDTO, Progress } from "@/lib/types";
 
@@ -268,8 +265,8 @@ function fullSetPrice(printings: PrintingDTO[]) {
   return priced === 0 ? null : { total, priced, count: printings.length };
 }
 
-function cardsHref(params: Record<string, string>) {
-  return `/cards?${new URLSearchParams(params)}`;
+function cardsHref(query: Record<string, string>): Href {
+  return { pathname: "/cards", query };
 }
 
 /** L'extension qui correspond au set déjà choisi ailleurs dans l'app. */
@@ -278,8 +275,10 @@ function matchesSet(extension: Extension, set: string) {
 }
 
 export function Dashboard() {
+  const fmt = useNumberFormat();
   const { ready, error, catalog, items } = useCollection();
-  const { t, locale } = useI18n();
+  const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const { selection, setSelection } = useBrowseSelection();
   const numberLocale = intlLocale(locale);
@@ -313,7 +312,7 @@ export function Dashboard() {
     const sealedRowByCode = new Map(sealedRows.map((row) => [row.setCode, row]));
 
     const cardExtensions = buildCardExtensions(catalog, agg, language, cardRows);
-    const blocks = buildBlocks(cardExtensions, agg, t.dashboard.unsortedBlock);
+    const blocks = buildBlocks(cardExtensions, agg, t("dashboard.unsortedBlock"));
     const sealedExtensions: Extension[] = partitionCatalogSets(catalog.sets)
       .sealedSets.map((set) => {
         const printings = catalog.printings.filter(
@@ -424,7 +423,7 @@ export function Dashboard() {
       <div className="mx-auto max-w-[1600px] px-4 py-10">
         <div className="hud-panel flex items-center justify-center gap-3 px-6 py-12 text-muted">
           <span className="inline-block size-4 animate-pulse rounded-full bg-cyan/80" aria-hidden />
-          {t.dashboard.loading}
+          {t("dashboard.loading")}
         </div>
       </div>
     );
@@ -438,17 +437,17 @@ export function Dashboard() {
   const heroSet = scope?.browseSet ?? (isSealed ? "" : ALL_SETS_ID);
   const heroLanguage = scope?.language ?? language;
   const heroTitle =
-    pickedExtension?.shortName ?? scope?.name ?? (isSealed ? t.dashboard.sealed : t.dashboard.allSetsTitle);
+    pickedExtension?.shortName ?? scope?.name ?? (isSealed ? t("dashboard.sealed") : t("dashboard.allSetsTitle"));
   const blockExtensionCount = block?.extensions.filter((extension) => !extension.related).length ?? 0;
   const heroIntro = isSealed
     ? scope
-      ? t.dashboard.sealedProductsHint(formatInt(scope.printings.length))
-      : t.dashboard.sealedIntro
+      ? t("dashboard.sealedProductsHint", { n: fmt.int(scope.printings.length) })
+      : t("dashboard.sealedIntro")
     : pickedExtension
-      ? t.dashboard.extensionIntro(formatInt(pickedExtension.progress.total))
+      ? t("dashboard.extensionIntro", { n: fmt.int(pickedExtension.progress.total) })
       : [
-          t.dashboard.globalIntro(formatInt(blockExtensionCount), t.dashboard.extensionNoun(blockExtensionCount)),
-          block?.extensions.some((extension) => extension.codes.includes(BETA_SET_CODE)) ? t.dashboard.splitNote : null,
+          t("dashboard.globalIntro", { n: fmt.int(blockExtensionCount), noun: t("dashboard.extensionNoun", { n: blockExtensionCount }) }),
+          block?.extensions.some((extension) => extension.codes.includes(BETA_SET_CODE)) ? t("dashboard.splitNote") : null,
         ]
           .filter(Boolean)
           .join(" ");
@@ -502,10 +501,10 @@ export function Dashboard() {
         />
         <div className="flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-1 items-center gap-5 sm:gap-6">
-            <ProgressRing percent={heroProgress.percent} label={formatPercent(heroProgress.percent)} />
+            <ProgressRing percent={heroProgress.percent} label={fmt.percent(heroProgress.percent)} />
             <div className="min-w-0">
               <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-cyan">
-                {t.dashboard.eyebrow}
+                {t("dashboard.eyebrow")}
                 {current && scope !== current ? ` · ${current.name}` : null}
               </p>
               <h1 className="mt-1.5 font-display text-2xl font-bold uppercase leading-tight tracking-wide text-yellow sm:text-4xl">
@@ -516,15 +515,15 @@ export function Dashboard() {
           </div>
           <div className="flex w-full shrink-0 flex-col gap-3 lg:max-w-sm">
             <div className="flex flex-wrap gap-3">
-              <SegmentGroup ariaLabel={t.dashboard.modeCards} grow>
+              <SegmentGroup ariaLabel={t("dashboard.modeCards")} grow>
                 <SegmentButton active={!isSealed} onClick={() => setMode("cards")}>
-                  {t.dashboard.modeCards}
+                  {t("dashboard.modeCards")}
                 </SegmentButton>
                 <SegmentButton active={isSealed} onClick={() => setMode("sealed")}>
-                  {t.dashboard.modeSealed}
+                  {t("dashboard.modeSealed")}
                 </SegmentButton>
               </SegmentGroup>
-              <SegmentGroup ariaLabel={t.investment.language}>
+              <SegmentGroup ariaLabel={t("investment.language")}>
                 {LANGUAGES.map((entry) => (
                   <SegmentButton
                     key={entry}
@@ -544,11 +543,11 @@ export function Dashboard() {
               <input type="hidden" name="language" value={heroLanguage} />
               <label className="flex h-11 w-full items-center gap-2.5 border border-line bg-panel-2 px-3.5 text-muted focus-within:border-cyan">
                 <SearchIcon />
-                <span className="sr-only">{t.common.search}</span>
+                <span className="sr-only">{t("common.search")}</span>
                 <input
                   name="q"
                   type="search"
-                  placeholder={isSealed ? t.dashboard.sealedSearchPlaceholder : t.dashboard.searchPlaceholder}
+                  placeholder={isSealed ? t("dashboard.sealedSearchPlaceholder") : t("dashboard.searchPlaceholder")}
                   className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted/80"
                 />
               </label>
@@ -556,47 +555,47 @@ export function Dashboard() {
           </div>
         </div>
         <div className="grid grid-cols-2 border-t border-line/60 xl:grid-cols-4">
-          <GlobalStat label={isSealed ? t.dashboard.uniqueSealed : t.dashboard.uniqueCards}>
-            <span className="font-mono text-2xl text-yellow sm:text-3xl">{formatInt(heroProgress.uniqueOwned)}</span>
-            <span className="font-mono text-sm text-muted">/ {formatInt(heroProgress.total)}</span>
+          <GlobalStat label={isSealed ? t("dashboard.uniqueSealed") : t("dashboard.uniqueCards")}>
+            <span className="font-mono text-2xl text-yellow sm:text-3xl">{fmt.int(heroProgress.uniqueOwned)}</span>
+            <span className="font-mono text-sm text-muted">/ {fmt.int(heroProgress.total)}</span>
           </GlobalStat>
           <GlobalStat
-            label={t.dashboard.missing}
+            label={t("dashboard.missing")}
             href={cardsHref({
               set: heroSet,
               language: heroLanguage,
               collection: "missing",
             })}
-            linkLabel={t.dashboard.see}
+            linkLabel={t("dashboard.see")}
             tone="danger"
           >
-            <span className="font-mono text-2xl text-danger sm:text-3xl">{formatInt(heroProgress.missing)}</span>
+            <span className="font-mono text-2xl text-danger sm:text-3xl">{fmt.int(heroProgress.missing)}</span>
           </GlobalStat>
           <GlobalStat
-            label={t.dashboard.duplicates}
+            label={t("dashboard.duplicates")}
             href={cardsHref({
               set: heroSet,
               language: heroLanguage,
               collection: "duplicates",
             })}
-            linkLabel={t.dashboard.see}
+            linkLabel={t("dashboard.see")}
           >
-            <span className="font-mono text-2xl sm:text-3xl">{formatInt(heroProgress.duplicates)}</span>
+            <span className="font-mono text-2xl sm:text-3xl">{fmt.int(heroProgress.duplicates)}</span>
           </GlobalStat>
-          <GlobalStat label={isSealed ? t.dashboard.sealedTrendValue : t.dashboard.trendValue} last>
+          <GlobalStat label={isSealed ? t("dashboard.sealedTrendValue") : t("dashboard.trendValue")} last>
             {view.hasPrices && heroValue && heroValue.pricedCopies > 0 ? (
               <>
-                <span className="font-mono text-xl text-yellow sm:text-3xl">{formatMoney(heroValue.marketTotal)}</span>
+                <span className="font-mono text-xl text-yellow sm:text-3xl">{fmt.money(heroValue.marketTotal)}</span>
                 <TrendBadge delta={heroValue.marketDelta} amount={heroValue.marketDeltaAmount} />
               </>
             ) : (
-              <span className="text-sm text-muted">{t.dashboard.noValue}</span>
+              <span className="text-sm text-muted">{t("dashboard.noValue")}</span>
             )}
           </GlobalStat>
         </div>
         {spentLine ? (
           <p className="border-t border-line/60 px-5 py-3 text-sm text-muted sm:px-7">
-            <span className="text-foreground/90">{t.dashboard.spent}</span> · {spentLine}
+            <span className="text-foreground/90">{t("dashboard.spent")}</span> · {spentLine}
           </p>
         ) : null}
       </section>
@@ -604,19 +603,19 @@ export function Dashboard() {
       {/* 2. Grille des blocs (ou des catégories scellées) — inutile s'il n'y a qu'un bloc */}
       {!isSealed && gridItems.length === 1 ? null : (
         <Section
-          title={isSealed ? t.dashboard.sealedCategories : t.dashboard.blocks}
-          hint={isSealed ? t.dashboard.sealedGridHint : undefined}
+          title={isSealed ? t("dashboard.sealedCategories") : t("dashboard.blocks")}
+          hint={isSealed ? t("dashboard.sealedGridHint") : undefined}
           action={
             gridItems.length > 1 ? (
-              <div role="group" aria-label={t.dashboard.sortGroup} className="flex items-center border border-line">
+              <div role="group" aria-label={t("dashboard.sortGroup")} className="flex items-center border border-line">
                 <span className="px-2 font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted sm:px-3">
-                  {t.dashboard.sortLabel}
+                  {t("dashboard.sortLabel")}
                 </span>
                 {(
                   [
-                    ["catalog", t.dashboard.sortCatalog],
-                    ["progress", t.dashboard.progress],
-                    ["value", t.dashboard.value],
+                    ["catalog", t("dashboard.sortCatalog")],
+                    ["progress", t("dashboard.progress")],
+                    ["value", t("dashboard.value")],
                   ] as const
                 ).map(([id, label]) => (
                   <button
@@ -636,7 +635,7 @@ export function Dashboard() {
           }
         >
           {gridItems.length === 0 ? (
-            <EmptyPanel>{isSealed ? t.dashboard.emptySealed : t.dashboard.emptyInvestment}</EmptyPanel>
+            <EmptyPanel>{isSealed ? t("dashboard.emptySealed") : t("dashboard.emptyInvestment")}</EmptyPanel>
           ) : (
             <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,17.5rem),1fr))]">
               {sortScopes(gridItems, sort).map((entry) => (
@@ -658,7 +657,7 @@ export function Dashboard() {
         <Section
           title={
             <>
-              <span className="text-muted">{t.dashboard.detail} ·</span>{" "}
+              <span className="text-muted">{t("dashboard.detail")} ·</span>{" "}
               <span className="text-yellow">{current.name}</span>
               {pickedExtension ? <span className="text-foreground"> › {pickedExtension.shortName}</span> : null}
             </>
@@ -671,17 +670,17 @@ export function Dashboard() {
               })}
               className="border border-line px-3.5 py-2.5 text-sm text-cyan hover:border-cyan hover:text-foreground"
             >
-              {isSealed ? t.dashboard.openSealedCategory : t.dashboard.viewSetCards} →
+              {isSealed ? t("dashboard.openSealedCategory") : t("dashboard.viewSetCards")} →
             </Link>
           }
         >
           <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
             <div className="flex flex-col gap-4">
               <div className="hud-panel grid grid-cols-3">
-                <MiniStat label={t.dashboard.copies} value={formatInt(scope.progress.totalCopies)} />
+                <MiniStat label={t("dashboard.copies")} value={fmt.int(scope.progress.totalCopies)} />
                 <MiniStat
-                  label={t.dashboard.missing}
-                  value={formatInt(scope.progress.missing)}
+                  label={t("dashboard.missing")}
+                  value={fmt.int(scope.progress.missing)}
                   href={cardsHref({
                     set: scope.browseSet,
                     language: scope.language,
@@ -690,8 +689,8 @@ export function Dashboard() {
                   tone="danger"
                 />
                 <MiniStat
-                  label={t.dashboard.duplicates}
-                  value={formatInt(scope.progress.duplicates)}
+                  label={t("dashboard.duplicates")}
+                  value={fmt.int(scope.progress.duplicates)}
                   href={cardsHref({
                     set: scope.browseSet,
                     language: scope.language,
@@ -705,7 +704,7 @@ export function Dashboard() {
                 <div className="hud-panel flex flex-col gap-2 p-5">
                   <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-display text-sm font-semibold uppercase tracking-[0.12em]">
-                      {t.dashboard.blockExtensions}
+                      {t("dashboard.blockExtensions")}
                     </h3>
                     {pickedExtension ? (
                       <button
@@ -713,7 +712,7 @@ export function Dashboard() {
                         onClick={() => setPick(null)}
                         className="min-h-8 border border-line px-2.5 text-xs text-muted hover:border-cyan hover:text-foreground"
                       >
-                        {t.dashboard.wholeBlock}
+                        {t("dashboard.wholeBlock")}
                       </button>
                     ) : null}
                   </div>
@@ -724,7 +723,7 @@ export function Dashboard() {
                       progress={extension.progress}
                       price={view.hasPrices ? fullSetPrice(extension.printings) : null}
                       active={pickedExtension?.key === extension.key}
-                      openLabel={t.dashboard.openList}
+                      openLabel={t("dashboard.openList")}
                       onClick={() => pickRow(extension)}
                     />
                   ))}
@@ -739,11 +738,11 @@ export function Dashboard() {
                 <thead>
                   <tr>
                     <th>
-                      {t.dashboard.byRarity}
+                      {t("dashboard.byRarity")}
                       {pickedExtension ? <span className="ml-2 text-yellow">· {pickedExtension.shortName}</span> : null}
                     </th>
-                    <th className="w-20 sm:w-32">{t.dashboard.uniques}</th>
-                    <th className="w-[45%]">{t.dashboard.progress}</th>
+                    <th className="w-20 sm:w-32">{t("dashboard.uniques")}</th>
+                    <th className="w-[45%]">{t("dashboard.progress")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -759,7 +758,7 @@ export function Dashboard() {
                           <Link
                             href={href}
                             className="flex items-center gap-2 px-2.5 py-3 hover:text-cyan sm:px-4"
-                            aria-label={t.dashboard.viewRarity(row.rarity)}
+                            aria-label={t("dashboard.viewRarity", { rarity: row.rarity })}
                           >
                             <span
                               aria-hidden
@@ -771,13 +770,13 @@ export function Dashboard() {
                         </td>
                         <td className="p-0 font-mono">
                           <Link href={href} tabIndex={-1} aria-hidden className="block px-2.5 py-3 whitespace-nowrap sm:px-4">
-                            {formatInt(row.uniqueOwned)} / {formatInt(row.total)}
+                            {fmt.int(row.uniqueOwned)} / {fmt.int(row.total)}
                           </Link>
                         </td>
                         <td className="p-0">
                           <Link href={href} tabIndex={-1} aria-hidden className="flex items-center gap-2 px-2.5 py-3 sm:gap-2.5 sm:px-4">
                             <Bar percent={row.percent} color={rarityColor(row.rarity)} />
-                            <span className="w-11 text-right font-mono sm:w-14">{formatPercent(row.percent)}</span>
+                            <span className="w-11 text-right font-mono sm:w-14">{fmt.percent(row.percent)}</span>
                           </Link>
                         </td>
                       </tr>
@@ -792,19 +791,19 @@ export function Dashboard() {
 
       {/* 4. Valeur par extension */}
       <Section
-        title={isSealed ? t.dashboard.valueBySealed : t.dashboard.valueBySet}
-        hint={isSealed ? t.dashboard.valueBySealedHint : t.dashboard.valueBySetHint}
+        title={isSealed ? t("dashboard.valueBySealed") : t("dashboard.valueBySet")}
+        hint={isSealed ? t("dashboard.valueBySealedHint") : t("dashboard.valueBySetHint")}
         action={
           <Link
             href="/investissement"
             className="border border-cyan px-3.5 py-2.5 text-sm text-cyan hover:text-foreground"
           >
-            {t.dashboard.viewInvestment} →
+            {t("dashboard.viewInvestment")} →
           </Link>
         }
       >
         {valueRows.length === 0 ? (
-          <EmptyPanel>{isSealed ? t.dashboard.emptySealedInvestment : t.dashboard.emptyInvestment}</EmptyPanel>
+          <EmptyPanel>{isSealed ? t("dashboard.emptySealedInvestment") : t("dashboard.emptyInvestment")}</EmptyPanel>
         ) : (
           <>
             <ul className="hud-panel md:hidden">
@@ -814,10 +813,10 @@ export function Dashboard() {
                   href={set ? investmentHref(set, rowLanguage) : null}
                   title={
                     <>
-                      <span className={name == null ? "text-muted" : "font-medium"}>{name ?? t.dashboard.otherSets}</span>
+                      <span className={name == null ? "text-muted" : "font-medium"}>{name ?? t("dashboard.otherSets")}</span>
                       {rowLanguage ? (
                         <span className="ml-2 text-xs text-muted">
-                          {rowLanguage === "fr" ? t.common.french : t.common.english}
+                          {rowLanguage === "fr" ? t("common.french") : t("common.english")}
                         </span>
                       ) : null}
                     </>
@@ -829,7 +828,7 @@ export function Dashboard() {
               ))}
               {globalValue && valueRows.length > 1 ? (
                 <ValueItem
-                  title={<span className="font-display font-semibold uppercase tracking-[0.08em]">{t.dashboard.total}</span>}
+                  title={<span className="font-display font-semibold uppercase tracking-[0.08em]">{t("dashboard.total")}</span>}
                   value={globalValue}
                   share={null}
                   total
@@ -839,12 +838,12 @@ export function Dashboard() {
             <DataTable minWidth="720px" className="hidden md:block">
               <thead>
                 <tr>
-                  <th>{isSealed ? t.dashboard.sealedCategory : t.dashboard.set}</th>
-                  <th className="w-32 text-right">{t.dashboard.copies}</th>
-                  <th className="w-32 text-right">{t.dashboard.value}</th>
-                  <th className="w-[20%]">{t.dashboard.share}</th>
-                  <th className="w-36 text-right">{t.dashboard.marketVar}</th>
-                  <th className="w-32 text-right">{t.dashboard.purchasePnL}</th>
+                  <th>{isSealed ? t("dashboard.sealedCategory") : t("dashboard.set")}</th>
+                  <th className="w-32 text-right">{t("dashboard.copies")}</th>
+                  <th className="w-32 text-right">{t("dashboard.value")}</th>
+                  <th className="w-[20%]">{t("dashboard.share")}</th>
+                  <th className="w-36 text-right">{t("dashboard.marketVar")}</th>
+                  <th className="w-32 text-right">{t("dashboard.purchasePnL")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -854,18 +853,18 @@ export function Dashboard() {
                   return (
                     <tr key={key} className={href ? "hover:bg-white/5" : undefined}>
                       <ValueCell href={href} primary className={name == null ? "text-muted" : "font-medium"}>
-                        {name ?? t.dashboard.otherSets}
+                        {name ?? t("dashboard.otherSets")}
                         {rowLanguage ? (
                           <span className="ml-2 text-xs font-normal text-muted">
-                            {rowLanguage === "fr" ? t.common.french : t.common.english}
+                            {rowLanguage === "fr" ? t("common.french") : t("common.english")}
                           </span>
                         ) : null}
                       </ValueCell>
                       <ValueCell href={href} className="text-right font-mono">
-                        {formatInt(row.pricedCopies)} / {formatInt(row.copies)}
+                        {fmt.int(row.pricedCopies)} / {fmt.int(row.copies)}
                       </ValueCell>
                       <ValueCell href={href} className="text-right font-mono">
-                        {row.pricedCopies > 0 ? formatMoney(row.marketTotal) : "—"}
+                        {row.pricedCopies > 0 ? fmt.money(row.marketTotal) : "—"}
                       </ValueCell>
                       <ValueCell href={href}>
                         <span className="flex items-center gap-2.5">
@@ -887,12 +886,12 @@ export function Dashboard() {
                 <tfoot className="border-t border-[var(--hud-border)]">
                   <tr>
                     <td className="px-4 py-3 font-display font-semibold uppercase tracking-[0.08em]">
-                      {t.dashboard.total}
+                      {t("dashboard.total")}
                     </td>
                     <td className="px-4 py-3 text-right font-mono">
-                      {formatInt(globalValue.pricedCopies)} / {formatInt(globalValue.copies)}
+                      {fmt.int(globalValue.pricedCopies)} / {fmt.int(globalValue.copies)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-yellow">{formatMoney(globalValue.marketTotal)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-yellow">{fmt.money(globalValue.marketTotal)}</td>
                     <td />
                     <td className="px-4 py-3 text-right">
                       <TrendBadge delta={globalValue.marketDelta} amount={globalValue.marketDeltaAmount} />
@@ -922,38 +921,39 @@ function ValueItem({
   title: ReactNode;
   value: ValueSummary;
   share: number | null;
-  href?: string | null;
+  href?: Href | null;
   total?: boolean;
 }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   const content = (
     <>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0">{title}</span>
         <span className={`shrink-0 font-mono text-base ${total ? "text-yellow" : ""}`}>
-          {value.pricedCopies > 0 ? formatMoney(value.marketTotal) : "—"}
+          {value.pricedCopies > 0 ? fmt.money(value.marketTotal) : "—"}
         </span>
       </div>
       {share != null ? (
         <div className="mt-2 flex items-center gap-2.5 text-xs">
           <Bar percent={share} tone="cyan" />
-          <span className="shrink-0 text-muted">{t.dashboard.valueShare(`${Math.round(share)} %`)}</span>
+          <span className="shrink-0 text-muted">{t("dashboard.valueShare", { percent: `${Math.round(share)} %` })}</span>
         </div>
       ) : null}
       <dl className="mt-2.5 flex flex-col gap-1.5 text-sm">
         <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-muted">{t.dashboard.valuePricedCopies}</dt>
-          <dd className="font-mono">{t.dashboard.valueCount(formatInt(value.pricedCopies), formatInt(value.copies))}</dd>
+          <dt className="text-muted">{t("dashboard.valuePricedCopies")}</dt>
+          <dd className="font-mono">{t("dashboard.valueCount", { count: fmt.int(value.pricedCopies), total: fmt.int(value.copies) })}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-muted">{t.dashboard.valueMarketChange}</dt>
+          <dt className="text-muted">{t("dashboard.valueMarketChange")}</dt>
           <dd>
             <TrendBadge delta={value.marketDelta} amount={value.marketDeltaAmount} />
           </dd>
         </div>
         {value.profitEur != null ? (
           <div className="flex items-baseline justify-between gap-3">
-            <dt className="text-muted">{value.profitEur < 0 ? t.dashboard.valueLoss : t.dashboard.valueGain}</dt>
+            <dt className="text-muted">{value.profitEur < 0 ? t("dashboard.valueLoss") : t("dashboard.valueGain")}</dt>
             <dd>
               <ProfitText value={value.profitEur} />
             </dd>
@@ -981,7 +981,7 @@ function ValueCell({
   className = "",
   children,
 }: {
-  href: string | null;
+  href: Href | null;
   primary?: boolean;
   className?: string;
   children: ReactNode;
@@ -1001,10 +1001,8 @@ function ValueCell({
   );
 }
 
-function investmentHref(set: string, language: Language | null) {
-  const params = new URLSearchParams({ set });
-  if (language) params.set("language", language);
-  return `/investissement?${params}`;
+function investmentHref(set: string, language: Language | null): Href {
+  return { pathname: "/investissement", query: language ? { set, language } : { set } };
 }
 
 function rarityColor(rarity: string) {
@@ -1022,6 +1020,7 @@ function GridCard({
   hasPrices: boolean;
   onSelect: () => void;
 }) {
+  const fmt = useNumberFormat();
   const { progress, value } = item;
   return (
     <button
@@ -1041,14 +1040,14 @@ function GridCard({
         <Bar percent={progress.percent} tone={selected ? "yellow" : "cyan"} />
         <span className="flex justify-between font-mono text-sm text-muted">
           <span>
-            <span className="text-foreground">{formatInt(progress.uniqueOwned)}</span> / {formatInt(progress.total)}
+            <span className="text-foreground">{fmt.int(progress.uniqueOwned)}</span> / {fmt.int(progress.total)}
           </span>
-          <span>{formatPercent(progress.percent)}</span>
+          <span>{fmt.percent(progress.percent)}</span>
         </span>
       </span>
       <span className="mt-auto flex items-baseline justify-between gap-2 border-t border-line/60 pt-3">
         <span className="font-mono text-base text-foreground">
-          {hasPrices && value && value.pricedCopies > 0 ? formatMoney(value.marketTotal) : "—"}
+          {hasPrices && value && value.pricedCopies > 0 ? fmt.money(value.marketTotal) : "—"}
         </span>
         {value ? <TrendBadge delta={value.marketDelta} amount={value.marketDeltaAmount} /> : null}
       </span>
@@ -1072,11 +1071,12 @@ function PickRow({
   openLabel: string;
   onClick: () => void;
 }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   const priceTitle = price
     ? [
-        `${t.dashboard.fullSetPrice} ${t.dashboard.fullSetHint}`,
-        price.priced < price.count ? `${formatInt(price.priced)} / ${formatInt(price.count)}` : null,
+        `${t("dashboard.fullSetPrice")} ${t("dashboard.fullSetHint")}`,
+        price.priced < price.count ? `${fmt.int(price.priced)} / ${fmt.int(price.count)}` : null,
       ]
         .filter(Boolean)
         .join(" · ")
@@ -1097,13 +1097,13 @@ function PickRow({
         </span>
         {price ? (
           <span title={priceTitle} className="truncate font-mono text-xs text-yellow">
-            {formatMoney(price.total)}
+            {fmt.money(price.total)}
           </span>
         ) : null}
       </span>
       <Bar percent={progress.percent} tone={active ? "yellow" : "cyan"} thick />
       <span className="w-20 shrink-0 text-right font-mono text-sm text-muted group-hover:text-foreground sm:w-24">
-        <span className="text-foreground">{formatInt(progress.uniqueOwned)}</span> / {formatInt(progress.total)}
+        <span className="text-foreground">{fmt.int(progress.uniqueOwned)}</span> / {fmt.int(progress.total)}
       </span>
       <span
         aria-hidden
@@ -1116,17 +1116,18 @@ function PickRow({
 }
 
 function SealedProducts({ extension, items }: { extension: Scope; items: { printingId: string; quantity: number }[] }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   return (
     <DataTable minWidth="520px">
       <thead>
         <tr>
-          <th>{t.dashboard.sealedProduct}</th>
+          <th>{t("dashboard.sealedProduct")}</th>
           <th className="w-14 sm:w-28">
-            <span className="sm:hidden">{t.investment.qty}</span>
-            <span className="hidden sm:inline">{t.dashboard.copies}</span>
+            <span className="sm:hidden">{t("investment.qty")}</span>
+            <span className="hidden sm:inline">{t("dashboard.copies")}</span>
           </th>
-          <th className="w-28 sm:w-32">{t.dashboard.value}</th>
+          <th className="w-28 sm:w-32">{t("dashboard.value")}</th>
         </tr>
       </thead>
       <tbody>
@@ -1152,7 +1153,7 @@ function SealedProducts({ extension, items }: { extension: Scope; items: { print
                 </td>
                 <td className="p-0 font-mono">
                   <Link href={href} tabIndex={-1} aria-hidden className="block px-2.5 py-3 sm:px-4">
-                    {formatInt(owned)}
+                    {fmt.int(owned)}
                   </Link>
                 </td>
                 <td className="p-0 font-mono">
@@ -1160,8 +1161,8 @@ function SealedProducts({ extension, items }: { extension: Scope; items: { print
                     {unit == null || Number.isNaN(unit)
                       ? "—"
                       : owned > 0
-                        ? formatMoney(unit * owned)
-                        : formatMoney(unit)}
+                        ? fmt.money(unit * owned)
+                        : fmt.money(unit)}
                   </Link>
                 </td>
               </tr>
@@ -1173,9 +1174,10 @@ function SealedProducts({ extension, items }: { extension: Scope; items: { print
 }
 
 function ProfitText({ value }: { value: number | null }) {
+  const fmt = useNumberFormat();
   if (value == null) return <span className="text-muted">—</span>;
   const tone = value > 0.004 ? "text-gain" : value < -0.004 ? "text-danger" : "text-muted";
-  return <span className={`font-mono ${tone}`}>{formatSignedMoney(value)}</span>;
+  return <span className={`font-mono ${tone}`}>{formatSignedMoney(fmt, value)}</span>;
 }
 
 function Bar({
@@ -1211,7 +1213,7 @@ function GlobalStat({
   children,
 }: {
   label: string;
-  href?: string;
+  href?: Href;
   linkLabel?: string;
   tone?: "danger";
   last?: boolean;
@@ -1249,7 +1251,7 @@ function MiniStat({
 }: {
   label: string;
   value: string;
-  href?: string;
+  href?: Href;
   tone?: "danger";
   last?: boolean;
 }) {
@@ -1389,13 +1391,13 @@ function DataTable({ minWidth, className = "", children }: { minWidth: string; c
 }
 
 function EmptyCatalog() {
-  const { t } = useI18n();
+  const t = useTranslations();
   return (
     <div className="mx-auto max-w-xl px-4 py-16">
       <div className="hud-panel p-8">
-        <h1 className="text-2xl text-yellow">{t.dashboard.emptyTitle}</h1>
+        <h1 className="text-2xl text-yellow">{t("dashboard.emptyTitle")}</h1>
         <p className="mt-3 text-sm leading-6 text-muted">
-          {t.dashboard.emptyBody} <code className="text-cyan">npm run import:cards</code>.
+          {t("dashboard.emptyBody")} <code className="text-cyan">npm run import:cards</code>.
         </p>
       </div>
     </div>

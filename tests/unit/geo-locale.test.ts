@@ -12,25 +12,33 @@ describe("i18n : langue proposée selon le pays", () => {
     assert.equal(suggestedSiteLocale({ stored: null, country: "SN", languages: [] }), "fr");
   });
 
-  it("connexion depuis les États-Unis ou l'Allemagne : anglais, même avec un navigateur français", () => {
+  it("connexion depuis les États-Unis : anglais, même avec un navigateur français", () => {
     assert.equal(suggestedSiteLocale({ stored: null, country: "US", languages: ["fr-FR"] }), "en");
-    assert.equal(suggestedSiteLocale({ stored: null, country: "DE", languages: ["de-DE"] }), "en");
+  });
+
+  it("connexion depuis un pays germanophone, hispanophone ou italophone : sa langue", () => {
+    assert.equal(suggestedSiteLocale({ stored: null, country: "DE", languages: ["en-US"] }), "de");
+    assert.equal(suggestedSiteLocale({ stored: null, country: "AT", languages: [] }), "de");
+    assert.equal(suggestedSiteLocale({ stored: null, country: "MX", languages: [] }), "es");
+    assert.equal(suggestedSiteLocale({ stored: null, country: "IT", languages: ["en"] }), "it");
   });
 
   it("pays bilingue : la langue du navigateur décide", () => {
     assert.equal(suggestedSiteLocale({ stored: null, country: "BE", languages: ["fr-BE", "nl"] }), "fr");
     assert.equal(suggestedSiteLocale({ stored: null, country: "CA", languages: ["en-CA"] }), "en");
+    assert.equal(suggestedSiteLocale({ stored: null, country: "CH", languages: ["it-CH", "de"] }), "it");
   });
 
   it("pays inconnu (développement local) : la langue du navigateur décide", () => {
     assert.equal(suggestedSiteLocale({ stored: null, country: null, languages: ["fr"] }), "fr");
-    assert.equal(suggestedSiteLocale({ stored: null, country: "xx", languages: ["es"] }), "en");
+    assert.equal(suggestedSiteLocale({ stored: null, country: "xx", languages: ["es"] }), "es");
+    assert.equal(suggestedSiteLocale({ stored: null, country: null, languages: ["ja", "nl"] }), "en");
   });
 
   it("langue choisie dans l'app : prioritaire sur le pays", () => {
     assert.equal(suggestedSiteLocale({ stored: "en", country: "FR", languages: ["fr"] }), "en");
     assert.equal(suggestedSiteLocale({ stored: "fr", country: "US", languages: ["en"] }), "fr");
-    assert.equal(suggestedSiteLocale({ stored: "de", country: "FR", languages: ["fr"] }), "en");
+    assert.equal(suggestedSiteLocale({ stored: "de", country: "FR", languages: ["fr"] }), "de");
   });
 
   it("code pays : deux lettres majuscules", () => {

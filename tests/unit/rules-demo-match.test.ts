@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { LOCALES } from "../../src/lib/i18n/messages";
+import { LOCALES, type Locale } from "../../src/i18n/config";
 import {
-  buildInteractiveSteps,
   cardOf,
-  demoTableCopy,
   initialMatchState,
   matchesExpect,
   type BoardCard,
@@ -14,13 +12,13 @@ import {
   type MatchState,
 } from "../../src/lib/rules/demo-match";
 import { EXAMPLE_CARDS } from "../../src/lib/rules/examples";
-import { howtoPlayContent } from "../../src/lib/rules/howto-play";
+import { howtoFor, stepsFor, tableFor } from "../helpers/rules-content";
 
 type Transition = { step: InteractiveStep; index: number; before: MatchState; after: MatchState };
 
 /** Joue toute la démo en appliquant chaque étape dans l'ordre (comme DemoMatch quand on suit le coach). */
-function runDemo(locale: "fr" | "en" = "fr"): { transitions: Transition[]; final: MatchState } {
-  const steps = buildInteractiveSteps(locale);
+function runDemo(locale: Locale = "fr"): { transitions: Transition[]; final: MatchState } {
+  const steps = stepsFor(locale);
   let state = initialMatchState();
   const transitions: Transition[] = [];
   steps.forEach((step, index) => {
@@ -64,7 +62,7 @@ function actionFor(expect: ExpectAction): Parameters<typeof matchesExpect>[1] {
 }
 
 const keywordExample = (name: string) => {
-  const kw = howtoPlayContent("en").keywords.items.find((k) => k.name === name);
+  const kw = howtoFor("en").keywords.items.find((k) => k.name === name);
   assert.ok(kw?.exampleKey, `mot-clé ${name} sans exemple`);
   return kw.exampleKey;
 };
@@ -84,8 +82,8 @@ function yourCardCount(s: MatchState): number {
 const DIE_ORDER = ["d4", "d6", "d8", "d10", "d12", "d20"];
 
 describe("Démo interactive — définition des étapes", () => {
-  const fr = buildInteractiveSteps("fr");
-  const en = buildInteractiveSteps("en");
+  const fr = stepsFor("fr");
+  const en = stepsFor("en");
 
   it("ids uniques, première étape « begin », seule la dernière est « done »", () => {
     assert.equal(new Set(fr.map((s) => s.id)).size, fr.length);
@@ -137,7 +135,7 @@ describe("Démo interactive — définition des étapes", () => {
 });
 
 describe("Démo interactive — matchesExpect", () => {
-  const steps = buildInteractiveSteps("fr");
+  const steps = stepsFor("fr");
   const kinds = [
     "begin",
     "die",
@@ -223,7 +221,7 @@ describe("Démo interactive — simulation de la partie", () => {
 
   it("apply ne mute jamais l'état précédent", () => {
     let state = initialMatchState();
-    for (const step of buildInteractiveSteps("fr")) {
+    for (const step of stepsFor("fr")) {
       const snapshot = structuredClone(state);
       const next = step.apply(state);
       assert.deepEqual(state, snapshot, `${step.id} a muté l'état`);
@@ -526,7 +524,7 @@ describe("Démo interactive — simulation de la partie", () => {
           : t.before.rivalField.find((c) => c.id === t.before.rivalAttackerId);
       assert.ok(attacker);
       for (const locale of ["fr", "en"] as const) {
-        const text = buildInteractiveSteps(locale)[t.index].explain;
+        const text = stepsFor(locale)[t.index].explain;
         const cited = [...text.matchAll(/\b(?:P|Power )(\d+)\b(?!\+)/g)].map((m) => Number(m[1]));
         for (const n of cited) assert.equal(n, powerOf(attacker), `${locale} : « ${text} »`);
       }
@@ -537,7 +535,7 @@ describe("Démo interactive — simulation de la partie", () => {
   it("le compte de Gigs annoncé en fin de démo correspond à l'état", () => {
     const finale = transitions.find((t) => t.after.flash === "finale");
     assert.ok(finale);
-    const needed = Number(demoTableCopy("fr").fx.winSub.match(/\d+/)![0]);
+    const needed = Number(tableFor("fr").fx.winSub.match(/\d+/)![0]);
     assert.ok(finale.after.yourGigs.length >= needed, `${finale.after.yourGigs.length} Gigs < ${needed}`);
   });
 });
@@ -552,8 +550,8 @@ describe("Démo interactive — textes de la table", () => {
   }
 
   it("FR et EN complets, mêmes clés", () => {
-    const fr = demoTableCopy("fr");
-    const en = demoTableCopy("en");
+    const fr = tableFor("fr");
+    const en = tableFor("en");
     assertFilled(fr, "fr");
     assertFilled(en, "en");
     assert.deepEqual(Object.keys(fr).sort(), Object.keys(en).sort());
@@ -561,18 +559,18 @@ describe("Démo interactive — textes de la table", () => {
     assert.notEqual(fr.title, en.title);
   });
 
-  it("toutes les locales de l'app ont une table (fr natif, sinon en)", () => {
-    for (const { id } of LOCALES) {
-      assert.deepEqual(
-        JSON.stringify(demoTableCopy(id)),
-        JSON.stringify(demoTableCopy(id === "fr" ? "fr" : "en")),
-        id,
-      );
+  it("chaque langue a une table complète, avec les mêmes clés que le français", () => {
+    const fr = tableFor("fr");
+    for (const id of LOCALES) {
+      const table = tableFor(id);
+      assertFilled(table, id);
+      assert.deepEqual(Object.keys(table).sort(), Object.keys(fr).sort(), id);
+      assert.deepEqual(Object.keys(table.fx).sort(), Object.keys(fr.fx).sort(), id);
     }
   });
 
   it("libellés de tour et Street Cred incluent leur paramètre", () => {
-    for (const c of [demoTableCopy("fr"), demoTableCopy("en")]) {
+    for (const c of LOCALES.map(tableFor)) {
       assert.match(c.turnYou(2), /\b2\b/);
       assert.match(c.turnRival(3), /\b3\b/);
       assert.match(c.fx.streetCred("10"), /\b10\b/);

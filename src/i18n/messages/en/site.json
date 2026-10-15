@@ -1,0 +1,12 @@
+{
+  "home": {
+    "title": "TCG Tracker — Cyberpunk TCG card list, collection and tournaments",
+    "description": "Browse every Cyberpunk TCG card, track your collection and its value, build decks and find tournaments and game stores near you. Free."
+  },
+  "og": {
+    "tagline": "Cyberpunk TCG cards, collection and tournaments",
+    "tournament": "Cyberpunk TCG tournament",
+    "shop": "Cyberpunk TCG game store",
+    "free": "Free"
+  }
+}

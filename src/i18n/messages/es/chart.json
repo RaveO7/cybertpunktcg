@@ -1,0 +1,6 @@
+{
+  "label": "Evolución",
+  "empty": "Aún no hay historial. Importa precios a lo largo de varios días.",
+  "period": "En el período mostrado",
+  "days": "{n, plural, one {# día} other {# días}}"
+}

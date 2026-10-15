@@ -3,11 +3,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ANATOMY_CARDS,
-  anatomyCopy,
   type AnatomyCard,
   type AnatomyPartId,
   type AnatomyPoint,
 } from "@/lib/rules/card-anatomy";
+import { useAnatomyCopy } from "@/lib/rules/use-rules";
 import { EXAMPLE_CARDS } from "@/lib/rules/examples";
 
 type Line = { part: AnatomyPartId; d: string };
@@ -19,8 +19,8 @@ function markerClass(active: boolean) {
   }`;
 }
 
-export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
-  const copy = anatomyCopy(locale);
+export function CardAnatomy() {
+  const copy = useAnatomyCopy();
   const [cardId, setCardId] = useState<AnatomyCard["id"]>("unit");
   const [selected, setSelected] = useState<AnatomyPartId>("cost");
   const [hovered, setHovered] = useState<AnatomyPartId | null>(null);
@@ -77,7 +77,7 @@ export function CardAnatomy({ locale }: { locale: "fr" | "en" }) {
     const points = ANATOMY_CARDS.find((c) => c.id === cardId)?.points ?? ANATOMY_CARDS[0].points;
     pointsRef.current = points;
     measureLines();
-  }, [cardId, locale]);
+  }, [cardId, copy]);
 
   useEffect(() => {
     const root = rootRef.current;

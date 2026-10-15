@@ -1,0 +1,15 @@
+{
+  "notes": {
+    "legendJackie": "Legende mit Go Solo — kann als Einheit aufs Spielfeld kommen.",
+    "legendJohnny": "Offene Legende im Legenden-Bereich.",
+    "legendJudy": "Blaue Legende — verstärkt BRAINDANCE-Programme.",
+    "unitJackie": "Einheit auf dem Spielfeld — greift an und stiehlt Gigs.",
+    "unitBlocker": "Einheit mit Blocker — leitet einen Angriff um.",
+    "unitAdrenaline": "Adrenaline — kann in dem Zug angreifen, in dem sie gespielt wird.",
+    "unitSmasher": "Power 15 → stiehlt 2 Gigs bei einem Angriff auf den Gig-Bereich.",
+    "programDetonate": "Programm mit Quick — als Reaktion auf einen Angriff spielbar.",
+    "programReaper": "Programm — sofortiger Effekt, dann auf die Ablage.",
+    "gearConverter": "Gear — wird an eine Einheit oder Legende angelegt.",
+    "eddieFace": "Verdeckt verkauft = 1 Eddie im Eddie-Bereich."
+  }
+}

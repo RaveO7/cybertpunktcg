@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { isSealedSetCode } from "@/lib/reference-data";
-import { FRENCH_ONLY_PATHS, localizedPath, SITE_LOCALES, type PublicRouteKey } from "@/lib/seo/routes";
+import { LOCALES } from "@/i18n/config";
+import { localizedPath, type PublicRouteKey } from "@/i18n/paths";
 import { absoluteUrl } from "@/lib/seo/site";
 
 /** Tournois terminés gardés dans le sitemap (résultats) pendant 180 jours après leur début. */
@@ -11,10 +12,10 @@ const SEALED_CARD_TYPES = ["Sealed", "Lot"];
 
 type Entry = MetadataRoute.Sitemap[number];
 
-/** Une entrée par langue, chacune déclarant les deux versions comme alternatives. */
-function bilingual(key: PublicRouteKey, params: Record<string, string> = {}, lastModified?: Date): Entry[] {
-  const languages = Object.fromEntries(SITE_LOCALES.map((locale) => [locale, absoluteUrl(localizedPath(key, locale, params))]));
-  return SITE_LOCALES.map((locale) => ({
+/** Une entrée par langue, chacune déclarant toutes les versions comme alternatives. */
+function localized(key: PublicRouteKey, params: Record<string, string> = {}, lastModified?: Date): Entry[] {
+  const languages = Object.fromEntries(LOCALES.map((locale) => [locale, absoluteUrl(localizedPath(key, locale, params))]));
+  return LOCALES.map((locale) => ({
     url: absoluteUrl(localizedPath(key, locale, params)),
     ...(lastModified ? { lastModified } : {}),
     alternates: { languages },
@@ -42,14 +43,13 @@ export async function buildSitemap(now = new Date()): Promise<MetadataRoute.Site
     }),
   ]);
 
-  const staticPages: PublicRouteKey[] = ["home", "cards"];
+  const staticPages: PublicRouteKey[] = ["home", "cards", "legalNotice", "terms", "privacy"];
   return [
-    ...staticPages.flatMap((key) => bilingual(key)),
-    ...FRENCH_ONLY_PATHS.map((path) => ({ url: absoluteUrl(path) })),
+    ...staticPages.flatMap((key) => localized(key)),
     ...cards
       .filter((card) => card.printings.some((printing) => !isSealedSetCode(printing.set.code)))
-      .flatMap((card) => bilingual("card", { slug: card.slug }, latest([card.updatedAt, ...card.printings.map((p) => p.updatedAt)]))),
-    ...shops.flatMap((shop) => bilingual("shop", { slug: shop.slug }, shop.updatedAt)),
-    ...tournaments.flatMap((t) => bilingual("tournament", { id: t.id }, t.updatedAt)),
+      .flatMap((card) => localized("card", { slug: card.slug }, latest([card.updatedAt, ...card.printings.map((p) => p.updatedAt)]))),
+    ...shops.flatMap((shop) => localized("shop", { slug: shop.slug }, shop.updatedAt)),
+    ...tournaments.flatMap((t) => localized("tournament", { id: t.id }, t.updatedAt)),
   ];
 }

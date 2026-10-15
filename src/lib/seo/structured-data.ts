@@ -4,8 +4,9 @@ import type { Place } from "@/lib/geo/location";
 import type { ShopDetail } from "@/lib/shops/shops";
 import type { PublicTournamentDetail, PublicTournamentSummary } from "@/lib/tournament/public-view";
 import { SOCIAL_LINKS, SITE } from "@/lib/site";
-import { localizedPath, type SiteLocale } from "@/lib/seo/routes";
 import { absoluteUrl } from "@/lib/seo/site";
+import type { Locale } from "@/i18n/config";
+import { localizedPath } from "@/i18n/paths";
 
 export type JsonLdObject = { [key: string]: unknown };
 
@@ -31,7 +32,7 @@ function toAbsolute(url: string | null | undefined): string | null {
   return /^https?:\/\//.test(url) ? url : absoluteUrl(url);
 }
 
-export function websiteLd(locale: SiteLocale): JsonLdObject {
+export function websiteLd(locale: Locale): JsonLdObject {
   return {
     "@context": CONTEXT,
     "@type": "WebSite",
@@ -42,7 +43,7 @@ export function websiteLd(locale: SiteLocale): JsonLdObject {
 }
 
 /** L'application elle-même (accueil) : outil web gratuit autour du jeu, avec ses fonctionnalités. */
-export function webApplicationLd(locale: SiteLocale, description: string, features: string[]): JsonLdObject {
+export function webApplicationLd(locale: Locale, description: string, features: string[]): JsonLdObject {
   return compact({
     "@context": CONTEXT,
     "@type": "WebApplication",
@@ -119,7 +120,7 @@ function price(cents: number | null): string {
 }
 
 /** Événement d'un tournoi public (statut, lieu, organisateur, offre d'inscription). */
-export function eventLd(t: PublicTournamentDetail, locale: SiteLocale): JsonLdObject {
+export function eventLd(t: PublicTournamentDetail, locale: Locale): JsonLdObject {
   const url = absoluteUrl(localizedPath("tournament", locale, { id: t.id }));
   const location = t.place
     ? compact({
@@ -167,7 +168,7 @@ export function eventLd(t: PublicTournamentDetail, locale: SiteLocale): JsonLdOb
 /** Liste des tournois (annuaire, boutique) : chaque élément pointe vers sa fiche. */
 export function tournamentListLd(
   tournaments: Pick<PublicTournamentSummary, "id" | "name">[],
-  locale: SiteLocale,
+  locale: Locale,
 ): JsonLdObject | null {
   return itemListLd(tournaments.map((t) => ({ name: t.name, path: localizedPath("tournament", locale, { id: t.id }) })));
 }
@@ -237,7 +238,7 @@ export function parseOpeningHours(text: string | null): JsonLdObject[] {
 }
 
 /** Boutique locale : adresse, coordonnées, contact, horaires reconnus et réseaux. */
-export function storeLd(shop: ShopDetail, locale: SiteLocale): JsonLdObject {
+export function storeLd(shop: ShopDetail, locale: Locale): JsonLdObject {
   return compact({
     "@context": CONTEXT,
     "@type": "Store",
@@ -263,7 +264,7 @@ export type CardLdSource = {
 };
 
 /** Carte de jeu : œuvre appartenant au jeu Cyberpunk TCG. */
-export function cardLd(card: CardLdSource, locale: SiteLocale): JsonLdObject {
+export function cardLd(card: CardLdSource, locale: Locale): JsonLdObject {
   return compact({
     "@context": CONTEXT,
     "@type": "CreativeWork",

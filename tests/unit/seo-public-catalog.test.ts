@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
+import { translationStatus } from "../../src/i18n/cards";
 import { cardWithNeighbours, publicCards } from "../../src/lib/seo/public-catalog";
 import type { CardDTO, CatalogDTO, PrintingDTO } from "../../src/lib/types";
 
@@ -97,6 +98,39 @@ describe("seo : catalogue public", () => {
     assert.equal(adam.translated, false);
     const vEn = publicCards(catalog, "en").find((c) => c.slug === "v")!;
     assert.equal(vEn.name, "V: Streetkid");
+  });
+
+  it("fiche allemande : nom et image anglais, texte de règles traduit s'il est à jour", () => {
+    const translations = {
+      v: { source: "Rules v", text: "Regeln v" },
+      adam: { source: "Ancien texte anglais", text: "Veraltete Übersetzung" },
+    };
+    const cards = publicCards(catalog, "de", translations);
+    const v = cards.find((c) => c.slug === "v")!;
+    assert.equal(v.name, "V: Streetkid");
+    assert.equal(v.image, "/card-images/v-en.webp");
+    assert.equal(v.rulesText, "Regeln v");
+    assert.equal(v.translated, true);
+    // Texte anglais modifié depuis la traduction : l'anglais à jour, signalé comme non traduit.
+    const adam = cards.find((c) => c.slug === "adam")!;
+    assert.equal(adam.rulesText, "Rules adam");
+    assert.equal(adam.translated, false);
+    // Pas de traduction : anglais.
+    const jackie = cards.find((c) => c.slug === "jackie")!;
+    assert.equal(jackie.rulesText, "Rules jackie");
+    assert.equal(jackie.translated, false);
+  });
+
+  it("une traduction du site ne remplace jamais une impression officielle", () => {
+    const v = publicCards(catalog, "fr", { v: { source: "Rules v", text: "Traduction du site" } }).find((c) => c.slug === "v")!;
+    assert.equal(v.rulesText, "Texte français");
+  });
+
+  it("état des traductions : à jour, périmée, absente", () => {
+    const translations = { v: { source: "Rules v", text: "x" }, adam: { source: "old", text: "y" } };
+    assert.equal(translationStatus(translations, "v", "Rules v"), "ok");
+    assert.equal(translationStatus(translations, "adam", "Rules adam"), "stale");
+    assert.equal(translationStatus(translations, "jackie", "Rules jackie"), "missing");
   });
 
   it("précédente, suivante et même couleur", () => {

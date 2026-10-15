@@ -1,4 +1,4 @@
-// Boutiques : fiche partagée par /boutiques/[slug] (fr) et /en/shops/[slug] (en), annuaire affiché
+// Boutiques : fiche dans chaque langue (/boutiques/[slug], /en/shops/[slug]…), annuaire affiché
 // sur l'accueil des visiteurs et sur /boutiques pour les comptes connectés.
 
 import type { Metadata } from "next";
@@ -10,12 +10,13 @@ import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { JsonLd } from "@/components/site/JsonLd";
 import type { SearchParams } from "@/components/public-site/tournament-pages";
 import { shopDirectoryQuerySchema, validateSearchParams } from "@/lib/api-schemas";
-import { COPY } from "@/lib/seo/copy";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { localizedPath, type SiteLocale } from "@/lib/seo/routes";
 import { storeLd, tournamentListLd } from "@/lib/seo/structured-data";
 import { findPublicShop, listPublicShops, toDetail } from "@/lib/shops/shops";
 import { shopTournaments } from "@/lib/tournament/directory";
+import type { Locale } from "@/i18n/config";
+import { localizedPath } from "@/i18n/paths";
+import { translatorFor } from "@/i18n/server";
 
 // Métadonnées et page lisent la même boutique : une seule requête par rendu.
 const findShop = cache(findPublicShop);
@@ -42,20 +43,20 @@ export async function ShopsDirectory({ searchParams }: { searchParams: SearchPar
   return <ShopDirectory initialParams={params} initial={initial} />;
 }
 
-export async function shopMetadata(locale: SiteLocale, slug: string): Promise<Metadata> {
+export async function shopMetadata(locale: Locale, slug: string): Promise<Metadata> {
   const shop = await findShop(slug);
-  if (!shop) return { title: COPY[locale].shops.crumb, robots: { index: false, follow: false } };
-  const copy = COPY[locale].shops;
+  const t = await translatorFor(locale, "shops");
+  if (!shop) return { title: t("seo.crumb"), robots: { index: false, follow: false } };
   return pageMetadata({
     locale,
     page: { key: "shop", params: { slug } },
-    title: copy.itemTitle(shop.name, shop.city),
-    description: shop.description?.trim() || copy.itemDescription(shop.name, shop.city),
+    title: t("seo.itemTitle", { name: shop.name, city: shop.city }),
+    description: shop.description?.trim() || t("seo.itemDescription", { name: shop.name, city: shop.city }),
     image: { url: `/og/shop/${encodeURIComponent(slug)}/${locale}`, width: 1200, height: 630, alt: shop.name },
   });
 }
 
-export async function ShopDetailPage({ locale, slug }: { locale: SiteLocale; slug: string }) {
+export async function ShopDetailPage({ locale, slug }: { locale: Locale; slug: string }) {
   const shop = await findShop(slug);
   if (!shop) notFound();
   const detail = toDetail(shop);

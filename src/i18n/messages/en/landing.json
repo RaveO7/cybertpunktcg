@@ -1,0 +1,105 @@
+{
+  "eyebrow": "Cyberpunk TCG · free fan-made tool",
+  "title": "Every Cyberpunk TCG card, your collection and tournaments near you",
+  "lead": "TCG Tracker brings together the full Cyberpunk TCG card list, collection and value tracking, deck building, and a directory of tournaments and game stores. Free, no ads.",
+  "register": "Create a free account",
+  "login": "Log in",
+  "openApp": "Open the app",
+  "featuresTitle": "What you can do",
+  "modulesLabel": "Modules",
+  "findLabel": "Out in the streets",
+  "findTitle": "Find a game near you",
+  "findBody": "Tournaments announced by stores and players, and the stores that keep the game alive.",
+  "tabTournaments": "Tournaments",
+  "tabShops": "Stores",
+  "fanLabel": "Some of the game's Legends",
+  "cardClose": "Close",
+  "features": [
+    {
+      "key": "collection",
+      "title": "Collection tracking",
+      "body": "Add your cards in a few clicks, even whole ranges at once, and see what your collection is worth.",
+      "points": [
+        "Condition and purchase price of every copy",
+        "Value at Cardmarket prices, and how it moves",
+        "CSV import and share your binder with a link"
+      ]
+    },
+    {
+      "key": "decks",
+      "title": "Deck building",
+      "body": "Build your decks: the app checks the deckbuilding rules for you.",
+      "points": [
+        "3 Legends, 40 to 50 cards, 3 copies at most",
+        "RAM limit per color worked out for you",
+        "The cards you're missing and what they cost"
+      ]
+    },
+    {
+      "key": "tournaments",
+      "title": "Tournaments",
+      "body": "Find a tournament near you, or run your own at a store or with friends.",
+      "points": [
+        "Sign up in one click or with a code",
+        "Swiss rounds in Bo1 or Bo3, round timer",
+        "Live pairings and standings"
+      ]
+    },
+    {
+      "key": "cards",
+      "title": "Full card list",
+      "body": "Every card in the game, with its text, printings and market price.",
+      "points": [
+        "Cards in French and English",
+        "Cost, power, RAM and rules text",
+        "Printings, rarities and Cardmarket prices"
+      ]
+    },
+    {
+      "key": "shops",
+      "title": "Game stores",
+      "body": "The stores that keep the game alive, and their next events.",
+      "points": [
+        "Address, opening hours and map",
+        "Upcoming tournaments at each store",
+        "Verified store badge"
+      ]
+    },
+    {
+      "key": "howToPlay",
+      "title": "Learn to play",
+      "body": "A real guided game against a Rival, move by move, then the full rules.",
+      "points": [
+        "Interactive step-by-step path",
+        "Playmat zones and how to read a card",
+        "Full rules and glossary"
+      ]
+    }
+  ],
+  "preview": "Preview",
+  "example": "Example",
+  "open": "Explore",
+  "finalTitle": "Ready to track your collection?",
+  "finalBody": "Create a free account and find your cards on all your devices, even offline.",
+  "showcase": {
+    "completion": "Completion",
+    "value": "Value",
+    "legal": [
+      "3 Legends",
+      "45 cards",
+      "RAM within limit"
+    ],
+    "missing": "3 cards missing",
+    "round": "Round 3 / 5",
+    "table": "Table",
+    "live": "Live standings",
+    "verified": "Verified",
+    "nextEvent": "Next tournament: Saturday 2 pm",
+    "store": "Night City store",
+    "gigs": "Gigs",
+    "win": "7 Gigs at the start of your turn: you win",
+    "price": "Price",
+    "red": "Red",
+    "green": "Green"
+  }
+}

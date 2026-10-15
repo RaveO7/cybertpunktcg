@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useNumberFormat } from "@/i18n/number-format";
+import { Link } from "@/i18n/navigation";
 import { CardImage } from "@/components/CardImage";
 import { useCollection } from "@/components/CollectionProvider";
-import { useI18n } from "@/components/LocaleProvider";
 import { TrendBadge } from "@/components/TrendBadge";
 import { useWishlist } from "@/components/WishlistProvider";
-import { intlLocale } from "@/lib/i18n/messages";
-import { formatInt, formatMoney, priceMovement, printingTitle, wishlistTargetReached } from "@/lib/logic";
+import { intlLocale } from "@/i18n/config";
+import { priceMovement, printingTitle, wishlistTargetReached } from "@/lib/logic";
 import type { CardDTO, PrintingDTO, WishlistItemDTO } from "@/lib/types";
 
 type Row = {
@@ -37,7 +38,9 @@ function compareRows(a: Row, b: Row) {
 }
 
 export function WishlistScreen() {
-  const { t, locale } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
+  const locale = useLocale();
   const { catalog, items: collection, ready: collectionReady, error } = useCollection();
   const wishlist = useWishlist();
   const { acknowledge } = wishlist;
@@ -81,7 +84,7 @@ export function WishlistScreen() {
   }, [catalog, collection, wishlist.items]);
 
   if (error) return <p className="p-6 text-danger">{error}</p>;
-  if (!collectionReady || !catalog || !wishlist.ready) return <p className="p-6 text-muted">{t.common.loading}</p>;
+  if (!collectionReady || !catalog || !wishlist.ready) return <p className="p-6 text-muted">{t("common.loading")}</p>;
 
   const reachedCount = rows.filter((row) => row.reached).length;
   const total = rows.reduce((sum, row) => sum + (row.market ?? 0), 0);
@@ -90,30 +93,30 @@ export function WishlistScreen() {
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-5 px-3 py-4 sm:gap-6 sm:px-4 sm:py-6">
       <div>
-        <h1 className="text-2xl text-yellow sm:text-4xl">{t.wishlist.title}</h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted">{t.wishlist.subtitle}</p>
+        <h1 className="text-2xl text-yellow sm:text-4xl">{t("wishlist.title")}</h1>
+        <p className="mt-1 max-w-2xl text-sm text-muted">{t("wishlist.subtitle")}</p>
       </div>
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-3 border border-line bg-panel p-5">
-          <p className="text-sm text-muted">{t.wishlist.empty}</p>
+          <p className="text-sm text-muted">{t("wishlist.empty")}</p>
           <Link
             href="/cards"
             className="inline-flex h-11 items-center bg-yellow px-4 text-sm font-semibold text-black hover:brightness-110"
           >
-            {t.wishlist.browse}
+            {t("wishlist.browse")}
           </Link>
         </div>
       ) : (
         <>
           <section className="grid grid-cols-3 gap-2 sm:gap-3">
-            <Stat label={t.wishlist.statCards} value={formatInt(rows.length)} />
+            <Stat label={t("wishlist.statCards")} value={fmt.int(rows.length)} />
             <Stat
-              label={t.wishlist.statReached}
-              value={formatInt(reachedCount)}
+              label={t("wishlist.statReached")}
+              value={fmt.int(reachedCount)}
               tone={reachedCount > 0 ? "gain" : undefined}
             />
-            <Stat label={t.wishlist.statTotal} value={total > 0 ? formatMoney(total) : "—"} />
+            <Stat label={t("wishlist.statTotal")} value={total > 0 ? fmt.money(total) : "—"} />
           </section>
 
           <ul className="flex flex-col border border-line bg-panel">
@@ -142,7 +145,8 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "ga
 }
 
 function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: string | null }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   const { patch, remove } = useWishlist();
   const [target, setTarget] = useState(row.item.targetPrice ?? "");
   const [pending, setPending] = useState(false);
@@ -156,7 +160,7 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
     try {
       await action();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t.wishlist.failed);
+      setMessage(error instanceof Error ? error.message : t("wishlist.failed"));
     } finally {
       setPending(false);
     }
@@ -175,9 +179,9 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
       }`}
     >
       <Link
-        href={`/cards?printing=${encodeURIComponent(row.printing.id)}`}
+        href={{ pathname: "/cards", query: { printing: row.printing.id } }}
         className="flex min-w-0 flex-1 items-center gap-3 hover:text-cyan"
-        aria-label={t.wishlist.openCard(row.title)}
+        aria-label={t("wishlist.openCard", { name: row.title })}
       >
         {row.printing.imagePath ? (
           <CardImage src={row.printing.imagePath} alt="" className="h-16 w-12 shrink-0 bg-black object-contain" loading="lazy" />
@@ -192,17 +196,17 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
           <span className="mt-1 flex flex-wrap gap-1.5">
             {row.reached ? (
               <span className="inline-flex h-5 items-center border border-gain/45 bg-gain/10 px-1.5 text-[11px] text-gain">
-                {since ? t.wishlist.reachedSince(since) : t.wishlist.targetReached}
+                {since ? t("wishlist.reachedSince", { date: since }) : t("wishlist.targetReached")}
               </span>
             ) : null}
             {fresh ? (
               <span className="inline-flex h-5 items-center bg-yellow px-1.5 text-[11px] font-semibold text-black">
-                {t.wishlist.alertNew}
+                {t("wishlist.alertNew")}
               </span>
             ) : null}
             {row.owned > 0 ? (
               <span className="inline-flex h-5 items-center border border-line px-1.5 text-[11px] text-muted">
-                {t.wishlist.owned(formatInt(row.owned))}
+                {t("wishlist.owned", { n: fmt.int(row.owned) })}
               </span>
             ) : null}
           </span>
@@ -211,15 +215,15 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
 
       <div className="flex items-end gap-3 sm:shrink-0">
         <div className="min-w-[6.5rem]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t.wishlist.currentPrice}</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t("wishlist.currentPrice")}</p>
           <p className="flex items-baseline gap-1.5 font-mono text-sm tabular-nums">
-            {row.market != null ? formatMoney(row.market) : t.wishlist.noPrice}
+            {row.market != null ? fmt.money(row.market) : t("wishlist.noPrice")}
             {movement === "up" || movement === "down" ? <TrendBadge delta={movement} /> : null}
           </p>
-          {gap != null ? <p className="font-mono text-[11px] text-muted">{t.wishlist.gap(formatMoney(gap))}</p> : null}
+          {gap != null ? <p className="font-mono text-[11px] text-muted">{t("wishlist.gap", { amount: fmt.money(gap) })}</p> : null}
         </div>
         <label className="w-28">
-          <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t.wishlist.targetPrice}</span>
+          <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t("wishlist.targetPrice")}</span>
           <span className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
             <input
               className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
@@ -241,8 +245,8 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
           disabled={pending}
           onClick={() => void run(() => remove(row.item.id))}
           className="grid h-10 w-10 shrink-0 place-items-center border border-line text-muted transition hover:border-danger hover:text-danger focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/70 disabled:opacity-50"
-          aria-label={t.wishlist.removeCard(row.title)}
-          title={t.wishlist.remove}
+          aria-label={t("wishlist.removeCard", { name: row.title })}
+          title={t("wishlist.remove")}
         >
           <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" />

@@ -1,7 +1,7 @@
 // Pays proposés à la saisie d'une adresse. Les noms viennent d'Intl.DisplayNames : ils
 // suivent la langue de l'app sans traduction à maintenir.
 
-import { intlLocale } from "@/lib/i18n/messages";
+import { intlLocale } from "@/i18n/config";
 
 export const COUNTRY_CODES = [
   "FR", "BE", "CH", "LU", "MC", "DE", "AT", "NL", "IT", "ES", "PT", "GB", "IE", "DK", "SE", "NO", "FI", "PL", "CZ",

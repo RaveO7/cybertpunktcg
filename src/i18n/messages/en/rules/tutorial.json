@@ -1,0 +1,346 @@
+{
+  "eyebrow": "NIGHT CITY TRAINING",
+  "title": "Learn to play",
+  "subtitle": "6 short missions. Click, try, win. No TCG experience needed.",
+  "learnTab": "Beginner path",
+  "rulesTab": "Full rules",
+  "startCta": "Start training",
+  "continueCta": "Continue",
+  "nextCta": "Next mission",
+  "backCta": "Back",
+  "skipCta": "Skip",
+  "retryCta": "Try again",
+  "hintCta": "Hint",
+  "progressLabel": "Mission {current} / {total}",
+  "streetCred": "Street Cred",
+  "correct": "Nice work, choom.",
+  "almost": "Not quite — try again.",
+  "missions": [
+    {
+      "badge": "00",
+      "title": "Briefing",
+      "blurb": "The goal in 30 seconds."
+    },
+    {
+      "badge": "01",
+      "title": "Gigs",
+      "blurb": "How you win."
+    },
+    {
+      "badge": "02",
+      "title": "Playmat",
+      "blurb": "Where things go."
+    },
+    {
+      "badge": "03",
+      "title": "Cards",
+      "blurb": "4 types, 4 jobs."
+    },
+    {
+      "badge": "04",
+      "title": "Your turn",
+      "blurb": "What order to act."
+    },
+    {
+      "badge": "05",
+      "title": "Combat",
+      "blurb": "Fight or steal."
+    },
+    {
+      "badge": "06",
+      "title": "Street exam",
+      "blurb": "Check what stuck."
+    },
+    {
+      "badge": "OK",
+      "title": "Diploma",
+      "blurb": "You’re ready."
+    }
+  ],
+  "intro": {
+    "needTitle": "What you need",
+    "needItems": [
+      "A Cyberpunk TCG deck (40–50 cards + 3 Legends)",
+      "6 dice: d4, d6, d8, d10, d12, d20",
+      "A Rival across the table"
+    ],
+    "promise": "You lead a Night City crew. You win by controlling jobs: Gigs (dice).",
+    "tip": "Tip: one Gig = one die. Face values matter for Street Cred, not for the win count."
+  },
+  "goal": {
+    "title": "Goal: 7 Gigs",
+    "explain": "Each turn take a die from your Fixer, roll it, put it in your Gig area. If you start your turn already holding 7 Gig dice → you win.",
+    "challenge": "Simulate a game: add Gigs up to 7, then “start your turn”.",
+    "winLine": "7 Gigs at the start of your turn = victory.",
+    "addGig": "Take a Gig (start of turn)",
+    "stealGig": "Steal 1 Gig from Rival",
+    "fixerEmpty": "Fixer empty — steal the 7th from Rival",
+    "reset": "Reset",
+    "diceLeft": "{n, plural, one {# die left in Fixer} other {# dice left in Fixer}}",
+    "yourGigs": "Your Gigs"
+  },
+  "board": {
+    "title": "Zone hunt",
+    "explain": "The playmat has 7 zones. Click the right zone for each question.",
+    "challenge": "Find all 4 asked zones. Wrong clicks are free.",
+    "prompts": [
+      {
+        "ask": "Where do Units go to fight?",
+        "hint": "The big center space…",
+        "success": "Field: your Units live here."
+      },
+      {
+        "ask": "Where do sold cards go for payment (Eddies)?",
+        "hint": "Your face-down “bank”.",
+        "success": "Eddies area: each face-down card = 1 €$."
+      },
+      {
+        "ask": "Where are your 3 special characters at the start?",
+        "hint": "They begin face-down…",
+        "success": "Legends area: 3 cards, random order."
+      },
+      {
+        "ask": "Where do dice go after you roll them?",
+        "hint": "This is how you win.",
+        "success": "Gig area: protect yours, steal theirs."
+      }
+    ],
+    "foundAll": "Playmat cleared. You know where the crew sits."
+  },
+  "cards": {
+    "title": "4 card types",
+    "explain": "Flip each card to learn its job. One idea per type.",
+    "challenge": "Discover all 4 types.",
+    "flipHint": "Tap the card",
+    "roles": [
+      {
+        "typeLabel": "Legend",
+        "oneLiner": "Deck bosses",
+        "detail": "Exactly 3, start face-down. Flip one per turn (1 €$) or spend any as 1 €$."
+      },
+      {
+        "typeLabel": "Unit",
+        "oneLiner": "Your crew",
+        "detail": "Stay on the Field. Attack spent Units or steal Gigs. Can’t attack the turn played (unless Adrenaline)."
+      },
+      {
+        "typeLabel": "Program",
+        "oneLiner": "Flash effect",
+        "detail": "Pay, resolve, Trash. Some are Quick (reaction timing)."
+      },
+      {
+        "typeLabel": "Gear",
+        "oneLiner": "Equipment",
+        "detail": "Attaches to a Unit or Legend. Leaves with its host."
+      }
+    ],
+    "allSeen": "You know the four roles. Next: turn rhythm."
+  },
+  "turn": {
+    "title": "Run a turn",
+    "explain": "Every turn = Start Phase (fixed order) then Main Phase (your choice).",
+    "challenge": "Click through each step with “Do this”.",
+    "steps": [
+      {
+        "title": "1. Ready",
+        "body": "Stand spent cards upright again.",
+        "action": "Ready my cards"
+      },
+      {
+        "title": "2. Draw",
+        "body": "Take the top card of your deck.",
+        "action": "Draw 1"
+      },
+      {
+        "title": "3. Gain a Gig",
+        "body": "Take a Fixer die (d20 last), roll it, move it to Gig.",
+        "action": "Roll my Gig"
+      },
+      {
+        "title": "4. Sell (optional, once)",
+        "body": "Reveal a sellable card, set it face-down = +1 Eddie.",
+        "action": "Sell for 1 €$"
+      },
+      {
+        "title": "5. Play cards",
+        "body": "Spend Eddies (or Legends) to play Units, Gear, Programs.",
+        "action": "Play Jackie (example)"
+      },
+      {
+        "title": "6. Attack",
+        "body": "Spend a Unit to attack a spent rival Unit or the rival Gig area.",
+        "action": "Attack"
+      }
+    ],
+    "done": "Turn complete. Rhythm: Ready → Draw → Gig → then whatever you want."
+  },
+  "combat": {
+    "title": "Fight or steal?",
+    "explain": "Two possible targets. Pick the right move for each setup.",
+    "scenarios": [
+      {
+        "setup": "Adam Smasher (Power 15) is ready. Rival has Gigs and no spent Units.",
+        "question": "Best way to push for the win?",
+        "choices": [
+          {
+            "label": "Attack the Gig area → steal 2 Gigs",
+            "feedback": "Power 15 = 2 Gigs (1 at 1+, +1 at 10+)."
+          },
+          {
+            "label": "Attack a ready rival Unit",
+            "feedback": "You can’t attack ready Units (unless a card says so)."
+          },
+          {
+            "label": "Do nothing — too risky",
+            "feedback": "Allowed, but stealing Gigs is the main win path here."
+          }
+        ]
+      },
+      {
+        "setup": "Jackie (strong) vs spent rival Meredith.",
+        "question": "How do you clear the Field?",
+        "choices": [
+          {
+            "label": "Attack Meredith → Power vs Power",
+            "feedback": "Higher Power wins. Tie = both to Trash."
+          },
+          {
+            "label": "Always ignore Units and only steal",
+            "feedback": "Sometimes true — but a dangerous spent Unit is often worth removing."
+          },
+          {
+            "label": "Equip Gear onto the Rival",
+            "feedback": "Gear only equips to your Units / Legends."
+          }
+        ]
+      },
+      {
+        "setup": "Rival attacks your Gig area. You have ready Meredith with Blocker.",
+        "question": "Can you react?",
+        "choices": [
+          {
+            "label": "Spend Meredith (Blocker) to take the hit",
+            "feedback": "Blocker redirects the attack. Even if you win the fight, no Gig is stolen."
+          },
+          {
+            "label": "No — Gigs can’t be protected",
+            "feedback": "Blocker (and Quick) exist for this."
+          },
+          {
+            "label": "Draw 3 as a free reaction",
+            "feedback": "Not a base rule — only if a card says so."
+          }
+        ]
+      }
+    ],
+    "allClear": "Combat and steals: locked in. Last stop: the quiz."
+  },
+  "quiz": {
+    "title": "Street exam",
+    "explain": "5 questions. Score 4+ to graduate Night City.",
+    "questions": [
+      {
+        "prompt": "When do you win?",
+        "choices": [
+          {
+            "label": "As soon as you hit 7 Gigs, even mid-rival turn",
+            "feedback": "You must start YOUR turn with 7 (except overtime)."
+          },
+          {
+            "label": "At the start of your turn if you already have 7 Gigs",
+            "feedback": "Correct."
+          },
+          {
+            "label": "When dice faces sum to 50",
+            "feedback": "That’s Street Cred, not the win condition."
+          }
+        ]
+      },
+      {
+        "prompt": "What are Eddies for?",
+        "choices": [
+          {
+            "label": "Paying card costs",
+            "feedback": "Each face-down Eddies card = 1 €$."
+          },
+          {
+            "label": "Attacking your Rival",
+            "feedback": "Units attack."
+          },
+          {
+            "label": "Replacing Gig dice",
+            "feedback": "Gigs stay dice."
+          }
+        ]
+      },
+      {
+        "prompt": "A Unit was just played. Can it attack?",
+        "choices": [
+          {
+            "label": "Yes, always",
+            "feedback": "It has Lag until end of turn."
+          },
+          {
+            "label": "No, unless it has Adrenaline (or similar)",
+            "feedback": "Lag blocks attacking on arrival."
+          },
+          {
+            "label": "Only if it’s a Legend",
+            "feedback": "Go Solo Legends are a separate case."
+          }
+        ]
+      },
+      {
+        "prompt": "Start Phase order?",
+        "choices": [
+          {
+            "label": "Draw → Ready → Gig",
+            "feedback": "Ready comes first."
+          },
+          {
+            "label": "Ready → Draw → Gig",
+            "feedback": "Always that order."
+          },
+          {
+            "label": "Gig → Draw → Attack",
+            "feedback": "Attack is Main Phase."
+          }
+        ]
+      },
+      {
+        "prompt": "Power 20 attacking the Gig area steals how many Gigs?",
+        "choices": [
+          {
+            "label": "1",
+            "feedback": "1 at Power 1+, +1 every 10."
+          },
+          {
+            "label": "2",
+            "feedback": "20+ = 3 Gigs."
+          },
+          {
+            "label": "3",
+            "feedback": "1+ → 1, 10+ → 2, 20+ → 3."
+          }
+        ]
+      }
+    ],
+    "scoreLine": "{score} / {total} correct",
+    "pass": "Diploma unlocked. Dive into full rules whenever you want.",
+    "retry": "Close — run the quiz again."
+  },
+  "done": {
+    "title": "Welcome to Night City",
+    "body": "You’ve got the basics: Gigs, zones, card types, turns, combat. The rest comes from playing — and the detailed rules.",
+    "restart": "Replay the path",
+    "openRules": "Open detailed rules",
+    "source": "Official Cyberpunk TCG guide"
+  },
+  "backToTop": "Back to top",
+  "leave": {
+    "title": "Leave the beginner path?",
+    "body": "Your progress in the path will be lost and you will have to start over from the beginning.",
+    "stay": "Keep going",
+    "leave": "Leave"
+  }
+}

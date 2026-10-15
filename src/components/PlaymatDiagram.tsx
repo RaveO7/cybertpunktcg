@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useExampleNote } from "@/lib/rules/use-rules";
 import { EXAMPLE_CARDS, type ExampleCard, type PlaymatZoneId } from "@/lib/rules/examples";
 import type { HowToPlayContent } from "@/lib/rules/howto-play";
 import { CardImage } from "@/components/CardImage";
@@ -52,12 +53,11 @@ const ZONE_CARDS: Partial<Record<PlaymatZoneId, (keyof typeof EXAMPLE_CARDS)[]>>
 export function PlaymatDiagram({
   areas,
   labels,
-  locale,
 }: {
   areas: HowToPlayContent["areas"]["items"];
   labels: HowToPlayContent["playmat"];
-  locale: "fr" | "en";
 }) {
+  const exampleNote = useExampleNote();
   const [selected, setSelected] = useState<PlaymatZoneId>("field");
   const [hovered, setHovered] = useState<PlaymatZoneId | null>(null);
   const active = hovered ?? selected;
@@ -217,7 +217,7 @@ export function PlaymatDiagram({
             {ZONE_CARDS[active]?.length ? (
               <p className="border-t border-line pt-3 text-xs text-muted">
                 {ZONE_CARDS[active]!
-                  .map((key) => (locale === "fr" ? EXAMPLE_CARDS[key].noteFr : EXAMPLE_CARDS[key].noteEn))
+                  .map((key) => exampleNote(key))
                   .join(" Â· ")}
               </p>
             ) : null}

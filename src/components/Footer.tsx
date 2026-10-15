@@ -1,35 +1,33 @@
 "use client";
 
-import Link from "next/link";
-import { useI18n } from "@/components/LocaleProvider";
-import { useLocalizedHref } from "@/components/site/useLocalizedHref";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { LEGAL_LINKS, SITE, SOCIAL_LINKS, type SocialNetwork } from "@/lib/site";
 
 /** Pied de page : liste des cartes, liens légaux et réseaux sociaux. */
 export function Footer() {
-  const { t } = useI18n();
-  const localizedHref = useLocalizedHref();
+  const t = useTranslations();
 
   return (
     // Masqué sur téléphone : la barre d'onglets du bas occupe déjà le bas de l'écran.
-    <footer className="mt-auto hidden shrink-0 border-t border-line sm:block" aria-label={t.footer.label}>
+    <footer className="mt-auto hidden shrink-0 border-t border-line sm:block" aria-label={t("footer.label")}>
       {/* Une seule ligne : liens légaux à gauche, copyright au centre, réseaux à droite (empilés sur téléphone). */}
       <div className="mx-auto flex max-w-[1600px] flex-col items-center gap-2 px-4 py-3 text-xs text-muted md:grid md:grid-cols-[1fr_auto_1fr] md:gap-6">
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 md:justify-start">
           {/* Liste publique des cartes : relie toutes les fiches au reste du site (référencement). */}
-          <Link href={localizedHref("cards")} className="py-1 hover:text-foreground">
-            {t.footer.cards}
+          <Link href="/cartes" className="py-1 hover:text-foreground">
+            {t("footer.cards")}
           </Link>
           {LEGAL_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className="py-1 hover:text-foreground">
-              {t.footer[link.key]}
+              {t(`footer.${link.key}`)}
             </Link>
           ))}
         </nav>
         <p className="font-mono tracking-[0.12em]">
           © {new Date().getFullYear()} {SITE.name}
         </p>
-        <ul className="flex items-center gap-1 md:justify-self-end" aria-label={t.footer.social}>
+        <ul className="flex items-center gap-1 md:justify-self-end" aria-label={t("footer.social")}>
           {SOCIAL_LINKS.map((link) => (
             <li key={link.network}>
               {link.href ? (

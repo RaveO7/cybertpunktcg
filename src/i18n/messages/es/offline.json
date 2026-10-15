@@ -1,0 +1,14 @@
+{
+  "banner": "Sin conexión: solo consulta. Podrás hacer cambios cuando vuelva la red.",
+  "title": "Modo sin conexión",
+  "hint": "El catálogo y tu colección siguen disponibles sin red (tienda, torneo). Descarga las imágenes de las cartas para verlas también sin conexión.",
+  "download": "Descargar imágenes ({n})",
+  "downloading": "Descargando… {done} / {total}",
+  "status": "{cached} / {total} imágenes guardadas en este dispositivo",
+  "failed": "{n} imagen(es) no se pudieron descargar. Vuelve a lanzarlo para reintentar.",
+  "cancel": "Detener",
+  "clear": "Eliminar imágenes sin conexión",
+  "cleared": "Imágenes eliminadas de este dispositivo.",
+  "unsupported": "Este navegador no admite el modo sin conexión.",
+  "hdNote": "Las imágenes a tamaño completo se guardan a medida que las abres."
+}

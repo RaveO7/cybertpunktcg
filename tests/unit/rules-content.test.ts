@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "vitest";
-import { LOCALES } from "../../src/lib/i18n/messages";
-import { ANATOMY_CARDS, anatomyCopy } from "../../src/lib/rules/card-anatomy";
+import { LOCALES } from "../../src/i18n/config";
+import { ANATOMY_CARDS } from "../../src/lib/rules/card-anatomy";
 import { EXAMPLE_CARDS, type PlaymatZoneId } from "../../src/lib/rules/examples";
-import { howtoPlayContent } from "../../src/lib/rules/howto-play";
-import { MISSION_FLOW, tutorialCopy } from "../../src/lib/rules/tutorial";
+import { MISSION_FLOW } from "../../src/lib/rules/tutorial";
+import { anatomyFor, howtoFor, noteFor, tutorialFor } from "../helpers/rules-content";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const exampleKeys = Object.keys(EXAMPLE_CARDS) as (keyof typeof EXAMPLE_CARDS)[];
@@ -14,6 +14,15 @@ const exampleKeys = Object.keys(EXAMPLE_CARDS) as (keyof typeof EXAMPLE_CARDS)[]
 /** Règle officielle : 1 Gig dès Power 1, +1 par tranche de 10 (0 à Power 0). */
 function gigsStolen(power: number): number {
   return power <= 0 ? 0 : 1 + Math.floor(power / 10);
+}
+
+/**
+ * Noms acceptés pour un type de carte dans une langue : le terme anglais (gardé par les contenus
+ * français et anglais) ou le libellé du catalogue de la langue (« Legende »), et « Gear » (glossaire).
+ */
+function typeNames(locale: string, type: string): string[] {
+  const catalog = JSON.parse(readFileSync(`${ROOT}src/i18n/messages/${locale}/catalog.json`, "utf8")) as { types: Record<string, string> };
+  return [type, catalog.types[type]];
 }
 
 function firstInt(text: string): number {
@@ -106,18 +115,17 @@ describe("EXAMPLE_CARDS (cartes d'exemple)", () => {
     }
   });
 
-  it("notes FR/EN renseignées et traduites", () => {
+  it("notes renseignées dans chaque langue, et traduites", () => {
     for (const k of exampleKeys) {
-      const { noteFr, noteEn } = EXAMPLE_CARDS[k];
-      assert.ok(noteFr.trim() && noteEn.trim(), k);
-      assert.notEqual(noteFr, noteEn, `${k} : note non traduite`);
+      for (const locale of LOCALES) assert.ok(noteFor(locale, k)?.trim(), `${k} : note ${locale}`);
+      assert.notEqual(noteFor("fr", k), noteFor("en", k), `${k} : note non traduite`);
     }
   });
 
   it("une note annonçant « Power N → X Gigs » respecte la Power de la carte et la règle de vol", () => {
     for (const k of exampleKeys) {
-      const card: { power?: number | null; noteFr: string; noteEn: string } = EXAMPLE_CARDS[k];
-      for (const note of [card.noteFr, card.noteEn]) {
+      const card = EXAMPLE_CARDS[k] as { power?: number | null };
+      for (const note of LOCALES.map((locale) => noteFor(locale, k))) {
         const m = note.match(/Power (\d+)\D+?(\d+) Gigs?/);
         if (!m) continue;
         assert.equal(Number(m[1]), card.power, `${k} : Power annoncée`);
@@ -161,8 +169,8 @@ describe("Anatomie d'une carte", () => {
   });
 
   it("chaque repère et onglet a son texte dans les deux langues", () => {
-    for (const locale of ["fr", "en"] as const) {
-      const copy = anatomyCopy(locale);
+    for (const locale of LOCALES) {
+      const copy = anatomyFor(locale);
       for (const card of ANATOMY_CARDS) {
         assert.ok(copy.cards[card.id].tab.trim(), `${locale} ${card.id} tab`);
         assert.ok(copy.cards[card.id].caption.trim(), `${locale} ${card.id} caption`);
@@ -175,8 +183,8 @@ describe("Anatomie d'une carte", () => {
   });
 
   it("la légende d'onglet correspond au nom de la carte d'exemple", () => {
-    for (const locale of ["fr", "en"] as const) {
-      const copy = anatomyCopy(locale);
+    for (const locale of LOCALES) {
+      const copy = anatomyFor(locale);
       for (const card of ANATOMY_CARDS) {
         assert.equal(copy.cards[card.id].caption, EXAMPLE_CARDS[card.exampleKey].name, `${locale} ${card.id}`);
       }
@@ -187,31 +195,24 @@ describe("Anatomie d'une carte", () => {
     const legend = ANATOMY_CARDS.find((c) => c.id === "legend");
     assert.ok(legend);
     const parts = new Set(legend.points.map((p) => p.part));
-    for (const locale of ["fr", "en"] as const) {
-      for (const part of Object.keys(anatomyCopy(locale).legendOverrides)) {
+    for (const locale of LOCALES) {
+      for (const part of Object.keys(anatomyFor(locale).legendOverrides)) {
         assert.ok(parts.has(part as never), `${locale} : surcharge ${part} sans repère`);
       }
     }
   });
 
   it("FR et EN ont la même structure, sans chaîne vide", () => {
-    assertSameShape(anatomyCopy("fr"), anatomyCopy("en"), "anatomy");
+    for (const locale of LOCALES) assertSameShape(anatomyFor("fr"), anatomyFor(locale), `anatomy ${locale}`);
   });
 });
 
 describe("Règles détaillées (howto-play)", () => {
-  const fr = howtoPlayContent("fr");
-  const en = howtoPlayContent("en");
+  const fr = howtoFor("fr");
+  const all = LOCALES.map(howtoFor);
 
-  it("FR et EN ont la même structure, les mêmes ids et aucune chaîne vide", () => {
-    assertSameShape(fr, en, "howto");
-  });
-
-  it("toutes les locales de l'app obtiennent un contenu (fr natif, sinon en)", () => {
-    for (const { id } of LOCALES) {
-      const c = howtoPlayContent(id);
-      assert.equal(c, id === "fr" ? fr : en, id);
-    }
+  it("chaque langue a la même structure que le français, les mêmes ids et aucune chaîne vide", () => {
+    for (const id of LOCALES) assertSameShape(fr, howtoFor(id), `howto ${id}`);
   });
 
   it("le sommaire pointe vers des sections existantes de HowToPlayRules", () => {
@@ -225,7 +226,7 @@ describe("Règles détaillées (howto-play)", () => {
   });
 
   it("zones : ids uniques, chacune a son libellé de tapis", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const ids = c.areas.items.map((a) => a.id);
       assert.equal(new Set(ids).size, ids.length);
       for (const id of ids) {
@@ -244,16 +245,17 @@ describe("Règles détaillées (howto-play)", () => {
   });
 
   it("types de cartes : exemple existant et du type décrit, 4 types distincts", () => {
-    for (const c of [fr, en]) {
+    LOCALES.forEach((locale, index) => {
+      const c = all[index];
       for (const item of c.cardTypes.items) {
-        assert.equal(EXAMPLE_CARDS[item.exampleKey].type, item.name);
+        assert.ok(typeNames(locale, EXAMPLE_CARDS[item.exampleKey].type).includes(item.name), `${locale} ${item.name}`);
       }
       assert.equal(new Set(c.cardTypes.items.map((i) => i.name)).size, 4);
-    }
+    });
   });
 
   it("mots-clés et triggers : noms uniques, exemples existants", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       for (const list of [c.keywords.items, c.triggers.items]) {
         const names = list.map((i) => i.name);
         assert.equal(new Set(names).size, names.length);
@@ -271,7 +273,7 @@ describe("Règles détaillées (howto-play)", () => {
   });
 
   it("le tapis annonce une Street Cred arithmétiquement juste", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const m = c.playmat.streetCred.match(/=\s*([\d+\s]+?)\s*=\s*(\d+)/);
       assert.ok(m, c.playmat.streetCred);
       const sum = m[1].split("+").reduce((acc, n) => acc + Number(n.trim()), 0);
@@ -280,7 +282,7 @@ describe("Règles détaillées (howto-play)", () => {
   });
 
   it("l'exemple de vol (Adam Smasher) respecte sa Power et la règle de vol", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const [power, gigs] = allInts(c.stealExample.body.replace(/10\+/, ""));
       assert.equal(power, EXAMPLE_CARDS.unitSmasher.power);
       assert.equal(gigs, gigsStolen(power));
@@ -288,7 +290,7 @@ describe("Règles détaillées (howto-play)", () => {
   });
 
   it("paliers de vol affichés conformes à la règle", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       assert.ok(c.attack.stealTiers.length >= 2);
       for (const tier of c.attack.stealTiers) {
         const [power, gigs] = allInts(tier);
@@ -298,7 +300,7 @@ describe("Règles détaillées (howto-play)", () => {
   });
 
   it("sources officielles en https", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       assert.match(c.sourceUrl, /^https:\/\//);
       assert.match(c.sourcePdfUrl, /^https:\/\/.+\.pdf$/);
     }
@@ -306,20 +308,17 @@ describe("Règles détaillées (howto-play)", () => {
 });
 
 describe("Parcours tutoriel (tutorial)", () => {
-  const fr = tutorialCopy("fr");
-  const en = tutorialCopy("en");
-  const zoneIds = new Set(howtoPlayContent("fr").areas.items.map((a) => a.id));
+  const fr = tutorialFor("fr");
+  const en = tutorialFor("en");
+  const all = LOCALES.map(tutorialFor);
+  const zoneIds = new Set(howtoFor("fr").areas.items.map((a) => a.id));
 
-  it("FR et EN ont la même structure, les mêmes ids/réponses et aucune chaîne vide", () => {
-    assertSameShape(fr, en, "tutorial");
-  });
-
-  it("toutes les locales de l'app obtiennent un contenu (fr natif, sinon en)", () => {
-    for (const { id } of LOCALES) assert.equal(tutorialCopy(id), id === "fr" ? fr : en, id);
+  it("chaque langue a la même structure que le français, les mêmes ids/réponses et aucune chaîne vide", () => {
+    for (const id of LOCALES) assertSameShape(fr, tutorialFor(id), `tutorial ${id}`);
   });
 
   it("missions : même ordre que MISSION_FLOW, ids et badges uniques", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       assert.deepEqual(c.missions.map((m) => m.id), MISSION_FLOW);
       assert.equal(new Set(c.missions.map((m) => m.badge)).size, c.missions.length);
     }
@@ -335,20 +334,23 @@ describe("Parcours tutoriel (tutorial)", () => {
 
   it("le sous-titre annonce le bon nombre de missions (hors briefing et diplôme)", () => {
     const playable = MISSION_FLOW.filter((id) => id !== "intro" && id !== "done").length;
-    for (const c of [fr, en]) assert.equal(firstInt(c.subtitle), playable);
+    for (const c of all) assert.equal(firstInt(c.subtitle), playable);
   });
 
   it("progressLabel et diceLeft produisent des libellés cohérents", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       assert.deepEqual(allInts(c.progressLabel(3, 8)), [3, 8]);
       assert.deepEqual(allInts(c.goal.diceLeft(1)), [1]);
       assert.deepEqual(allInts(c.goal.diceLeft(5)), [5]);
+    }
+    // Pluriel distinct en français et en anglais (en allemand, « 1 Würfel » / « 2 Würfel »).
+    for (const c of [fr, en]) {
       assert.notEqual(c.goal.diceLeft(1).replace("1", "N"), c.goal.diceLeft(2).replace("2", "N"), "pluriel");
     }
   });
 
   it("chasse aux zones : zones existantes, distinctes, nombre annoncé = nombre de questions", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const zones = c.board.prompts.map((p) => p.zone);
       assert.equal(new Set(zones).size, zones.length);
       for (const z of zones) assert.ok(zoneIds.has(z), `zone inconnue ${z}`);
@@ -357,20 +359,21 @@ describe("Parcours tutoriel (tutorial)", () => {
   });
 
   it("rôles des cartes : carte existante, libellé = type réel, les 4 types couverts", () => {
-    for (const c of [fr, en]) {
+    LOCALES.forEach((locale, index) => {
+      const c = all[index];
       for (const role of c.cards.roles) {
         assert.ok(role.key in EXAMPLE_CARDS);
-        assert.equal(role.typeLabel, EXAMPLE_CARDS[role.key].type);
+        assert.ok(typeNames(locale, EXAMPLE_CARDS[role.key].type).includes(role.typeLabel), `${locale} ${role.typeLabel}`);
       }
       const types = new Set(c.cards.roles.map((r) => r.typeLabel));
       assert.equal(types.size, 4);
       assert.equal(firstInt(c.cards.challenge), c.cards.roles.length);
       assert.equal(firstInt(c.cards.title), c.cards.roles.length);
-    }
+    });
   });
 
   it("étapes du tour : ids uniques, numérotation 1..n, Start Phase dans l'ordre Ready → Pioche → Gig", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const ids = c.turn.steps.map((s) => s.id);
       assert.equal(new Set(ids).size, ids.length);
       c.turn.steps.forEach((s, i) => assert.equal(firstInt(s.title), i + 1, s.title));
@@ -379,7 +382,7 @@ describe("Parcours tutoriel (tutorial)", () => {
   });
 
   it("chaque question (combat + quiz) a exactement une bonne réponse et des choix uniques", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const all = [...c.combat.scenarios, ...c.quiz.questions];
       const ids = [...c.combat.scenarios.map((s) => s.id), ...c.quiz.questions.map((q) => q.id)];
       assert.equal(new Set(ids).size, ids.length);
@@ -393,7 +396,7 @@ describe("Parcours tutoriel (tutorial)", () => {
   });
 
   it("quiz : nombre de questions annoncé exact, seuil de réussite atteignable", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const [count, threshold] = allInts(c.quiz.explain);
       assert.equal(count, c.quiz.questions.length);
       assert.ok(threshold > 0 && threshold <= count);
@@ -402,7 +405,7 @@ describe("Parcours tutoriel (tutorial)", () => {
   });
 
   it("scénario de vol : la bonne réponse vole le nombre de Gigs dicté par la Power", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const scenario = c.combat.scenarios.find((s) => s.id === "steal");
       assert.ok(scenario);
       const power = Number(scenario.setup.match(/Power (\d+)/)?.[1]);
@@ -413,7 +416,7 @@ describe("Parcours tutoriel (tutorial)", () => {
   });
 
   it("quiz Power → Gigs : la bonne réponse suit la règle de vol", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const q = c.quiz.questions.find((x) => /Power \d+/.test(x.prompt) && x.choices.every((ch) => /^\d+$/.test(ch.label)));
       assert.ok(q, "question Power introuvable");
       const power = Number(q.prompt.match(/Power (\d+)/)![1]);
@@ -422,7 +425,7 @@ describe("Parcours tutoriel (tutorial)", () => {
   });
 
   it("l’intro liste les 6 dés du Fixer, d4 à d20", () => {
-    for (const c of [fr, en]) {
+    for (const c of all) {
       const dice = c.intro.needItems.join(" ").match(/d\d+/g);
       assert.deepEqual(dice, ["d4", "d6", "d8", "d10", "d12", "d20"]);
     }

@@ -1,12 +1,15 @@
 /**
- * Catalogue public (pages /cartes et /en/cards) : cartes de jeu actives, hors produits scellés,
- * avec le contenu de la langue de la page (impression française si elle existe, sinon anglais).
+ * Catalogue public (/cartes, /en/cards, /de/karten…) : cartes de jeu actives, hors produits scellés,
+ * avec le contenu de la langue de la page : impression officielle dans cette langue si elle existe
+ * (nom, texte, image), sinon nom et image anglais et texte de règles traduit par le site s'il est à
+ * jour, sinon texte anglais.
  */
 
 import { thumbnailPath } from "@/lib/card-image";
 import { FRENCH_SOURCE_SET_CODE, isSealedSetCode, MAIN_SET_CODE } from "@/lib/reference-data";
-import type { SiteLocale } from "@/lib/seo/routes";
 import type { CardDTO, CatalogDTO, PrintingDTO } from "@/lib/types";
+import { CARD_TEXT_LOCALE, translatedRulesText, type CardTranslations } from "@/i18n/cards";
+import type { Locale } from "@/i18n/config";
 
 /** Types de produits scellés rangés parmi les cartes du catalogue. */
 const SEALED_CARD_TYPES = new Set(["Sealed", "Lot"]);
@@ -31,7 +34,7 @@ export type PublicCard = {
   mainPrintingId: string | null;
   /** Nom dans la langue de la page (repli anglais). */
   name: string;
-  /** Vrai si le nom et le texte viennent d'une impression dans la langue de la page. */
+  /** Vrai si le texte de règles est dans la langue de la page (impression officielle ou traduction à jour). */
   translated: boolean;
   color: string | null;
   cardType: string | null;
@@ -90,10 +93,13 @@ function amount(value: string | null) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function toPublicCard(card: CardDTO, printings: PrintingDTO[], locale: SiteLocale): PublicCard {
+function toPublicCard(card: CardDTO, printings: PrintingDTO[], locale: Locale, translations: CardTranslations): PublicCard {
   const sorted = sortPrintingsForCard(printings.filter((printing) => !isSealedSetCode(printing.setCode)));
-  const english = sorted.find((printing) => printing.language === "en") ?? sorted[0];
-  const localized = locale === "fr" ? sorted.find((printing) => printing.language === "fr" && printing.localizedName) : undefined;
+  const english = sorted.find((printing) => printing.language === CARD_TEXT_LOCALE) ?? sorted[0];
+  // Impression officielle dans la langue de la page (aujourd'hui : le français).
+  const localized =
+    locale === CARD_TEXT_LOCALE ? undefined : sorted.find((printing) => printing.language === locale && printing.localizedName);
+  const siteTranslation = localized ? null : translatedRulesText(translations, card.slug, card.rulesText);
   const main = localized ?? english;
   const prices = sorted.map((printing) => amount(printing.marketPrice)).filter((value): value is number => value !== null);
   const mainPrice = amount(english?.marketPrice ?? null);
@@ -102,13 +108,13 @@ function toPublicCard(card: CardDTO, printings: PrintingDTO[], locale: SiteLocal
     slug: card.slug,
     mainPrintingId: main?.id ?? null,
     name: localized?.localizedName ?? englishName(card),
-    translated: locale === "en" || Boolean(localized),
+    translated: locale === CARD_TEXT_LOCALE || Boolean(localized) || siteTranslation !== null,
     color: card.color,
     cardType: card.cardType,
     cost: card.cost,
     power: card.power,
     ram: card.ram,
-    rulesText: localized?.printedRulesText ?? card.rulesText,
+    rulesText: localized?.printedRulesText ?? siteTranslation ?? card.rulesText,
     flavorText: localized ? null : card.flavorText,
     keywords: card.keywords,
     tags: card.tags,
@@ -133,11 +139,11 @@ function toPublicCard(card: CardDTO, printings: PrintingDTO[], locale: SiteLocal
 
 /** Ordre du catalogue : numéro de collection de l'impression principale anglaise. */
 function catalogOrder(card: PublicCard) {
-  return card.printings.find((printing) => printing.language === "en") ?? card.printings[0];
+  return card.printings.find((printing) => printing.language === CARD_TEXT_LOCALE) ?? card.printings[0];
 }
 
 /** Toutes les cartes publiques dans l'ordre du catalogue. */
-export function publicCards(catalog: CatalogDTO, locale: SiteLocale): PublicCard[] {
+export function publicCards(catalog: CatalogDTO, locale: Locale, translations: CardTranslations = {}): PublicCard[] {
   const byCard = new Map<string, PrintingDTO[]>();
   for (const printing of catalog.printings) {
     const list = byCard.get(printing.cardId);
@@ -146,7 +152,7 @@ export function publicCards(catalog: CatalogDTO, locale: SiteLocale): PublicCard
   }
   return catalog.cards
     .filter((card) => isGameCard(card, byCard.get(card.id) ?? []))
-    .map((card) => toPublicCard(card, byCard.get(card.id) ?? [], locale))
+    .map((card) => toPublicCard(card, byCard.get(card.id) ?? [], locale, translations))
     .sort((a, b) => {
       const left = catalogOrder(a);
       const right = catalogOrder(b);

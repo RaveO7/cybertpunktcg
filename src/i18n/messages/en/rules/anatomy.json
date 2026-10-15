@@ -1,0 +1,74 @@
+{
+  "title": "Reading your cards",
+  "intro": "Every card shares the same layout. Hover or click a marker to read the explanation linked to the card.",
+  "hint": "Pick a card type:",
+  "cards": {
+    "unit": {
+      "tab": "Unit",
+      "caption": "Jackie Welles: Ride or Die Choom"
+    },
+    "program": {
+      "tab": "Program (sell tag)",
+      "caption": "Afterparty at Lizzie's"
+    },
+    "legend": {
+      "tab": "Legend",
+      "caption": "Jackie Welles: Mama's Favorite"
+    }
+  },
+  "parts": {
+    "cost": {
+      "name": "Cost",
+      "body": "Spend Eddies equal to a card’s cost to play it. (You can also spend face-up or face-down Legends as 1 €$ each.)"
+    },
+    "sell": {
+      "name": "Sell tag",
+      "body": "You can sell cards with this symbol for Eddies. Legends with a sell tag can be spent to pay 1 €$ in the Legends area."
+    },
+    "type": {
+      "name": "Type",
+      "body": "Designates a card as a Legend, Unit, Program, or Gear."
+    },
+    "ram": {
+      "name": "RAM",
+      "body": "Your Legends’ cumulative RAM amount & color determines the other cards that can be included in your deck."
+    },
+    "art": {
+      "name": "Artwork",
+      "body": "The card art. The frame color matches the RAM color."
+    },
+    "name": {
+      "name": "Name",
+      "body": "Card name, sometimes with a subtitle. Up to 3 copies of the same card; your 3 Legends must have unique names."
+    },
+    "classes": {
+      "name": "Tags",
+      "body": "Designates a card’s affiliations. These can be referenced in effects."
+    },
+    "keyword": {
+      "name": "Keyword",
+      "body": "A standard effect (Go Solo, Adrenaline, Quick, Blocker). Reminder text often follows in parentheses."
+    },
+    "text": {
+      "name": "Effect text",
+      "body": "What the card does. Timing triggers (Play, Call, Attack, Defeated) tell you when the effect happens. If card text conflicts with the rules, follow the card."
+    },
+    "power": {
+      "name": "Power",
+      "body": "Used in attacking. Determines success in fights against rival Units. A Unit steals two Gigs at 10 power, three at 20, and so on."
+    },
+    "set": {
+      "name": "Set & number",
+      "body": "Expansion code (MS01 – WNC) and collector number, handy to find the card in the catalog."
+    },
+    "illustrator": {
+      "name": "Artist credit",
+      "body": "The illustrator’s name, printed along the card edge."
+    }
+  },
+  "legendOverrides": {
+    "cost": "On a Legend, this is what you pay to play it as a Unit with Go Solo. Otherwise the Legend stays in its area and can pay 1 €$.",
+    "ram": "On a Legend, this is the RAM it grants your deck. Add up your 3 Legends’ RAM per color to get your deck-building limits.",
+    "power": "Power used if the Legend enters the Field with Go Solo."
+  }
+}

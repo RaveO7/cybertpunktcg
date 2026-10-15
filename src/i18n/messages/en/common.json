@@ -1,0 +1,21 @@
+{
+  "loading": "Loading…",
+  "search": "Search",
+  "all": "All",
+  "allMasculine": "All",
+  "reset": "Reset",
+  "share": "Share",
+  "settings": "Settings",
+  "sections": "Sections",
+  "english": "English",
+  "french": "French",
+  "german": "German",
+  "spanish": "Spanish",
+  "italian": "Italian",
+  "optional": "Optional",
+  "copies": "{n, plural, one {copy} other {copies}}",
+  "cards": "{n, plural, one {card} other {cards}}",
+  "lines": "{n, plural, one {line} other {lines}}",
+  "trendUp": "up",
+  "trendDown": "down"
+}

@@ -1,0 +1,105 @@
+{
+  "eyebrow": "Cyberpunk TCG · kostenloses Fan-Tool",
+  "title": "Alle Cyberpunk TCG Karten, deine Sammlung und Turniere in deiner Nähe",
+  "lead": "TCG Tracker vereint die komplette Kartenliste von Cyberpunk TCG, die Verwaltung deiner Sammlung und ihres Werts, den Deckbau und ein Verzeichnis von Turnieren und Spieleläden. Kostenlos, ohne Werbung.",
+  "register": "Kostenloses Konto erstellen",
+  "login": "Anmelden",
+  "openApp": "App öffnen",
+  "featuresTitle": "Was du tun kannst",
+  "modulesLabel": "Module",
+  "findLabel": "Auf der Straße",
+  "findTitle": "Finde ein Spiel in deiner Nähe",
+  "findBody": "Turniere, die von Läden und Spielern angekündigt werden, und die Läden, die das Spiel am Leben halten.",
+  "tabTournaments": "Turniere",
+  "tabShops": "Läden",
+  "fanLabel": "Einige Legenden des Spiels",
+  "cardClose": "Schließen",
+  "features": [
+    {
+      "key": "collection",
+      "title": "Sammlungsverwaltung",
+      "body": "Füge deine Karten mit wenigen Klicks hinzu, sogar ganze Bereiche auf einmal, und sieh, was deine Sammlung wert ist.",
+      "points": [
+        "Zustand und Kaufpreis jedes Exemplars",
+        "Wert zu Cardmarket-Preisen und seine Entwicklung",
+        "CSV-Import und Teilen deines Ordners per Link"
+      ]
+    },
+    {
+      "key": "decks",
+      "title": "Deckbau",
+      "body": "Baue deine Decks: Die App prüft die Deckbauregeln für dich.",
+      "points": [
+        "3 Legenden, 40 bis 50 Karten, höchstens 3 Exemplare",
+        "RAM-Grenze pro Farbe automatisch berechnet",
+        "Die Karten, die dir fehlen, und was sie kosten"
+      ]
+    },
+    {
+      "key": "tournaments",
+      "title": "Turniere",
+      "body": "Finde ein Turnier in deiner Nähe oder organisiere dein eigenes im Laden oder mit Freunden.",
+      "points": [
+        "Anmeldung mit einem Klick oder per Code",
+        "Schweizer Runden in Bo1 oder Bo3, Rundentimer",
+        "Paarungen und Rangliste live"
+      ]
+    },
+    {
+      "key": "cards",
+      "title": "Vollständige Kartenliste",
+      "body": "Alle Karten des Spiels mit Text, Drucken und Marktpreis.",
+      "points": [
+        "Karten auf Englisch und Französisch",
+        "Kosten, Stärke, RAM und Regeltext",
+        "Drucke, Seltenheiten und Cardmarket-Preise"
+      ]
+    },
+    {
+      "key": "shops",
+      "title": "Spieleläden",
+      "body": "Die Läden, die das Spiel am Leben halten, und ihre nächsten Events.",
+      "points": [
+        "Adresse, Öffnungszeiten und Karte",
+        "Kommende Turniere jedes Ladens",
+        "Abzeichen für verifizierte Läden"
+      ]
+    },
+    {
+      "key": "howToPlay",
+      "title": "Spielen lernen",
+      "body": "Eine echte geführte Partie gegen einen Rivalen, Zug um Zug, dann die vollständigen Regeln.",
+      "points": [
+        "Interaktiver Einstieg Schritt für Schritt",
+        "Spielmattenzonen und wie man eine Karte liest",
+        "Vollständige Regeln und Glossar"
+      ]
+    }
+  ],
+  "preview": "Vorschau",
+  "example": "Beispiel",
+  "open": "Entdecken",
+  "finalTitle": "Bereit, deine Sammlung zu verfolgen?",
+  "finalBody": "Erstelle ein kostenloses Konto und finde deine Karten auf all deinen Geräten, sogar offline.",
+  "showcase": {
+    "completion": "Vollständigkeit",
+    "value": "Wert",
+    "legal": [
+      "3 Legenden",
+      "45 Karten",
+      "RAM eingehalten"
+    ],
+    "missing": "3 Karten fehlen",
+    "round": "Runde 3 / 5",
+    "table": "Tisch",
+    "live": "Rangliste live",
+    "verified": "Verifiziert",
+    "nextEvent": "Nächstes Turnier: Samstag 14 Uhr",
+    "store": "Laden in Night City",
+    "gigs": "Gigs",
+    "win": "7 Gigs zu Beginn deines Zuges: Sieg",
+    "price": "Preis",
+    "red": "Rot",
+    "green": "Grün"
+  }
+}

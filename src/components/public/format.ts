@@ -1,6 +1,6 @@
 // Formats d'affichage des tournois publics (date à l'heure du lieu, prix, distance).
 
-import { intlLocale } from "@/lib/i18n/messages";
+import { intlLocale } from "@/i18n/config";
 
 /** « sam. 17 oct., 14:00 » à l'heure du lieu du tournoi (fuseau du navigateur à défaut). */
 export function formatStart(iso: string | null, timeZone: string | null, locale: string, style: "short" | "long" = "short") {

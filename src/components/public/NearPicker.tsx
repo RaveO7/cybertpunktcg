@@ -5,7 +5,7 @@
 // elle ne sert que de paramètre de recherche, arrondie à ~1 km.
 
 import { useEffect, useState } from "react";
-import { useI18n } from "@/components/LocaleProvider";
+import { useLocale, useTranslations } from "next-intl";
 import { buttonClass, inputClass } from "@/components/tournament/ui";
 import type { CitySuggestion } from "@/lib/geo/geocode";
 import { SEARCH_RADII_KM } from "@/lib/tournament/listing";
@@ -16,7 +16,8 @@ export type NearPoint = { lat: number; lng: number; radius: number; label: strin
 const round2 = (value: number) => Math.round(value * 100) / 100;
 
 export function NearPicker({ value, onChange }: { value: NearPoint | null; onChange: (point: NearPoint | null) => void }) {
-  const { t, locale } = useI18n();
+  const t = useTranslations();
+  const locale = useLocale();
   const [query, setQuery] = useState("");
   const [cities, setCities] = useState<CitySuggestion[]>([]);
   const [message, setMessage] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export function NearPicker({ value, onChange }: { value: NearPoint | null; onCha
 
   function aroundMe() {
     if (!("geolocation" in navigator)) {
-      setMessage(t.geo.geolocUnavailable);
+      setMessage(t("geo.geolocUnavailable"));
       return;
     }
     setLocating(true);
@@ -56,7 +57,7 @@ export function NearPicker({ value, onChange }: { value: NearPoint | null; onCha
       },
       (error) => {
         setLocating(false);
-        setMessage(error.code === error.PERMISSION_DENIED ? t.geo.geolocDenied : t.geo.geolocUnavailable);
+        setMessage(error.code === error.PERMISSION_DENIED ? t("geo.geolocDenied") : t("geo.geolocUnavailable"));
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 10 * 60_000 },
     );
@@ -66,14 +67,14 @@ export function NearPicker({ value, onChange }: { value: NearPoint | null; onCha
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-end gap-2">
         <button type="button" className={buttonClass} disabled={locating} onClick={aroundMe}>
-          {locating ? t.geo.locating : t.geo.aroundMe}
+          {locating ? t("geo.locating") : t("geo.aroundMe")}
         </button>
         <label className="relative flex min-w-48 flex-1 flex-col gap-1">
-          <span className="hud-label">{t.geo.aroundCity}</span>
+          <span className="hud-label">{t("geo.aroundCity")}</span>
           <input
             className={inputClass}
             value={query}
-            placeholder={value?.label || t.geo.cityPlaceholder}
+            placeholder={value?.label || t("geo.cityPlaceholder")}
             autoComplete="off"
             onChange={(event) => {
               setQuery(event.target.value);
@@ -103,18 +104,18 @@ export function NearPicker({ value, onChange }: { value: NearPoint | null; onCha
           ) : null}
         </label>
         <label className="flex flex-col gap-1">
-          <span className="hud-label">{t.geo.radius}</span>
+          <span className="hud-label">{t("geo.radius")}</span>
           <select
             className={inputClass}
             value={radius}
             onChange={(event) => {
               if (value) onChange({ ...value, radius: Number(event.target.value) });
-              else setMessage(t.geo.pickPointFirst);
+              else setMessage(t("geo.pickPointFirst"));
             }}
           >
             {SEARCH_RADII_KM.map((km) => (
               <option key={km} value={km}>
-                {t.geo.km(km)}
+                {t("geo.km", { n: km })}
               </option>
             ))}
           </select>
@@ -122,9 +123,9 @@ export function NearPicker({ value, onChange }: { value: NearPoint | null; onCha
       </div>
       {value ? (
         <p className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-cyan">{t.geo.around(value.label || t.geo.aroundMe, value.radius)}</span>
+          <span className="text-cyan">{t("geo.around", { label: value.label || t("geo.aroundMe"), radius: value.radius })}</span>
           <button type="button" className="text-xs text-muted underline" onClick={() => onChange(null)}>
-            {t.geo.clearPoint}
+            {t("geo.clearPoint")}
           </button>
         </p>
       ) : null}

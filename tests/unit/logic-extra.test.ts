@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
+import { numberFormat } from "../../src/i18n/number-format";
 import {
   aggregateCollection,
   alignReleasedFilters,
@@ -10,9 +11,6 @@ import {
   defaultFilters,
   equivalentPrintingIds,
   filterInvestmentLines,
-  formatInt,
-  formatMoney,
-  formatPercent,
   frenchChecklist,
   investmentBySet,
   isReleasedSet,
@@ -538,13 +536,22 @@ describe("textes de carte", () => {
 
 describe("formats", () => {
   it("formats français (espaces insécables)", () => {
-    assert.equal(formatMoney(1234.5), "1 234,50 €");
-    assert.equal(formatMoney(-3), "-3,00 €");
-    assert.match(formatMoney(2, "USD"), /^2,00 \$US$/);
-    assert.equal(formatInt(1234567), "1 234 567");
-    assert.equal(formatPercent(12.345, 1), "12,3 %");
-    assert.equal(formatPercent(99.6), "100 %");
-    assert.equal(formatPercent(0), "0 %");
+    const fmt = numberFormat("fr");
+    assert.equal(fmt.money(1234.5), "1 234,50 €");
+    assert.equal(fmt.money(-3), "-3,00 €");
+    assert.match(fmt.money(2, "USD"), /^2,00 \$US$/);
+    assert.equal(fmt.int(1234567), "1 234 567");
+    assert.equal(fmt.percent(12.345, 1), "12,3 %");
+    assert.equal(fmt.percent(99.6), "100 %");
+    assert.equal(fmt.percent(0), "0 %");
+  });
+
+  it("format régional de la langue de la page", () => {
+    assert.equal(numberFormat("en").money(12.5), "€12.50");
+    assert.equal(numberFormat("de").money(12.5), "12,50 €");
+    assert.equal(numberFormat("de").int(1234567), "1.234.567");
+    assert.equal(numberFormat("en").percent(12.345, 1), "12.3%");
+    assert.equal(numberFormat("it").percent(50), "50%");
   });
 });
 

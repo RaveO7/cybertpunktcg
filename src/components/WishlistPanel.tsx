@@ -1,13 +1,15 @@
 "use client";
 
 import { useId, useState } from "react";
-import { useI18n } from "@/components/LocaleProvider";
+import { useTranslations } from "next-intl";
+import { useNumberFormat } from "@/i18n/number-format";
 import { useWishlist } from "@/components/WishlistProvider";
-import { formatMoney, wishlistTargetReached } from "@/lib/logic";
+import { wishlistTargetReached } from "@/lib/logic";
 
 /** Bloc de la fiche carte : ajout à la liste de souhaits et prix cible de l'alerte. */
 export function WishlistPanel({ printingId, marketPrice }: { printingId: string; marketPrice: number | null }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   const wishlist = useWishlist();
   const headingId = useId();
   const item = wishlist.items.find((entry) => entry.printingId === printingId) ?? null;
@@ -35,7 +37,7 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
     try {
       await action();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t.wishlist.failed);
+      setMessage(error instanceof Error ? error.message : t("wishlist.failed"));
     } finally {
       setPending(false);
     }
@@ -50,7 +52,7 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
     <section data-no-swipe="" className="hud-panel order-6 overflow-hidden md:order-none" aria-labelledby={headingId}>
       <div className="flex items-center justify-between gap-3 border-b border-cyan/15 px-4 py-3 sm:px-5">
         <h3 id={headingId} className="hud-label text-cyan">
-          {t.wishlist.title}
+          {t("wishlist.title")}
         </h3>
       </div>
       <form
@@ -61,7 +63,7 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
         }}
       >
         <label className="w-32">
-          <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t.wishlist.targetPrice}</span>
+          <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t("wishlist.targetPrice")}</span>
           <span className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
             <input
               className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
@@ -79,7 +81,7 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
             disabled={pending}
             className="inline-flex h-10 items-center gap-1.5 bg-yellow px-3 text-sm font-semibold text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80 disabled:opacity-60"
           >
-            {item ? t.wishlist.save : t.wishlist.add}
+            {item ? t("wishlist.save") : t("wishlist.add")}
           </button>
         ) : null}
         {item ? (
@@ -89,16 +91,16 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
             onClick={() => void run(() => wishlist.remove(item.id))}
             className="inline-flex h-10 items-center border border-line px-3 text-sm text-muted transition hover:border-danger hover:text-danger focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/70 disabled:opacity-60"
           >
-            {t.wishlist.remove}
+            {t("wishlist.remove")}
           </button>
         ) : null}
         <p className="basis-full text-xs text-muted">
           {reached && marketPrice != null ? (
             <span className="text-gain">
-              {t.wishlist.targetReached} · {formatMoney(marketPrice)}
+              {t("wishlist.targetReached")} · {fmt.money(marketPrice)}
             </span>
           ) : (
-            t.wishlist.targetHint
+            t("wishlist.targetHint")
           )}
         </p>
         {message ? (

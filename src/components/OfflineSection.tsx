@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { useI18n } from "@/components/LocaleProvider";
+import { useTranslations } from "next-intl";
 import { useIsOffline } from "@/components/OfflineSupport";
 import {
   clearOfflineImages,
@@ -16,7 +16,7 @@ import type { CatalogDTO } from "@/lib/types";
 const noopSubscribe = () => () => {};
 
 export function OfflineSection({ catalog }: { catalog: CatalogDTO | null }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const offline = useIsOffline();
   const urls = useMemo(() => (catalog ? offlineImageUrls(catalog) : []), [catalog]);
   const supported = useSyncExternalStore(noopSubscribe, offlineSupported, () => true);
@@ -48,7 +48,7 @@ export function OfflineSection({ catalog }: { catalog: CatalogDTO | null }) {
     setProgress({ done: 0, total: urls.length, failed: 0 });
     try {
       const result = await downloadImages(urls, setProgress, controller.signal);
-      if (result.failed > 0 && !controller.signal.aborted) setNote(t.offline.failed(result.failed));
+      if (result.failed > 0 && !controller.signal.aborted) setNote(t("offline.failed", { n: result.failed }));
     } finally {
       abortRef.current = null;
       setProgress(null);
@@ -60,7 +60,7 @@ export function OfflineSection({ catalog }: { catalog: CatalogDTO | null }) {
     setNote(null);
     await clearOfflineImages();
     setCached(0);
-    setNote(t.offline.cleared);
+    setNote(t("offline.cleared"));
   }
 
   const busy = progress !== null;
@@ -68,14 +68,14 @@ export function OfflineSection({ catalog }: { catalog: CatalogDTO | null }) {
 
   return (
     <section className="mt-8 border-t border-line pt-6">
-      <h2 className="text-xs uppercase tracking-[0.14em] text-muted">{t.offline.title}</h2>
-      <p className="mt-2 text-sm text-muted">{t.offline.hint}</p>
+      <h2 className="text-xs uppercase tracking-[0.14em] text-muted">{t("offline.title")}</h2>
+      <p className="mt-2 text-sm text-muted">{t("offline.hint")}</p>
       {!supported ? (
-        <p className="mt-4 text-sm text-muted">{t.offline.unsupported}</p>
+        <p className="mt-4 text-sm text-muted">{t("offline.unsupported")}</p>
       ) : (
         <>
           {cached !== null && urls.length > 0 ? (
-            <p className="mt-3 text-sm text-foreground">{t.offline.status(cached, urls.length)}</p>
+            <p className="mt-3 text-sm text-foreground">{t("offline.status", { cached, total: urls.length })}</p>
           ) : null}
           {busy ? (
             <div className="mt-4 space-y-2">
@@ -93,14 +93,14 @@ export function OfflineSection({ catalog }: { catalog: CatalogDTO | null }) {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm text-muted" aria-live="polite">
-                  {t.offline.downloading(progress.done, progress.total)}
+                  {t("offline.downloading", { done: progress.done, total: progress.total })}
                 </p>
                 <button
                   type="button"
                   onClick={() => abortRef.current?.abort()}
                   className="h-9 border border-line px-3 text-sm text-muted hover:border-cyan hover:text-cyan"
                 >
-                  {t.offline.cancel}
+                  {t("offline.cancel")}
                 </button>
               </div>
             </div>
@@ -112,7 +112,7 @@ export function OfflineSection({ catalog }: { catalog: CatalogDTO | null }) {
                 onClick={() => void download()}
                 className="h-12 w-full border border-cyan text-sm text-cyan hover:bg-cyan/10 disabled:opacity-60"
               >
-                {t.offline.download(missing)}
+                {t("offline.download", { n: missing })}
               </button>
               {cached ? (
                 <button
@@ -120,12 +120,12 @@ export function OfflineSection({ catalog }: { catalog: CatalogDTO | null }) {
                   onClick={() => void clear()}
                   className="h-10 w-full border border-line text-sm text-muted hover:border-danger hover:text-danger"
                 >
-                  {t.offline.clear}
+                  {t("offline.clear")}
                 </button>
               ) : null}
             </div>
           )}
-          <p className="mt-3 text-xs text-muted">{t.offline.hdNote}</p>
+          <p className="mt-3 text-xs text-muted">{t("offline.hdNote")}</p>
         </>
       )}
       {note ? (

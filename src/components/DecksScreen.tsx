@@ -1,13 +1,14 @@
 "use client";
 
 import { useVirtualizer } from "@tanstack/react-virtual";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useNumberFormat } from "@/i18n/number-format";
+import { Link, useRouter } from "@/i18n/navigation";
 import { CardImage } from "@/components/CardImage";
 import { colorDotClass } from "@/components/CardTile";
 import { useCollection } from "@/components/CollectionProvider";
-import { useI18n } from "@/components/LocaleProvider";
 import { RulesText } from "@/components/RulesText";
 import {
   DECK_RULES,
@@ -33,9 +34,9 @@ import {
   type Shortfall,
   type ShortfallLine,
 } from "@/lib/deck-rules";
-import type { Messages } from "@/lib/i18n/messages";
-import { intlLocale } from "@/lib/i18n/messages";
-import { formatInt, formatMoney, normalizeText, resolveRulesText } from "@/lib/logic";
+import type { Translator } from "@/i18n/translator";
+import { intlLocale } from "@/i18n/config";
+import { normalizeText, resolveRulesText } from "@/lib/logic";
 import { BLOCKS, COLOR_ORDER, TYPE_ORDER } from "@/lib/reference-data";
 import type { CardDTO, CatalogDTO, DeckDTO, PrintingDTO } from "@/lib/types";
 
@@ -130,7 +131,7 @@ function useDeckCatalog(catalog: CatalogDTO | null) {
 }
 
 export function DecksScreen() {
-  const { t } = useI18n();
+  const t = useTranslations();
   const searchParams = useSearchParams();
   const deckId = searchParams.get("deck");
   const { catalog, ready: collectionReady, error: collectionError } = useCollection();
@@ -138,14 +139,14 @@ export function DecksScreen() {
 
   if (collectionError) return <p className="p-6 text-danger">{collectionError}</p>;
   if (decks.error) return <p className="p-6 text-danger">{decks.error}</p>;
-  if (!collectionReady || !catalog || !decks.ready) return <p className="p-6 text-muted">{t.common.loading}</p>;
+  if (!collectionReady || !catalog || !decks.ready) return <p className="p-6 text-muted">{t("common.loading")}</p>;
 
   if (deckId) {
     const deck = decks.decks.find((entry) => entry.id === deckId);
     if (!deck) {
       return (
         <div className="mx-auto flex w-full max-w-[1100px] flex-col items-start gap-3 px-3 py-6 sm:px-4">
-          <p className="text-sm text-muted">{t.decks.notFound}</p>
+          <p className="text-sm text-muted">{t("decks.notFound")}</p>
           <BackLink />
         </div>
       );
@@ -156,13 +157,13 @@ export function DecksScreen() {
 }
 
 function BackLink() {
-  const { t } = useI18n();
+  const t = useTranslations();
   return (
     <Link href="/decks" className="inline-flex h-10 items-center gap-1.5 text-sm text-muted hover:text-cyan">
       <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M10 3 5 8l5 5" />
       </svg>
-      {t.decks.back}
+      {t("decks.back")}
     </Link>
   );
 }
@@ -185,7 +186,8 @@ function DeckList({
   onCreate: (input: { name?: string; cards?: DeckEntry[] }) => Promise<DeckDTO>;
   onDelete: (id: string) => Promise<void>;
 }) {
-  const { t, locale } = useI18n();
+  const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const { items } = useCollection();
   const { cardsById, printingsByCard, preview } = useDeckCatalog(catalog);
@@ -200,7 +202,7 @@ function DeckList({
     try {
       await action();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t.decks.failed);
+      setMessage(error instanceof Error ? error.message : t("decks.failed"));
     } finally {
       setPending(false);
     }
@@ -208,19 +210,19 @@ function DeckList({
 
   const create = () =>
     run(async () => {
-      const deck = await onCreate({ name: t.decks.defaultName });
-      router.push(`/decks?deck=${encodeURIComponent(deck.id)}`);
+      const deck = await onCreate({ name: t("decks.defaultName") });
+      router.push({ pathname: "/decks", query: { deck: deck.id } });
     });
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-5 px-3 py-4 sm:gap-6 sm:px-4 sm:py-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl text-yellow sm:text-4xl">{t.decks.title}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted">{t.decks.subtitle}</p>
+          <h1 className="text-2xl text-yellow sm:text-4xl">{t("decks.title")}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted">{t("decks.subtitle")}</p>
         </div>
         <button type="button" className={primaryClass} disabled={pending} onClick={() => void create()}>
-          {t.decks.newDeck}
+          {t("decks.newDeck")}
         </button>
       </div>
       {message ? (
@@ -230,7 +232,7 @@ function DeckList({
       ) : null}
 
       {decks.length === 0 ? (
-        <p className="border border-line bg-panel p-5 text-sm text-muted">{t.decks.empty}</p>
+        <p className="border border-line bg-panel p-5 text-sm text-muted">{t("decks.empty")}</p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => {
@@ -247,7 +249,7 @@ function DeckList({
                 pending={pending}
                 onDuplicate={() =>
                   void run(async () => {
-                    await onCreate({ name: t.decks.copyName(deck.name).slice(0, 60), cards: deck.cards });
+                    await onCreate({ name: t("decks.copyName", { name: deck.name }).slice(0, 60), cards: deck.cards });
                   })
                 }
                 onDelete={() => void run(() => onDelete(deck.id))}
@@ -280,7 +282,8 @@ function DeckSummaryCard({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   const [confirming, setConfirming] = useState(false);
   const slots = Array.from({ length: DECK_RULES.legends }, (_, position) => analysis.legends[position]);
   const secondary = `${buttonClass} relative z-10 h-9 px-3 text-xs`;
@@ -325,43 +328,43 @@ function DeckSummaryCard({
               </span>
             ))
           ) : (
-            <span>{t.decks.noLegends}</span>
+            <span>{t("decks.noLegends")}</span>
           )}
         </p>
         <dl className="grid grid-cols-3 gap-2 border-t border-line/60 pt-3 text-xs">
           <div>
-            <dt className="hud-label">{t.decks.mainDeck}</dt>
-            <dd className="mt-1 font-mono tabular-nums">{formatInt(analysis.mainCount)}</dd>
+            <dt className="hud-label">{t("decks.mainDeck")}</dt>
+            <dd className="mt-1 font-mono tabular-nums">{fmt.int(analysis.mainCount)}</dd>
           </div>
           <div>
-            <dt className="hud-label">{t.decks.owned}</dt>
+            <dt className="hud-label">{t("decks.owned")}</dt>
             <dd className="mt-1 font-mono tabular-nums">
-              {formatInt(shortfall.ownedCopies)}/{formatInt(shortfall.totalCopies)}
+              {fmt.int(shortfall.ownedCopies)}/{fmt.int(shortfall.totalCopies)}
             </dd>
           </div>
           <div>
-            <dt className="hud-label">{t.decks.toBuy}</dt>
+            <dt className="hud-label">{t("decks.toBuy")}</dt>
             <dd className={`mt-1 font-mono tabular-nums ${shortfall.missingCopies === 0 && shortfall.totalCopies > 0 ? "text-gain" : ""}`}>
-              {shortfall.missingCopies === 0 ? "—" : formatMoney(shortfall.missingCost)}
+              {shortfall.missingCopies === 0 ? "—" : fmt.money(shortfall.missingCost)}
             </dd>
           </div>
         </dl>
-        <p className="text-[11px] text-muted">{t.decks.updated(updated)}</p>
+        <p className="text-[11px] text-muted">{t("decks.updated", { date: updated })}</p>
 
         <div className="mt-auto flex flex-wrap items-center gap-2">
           {/* Lien étiré : son ::after couvre toute la carte, les autres boutons passent au-dessus (z-10). */}
           <Link
-            href={`/decks?deck=${encodeURIComponent(deck.id)}`}
-            aria-label={t.decks.open(deck.name)}
+            href={{ pathname: "/decks", query: { deck: deck.id } }}
+            aria-label={t("decks.open", { name: deck.name })}
             className={`${primaryClass} h-9 flex-1 gap-1.5 after:absolute after:inset-0 after:content-['']`}
           >
-            {t.decks.edit}
+            {t("decks.edit")}
             <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 8h9M8.5 4 12.5 8l-4 4" />
             </svg>
           </Link>
           <button type="button" className={secondary} disabled={pending} onClick={onDuplicate}>
-            {t.decks.duplicate}
+            {t("decks.duplicate")}
           </button>
           {confirming ? (
             <button
@@ -372,11 +375,11 @@ function DeckSummaryCard({
               onBlur={() => setConfirming(false)}
               autoFocus
             >
-              {t.decks.confirmDelete}
+              {t("decks.confirmDelete")}
             </button>
           ) : (
             <button type="button" className={secondary} disabled={pending} onClick={() => setConfirming(true)}>
-              {t.decks.delete}
+              {t("decks.delete")}
             </button>
           )}
         </div>
@@ -395,14 +398,14 @@ function PencilIcon({ className }: { className: string }) {
 }
 
 function ValidityBadge({ analysis }: { analysis: DeckAnalysis }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   return analysis.valid ? (
     <span className="inline-flex h-6 shrink-0 items-center border border-gain/45 bg-gain/10 px-1.5 text-[11px] text-gain">
-      {t.decks.valid}
+      {t("decks.valid")}
     </span>
   ) : (
     <span className="inline-flex h-6 shrink-0 items-center border border-danger/45 bg-danger/10 px-1.5 text-[11px] text-danger">
-      {t.decks.issueCount(analysis.issues.length)}
+      {t("decks.issueCount", { n: analysis.issues.length })}
     </span>
   );
 }
@@ -512,7 +515,8 @@ function DeckEditor({
   onSaved: (deck: DeckDTO) => void;
   onDelete: (id: string) => Promise<void>;
 }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   const router = useRouter();
   const { items } = useCollection();
   const index = useDeckCatalog(catalog);
@@ -546,10 +550,10 @@ function DeckEditor({
   /** Pourquoi une carte de plus est refusée (copies max, 3 Legends aux noms différents), ou null. */
   const blockReason = (card: CardDTO) => {
     const quantity = quantities.get(card.id) ?? 0;
-    if (quantity >= maxCopies(card)) return isLegend(card) ? t.decks.reasonLegendCopy : t.decks.reasonCopies;
+    if (quantity >= maxCopies(card)) return isLegend(card) ? t("decks.reasonLegendCopy") : t("decks.reasonCopies");
     if (!isLegend(card)) return null;
-    if (analysis.legendCount >= DECK_RULES.legends) return t.decks.reasonLegendFull;
-    return analysis.legends.some((line) => line.card.name === card.name) ? t.decks.reasonLegendName(card.name) : null;
+    if (analysis.legendCount >= DECK_RULES.legends) return t("decks.reasonLegendFull");
+    return analysis.legends.some((line) => line.card.name === card.name) ? t("decks.reasonLegendName", { name: card.name }) : null;
   };
   const canAdd = (card: CardDTO) => blockReason(card) === null;
 
@@ -623,7 +627,7 @@ function DeckEditor({
       await onDelete(deck.id);
       router.push("/decks");
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : t.decks.failed);
+      setDeleteError(error instanceof Error ? error.message : t("decks.failed"));
     }
   }
 
@@ -646,7 +650,7 @@ function DeckEditor({
               aria-expanded={panel === "import"}
               onClick={() => setPanel(panel === "import" ? "none" : "import")}
             >
-              {t.decks.import}
+              {t("decks.import")}
             </button>
             <button
               type="button"
@@ -654,7 +658,7 @@ function DeckEditor({
               aria-expanded={panel === "export"}
               onClick={() => setPanel(panel === "export" ? "none" : "export")}
             >
-              {t.decks.export}
+              {t("decks.export")}
             </button>
             {confirmDelete ? (
               <button
@@ -664,17 +668,17 @@ function DeckEditor({
                 onBlur={() => setConfirmDelete(false)}
                 autoFocus
               >
-                {t.decks.confirmDelete}
+                {t("decks.confirmDelete")}
               </button>
             ) : (
               <button type="button" className={buttonClass} onClick={() => setConfirmDelete(true)}>
-                {t.decks.delete}
+                {t("decks.delete")}
               </button>
             )}
           </span>
         </div>
         <label className="flex max-w-2xl flex-col gap-1.5">
-          <span className="hud-label">{t.decks.name}</span>
+          <span className="hud-label">{t("decks.name")}</span>
           <span className="flex items-center gap-2 border border-line bg-panel px-3 transition hover:border-muted focus-within:border-cyan">
             <input
               className="h-12 min-w-0 flex-1 bg-transparent text-xl text-yellow outline-none sm:text-2xl"
@@ -710,7 +714,7 @@ function DeckEditor({
 
       {/* Téléphone / tablette : un onglet à la fois, barre d'onglets collée en haut. */}
       <div ref={tabsRef} className="sticky top-0 z-20 -mx-3 bg-background px-3 py-2 sm:-mx-5 sm:px-5 lg:hidden">
-        <div className="flex border border-line" role="tablist" aria-label={t.decks.title}>
+        <div className="flex border border-line" role="tablist" aria-label={t("decks.title")}>
           {(["deck", "add"] as const).map((key) => (
             <button
               key={key}
@@ -722,14 +726,14 @@ function DeckEditor({
             >
               {key === "deck" ? (
                 <>
-                  {t.decks.deckTab}
+                  {t("decks.deckTab")}
                   <span className="font-mono tabular-nums">
-                    {formatInt(analysis.legendCount + analysis.mainCount)}
+                    {fmt.int(analysis.legendCount + analysis.mainCount)}
                   </span>
                   <span className={`h-2 w-2 rounded-full ${analysis.valid ? "bg-gain" : "bg-danger"}`} aria-hidden="true" />
                 </>
               ) : (
-                t.decks.addCards
+                t("decks.addCards")
               )}
             </button>
           ))}
@@ -761,7 +765,7 @@ function DeckEditor({
           />
         </section>
         <aside
-          aria-label={t.decks.deckTab}
+          aria-label={t("decks.deckTab")}
           className={`${pane === "deck" ? "flex" : "hidden"} deck-pane-from-left scrollbar-hud min-w-0 flex-col gap-4 lg:flex lg:pointer-fine:sticky lg:pointer-fine:top-0 lg:pointer-fine:max-h-[100cqh] lg:pointer-fine:overflow-y-auto lg:pointer-fine:py-5 lg:pointer-fine:pr-1`}
         >
           <DeckOverview
@@ -803,41 +807,41 @@ function DeckEditor({
 }
 
 function SaveIndicator({ status, error, onRetry }: { status: SaveStatus; error: string | null; onRetry: () => void }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   if (status === "idle") return null;
   if (status === "error") {
     return (
       <span role="alert" className="flex items-center gap-2 text-xs text-danger">
-        {error ?? t.decks.saveFailed}
+        {error ?? t("decks.saveFailed")}
         <button type="button" className="underline hover:text-foreground" onClick={onRetry}>
-          {t.decks.retry}
+          {t("decks.retry")}
         </button>
       </span>
     );
   }
   return (
     <span className="text-xs text-muted" aria-live="polite">
-      {status === "saving" ? t.decks.saving : t.decks.saved}
+      {status === "saving" ? t("decks.saving") : t("decks.saved")}
     </span>
   );
 }
 
-function issueText(t: Messages, issue: DeckIssue) {
+function issueText(t: Translator, issue: DeckIssue) {
   switch (issue.code) {
     case "legend-count":
-      return t.decks.issueLegendCount(issue.count);
+      return t("decks.issueLegendCount", { n: issue.count });
     case "legend-name":
-      return t.decks.issueLegendName(issue.name);
+      return t("decks.issueLegendName", { name: issue.name });
     case "deck-size":
-      return t.decks.issueDeckSize(issue.count);
+      return t("decks.issueDeckSize", { n: issue.count });
     case "copies":
-      return t.decks.issueCopies(issue.name, issue.quantity);
+      return t("decks.issueCopies", { name: issue.name, n: issue.quantity });
     case "ram":
-      return t.decks.issueRam(issue.name, issue.ram, issue.color, issue.limit);
+      return t("decks.issueRam", { name: issue.name, ram: issue.ram, color: issue.color, limit: issue.limit });
     case "not-legal":
-      return t.decks.issueNotLegal(issue.name);
+      return t("decks.issueNotLegal", { name: issue.name });
     case "unknown":
-      return t.decks.issueUnknown;
+      return t("decks.issueUnknown");
   }
 }
 
@@ -857,7 +861,8 @@ function DeckOverview({
   onBrowseLegends: () => void;
   onPreview: (cardId: string, list: string[]) => void;
 }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   const sizeOk = analysis.mainCount >= DECK_RULES.minCards && analysis.mainCount <= DECK_RULES.maxCards;
   const colors = COLOR_ORDER.filter((color) => analysis.ramLimits[color] != null);
   const slots = Array.from({ length: Math.max(DECK_RULES.legends, analysis.legends.length) }, (_, position) => analysis.legends[position]);
@@ -866,10 +871,10 @@ function DeckOverview({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 id="deck-validation" className="hud-label">
-            {t.decks.validation}
+            {t("decks.validation")}
           </h2>
           <p className="mt-1 font-mono text-3xl tabular-nums">
-            <span className={sizeOk ? "text-gain" : "text-foreground"}>{formatInt(analysis.mainCount)}</span>
+            <span className={sizeOk ? "text-gain" : "text-foreground"}>{fmt.int(analysis.mainCount)}</span>
             <span className="text-base text-muted">
               {" "}
               / {DECK_RULES.minCards}–{DECK_RULES.maxCards}
@@ -881,7 +886,7 @@ function DeckOverview({
 
       <div>
         <h3 className="hud-label mb-2">
-          {t.decks.legends} · {analysis.legendCount}/{DECK_RULES.legends}
+          {t("decks.legends")} · {analysis.legendCount}/{DECK_RULES.legends}
         </h3>
         <ul className="grid grid-cols-3 gap-2">
           {slots.map((line, position) =>
@@ -891,7 +896,7 @@ function DeckOverview({
                   type="button"
                   className="block w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan"
                   onClick={() => onPreview(line.card.id, analysis.legends.map((entry) => entry.card.id))}
-                  aria-label={t.decks.viewCard(cardLabel(line.card))}
+                  aria-label={t("decks.viewCard", { name: cardLabel(line.card) })}
                 >
                   {preview.get(line.card.id)?.imagePath ? (
                     <CardImage
@@ -907,7 +912,7 @@ function DeckOverview({
                   type="button"
                   onClick={() => onQuantity(line.card.id, line.quantity - 1)}
                   className="absolute top-1 right-1 grid h-7 w-7 place-items-center rounded-full bg-black/80 text-sm text-foreground hover:bg-danger"
-                  aria-label={t.decks.removeOne(cardLabel(line.card))}
+                  aria-label={t("decks.removeOne", { name: cardLabel(line.card) })}
                 >
                   ×
                 </button>
@@ -940,11 +945,11 @@ function DeckOverview({
           colors.map((color) => (
             <span key={color} className="inline-flex h-6 items-center gap-1.5 border border-line px-1.5 text-[11px]">
               <span className={`h-2 w-2 rounded-full ${colorDotClass(color)}`} aria-hidden="true" />
-              {t.decks.ramLimit(color, analysis.ramLimits[color])}
+              {t("decks.ramLimit", { color, n: analysis.ramLimits[color] })}
             </span>
           ))
         ) : (
-          <span className="text-[11px] text-muted">{t.decks.noRam}</span>
+          <span className="text-[11px] text-muted">{t("decks.noRam")}</span>
         )}
       </div>
 
@@ -990,13 +995,14 @@ function DeckCardList({
   onBrowse: () => void;
   onPreview: (cardId: string, list: string[]) => void;
 }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   if (analysis.main.length === 0) {
     return (
       <div className={`${panelClass} flex flex-col items-start gap-3 p-4`}>
-        <p className="text-sm text-muted">{t.decks.emptyDeck}</p>
+        <p className="text-sm text-muted">{t("decks.emptyDeck")}</p>
         <button type="button" className={`${primaryClass} lg:hidden`} onClick={onBrowse}>
-          {t.decks.addCards}
+          {t("decks.addCards")}
         </button>
       </div>
     );
@@ -1008,15 +1014,15 @@ function DeckCardList({
       title: type,
       lines: analysis.main.filter((line) => line.card.cardType === type),
     })),
-    { key: "other", title: t.decks.otherCards, lines: analysis.main.filter((line) => !known.includes(line.card.cardType ?? "")) },
+    { key: "other", title: t("decks.otherCards"), lines: analysis.main.filter((line) => !known.includes(line.card.cardType ?? "")) },
   ].filter((group) => group.lines.length > 0);
   return (
-    <section className={panelClass} aria-label={t.decks.mainDeck}>
+    <section className={panelClass} aria-label={t("decks.mainDeck")}>
       {groups.map((group) => (
         <div key={group.key} className="border-t border-line/60 first:border-t-0">
           <h3 className="hud-label flex justify-between px-3 pt-3 pb-1">
             <span>{group.title}</span>
-            <span className="tabular-nums">{formatInt(group.lines.reduce((sum, line) => sum + line.quantity, 0))}</span>
+            <span className="tabular-nums">{fmt.int(group.lines.reduce((sum, line) => sum + line.quantity, 0))}</span>
           </h3>
           <ul className="pb-1.5">
             {group.lines.map((line) => (
@@ -1052,7 +1058,7 @@ function DeckRow({
   onQuantity: (cardId: string, quantity: number) => void;
   onPreview: () => void;
 }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const label = cardLabel(line.card);
   const owned = detail?.owned ?? 0;
   const ownedTone = owned >= line.quantity ? "bg-gain" : owned > 0 ? "bg-yellow" : "bg-line";
@@ -1066,17 +1072,17 @@ function DeckRow({
         onClick={onPreview}
         className="min-w-0 flex-1 truncate text-left text-sm hover:text-cyan"
         title={label}
-        aria-label={t.decks.viewCard(label)}
+        aria-label={t("decks.viewCard", { name: label })}
       >
         {label}
       </button>
-      <span className="w-5 shrink-0 text-center font-mono text-[11px] text-muted" title={line.card.cost != null ? t.decks.cost(line.card.cost) : undefined}>
+      <span className="w-5 shrink-0 text-center font-mono text-[11px] text-muted" title={line.card.cost != null ? t("decks.cost", { n: line.card.cost }) : undefined}>
         {line.card.cost ?? ""}
       </span>
       <span
         className={`h-2.5 w-2.5 shrink-0 rounded-full ${ownedTone}`}
-        title={t.decks.ownedTitle(owned, line.quantity)}
-        aria-label={t.decks.ownedTitle(owned, line.quantity)}
+        title={t("decks.ownedTitle", { owned, total: line.quantity })}
+        aria-label={t("decks.ownedTitle", { owned, total: line.quantity })}
         role="img"
       />
       <Stepper card={line.card} quantity={line.quantity} canAdd={canAdd} onQuantity={onQuantity} compact />
@@ -1085,16 +1091,16 @@ function DeckRow({
 }
 
 function CardFacts({ card, ramOk }: { card: CardDTO; ramOk: boolean }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   return (
     <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[11px] text-muted">
       <span className="inline-flex items-center gap-1">
         <span className={`h-2 w-2 rounded-full ${colorDotClass(card.color)}`} aria-hidden="true" />
         {card.color ?? "—"}
       </span>
-      {card.cost != null ? <span>{t.decks.cost(card.cost)}</span> : null}
-      {card.ram != null ? <span className={ramOk ? "" : "text-danger"}>{t.decks.ram(card.ram)}</span> : null}
-      {!isLegal(card) ? <span className="text-danger">{t.decks.notLegal}</span> : null}
+      {card.cost != null ? <span>{t("decks.cost", { n: card.cost })}</span> : null}
+      {card.ram != null ? <span className={ramOk ? "" : "text-danger"}>{t("decks.ram", { n: card.ram })}</span> : null}
+      {!isLegal(card) ? <span className="text-danger">{t("decks.notLegal")}</span> : null}
     </span>
   );
 }
@@ -1114,17 +1120,17 @@ function Stepper({
   wide?: boolean;
   compact?: boolean;
 }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const label = cardLabel(card);
   const size = compact ? "h-7 w-7 text-sm" : "h-9 w-9 text-base";
   const step = `grid ${size} place-items-center border border-line text-muted hover:border-cyan hover:text-foreground disabled:opacity-40 disabled:hover:border-line disabled:hover:text-muted`;
   return (
     <span className={wide ? "flex w-full items-center justify-between" : "flex shrink-0 items-center"}>
-      <button type="button" className={step} disabled={quantity <= 0} onClick={() => onQuantity(card.id, quantity - 1)} aria-label={t.decks.removeOne(label)}>
+      <button type="button" className={step} disabled={quantity <= 0} onClick={() => onQuantity(card.id, quantity - 1)} aria-label={t("decks.removeOne", { name: label })}>
         −
       </button>
       {compact ? null : (
-        <span className="w-8 text-center font-mono text-sm tabular-nums" aria-label={t.decks.inDeck(quantity)}>
+        <span className="w-8 text-center font-mono text-sm tabular-nums" aria-label={t("decks.inDeck", { n: quantity })}>
           {quantity}
         </span>
       )}
@@ -1133,7 +1139,7 @@ function Stepper({
         className={`${step} ${compact ? "-ml-px" : ""}`}
         disabled={!canAdd}
         onClick={() => onQuantity(card.id, quantity + 1)}
-        aria-label={t.decks.addOne(label)}
+        aria-label={t("decks.addOne", { name: label })}
       >
         +
       </button>
@@ -1142,16 +1148,16 @@ function Stepper({
 }
 
 function CostCurve({ curve }: { curve: number[] }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const max = Math.max(1, ...curve);
   return (
     <section className={`${panelClass} p-4`} aria-labelledby="deck-curve">
       <h2 id="deck-curve" className="hud-label">
-        {t.decks.curve}
+        {t("decks.curve")}
       </h2>
       <ol className="mt-3 grid h-24 grid-cols-8 items-end gap-1.5">
         {curve.map((count, cost) => (
-          <li key={cost} className="flex h-full flex-col items-center justify-end gap-1" aria-label={t.decks.curveBar(cost === 7 ? "7+" : String(cost), count)}>
+          <li key={cost} className="flex h-full flex-col items-center justify-end gap-1" aria-label={t("decks.curveBar", { cost: cost === 7 ? "7+" : String(cost), n: count })}>
             <span className="font-mono text-[10px] tabular-nums text-muted">{count || ""}</span>
             <span className="w-full bg-cyan/70" style={{ height: `${(count / max) * 65}%`, minHeight: count ? 2 : 0 }} />
             <span className="font-mono text-[11px] text-muted">{cost === 7 ? "7+" : cost}</span>
@@ -1173,7 +1179,8 @@ async function copyText(text: string) {
 
 /** Récapitulatif en fin de deck : manquantes, prix du deck complet, reste à acheter et liste d'achat. */
 function DeckRecap({ shortfall }: { shortfall: Shortfall }) {
-  const { t } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
   const [copied, setCopied] = useState<boolean | null>(null);
   if (shortfall.totalCopies === 0) return null;
   const missing = shortfall.lines.filter((line) => line.missing > 0).sort((a, b) => (b.cost ?? -1) - (a.cost ?? -1));
@@ -1182,42 +1189,42 @@ function DeckRecap({ shortfall }: { shortfall: Shortfall }) {
   return (
     <section className="flex flex-col gap-2" aria-labelledby="deck-recap">
       <h2 id="deck-recap" className="hud-label">
-        {t.decks.recapTitle}
+        {t("decks.recapTitle")}
       </h2>
       <div className="grid grid-cols-3 gap-2">
         <Stat
-          label={t.decks.missingCards}
-          value={`${formatInt(shortfall.missingCopies)}/${formatInt(shortfall.totalCopies)}`}
+          label={t("decks.missingCards")}
+          value={`${fmt.int(shortfall.missingCopies)}/${fmt.int(shortfall.totalCopies)}`}
           tone={complete ? "gain" : undefined}
         />
         <Stat
-          label={t.decks.deckCost}
-          value={formatMoney(shortfall.deckCost)}
-          hint={shortfall.deckUnpricedCopies > 0 ? t.decks.unpriced(shortfall.deckUnpricedCopies) : undefined}
+          label={t("decks.deckCost")}
+          value={fmt.money(shortfall.deckCost)}
+          hint={shortfall.deckUnpricedCopies > 0 ? t("decks.unpriced", { n: shortfall.deckUnpricedCopies }) : undefined}
         />
         <Stat
-          label={t.decks.toBuy}
-          value={complete ? t.decks.complete : formatMoney(shortfall.missingCost)}
-          hint={shortfall.unpricedCopies > 0 ? t.decks.unpriced(shortfall.unpricedCopies) : undefined}
+          label={t("decks.toBuy")}
+          value={complete ? t("decks.complete") : fmt.money(shortfall.missingCost)}
+          hint={shortfall.unpricedCopies > 0 ? t("decks.unpriced", { n: shortfall.unpricedCopies }) : undefined}
           tone={complete ? "gain" : undefined}
         />
       </div>
       {complete ? (
-        <p className="border border-gain/45 bg-gain/10 px-3 py-2 text-sm text-gain sm:px-4">{t.decks.allOwned}</p>
+        <p className="border border-gain/45 bg-gain/10 px-3 py-2 text-sm text-gain sm:px-4">{t("decks.allOwned")}</p>
       ) : (
         <div className="border border-line bg-panel">
           <div className="flex flex-wrap items-center gap-2 border-b border-line/60 px-3 py-2 sm:px-4">
             <h3 className="hud-label">
-              {t.decks.missingTitle} · {formatInt(shortfall.missingCopies)}
+              {t("decks.missingTitle")} · {fmt.int(shortfall.missingCopies)}
             </h3>
             <span className="ml-auto flex items-center gap-2">
               {copied != null ? (
                 <span className={`text-xs ${copied ? "text-gain" : "text-danger"}`} aria-live="polite">
-                  {copied ? t.decks.copied : t.decks.copyFailed}
+                  {copied ? t("decks.copied") : t("decks.copyFailed")}
                 </span>
               ) : null}
               <button type="button" className={`${buttonClass} h-8 px-2 text-xs`} onClick={() => void copyText(text).then(setCopied)}>
-                {t.decks.copyList}
+                {t("decks.copyList")}
               </button>
             </span>
           </div>
@@ -1227,19 +1234,19 @@ function DeckRecap({ shortfall }: { shortfall: Shortfall }) {
                 <span className="w-6 shrink-0 font-mono text-xs tabular-nums text-muted">×{line.missing}</span>
                 <span
                   className="min-w-0 flex-1 truncate"
-                  title={line.unitPrice != null ? `${cardLabel(line.card)} · ${t.decks.priceEach(formatMoney(line.unitPrice))}` : cardLabel(line.card)}
+                  title={line.unitPrice != null ? `${cardLabel(line.card)} · ${t("decks.priceEach", { amount: fmt.money(line.unitPrice) })}` : cardLabel(line.card)}
                 >
                   {cardLabel(line.card)}
                 </span>
                 <span className="w-20 shrink-0 text-right font-mono text-xs tabular-nums">
-                  {line.cost != null ? formatMoney(line.cost) : t.decks.noPrice}
+                  {line.cost != null ? fmt.money(line.cost) : t("decks.noPrice")}
                 </span>
               </li>
             ))}
           </ul>
           <p className="flex items-center justify-between gap-3 border-t border-line/60 px-3 py-2 text-sm sm:px-4">
-            <span className="text-[11px] text-muted">{t.decks.missingHint}</span>
-            <span className="font-mono tabular-nums">{formatMoney(shortfall.missingCost)}</span>
+            <span className="text-[11px] text-muted">{t("decks.missingHint")}</span>
+            <span className="font-mono tabular-nums">{fmt.money(shortfall.missingCost)}</span>
           </p>
         </div>
       )}
@@ -1248,11 +1255,11 @@ function DeckRecap({ shortfall }: { shortfall: Shortfall }) {
 }
 
 function ExportPanel({ lines, onClose }: { lines: DeckLine[]; onClose: () => void }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const [copied, setCopied] = useState<boolean | null>(null);
   const text = deckToText(lines);
   return (
-    <section className="flex flex-col gap-2 border border-line bg-panel p-3 sm:p-4" aria-label={t.decks.export}>
+    <section className="flex flex-col gap-2 border border-line bg-panel p-3 sm:p-4" aria-label={t("decks.export")}>
       <textarea
         readOnly
         value={text}
@@ -1262,14 +1269,14 @@ function ExportPanel({ lines, onClose }: { lines: DeckLine[]; onClose: () => voi
       />
       <div className="flex items-center gap-2">
         <button type="button" className={primaryClass} disabled={!text} onClick={() => void copyText(text).then(setCopied)}>
-          {t.decks.copyList}
+          {t("decks.copyList")}
         </button>
         <button type="button" className={buttonClass} onClick={onClose}>
-          {t.decks.close}
+          {t("decks.close")}
         </button>
         {copied != null ? (
           <span className={`text-xs ${copied ? "text-gain" : "text-danger"}`} aria-live="polite">
-            {copied ? t.decks.copied : t.decks.copyFailed}
+            {copied ? t("decks.copied") : t("decks.copyFailed")}
           </span>
         ) : null}
       </div>
@@ -1278,15 +1285,15 @@ function ExportPanel({ lines, onClose }: { lines: DeckLine[]; onClose: () => voi
 }
 
 function ImportPanel({ cards, onApply, onClose }: { cards: CardDTO[]; onApply: (entries: DeckEntry[]) => void; onClose: () => void }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const [text, setText] = useState("");
   const parsed = useMemo(() => (text.trim() ? parseDeckText(text, cards) : null), [text, cards]);
   return (
     <section className="flex flex-col gap-2 border border-line bg-panel p-3 sm:p-4" aria-labelledby="deck-import">
       <h2 id="deck-import" className="hud-label">
-        {t.decks.importTitle}
+        {t("decks.importTitle")}
       </h2>
-      <p className="text-xs text-muted">{t.decks.importHint}</p>
+      <p className="text-xs text-muted">{t("decks.importHint")}</p>
       <textarea
         value={text}
         rows={8}
@@ -1296,7 +1303,7 @@ function ImportPanel({ cards, onApply, onClose }: { cards: CardDTO[]; onApply: (
       />
       {parsed && parsed.unmatched.length > 0 ? (
         <div className="text-xs text-danger" role="status">
-          <p>{t.decks.importUnmatched(parsed.unmatched.length)}</p>
+          <p>{t("decks.importUnmatched", { n: parsed.unmatched.length })}</p>
           <ul className="mt-1 list-inside list-disc font-mono">
             {parsed.unmatched.slice(0, 8).map((line, position) => (
               <li key={position}>{line}</li>
@@ -1311,10 +1318,10 @@ function ImportPanel({ cards, onApply, onClose }: { cards: CardDTO[]; onApply: (
           disabled={!parsed || parsed.entries.length === 0}
           onClick={() => parsed && onApply(parsed.entries)}
         >
-          {parsed ? t.decks.importApply(parsed.entries.reduce((sum, entry) => sum + entry.quantity, 0)) : t.decks.importApply(0)}
+          {parsed ? t("decks.importApply", { n: parsed.entries.reduce((sum, entry) => sum + entry.quantity, 0) }) : t("decks.importApply", { n: 0 })}
         </button>
         <button type="button" className={buttonClass} onClick={onClose}>
-          {t.decks.cancel}
+          {t("decks.cancel")}
         </button>
       </div>
     </section>
@@ -1347,7 +1354,7 @@ function CardBrowser({
   onQuantity: (cardId: string, quantity: number) => void;
   onPreview: (cardId: string, list: string[]) => void;
 }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const haystacks = useMemo(
     () =>
       new Map(
@@ -1385,33 +1392,33 @@ function CardBrowser({
       <div className="flex flex-col gap-2.5 border-b border-line bg-background pb-3 lg:sticky lg:top-0 lg:z-10 lg:pt-5">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2 id="deck-picker" className="sr-only">
-            {t.decks.addCards}
+            {t("decks.addCards")}
           </h2>
           <input
             type="search"
             className="h-11 min-w-0 flex-1 basis-56 border border-line bg-panel px-3 text-sm outline-none focus:border-cyan"
-            placeholder={t.decks.searchPlaceholder}
-            aria-label={t.common.search}
+            placeholder={t("decks.searchPlaceholder")}
+            aria-label={t("common.search")}
             value={filters.query}
             onChange={(event) => update({ query: event.target.value })}
           />
           <label className="flex h-11 min-w-0 flex-1 basis-48 items-center border border-line bg-panel focus-within:border-cyan sm:flex-none">
-            <span className="shrink-0 pl-3 font-mono text-[10px] tracking-[0.12em] text-muted uppercase">{t.decks.extension}</span>
+            <span className="shrink-0 pl-3 font-mono text-[10px] tracking-[0.12em] text-muted uppercase">{t("decks.extension")}</span>
             <select
               className="h-full min-w-0 flex-1 cursor-pointer bg-transparent px-2 text-sm outline-none"
               value={filters.extension}
               onChange={(event) => update({ extension: event.target.value })}
             >
-              <option value="">{t.decks.allExtensions}</option>
+              <option value="">{t("decks.allExtensions")}</option>
               {extensionOptions.map((name) => (
                 <option key={name} value={name}>
-                  {name === OTHER_EXTENSION ? t.decks.otherExtensions : name}
+                  {name === OTHER_EXTENSION ? t("decks.otherExtensions") : name}
                 </option>
               ))}
             </select>
           </label>
           <span className="shrink-0 font-mono text-xs tabular-nums text-muted" aria-live="polite">
-            {t.decks.resultCount(results.length)}
+            {t("decks.resultCount", { n: results.length })}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -1446,17 +1453,17 @@ function CardBrowser({
         <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted">
           <label className="inline-flex min-h-8 items-center gap-2">
             <input type="checkbox" checked={filters.ownedOnly} onChange={(event) => update({ ownedOnly: event.target.checked })} />
-            {t.decks.ownedOnly}
+            {t("decks.ownedOnly")}
           </label>
-          <label className="inline-flex min-h-8 items-center gap-2" title={hasLegends ? undefined : t.decks.noRam}>
+          <label className="inline-flex min-h-8 items-center gap-2" title={hasLegends ? undefined : t("decks.noRam")}>
             <input type="checkbox" checked={filters.ramOnly} onChange={(event) => update({ ramOnly: event.target.checked })} />
-            {t.decks.ramOnly}
+            {t("decks.ramOnly")}
           </label>
         </div>
       </div>
 
       {results.length === 0 ? (
-        <p className="py-8 text-sm text-muted">{t.decks.noResults}</p>
+        <p className="py-8 text-sm text-muted">{t("decks.noResults")}</p>
       ) : (
         <VirtualTileGrid
           cards={results}
@@ -1499,7 +1506,7 @@ function PickerTile({
   onQuantity: (cardId: string, quantity: number) => void;
   onPreview: () => void;
 }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const label = cardLabel(card);
   return (
     <div role="listitem" className="flex min-w-0 flex-col gap-1.5">
@@ -1507,7 +1514,7 @@ function PickerTile({
       <button
         type="button"
         onClick={onPreview}
-        aria-label={t.decks.viewCard(label)}
+        aria-label={t("decks.viewCard", { name: label })}
         className={`group relative block w-full cursor-zoom-in rounded-lg ring-2 transition focus-visible:outline-none focus-visible:ring-cyan ${
           quantity ? "ring-cyan" : "ring-transparent hover:ring-line"
         }`}
@@ -1533,7 +1540,7 @@ function PickerTile({
         {label}
       </span>
       <CardFacts card={card} ramOk={ramOk} />
-      {owned > 0 ? <span className="sr-only">{t.decks.ownedCount(owned)}</span> : null}
+      {owned > 0 ? <span className="sr-only">{t("decks.ownedCount", { n: owned })}</span> : null}
       <Stepper card={card} quantity={quantity} canAdd={canAdd} onQuantity={onQuantity} wide />
     </div>
   );
@@ -1654,7 +1661,9 @@ function CardPreview({
   onQuantity: (cardId: string, quantity: number) => void;
   onClose: () => void;
 }) {
-  const { t, locale } = useI18n();
+  const fmt = useNumberFormat();
+  const t = useTranslations();
+  const locale = useLocale();
   const closeRef = useRef<HTMLButtonElement>(null);
   const titleId = `deck-preview-${card.id}`;
   const position = list.indexOf(card.id);
@@ -1688,9 +1697,9 @@ function CardPreview({
   }, [onClose, onNavigate, prevId, nextId]);
 
   const stats = [
-    { label: t.filters.cost, value: card.cost },
-    { label: t.filters.power, value: card.power },
-    { label: t.filters.ram, value: card.ram, danger: !ramOk },
+    { label: t("filters.cost"), value: card.cost },
+    { label: t("filters.power"), value: card.power },
+    { label: t("filters.ram"), value: card.ram, danger: !ramOk },
   ].filter((stat) => stat.value != null);
   const navButton =
     "grid h-10 w-10 place-items-center border border-line text-muted hover:border-cyan hover:text-foreground disabled:opacity-30 disabled:hover:border-line disabled:hover:text-muted";
@@ -1714,7 +1723,7 @@ function CardPreview({
             </h2>
             {card.subname ? <p className="truncate text-sm text-muted">{card.subname}</p> : null}
           </div>
-          <button ref={closeRef} type="button" onClick={onClose} className={navButton} aria-label={t.decks.close}>
+          <button ref={closeRef} type="button" onClick={onClose} className={navButton} aria-label={t("decks.close")}>
             <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="m4 4 8 8M12 4l-8 8" />
             </svg>
@@ -1732,13 +1741,13 @@ function CardPreview({
             )}
             {list.length > 1 ? (
               <div className="flex items-center gap-3">
-                <button type="button" className={navButton} disabled={!prevId} onClick={() => prevId && onNavigate(prevId)} aria-label={t.decks.previousCard}>
+                <button type="button" className={navButton} disabled={!prevId} onClick={() => prevId && onNavigate(prevId)} aria-label={t("decks.previousCard")}>
                   ‹
                 </button>
                 <span className="font-mono text-xs tabular-nums text-muted">
-                  {formatInt(position + 1)} / {formatInt(list.length)}
+                  {fmt.int(position + 1)} / {fmt.int(list.length)}
                 </span>
-                <button type="button" className={navButton} disabled={!nextId} onClick={() => nextId && onNavigate(nextId)} aria-label={t.decks.nextCard}>
+                <button type="button" className={navButton} disabled={!nextId} onClick={() => nextId && onNavigate(nextId)} aria-label={t("decks.nextCard")}>
                   ›
                 </button>
               </div>
@@ -1770,19 +1779,19 @@ function CardPreview({
               </dl>
             ) : null}
 
-            {rules.trim() ? <RulesText label={t.modal.rulesText} text={rules} compact /> : null}
+            {rules.trim() ? <RulesText label={t("modal.rulesText")} text={rules} compact /> : null}
             {card.flavorText ? <p className="text-sm text-muted italic">{card.flavorText}</p> : null}
 
             <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
-              <span className={owned > 0 ? "text-gain" : "text-muted"}>{owned > 0 ? t.decks.ownedCount(owned) : t.decks.notOwned}</span>
-              <span className="text-muted">{cheapest ? t.decks.fromPrice(formatMoney(cheapest.price)) : t.decks.noPrice}</span>
+              <span className={owned > 0 ? "text-gain" : "text-muted"}>{owned > 0 ? t("decks.ownedCount", { n: owned }) : t("decks.notOwned")}</span>
+              <span className="text-muted">{cheapest ? t("decks.fromPrice", { amount: fmt.money(cheapest.price) }) : t("decks.noPrice")}</span>
             </div>
 
             {!isLegal(card) || !ramOk ? (
               <ul className="flex flex-col gap-1 text-sm text-danger">
-                {!isLegal(card) ? <li>{t.decks.issueNotLegal(label)}</li> : null}
+                {!isLegal(card) ? <li>{t("decks.issueNotLegal", { name: label })}</li> : null}
                 {!ramOk && card.color && card.ram != null ? (
-                  <li>{t.decks.issueRam(label, card.ram, card.color, analysis.ramLimits[card.color] ?? 0)}</li>
+                  <li>{t("decks.issueRam", { name: label, ram: card.ram, color: card.color, limit: analysis.ramLimits[card.color] ?? 0 })}</li>
                 ) : null}
               </ul>
             ) : null}
@@ -1791,7 +1800,7 @@ function CardPreview({
             <div className="sticky bottom-0 -mx-4 mt-auto flex flex-col gap-2 border-t border-line/60 bg-panel px-4 pt-3 pb-4 sm:static sm:mx-0 sm:px-0 sm:pt-4 sm:pb-0">
               {quantity > 0 ? (
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-cyan">{t.decks.inDeck(quantity)}</span>
+                  <span className="text-sm text-cyan">{t("decks.inDeck", { n: quantity })}</span>
                   <span className="ml-auto w-44">
                     <Stepper card={card} quantity={quantity} canAdd={blockReason === null} onQuantity={onQuantity} wide />
                   </span>
@@ -1807,7 +1816,7 @@ function CardPreview({
                     onClose();
                   }}
                 >
-                  {t.decks.addToDeck}
+                  {t("decks.addToDeck")}
                 </button>
               )}
               {blockReason ? <p className="text-xs text-muted">{blockReason}</p> : null}

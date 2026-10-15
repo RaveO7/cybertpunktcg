@@ -1,0 +1,21 @@
+{
+  "loading": "Cargando…",
+  "search": "Buscar",
+  "all": "Todas",
+  "allMasculine": "Todos",
+  "reset": "Restablecer",
+  "share": "Compartir",
+  "settings": "Ajustes",
+  "sections": "Secciones",
+  "english": "Inglés",
+  "french": "Francés",
+  "german": "Alemán",
+  "spanish": "Español",
+  "italian": "Italiano",
+  "optional": "Opcional",
+  "copies": "{n, plural, one {ejemplar} other {ejemplares}}",
+  "cards": "{n, plural, one {carta} other {cartas}}",
+  "lines": "{n, plural, one {línea} other {líneas}}",
+  "trendUp": "al alza",
+  "trendDown": "a la baja"
+}

@@ -1,0 +1,391 @@
+{
+  "eyebrow": "RULES",
+  "title": "How to play",
+  "intro": [
+    "In the Cyberpunk Trading Card Game, you’re the leader of your crew, competing against your Rival to become a Night City Legend. Take on Gigs, equip Units, deploy Programs, and boost your Street Cred.",
+    "You need a set of six dice (d4, d6, d8, d10, d12, d20) and a Cyberpunk TCG deck. Win by controlling the majority of Gig dice and securing them until the start of your turn."
+  ],
+  "sourceLabel": "Official guide",
+  "sourcePdfLabel": "Printable PDF",
+  "toc": [
+    {
+      "label": "Win condition"
+    },
+    {
+      "label": "Playmat"
+    },
+    {
+      "label": "Reading your cards"
+    },
+    {
+      "label": "Card types"
+    },
+    {
+      "label": "Triggers & keywords"
+    },
+    {
+      "label": "Setup"
+    },
+    {
+      "label": "Turn structure"
+    },
+    {
+      "label": "Attacking"
+    },
+    {
+      "label": "Deck building"
+    },
+    {
+      "label": "Glossary"
+    }
+  ],
+  "win": {
+    "title": "Win condition",
+    "body": "Control the majority of Night City’s Gigs, represented by Gig dice. Protect yours and attack your Rival to steal theirs. Each die is one Gig — two dice always get you closer to winning than one, regardless of face values.",
+    "highlight": "Start your turn with 7 Gigs to win",
+    "highlightBody": "If a player has at least 7 Gig dice in their Gig area at the start of their turn, they win.",
+    "overtime": "Overtime: 7 Gigs wins instantly",
+    "overtimeBody": "Overtime begins after the last player’s 7th turn. Sudden death: as soon as a player has a majority of Gig dice, they win.",
+    "deckOut": "Deck out: if you must draw and your deck is empty, your Rival wins immediately."
+  },
+  "areas": {
+    "title": "Playmat areas",
+    "items": [
+      {
+        "name": "Fixer",
+        "body": "All Gig dice start here. After drawing at the start of your turn, choose a die (except the d20, always last), roll it, and move it to your Gig area.",
+        "tips": [
+          "The dice are job offers your fixer has lined up for you.",
+          "Small die = low but safe value; big die = more potential Street Cred.",
+          "The d20 can only be picked once every other die is gone."
+        ]
+      },
+      {
+        "name": "Rival Gigs",
+        "body": "The Gig dice your Rival controls. This is what your Units target when they attack directly: each successful attack takes a die from here and moves it to your Friendly Gigs area.",
+        "tips": [
+          "A Unit steals 1 Gig, +1 per 10 Power (Power 10+ → 2 Gigs).",
+          "If a Blocker redirects the attack, no Gig is stolen even if you win the fight.",
+          "Watch their count: with 7 dice at the start of their turn, your Rival wins."
+        ]
+      },
+      {
+        "name": "Friendly Gigs",
+        "body": "Gigs you control, including stolen ones. Starting your turn with 7 dice here (before taking one from the Fixer) wins. Street Cred is the sum of the top faces.",
+        "tips": [
+          "Each die = 1 Gig regardless of its value — the number of dice is what wins.",
+          "Rival Units attack this area to steal your dice.",
+          "Some cards require a ☆ Street Cred threshold to activate."
+        ]
+      },
+      {
+        "name": "Field",
+        "body": "Where Units live. They can attack a spent rival Unit to fight, or the rival Gig area to steal a Gig. Gear equips onto Units here.",
+        "tips": [
+          "Units enter ready but with Lag: no attacking the turn they’re played (unless Adrenaline).",
+          "Attacking spends the Unit (sideways), which makes it attackable by your Rival.",
+          "Ready Units can’t be attacked; only Quick / Blocker can interrupt an attack."
+        ]
+      },
+      {
+        "name": "Eddies (€$)",
+        "body": "Night City currency. Pay a card’s top-left cost by spending that many Eddies. Starts empty — sell cards from hand to create Eddies.",
+        "tips": [
+          "Sell: once per turn, a card with a sell tag (€$) → 1 face-down Eddie.",
+          "Paying = spending (turning) Eddies; they ready at the start of your turn.",
+          "A sold card is always worth 1 €$, even if it cost 8."
+        ]
+      },
+      {
+        "name": "Legends",
+        "body": "Your 3 Legends start face-down in random order. Once per turn, Call a Legend by spending 1 €$ to flip one without looking. Face-up or face-down, a Legend can also pay 1 €$.",
+        "tips": [
+          "Call a Legend can also be done as a reaction to a rival attack.",
+          "The first player starts with their 2 leftmost Legends spent.",
+          "Legends with Go Solo can enter the Field as a Unit."
+        ]
+      },
+      {
+        "name": "Deck",
+        "body": "Draw from the top of your deck.",
+        "tips": [
+          "40–50 cards, not counting Legends.",
+          "Deck out: if you must draw from an empty deck, your Rival wins."
+        ]
+      },
+      {
+        "name": "Trash",
+        "body": "Discarded, defeated, or trashed cards go here face-up.",
+        "tips": [
+          "Programs go here as soon as their effect resolves.",
+          "A defeated Unit goes here with all its equipped Gear."
+        ]
+      }
+    ]
+  },
+  "playmat": {
+    "hint": "Interactive mid-game playmat with real Welcome to Night City cards. Hover or click a zone to read what it does.",
+    "prev": "Previous",
+    "next": "Next",
+    "fixer": "Fixer",
+    "rivalGig": "Rival Gigs",
+    "gig": "Friendly Gigs",
+    "streetCred": "Street Cred = 4+6+10 = 20",
+    "legends": "Legends",
+    "field": "Field",
+    "eddies": "Eddies",
+    "deck": "Deck",
+    "trash": "Trash"
+  },
+  "examplesTitle": "Real example",
+  "fightExample": {
+    "title": "Fight example",
+    "body": "Jackie (Unit) attacks Meredith (spent rival Unit). Compare Power: higher wins, tie = both to Trash.",
+    "attackerLabel": "Attacker",
+    "defenderLabel": "Defender (spent)",
+    "outcome": "If Jackie has higher Power, Meredith goes to Trash with any equipped Gear."
+  },
+  "stealExample": {
+    "title": "Gig steal example",
+    "body": "Adam Smasher: Metal Over Meat has Power 15. If he attacks the rival Gig area unblocked, he steals 2 Gigs (10+ threshold)."
+  },
+  "cardTypes": {
+    "title": "Card types",
+    "note": "If a card’s text conflicts with this guide, follow the card. Each type below shows a real catalog card.",
+    "items": [
+      {
+        "name": "Legend",
+        "body": "Centerpiece characters. All 3 begin face-down. Call a Legend (1 €$, once per turn) flips one at random. Any Legend can also pay 1 €$."
+      },
+      {
+        "name": "Unit",
+        "body": "Crew members. Pay the cost and place it ready on the Field. Units can’t attack the turn they’re played (unless Adrenaline)."
+      },
+      {
+        "name": "Program",
+        "body": "Instant effect. Pay the cost, resolve it, then move the card to the Trash."
+      },
+      {
+        "name": "Gear",
+        "body": "Equips a friendly Unit or Legend. When the host leaves its area, Gear goes with it."
+      }
+    ]
+  },
+  "triggers": {
+    "title": "Timing triggers",
+    "intro": "Triggers tell you when an effect happens.",
+    "items": [
+      {
+        "name": "Play",
+        "body": "When you play this card."
+      },
+      {
+        "name": "Call",
+        "body": "When you flip this Legend via Call a Legend."
+      },
+      {
+        "name": "Attack",
+        "body": "When this Unit attacks (before your Rival reacts)."
+      },
+      {
+        "name": "Defeated",
+        "body": "When this Unit is defeated."
+      }
+    ]
+  },
+  "keywords": {
+    "title": "Keywords",
+    "intro": "Standard effects shared across cards — with a catalog example.",
+    "items": [
+      {
+        "name": "Adrenaline",
+        "body": "This Unit can attack the turn it’s played."
+      },
+      {
+        "name": "Go Solo",
+        "body": "Pay this Legend’s cost to play it as a ready Unit. It can attack this turn. If it leaves the field, remove it from the game."
+      },
+      {
+        "name": "Quick",
+        "body": "You may also activate this effect (or play this Program) as a reaction when a rival Unit attacks."
+      },
+      {
+        "name": "Blocker",
+        "body": "When a rival Unit attacks, you may spend this Unit to redirect the attack to it instead."
+      }
+    ]
+  },
+  "setup": {
+    "title": "Setup",
+    "intro": "Each player follows these steps before the game.",
+    "steps": [
+      {
+        "title": "1. Shuffle",
+        "body": "Shuffle your deck and randomize your Legends face-down in the Legends area."
+      },
+      {
+        "title": "2. Play order",
+        "body": "Both players roll a d20 (reroll ties). Higher roll decides who goes first. The first player spends their 2 leftmost Legends and doesn’t ready them on their first turn."
+      },
+      {
+        "title": "3. Draw 6",
+        "body": "You may mulligan once: shuffle your hand into the deck and draw 6 new cards."
+      }
+    ]
+  },
+  "turn": {
+    "title": "Turn structure",
+    "intro": "Each turn has two phases: Start Phase, then Main Phase.",
+    "startTitle": "Start Phase (in order)",
+    "startSteps": [
+      {
+        "title": "Ready",
+        "body": "Return all spent (sideways) cards to the ready (upright) position."
+      },
+      {
+        "title": "Draw 1",
+        "body": "Add the top card of your deck to your hand."
+      },
+      {
+        "title": "Gain a Gig",
+        "body": "Take a die from your Fixer area, roll it, and add it to your Gig area. Any die except the d20, which is always last."
+      }
+    ],
+    "mainTitle": "Main Phase (any order)",
+    "mainIntro": "Do any number of these actions as the rules allow.",
+    "mainActions": [
+      {
+        "title": "Sell for Eddie (once per turn)",
+        "body": "Sell a hand card with a sell tag. Reveal it, then place it face-down in the Eddies area. It is always worth 1 €$ as an Eddie."
+      },
+      {
+        "title": "Play a card",
+        "body": "Spend Eddies (and/or Legends as 1 €$ each) equal to the cost. Units enter with Lag until end of turn: they can’t attack or activate self-spend effects."
+      },
+      {
+        "title": "Call a Legend (once per turn)",
+        "body": "Spend 1 €$ to flip a Legend face-up without peeking."
+      },
+      {
+        "title": "Attack",
+        "body": "Spend the attacking Unit. Attack a spent rival Unit, or the rival Gig area to steal a Gig."
+      }
+    ]
+  },
+  "attack": {
+    "title": "Attacking",
+    "intro": "Each Unit attacks individually and finishes the full sequence before another can attack. Target a spent rival Unit or your Rival’s Gig area.",
+    "steps": [
+      {
+        "title": "1. Spend the attacker",
+        "body": "Turn the Unit sideways and resolve {Attack} effects. Units can’t attack the turn they’re played (unless Adrenaline)."
+      },
+      {
+        "title": "2. Declare a target",
+        "body": "Spent rival Unit → fight. Rival Gig area → steal."
+      }
+    ],
+    "reactTitle": "3. Rival reacts",
+    "reactIntro": "The attacked Rival may take any number of these reactions.",
+    "reactions": [
+      {
+        "title": "Call a Legend (once per turn)",
+        "body": "Spend 1 €$ to flip a Legend face-up."
+      },
+      {
+        "title": "Quick",
+        "body": "Activate effects or play cards with Quick."
+      },
+      {
+        "title": "Blocker",
+        "body": "Spend a Blocker Unit to redirect the attack to it."
+      }
+    ],
+    "fightTitle": "Fight (target = spent Unit)",
+    "fightBody": [
+      "Compare both Units’ Power.",
+      "Higher Power defeats the other. On a tie, both are defeated.",
+      "Move defeated Units to the Trash and resolve {Defeated} effects."
+    ],
+    "stealTitle": "Steal (target = Gig area)",
+    "stealBody": "Choose a rival Gig die and move it to your Gig area. Steal an extra Gig for every 10 Power (0 Gigs at Power 0).",
+    "stealTiers": [
+      "Power 1+ → 1 Gig",
+      "Power 10+ → 2 Gigs",
+      "Power 20+ → 3 Gigs, etc."
+    ],
+    "tip": "Ready Units can’t be attacked. Only Quick / Blocker (and similar) can interrupt attacks — those are usually the Units worth keeping ready. If a Blocker redirects a direct attack on your Rival, a fight happens against the Blocker instead — even if you defeat it, you steal no Gigs."
+  },
+  "deckbuilding": {
+    "title": "Deck building & RAM",
+    "intro": "Legal deck requirements:",
+    "rules": [
+      "Exactly 3 Legend cards with unique names.",
+      "40–50 cards (not counting Legends).",
+      "No more than 3 copies of the same card.",
+      "Stay within the RAM limit set by your Legends."
+    ],
+    "ramTitle": "RAM",
+    "ramBody": [
+      "Each Legend has a color and RAM value. Their combined RAM per color caps which cards you can include: each card’s RAM must be ≤ your Legends’ total for that color.",
+      "Example: Goro Takemura (2 Green) + Saburo Arasaka (2 Green) + Yorinobu Arasaka (2 Red) → Green cards up to 4 RAM, Red cards up to 2 RAM."
+    ]
+  },
+  "glossary": {
+    "title": "Glossary",
+    "items": [
+      {
+        "term": "Spend / Spent",
+        "definition": "Turn a card sideways. Spent cards can’t be spent again until readied. Eddies and Legends spend to pay; Units spend to attack."
+      },
+      {
+        "term": "Ready",
+        "definition": "Upright card. Only ready Units can attack; ready Units can’t be attacked."
+      },
+      {
+        "term": "Eddies (€$)",
+        "definition": "Eurodollars. Each face-down card in the Eddies area is 1 Eddie. Legends can pay 1 €$ but aren’t Eddies."
+      },
+      {
+        "term": "Cost",
+        "definition": "Number in the top left. Spend that many €$ to play the card."
+      },
+      {
+        "term": "Sell",
+        "definition": "Once per turn: reveal a sell-tag card, place it face-down as 1 Eddie."
+      },
+      {
+        "term": "Gigs",
+        "definition": "Job dice. First player to start their turn with 7+ Gigs wins. Steal by attacking the rival Gig area."
+      },
+      {
+        "term": "Street Cred",
+        "definition": "Sum of your Gig dice faces. Some effects require a threshold."
+      },
+      {
+        "term": "Fixer",
+        "definition": "Job-offer area. Each turn, take a die (d20 last), roll it, move it to the Gig area."
+      },
+      {
+        "term": "Lag",
+        "definition": "Units enter with Lag until end of turn: no attacking or self-spend effects."
+      },
+      {
+        "term": "Power",
+        "definition": "Bottom-right number. Used in fights and Gig steals (+1 Gig per 10 Power)."
+      },
+      {
+        "term": "Call a Legend",
+        "definition": "Once per turn, spend 1 €$ to flip a Legend. Allowed in Main Phase or as a reaction to an attack."
+      },
+      {
+        "term": "Bottom-deck",
+        "definition": "Put cards on the bottom of your deck in any order."
+      },
+      {
+        "term": "Trash",
+        "definition": "Put the top card(s) of the deck into the Trash, or the zone for defeated cards."
+      }
+    ]
+  }
+}

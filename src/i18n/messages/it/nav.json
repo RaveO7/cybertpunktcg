@@ -1,0 +1,16 @@
+{
+  "shops": "Negozi",
+  "login": "Accedi",
+  "language": "Lingua",
+  "dashboard": "Dashboard",
+  "cards": "Carte",
+  "investment": "Investimento",
+  "decks": "Mazzi",
+  "wishlist": "Desideri",
+  "howto": "Impara",
+  "tournaments": "Tornei",
+  "breadcrumb": {
+    "label": "Percorso di navigazione",
+    "home": "Home"
+  }
+}

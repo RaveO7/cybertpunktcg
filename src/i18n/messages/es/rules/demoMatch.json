@@ -1,0 +1,240 @@
+{
+  "table": {
+    "eyebrow": "DUELO DE DEMOSTRACIÓN",
+    "title": "Tu primera partida",
+    "subtitle": "Pasa el cursor sobre una carta (pulsación larga en el móvil) para ampliarla. Haz clic en los objetivos que parpadean, como en un cliente en línea.",
+    "tipLabel": "Coach",
+    "yourHand": "Mano",
+    "endTurn": "Fin del turno",
+    "begin": "Empezar la partida",
+    "next": "Siguiente",
+    "rivalPhase": "Turno del Rival",
+    "restart": "Volver a jugar",
+    "openRules": "Reglas detalladas",
+    "exit": "Salir del tutorial",
+    "fixer": "Fixer",
+    "yourGigs": "Tus Gigs",
+    "rivalGigs": "Gigs del Rival",
+    "legends": "Leyendas",
+    "eddies": "Eddies",
+    "yourField": "Tu Campo",
+    "rivalField": "Campo del Rival",
+    "deck": "Mazo",
+    "trash": "Descarte",
+    "spent": "agotada",
+    "paying": "Por pagar",
+    "wrong": "Ahora no: sigue el objetivo que parpadea.",
+    "fx": {
+      "begin": "Te toca",
+      "gig": "Gig ganado",
+      "streetCred": "Street Cred {face}",
+      "sell": "+1 €$",
+      "legend": "Leyenda revelada",
+      "deployed": "Desplegada",
+      "equip": "Gear equipado",
+      "steal": "¡Gig arrebatado!",
+      "fight": "¡Combate!",
+      "rivalTurn": "Turno del Rival",
+      "rivalPlay": "El Rival juega",
+      "attack": "¡Ataque!",
+      "lost": "Gig perdido",
+      "block": "¡Bloqueado!",
+      "win": "Fin de la demo",
+      "winSub": "3 Gigs: necesitas 7 al inicio de tu turno para ganar"
+    },
+    "turnYou": "Turno {n}",
+    "turnRival": "Rival · Turno {n}"
+  },
+  "steps": {
+    "begin": {
+      "tip": "Juegas en segundo lugar. Haz clic para empezar la partida.",
+      "title": "Bienvenido a la mesa",
+      "explain": "Juegas en segundo lugar. Objetivo: 7 Gigs al inicio de tu turno. Pasa el cursor sobre las cartas (pulsación larga en el móvil) para leer su texto. Luego veremos los tipos de carta y las zonas."
+    },
+    "intro-types": {
+      "tip": "Siguiente: tipos de carta.",
+      "title": "4 tipos de carta",
+      "explain": "Unidad = banda en el Campo (ataca). Programa = efecto de un solo uso (luego suele ir al descarte). Gear = se equipa a una Unidad/Leyenda. Leyenda = 3 personajes del mazo (zona izquierda). Eddies = dinero que obtienes vendiendo."
+    },
+    "intro-legends": {
+      "tip": "Mira la zona de Leyendas.",
+      "title": "Tus 3 Leyendas",
+      "explain": "Empiezan boca abajo. Una vez por turno puedes hacer Call a una Leyenda (1 €$) para girar una al azar. Boca arriba o boca abajo, una Leyenda también puede pagar 1 €$ (como un Eddie)."
+    },
+    "t1-die": {
+      "tip": "Haz clic en el d6 del Fixer.",
+      "title": "Ganar un Gig",
+      "explain": "Cada turno: Preparar → robar → Gig. Toma un dado del Fixer (el d20 siempre el último), lánzalo y ponlo en tu zona de Gigs. 1 dado = 1 Gig. La cara = Street Cred."
+    },
+    "t1-sell": {
+      "tip": "Haz clic en Afterparty para venderla.",
+      "title": "Vender → 1 Eddie",
+      "explain": "Una vez por turno: vende una carta con símbolo de venta. Va boca abajo a los Eddies y vale siempre 1 €$ (no su coste impreso)."
+    },
+    "t1-play": {
+      "tip": "Haz clic en Meredith para jugarla.",
+      "title": "Jugar una Unidad (coste 4)",
+      "explain": "El coste está arriba a la izquierda: Meredith Stout cuesta 4 €$. Elígela de tu mano y paga 4 €$: tu Eddie y luego tus 3 Leyendas (1 €$ cada una)."
+    },
+    "t1-pay-eddie": {
+      "tip": "Haz clic en tu Eddie para pagar 1 €$.",
+      "title": "Pagar con un Eddie",
+      "explain": "Cada Eddie boca abajo vale 1 €$. Haz clic en él para agotarlo (se gira). Se prepara al inicio de tu próximo turno."
+    },
+    "t1-pay-legend-1": {
+      "tip": "Haz clic en una Leyenda (quedan 3 €$).",
+      "title": "Termina con las Leyendas",
+      "explain": "Quedan 3 €$. Las Leyendas también pagan 1 €$ cada una al agotarse. Haz clic en una Leyenda."
+    },
+    "t1-pay-legend-2": {
+      "tip": "Otra Leyenda (quedan 2 €$).",
+      "title": "Segunda Leyenda",
+      "explain": "Otro 1 €$ pagado. Quedará 1 €$: tu última Leyenda."
+    },
+    "t1-pay-legend-3": {
+      "tip": "Última Leyenda: entra Meredith.",
+      "title": "Último €$ → la Unidad entra",
+      "explain": "Meredith entra en tu Campo preparada, pero con Lag: sin Adrenaline, una Unidad no puede atacar el turno en que se juega. Tiene Blocker: puede proteger tus Gigs durante el turno del Rival."
+    },
+    "t1-end": {
+      "tip": "Fin del turno.",
+      "title": "Pasa el turno",
+      "explain": "Has gastado todos tus €$ y Meredith tiene Lag: no queda nada por hacer. Termina tu turno: el Rival juega entonces su fase de inicio y su fase principal."
+    },
+    "r1-ready": {
+      "tip": "Siguiente: fase de inicio del Rival.",
+      "title": "Fase de inicio del Rival",
+      "explain": "Como tú, el Rival prepara sus cartas agotadas (su Meredith se endereza), roba una carta y toma un dado del Fixer para un Gig."
+    },
+    "r1-gig": {
+      "tip": "Siguiente: Gig del Rival.",
+      "title": "El Rival gana un Gig",
+      "explain": "Lanza un d8 del Fixer y pone un 8 en su zona de Gigs. Cada Gig cuenta para la victoria."
+    },
+    "r1-play": {
+      "tip": "Siguiente: el Rival juega una Unidad.",
+      "title": "Fase principal — Jackie",
+      "explain": "El Rival paga el coste y juega a Jackie Welles (Power 8) en su Campo. Entra preparada pero con Lag: no puede atacar este turno."
+    },
+    "r1-attack": {
+      "tip": "Siguiente: declaración de ataque.",
+      "title": "La Meredith rival ataca",
+      "explain": "El Rival agota su Meredith (Power 5), en juego desde el inicio de su turno, y apunta a tu zona de Gigs. Tu Meredith podría bloquear, pero 5 contra 5 es un empate: ambas irían al descarte. Lo dejas pasar."
+    },
+    "r1-steal": {
+      "tip": "Siguiente: Gig arrebatado.",
+      "title": "Pierdes un Gig",
+      "explain": "Ataque a los Gigs con éxito: un dado pasa de tu zona a la del Rival (Power 5 → 1 Gig arrebatado)."
+    },
+    "t2-die": {
+      "tip": "Haz clic en el d8.",
+      "title": "Fase de inicio (turno 2)",
+      "explain": "Preparar (cartas en vertical) + robar + nuevo Gig. Haz clic en el d8: el d20 siempre es el último."
+    },
+    "t2-sell": {
+      "tip": "Vende Detonate (un Programa).",
+      "title": "Programa → Eddie",
+      "explain": "Detonate es un Programa: en una partida real también puedes jugarlo por su efecto (luego al descarte). Aquí lo vendemos por 1 Eddie: tendrás 2 Eddies para pagar el Gear."
+    },
+    "t2-gear": {
+      "tip": "Juega el Gear (coste 2).",
+      "title": "Equipar Gear",
+      "explain": "Adrenaline Converter cuesta 2 €$ y da +3 de Power a la Unidad que lo lleva. Haz clic en el Gear y paga con tus 2 Eddies."
+    },
+    "t2-gear-pay-1": {
+      "tip": "Agota un Eddie (1/2).",
+      "title": "Primero los Eddies",
+      "explain": "Normalmente se agotan los Eddies antes que las Leyendas. Haz clic en un Eddie preparado."
+    },
+    "t2-gear-pay-2": {
+      "tip": "Agota el 2.º Eddie: equipar.",
+      "title": "Gear en Meredith",
+      "explain": "El Gear se equipa a Meredith: Power 5 + 3 = 8. La sigue si cambia de zona."
+    },
+    "t2-call-pay": {
+      "tip": "Call a una Leyenda: agota 1 Leyenda.",
+      "title": "Call a una Leyenda (una vez/turno)",
+      "explain": "Tus Eddies están agotados, pero tus 3 Leyendas están preparadas. Agota una (1 €$) para hacer Call a una Leyenda: gira una Leyenda boca arriba sin mirarla."
+    },
+    "t2-call-flip": {
+      "tip": "Haz clic en una Leyenda boca abajo.",
+      "title": "Girar una Leyenda",
+      "explain": "La Leyenda se gira boca arriba. Resuelve sus efectos {Call}. Aun así podrá pagar 1 €$ más tarde."
+    },
+    "t2-end": {
+      "tip": "Fin del turno.",
+      "title": "Fin del turno 2",
+      "explain": "Meredith podría atacar, pero se quedaría agotada durante el turno del Rival. Mantenla preparada: con Blocker y 8 de Power, protege tus Gigs."
+    },
+    "r2-ready": {
+      "tip": "Siguiente: turno del Rival.",
+      "title": "Fase de inicio del Rival",
+      "explain": "Nuevo turno del Rival: su Meredith vuelve a prepararse. Jackie se quedó preparada, así que no se la podía atacar."
+    },
+    "r2-gig": {
+      "tip": "Siguiente: Gig del Rival.",
+      "title": "El Rival gana un Gig",
+      "explain": "Roba y luego lanza un d4 del Fixer: un 4 se une a su zona de Gigs."
+    },
+    "r2-attack": {
+      "tip": "Siguiente: ataque a tus Gigs.",
+      "title": "Ataque a tus Gigs",
+      "explain": "La Meredith rival (Power 5) se agota y apunta a tu zona de Gigs. Puedes reaccionar con un Blocker preparado: ¡tu Meredith!"
+    },
+    "r2-block": {
+      "tip": "Haz clic en Meredith para bloquear.",
+      "title": "Reacción con Blocker",
+      "explain": "Agota a Meredith para desviar el ataque hacia ella. Combate: 8 (5 + Gear) contra 5, la Meredith del Rival va al descarte. No se arrebata ningún Gig: es tu defensa clave."
+    },
+    "t3-die": {
+      "tip": "Haz clic en el d10.",
+      "title": "Turno 3 — nuevo Gig",
+      "explain": "Preparar → robar → Gig. Meredith, tus Eddies y tus Leyendas vuelven a estar preparados."
+    },
+    "t3-play": {
+      "tip": "Juega Riding Nomad (coste 5).",
+      "title": "Una Unidad con Adrenaline",
+      "explain": "Riding Nomad cuesta 5 €$: tus 2 Eddies + tus 3 Leyendas. Tiene Adrenaline: puede atacar este mismo turno. Haz clic en Nomad."
+    },
+    "t3-pay-eddie-1": {
+      "tip": "Agota un Eddie (1/5).",
+      "title": "Pagar a Nomad",
+      "explain": "Haz clic en un Eddie preparado."
+    },
+    "t3-pay-eddie-2": {
+      "tip": "Agota el 2.º Eddie (2/5).",
+      "title": "Segundo Eddie",
+      "explain": "Tu 2.º Eddie paga otro 1 €$. Quedan 3 €$ que pagarás con tus Leyendas."
+    },
+    "t3-pay-legend-1": {
+      "tip": "Haz clic en una Leyenda (3/5).",
+      "title": "Luego las Leyendas",
+      "explain": "Boca arriba o boca abajo, cada Leyenda paga 1 €$. Haz clic en una Leyenda."
+    },
+    "t3-pay-legend-2": {
+      "tip": "Otra Leyenda (4/5).",
+      "title": "Falta 1 €$",
+      "explain": "Otro 1 €$ pagado. Una última Leyenda y entra Nomad."
+    },
+    "t3-pay-legend-3": {
+      "tip": "Última Leyenda: entra Nomad.",
+      "title": "Entra Nomad",
+      "explain": "Pagado. Gracias a Adrenaline, Nomad ignora el Lag: puede atacar enseguida."
+    },
+    "t3-atk-select": {
+      "tip": "Haz clic en Nomad para atacar.",
+      "title": "Declara el atacante",
+      "explain": "Para atacar, agota una Unidad preparada (gírala). Objetivo: una Unidad rival agotada o la zona de Gigs rival. Jackie está preparada, así que no se la puede atacar: ve a por los Gigs."
+    },
+    "t3-atk-target": {
+      "tip": "Haz clic en los Gigs del Rival.",
+      "title": "Arrebatar un Gig",
+      "explain": "Atacar la zona de Gigs arrebata dados: Power 1+ → 1 Gig, 10+ → 2, 20+ → 3. Nomad (P4) arrebata 1 Gig. Una partida real sigue hasta que alguien empieza su turno con 7 Gigs."
+    },
+    "done": {
+      "tip": "Demo completada.",
+      "title": "Ya tienes lo básico",
+      "explain": "Has visto: los tipos (Unidad/Programa/Gear/Leyenda), los Eddies, los costes, el Lag y Adrenaline, el Call a una Leyenda, el ataque, Blocker, los combates y el Gear. Para la RAM, la construcción del mazo y todas las palabras clave → Reglas detalladas."
+    }
+  }
+}

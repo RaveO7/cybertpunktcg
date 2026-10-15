@@ -1,4 +1,4 @@
-// Tournois publics : fiche partagée par /tournois/publics/[id] (fr) et /en/tournaments/[id] (en),
+// Tournois publics : fiche dans chaque langue (/tournois/publics/[id], /en/tournaments/[id]…),
 // annuaire affiché sur l'accueil des visiteurs et sur /tournois/publics pour les comptes connectés.
 
 import type { Metadata } from "next";
@@ -11,12 +11,13 @@ import { PublicTournamentPage } from "@/components/public/PublicTournamentPage";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { JsonLd } from "@/components/site/JsonLd";
 import { directoryQuerySchema, validateSearchParams } from "@/lib/api-schemas";
-import { COPY } from "@/lib/seo/copy";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { localizedPath, type SiteLocale } from "@/lib/seo/routes";
 import { eventLd } from "@/lib/seo/structured-data";
 import { directoryQueryFromParams, findPublicTournament, searchPublicTournaments } from "@/lib/tournament/directory";
 import { buildPublicView } from "@/lib/tournament/public-view";
+import type { Locale } from "@/i18n/config";
+import { localizedPath } from "@/i18n/paths";
+import { translatorFor } from "@/i18n/server";
 
 // Métadonnées et page lisent le même tournoi : une seule requête par rendu.
 const findTournament = cache(findPublicTournament);
@@ -37,26 +38,25 @@ export async function TournamentsDirectory({ searchParams }: { searchParams: Sea
   return <PublicDirectory initialParams={params} initial={initial} />;
 }
 
-export async function tournamentMetadata(locale: SiteLocale, id: string): Promise<Metadata> {
-  const t = await findTournament(id);
-  if (!t) return { title: COPY[locale].tournaments.crumb, robots: { index: false, follow: false } };
-  const view = buildPublicView(t);
-  const copy = COPY[locale].tournaments;
+export async function tournamentMetadata(locale: Locale, id: string): Promise<Metadata> {
+  const [tournament, t] = await Promise.all([findTournament(id), translatorFor(locale, "publicTournaments")]);
+  if (!tournament) return { title: t("seo.crumb"), robots: { index: false, follow: false } };
+  const view = buildPublicView(tournament);
   const when = view.startsAt ? formatStart(view.startsAt, view.timeZone, locale, "long") : null;
   const where = [view.venueName, view.city].filter(Boolean).join(", ");
   const parts = [when, where, view.shop?.name ?? null].filter((part): part is string => Boolean(part));
   return pageMetadata({
     locale,
     page: { key: "tournament", params: { id } },
-    title: copy.itemTitle(view.name),
-    description: copy.itemDescription(parts),
+    title: t("seo.itemTitle", { name: view.name }),
+    description: t("seo.itemDescription", { details: parts.join(" · ") }),
     image: { url: `/og/tournament/${encodeURIComponent(id)}/${locale}`, width: 1200, height: 630, alt: view.name },
     // Tournoi annulé : la fiche reste consultable mais n'est plus indexée.
     noindex: view.status === "annule",
   });
 }
 
-export async function TournamentDetail({ locale, id }: { locale: SiteLocale; id: string }) {
+export async function TournamentDetail({ locale, id }: { locale: Locale; id: string }) {
   const t = await findTournament(id);
   if (!t) notFound();
   const view = buildPublicView(t);

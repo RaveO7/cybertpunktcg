@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useI18n } from "@/components/LocaleProvider";
+import { useTranslations } from "next-intl";
 import type { QueuedCommand } from "@/lib/tournament/offline-queue";
 import type { MatchResult } from "@/lib/tournament/scores";
 import type { MatchView, RoundView, TournamentView } from "@/lib/tournament/view";
@@ -31,14 +31,14 @@ function urgency(match: MatchView, hasApp: (id: string | null) => boolean) {
 }
 
 export function RoundTab({ view, run, now, pending }: { view: TournamentView; run: RunCommand; now: Date; pending: QueuedCommand[] }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const [selected, setSelected] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const status = view.tournament.status;
   const current = view.rounds.length ? view.rounds[view.rounds.length - 1] : null;
   const names = new Map(view.players.map((player) => [player.id, player.name]));
   const apps = new Map(view.players.map((player) => [player.id, player.hasApp]));
-  const name = (id: string | null) => (id ? (names.get(id) ?? "?") : t.tournaments.bye);
+  const name = (id: string | null) => (id ? (names.get(id) ?? "?") : t("tournaments.bye"));
   const hasApp = (id: string | null) => (id ? (apps.get(id) ?? false) : false);
   const swissPlayed = view.rounds.filter((round) => round.phase === "swiss").length;
   const notStarted = current !== null && (current.status === "draft" || current.status === "published");
@@ -53,9 +53,9 @@ export function RoundTab({ view, run, now, pending }: { view: TournamentView; ru
     const outcome = await run({ type: "startRound", ...extra });
     if (outcome.status !== "error") return;
     const details = (outcome.details ?? {}) as { needs?: string; active?: number; pending?: number };
-    if (details.needs === "fewPlayers" && window.confirm(t.tournaments.confirmFewPlayers(details.active ?? 0))) {
+    if (details.needs === "fewPlayers" && window.confirm(t("tournaments.confirmFewPlayers", { n: details.active ?? 0 }))) {
       await start({ ...extra, confirmFewPlayers: true });
-    } else if (details.needs === "pending" && window.confirm(t.tournaments.confirmPending(details.pending ?? 0))) {
+    } else if (details.needs === "pending" && window.confirm(t("tournaments.confirmPending", { n: details.pending ?? 0 }))) {
       await start({ ...extra, ignorePending: true });
     }
   }
@@ -73,10 +73,10 @@ export function RoundTab({ view, run, now, pending }: { view: TournamentView; ru
   if (status === "termine" || status === "annule") {
     return (
       <div className="flex flex-col gap-3">
-        {status === "annule" ? <p className={`${panelClass} text-sm text-danger`}>{t.tournaments.statuses.annule}</p> : null}
+        {status === "annule" ? <p className={`${panelClass} text-sm text-danger`}>{t("tournaments.statuses.annule")}</p> : null}
         {view.tournament.championId ? (
           <p className={`${panelClass} text-lg`}>
-            <span className="hud-label mr-2">{t.tournaments.champion}</span>
+            <span className="hud-label mr-2">{t("tournaments.champion")}</span>
             <span className="text-yellow">{name(view.tournament.championId)}</span>
           </p>
         ) : null}
@@ -90,16 +90,16 @@ export function RoundTab({ view, run, now, pending }: { view: TournamentView; ru
     <div className="flex flex-col gap-4">
       {canPairNext ? (
         <button type="button" className={`${primaryClass} h-12`} onClick={() => void run({ type: "pairRound" })}>
-          {t.tournaments.pairRound(swissPlayed + 1)}
+          {t("tournaments.pairRound", { n: swissPlayed + 1 })}
         </button>
       ) : null}
-      {!current ? <p className="text-sm text-muted">{t.tournaments.noRound}</p> : null}
+      {!current ? <p className="text-sm text-muted">{t("tournaments.noRound")}</p> : null}
 
       {current ? (
         <section className={`${panelClass} flex flex-col gap-3`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg">
-              {roundTitle(current, t)} <Tag tone={current.status === "running" ? "cyan" : "muted"}>{t.tournaments.roundStatuses[current.status]}</Tag>
+              {roundTitle(current, t)} <Tag tone={current.status === "running" ? "cyan" : "muted"}>{t(`tournaments.roundStatuses.${current.status}`)}</Tag>
             </h2>
             <RoundClockDisplay round={current} now={now} large />
           </div>
@@ -107,35 +107,35 @@ export function RoundTab({ view, run, now, pending }: { view: TournamentView; ru
           {notStarted ? (
             <div className="flex flex-wrap gap-2">
               <button type="button" className={buttonClass} onClick={() => void run({ type: "pairRound" })}>
-                {t.tournaments.repair}
+                {t("tournaments.repair")}
               </button>
               {current.status === "draft" ? (
                 <button type="button" className={buttonClass} onClick={() => void run({ type: "publishRound" })}>
-                  {t.tournaments.publish}
+                  {t("tournaments.publish")}
                 </button>
               ) : null}
               <button type="button" className={primaryClass} onClick={() => void start()}>
-                {t.tournaments.start}
+                {t("tournaments.start")}
               </button>
             </div>
           ) : null}
-          {notStarted && current.phase === "swiss" ? <p className="text-xs text-muted">{selected ? t.tournaments.swapHint : t.tournaments.swapIntro}</p> : null}
+          {notStarted && current.phase === "swiss" ? <p className="text-xs text-muted">{selected ? t("tournaments.swapHint") : t("tournaments.swapIntro")}</p> : null}
           {notStarted && current.phase === "top_cut" ? <CutSeeds view={view} run={run} name={name} /> : null}
 
           {current.status === "running" ? (
             <div className="flex flex-wrap gap-2">
               {current.pausedAt ? (
                 <button type="button" className={buttonClass} onClick={() => void run({ type: "resumeClock" })}>
-                  {t.tournaments.resume}
+                  {t("tournaments.resume")}
                 </button>
               ) : (
                 <button type="button" className={buttonClass} onClick={() => void run({ type: "pauseClock" })}>
-                  {t.tournaments.pause}
+                  {t("tournaments.pause")}
                 </button>
               )}
               {[-1, 1, 5].map((minutes) => (
                 <button key={minutes} type="button" className={buttonClass} onClick={() => void run({ type: "adjustClock", seconds: minutes * 60 })}>
-                  {minutes > 0 ? t.tournaments.addMinutes(minutes) : t.tournaments.removeMinutes(-minutes)}
+                  {minutes > 0 ? t("tournaments.addMinutes", { n: minutes }) : t("tournaments.removeMinutes", { n: -minutes })}
                 </button>
               ))}
             </div>
@@ -178,7 +178,7 @@ export function RoundTab({ view, run, now, pending }: { view: TournamentView; ru
       {view.rounds.some((round) => round.status === "closed") ? (
         <div className="flex flex-col gap-2">
           <button type="button" className={buttonClass} aria-expanded={showHistory} onClick={() => setShowHistory((value) => !value)}>
-            {t.tournaments.history}
+            {t("tournaments.history")}
           </button>
           {showHistory ? <History rounds={view.rounds.filter((round) => round.status === "closed")} view={view} run={run} now={now} name={name} queued={queuedResults} /> : null}
         </div>
@@ -188,21 +188,21 @@ export function RoundTab({ view, run, now, pending }: { view: TournamentView; ru
 }
 
 function CloseRound({ round, run }: { round: RoundView; run: RunCommand }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const open = round.matches.filter((match) => match.status !== "valide").length;
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button type="button" className={`${primaryClass} h-12`} onClick={() => void run({ type: "closeRound" })}>
-        {t.tournaments.closeRound}
+        {t("tournaments.closeRound")}
       </button>
-      {open > 0 ? <span className="text-sm text-muted">{t.tournaments.remainingMatches(open)}</span> : null}
+      {open > 0 ? <span className="text-sm text-muted">{t("tournaments.remainingMatches", { n: open })}</span> : null}
     </div>
   );
 }
 
 /** Qualifiés du top cut (premier tour pas encore démarré) : un qualifié peut décliner. */
 function CutSeeds({ view, run, name }: { view: TournamentView; run: RunCommand; name: (id: string | null) => string }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   return (
     <div className="flex flex-col gap-1">
       {view.tournament.cutSeeds.map((id, index) => (
@@ -215,10 +215,10 @@ function CutSeeds({ view, run, name }: { view: TournamentView; run: RunCommand; 
             type="button"
             className={buttonClass}
             onClick={() => {
-              if (window.confirm(t.tournaments.confirmDecline(name(id)))) void run({ type: "declineCut", playerId: id });
+              if (window.confirm(t("tournaments.confirmDecline", { name: name(id) }))) void run({ type: "declineCut", playerId: id });
             }}
           >
-            {t.tournaments.declineCut}
+            {t("tournaments.declineCut")}
           </button>
         </div>
       ))}
@@ -243,7 +243,7 @@ function History({
   queued: Map<string, MatchResult>;
   open?: boolean;
 }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const [expanded, setExpanded] = useState<string | null>(open && rounds.length ? rounds[rounds.length - 1].id : null);
   return (
     <div className="flex flex-col gap-2">
@@ -291,7 +291,7 @@ function MatchRow({
   onPick: ((playerId: string) => void) | null;
   onGiveBye: (() => Promise<void>) | null;
 }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const [dropAbsent, setDropAbsent] = useState(false);
   const isBye = match.playerBId === null;
@@ -301,14 +301,14 @@ function MatchRow({
 
   const status = (
     <span className="flex flex-wrap items-center gap-1">
-      {queued ? <Tag tone="danger">{t.tournaments.notSynced}</Tag> : null}
-      {match.status === "conteste" ? <Tag tone="danger">{t.tournaments.matchStatuses.conteste}</Tag> : null}
-      {match.overdue ? <Tag tone="yellow">{t.tournaments.overdue}</Tag> : null}
-      {match.status === "declare" ? <Tag tone="yellow">{t.tournaments.matchStatuses.declare}</Tag> : null}
-      {match.status === "declare" && match.confirmedOnSite ? <Tag>{t.tournaments.onSite}</Tag> : null}
-      {match.status === "en_cours" && round.status === "running" && !hasApp(match.playerAId) && !hasApp(match.playerBId) ? <Tag>{t.tournaments.toEnter}</Tag> : null}
-      {match.kind === "no_show" ? <Tag>{t.tournaments.noShow}</Tag> : null}
-      {match.extraSeconds > 0 ? <Tag tone="cyan">{t.tournaments.extraTime(Math.round(match.extraSeconds / 60))}</Tag> : null}
+      {queued ? <Tag tone="danger">{t("tournaments.notSynced")}</Tag> : null}
+      {match.status === "conteste" ? <Tag tone="danger">{t("tournaments.matchStatuses.conteste")}</Tag> : null}
+      {match.overdue ? <Tag tone="yellow">{t("tournaments.overdue")}</Tag> : null}
+      {match.status === "declare" ? <Tag tone="yellow">{t("tournaments.matchStatuses.declare")}</Tag> : null}
+      {match.status === "declare" && match.confirmedOnSite ? <Tag>{t("tournaments.onSite")}</Tag> : null}
+      {match.status === "en_cours" && round.status === "running" && !hasApp(match.playerAId) && !hasApp(match.playerBId) ? <Tag>{t("tournaments.toEnter")}</Tag> : null}
+      {match.kind === "no_show" ? <Tag>{t("tournaments.noShow")}</Tag> : null}
+      {match.extraSeconds > 0 ? <Tag tone="cyan">{t("tournaments.extraTime", { n: Math.round(match.extraSeconds / 60) })}</Tag> : null}
     </span>
   );
 
@@ -325,16 +325,16 @@ function MatchRow({
     <li className="border-b border-line py-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="hud-label w-14 shrink-0">{t.tournaments.table(match.table)}</span>
+          <span className="hud-label w-14 shrink-0">{t("tournaments.table", { n: match.table })}</span>
           {playerButton(match.playerAId)}
-          <span className="text-muted">{t.tournaments.vs}</span>
+          <span className="text-muted">{t("tournaments.vs")}</span>
           {isBye ? (
             onGiveBye ? (
               <button type="button" className={`${buttonClass} h-8`} onClick={() => void onGiveBye()}>
-                {t.tournaments.giveBye}
+                {t("tournaments.giveBye")}
               </button>
             ) : (
-              <span className="text-muted">{t.tournaments.bye}</span>
+              <span className="text-muted">{t("tournaments.bye")}</span>
             )
           ) : (
             playerButton(match.playerBId)
@@ -345,7 +345,7 @@ function MatchRow({
           <span className="font-mono">{queued ? scoreLabel(queued, t) : scoreLabel(result, t)}</span>
           {editable ? (
             <button type="button" className={`${buttonClass} h-9`} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-              {open ? t.tournaments.close : t.tournaments.setScore}
+              {open ? t("tournaments.close") : t("tournaments.setScore")}
             </button>
           ) : null}
         </div>
@@ -366,7 +366,7 @@ function MatchRow({
               className={primaryClass}
               onClick={() => void run({ type: "setResult", matchId: match.id, result: declared, expectedVersion: match.version }).then(() => setOpen(false))}
             >
-              {t.tournaments.validateDeclared(scoreLabel(declared, t))}
+              {t("tournaments.validateDeclared", { score: scoreLabel(declared, t) })}
             </button>
           ) : null}
           <ScorePicker
@@ -386,31 +386,31 @@ function MatchRow({
                   type="button"
                   className={dangerClass}
                   onClick={() => {
-                    if (!window.confirm(t.tournaments.noShowConfirm(name(id)))) return;
+                    if (!window.confirm(t("tournaments.noShowConfirm", { name: name(id) }))) return;
                     void run({ type: "noShow", matchId: match.id, absentPlayerId: id, drop: dropAbsent }).then(() => setOpen(false));
                   }}
                 >
-                  {t.tournaments.noShowOf(name(id))}
+                  {t("tournaments.noShowOf", { name: name(id) })}
                 </button>
               ))}
               <label className="flex items-center gap-1 text-sm text-muted">
                 <input type="checkbox" checked={dropAbsent} onChange={(event) => setDropAbsent(event.target.checked)} />
-                {t.tournaments.alsoDrop}
+                {t("tournaments.alsoDrop")}
               </label>
             </div>
           ) : null}
           {round.status === "running" ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="hud-label">{t.tournaments.tableTime}</span>
+              <span className="hud-label">{t("tournaments.tableTime")}</span>
               {[2, 5].map((minutes) => (
                 <button key={minutes} type="button" className={buttonClass} onClick={() => void run({ type: "addTableTime", matchId: match.id, seconds: minutes * 60 })}>
-                  {t.tournaments.addMinutes(minutes)}
+                  {t("tournaments.addMinutes", { n: minutes })}
                 </button>
               ))}
               <RoundClockDisplay round={round} now={now} extraSeconds={match.extraSeconds} />
               {match.status !== "en_cours" ? (
                 <button type="button" className={buttonClass} onClick={() => void run({ type: "resetResult", matchId: match.id })}>
-                  {t.tournaments.resetResult}
+                  {t("tournaments.resetResult")}
                 </button>
               ) : null}
             </div>

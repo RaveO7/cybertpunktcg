@@ -1,0 +1,14 @@
+{
+  "banner": "Offline: sola consultazione. Le modifiche saranno possibili al ritorno della rete.",
+  "title": "Modalità offline",
+  "hint": "Il catalogo e la tua collezione restano consultabili senza rete (negozio, torneo). Scarica le immagini delle carte per vederle anche offline.",
+  "download": "Scarica le immagini ({n})",
+  "downloading": "Download in corso… {done} / {total}",
+  "status": "{cached} / {total} immagini salvate su questo dispositivo",
+  "failed": "{n} immagine/i non scaricata/e. Riavvia per riprovare.",
+  "cancel": "Interrompi",
+  "clear": "Elimina le immagini offline",
+  "cleared": "Immagini eliminate da questo dispositivo.",
+  "unsupported": "Questo browser non supporta la modalità offline.",
+  "hdNote": "Le immagini a grandezza piena vengono salvate quando le apri."
+}

@@ -1,0 +1,391 @@
+{
+  "eyebrow": "REGELN",
+  "title": "Spielanleitung",
+  "intro": [
+    "Im Cyberpunk Trading Card Game führst du deine Crew an und trittst gegen deinen Rivalen an, um zur Legende von Night City zu werden. Nimm Gigs an, rüste Einheiten aus, setze Programme ein und steigere deine Street Cred.",
+    "Du brauchst einen Satz aus sechs Würfeln (d4, d6, d8, d10, d12, d20) und ein Cyberpunk-TCG-Deck. Du gewinnst, wenn du die Mehrheit der Gig-Würfel kontrollierst und sie bis zum Beginn deines Zuges hältst."
+  ],
+  "sourceLabel": "Offizieller Leitfaden",
+  "sourcePdfLabel": "PDF zum Ausdrucken",
+  "toc": [
+    {
+      "label": "Siegbedingung"
+    },
+    {
+      "label": "Spielmatte"
+    },
+    {
+      "label": "Karten lesen"
+    },
+    {
+      "label": "Kartentypen"
+    },
+    {
+      "label": "Auslöser & Schlüsselwörter"
+    },
+    {
+      "label": "Spielaufbau"
+    },
+    {
+      "label": "Zugablauf"
+    },
+    {
+      "label": "Angreifen"
+    },
+    {
+      "label": "Deckbau"
+    },
+    {
+      "label": "Glossar"
+    }
+  ],
+  "win": {
+    "title": "Siegbedingung",
+    "body": "Kontrolliere die Mehrheit der Gigs von Night City, dargestellt durch Gig-Würfel. Schütze deine und greife deinen Rivalen an, um seine zu stehlen. Jeder Würfel ist ein Gig — zwei Würfel bringen dich immer näher an den Sieg als einer, unabhängig von den Augenzahlen.",
+    "highlight": "Beginne deinen Zug mit 7 Gigs, um zu gewinnen",
+    "highlightBody": "Hat ein Spieler zu Beginn seines Zuges mindestens 7 Gig-Würfel in seinem Gig-Bereich, gewinnt er.",
+    "overtime": "Verlängerung: 7 Gigs gewinnen sofort",
+    "overtimeBody": "Die Verlängerung beginnt nach dem 7. Zug des letzten Spielers. Sudden Death: Sobald ein Spieler die Mehrheit der Gig-Würfel hat, gewinnt er.",
+    "deckOut": "Leeres Deck: Musst du ziehen und dein Deck ist leer, gewinnt dein Rivale sofort."
+  },
+  "areas": {
+    "title": "Bereiche der Spielmatte",
+    "items": [
+      {
+        "name": "Fixer",
+        "body": "Alle Gig-Würfel beginnen hier. Nachdem du zu Beginn deines Zuges gezogen hast, wähle einen Würfel (außer dem d20, der immer zuletzt kommt), wirf ihn und lege ihn in deinen Gig-Bereich.",
+        "tips": [
+          "Die Würfel sind Jobangebote, die dein Fixer für dich bereithält.",
+          "Kleiner Würfel = niedriger, aber sicherer Wert; großer Würfel = mehr mögliche Street Cred.",
+          "Den d20 kannst du erst nehmen, wenn alle anderen Würfel weg sind."
+        ]
+      },
+      {
+        "name": "Gigs des Rivalen",
+        "body": "Die Gig-Würfel, die dein Rivale kontrolliert. Darauf zielen deine Einheiten bei einem direkten Angriff: Jeder erfolgreiche Angriff nimmt hier einen Würfel und legt ihn in deinen Bereich der verbündeten Gigs.",
+        "tips": [
+          "Eine Einheit stiehlt 1 Gig, +1 je 10 Power (Power 10+ → 2 Gigs).",
+          "Leitet ein Blocker den Angriff um, wird kein Gig gestohlen, selbst wenn du den Kampf gewinnst.",
+          "Achte auf seine Anzahl: Mit 7 Würfeln zu Beginn seines Zuges gewinnt dein Rivale."
+        ]
+      },
+      {
+        "name": "Verbündete Gigs",
+        "body": "Die Gigs, die du kontrollierst, auch gestohlene. Beginnst du deinen Zug mit 7 Würfeln hier (bevor du einen vom Fixer nimmst), gewinnst du. Die Street Cred ist die Summe der oben liegenden Augenzahlen.",
+        "tips": [
+          "Jeder Würfel = 1 Gig, egal welcher Wert — die Anzahl der Würfel entscheidet über den Sieg.",
+          "Gegnerische Einheiten greifen diesen Bereich an, um deine Würfel zu stehlen.",
+          "Manche Karten verlangen eine bestimmte ☆ Street Cred, um zu wirken."
+        ]
+      },
+      {
+        "name": "Spielfeld",
+        "body": "Hier leben die Einheiten. Sie können eine erschöpfte gegnerische Einheit angreifen, um zu kämpfen, oder den gegnerischen Gig-Bereich, um einen Gig zu stehlen. Gear wird hier an Einheiten angelegt.",
+        "tips": [
+          "Einheiten kommen bereit ins Spiel, aber mit Lag: kein Angriff in dem Zug, in dem sie gespielt werden (außer mit Adrenaline).",
+          "Ein Angriff erschöpft die Einheit (quer gedreht), wodurch dein Rivale sie angreifen kann.",
+          "Bereite Einheiten können nicht angegriffen werden; nur Quick / Blocker können einen Angriff unterbrechen."
+        ]
+      },
+      {
+        "name": "Eddies (€$)",
+        "body": "Die Währung von Night City. Bezahle die Kosten oben links auf einer Karte, indem du ebenso viele Eddies erschöpfst. Der Bereich ist anfangs leer — verkaufe Karten aus deiner Hand, um Eddies zu erhalten.",
+        "tips": [
+          "Verkaufen: einmal pro Zug eine Karte mit Verkaufssymbol (€$) → 1 verdeckter Eddie.",
+          "Bezahlen = Eddies erschöpfen (drehen); sie werden zu Beginn deines Zuges wieder bereit.",
+          "Eine verkaufte Karte ist immer 1 €$ wert, selbst wenn sie 8 gekostet hat."
+        ]
+      },
+      {
+        "name": "Legenden",
+        "body": "Deine 3 Legenden beginnen verdeckt in zufälliger Reihenfolge. Einmal pro Zug kannst du für 1 €$ Call auf eine Legende ausführen und sie umdrehen, ohne hinzusehen. Ob offen oder verdeckt, eine Legende kann auch 1 €$ bezahlen.",
+        "tips": [
+          "Call auf eine Legende kannst du auch als Reaktion auf einen gegnerischen Angriff ausführen.",
+          "Der Startspieler beginnt mit seinen 2 Legenden ganz links erschöpft.",
+          "Legenden mit Go Solo können als Einheit aufs Spielfeld kommen."
+        ]
+      },
+      {
+        "name": "Deck",
+        "body": "Ziehe von oben von deinem Deck.",
+        "tips": [
+          "40–50 Karten, Legenden nicht mitgezählt.",
+          "Leeres Deck: Musst du aus einem leeren Deck ziehen, gewinnt dein Rivale."
+        ]
+      },
+      {
+        "name": "Ablage",
+        "body": "Abgeworfene, besiegte oder entsorgte Karten kommen offen hierher.",
+        "tips": [
+          "Programme kommen hierher, sobald ihr Effekt abgehandelt ist.",
+          "Eine besiegte Einheit kommt mit allem angelegten Gear hierher."
+        ]
+      }
+    ]
+  },
+  "playmat": {
+    "hint": "Interaktive Spielmatte mitten im Spiel mit echten Karten aus Welcome to Night City. Fahre über einen Bereich oder klicke ihn an, um zu lesen, wozu er dient.",
+    "prev": "Zurück",
+    "next": "Weiter",
+    "fixer": "Fixer",
+    "rivalGig": "Gigs des Rivalen",
+    "gig": "Verbündete Gigs",
+    "streetCred": "Street Cred = 4+6+10 = 20",
+    "legends": "Legenden",
+    "field": "Spielfeld",
+    "eddies": "Eddies",
+    "deck": "Deck",
+    "trash": "Ablage"
+  },
+  "examplesTitle": "Echtes Beispiel",
+  "fightExample": {
+    "title": "Beispiel für einen Kampf",
+    "body": "Jackie (Einheit) greift Meredith an (erschöpfte gegnerische Einheit). Vergleicht die Power: Die höhere gewinnt, bei Gleichstand kommen beide auf die Ablage.",
+    "attackerLabel": "Angreifer",
+    "defenderLabel": "Verteidiger (erschöpft)",
+    "outcome": "Hat Jackie mehr Power, kommt Meredith mit allem angelegten Gear auf die Ablage."
+  },
+  "stealExample": {
+    "title": "Beispiel für einen Gig-Diebstahl",
+    "body": "Adam Smasher: Metal Over Meat hat Power 15. Greift er ungeblockt den gegnerischen Gig-Bereich an, stiehlt er 2 Gigs (Schwelle 10+)."
+  },
+  "cardTypes": {
+    "title": "Kartentypen",
+    "note": "Widerspricht der Text einer Karte diesem Leitfaden, gilt die Karte. Zu jedem Typ unten siehst du eine echte Karte aus dem Katalog.",
+    "items": [
+      {
+        "name": "Legende",
+        "body": "Die zentralen Figuren. Alle 3 beginnen verdeckt. Call auf eine Legende (1 €$, einmal pro Zug) dreht eine zufällig um. Jede Legende kann außerdem 1 €$ bezahlen."
+      },
+      {
+        "name": "Einheit",
+        "body": "Mitglieder deiner Crew. Bezahle die Kosten und lege sie bereit aufs Spielfeld. Einheiten können in dem Zug, in dem sie gespielt werden, nicht angreifen (außer mit Adrenaline)."
+      },
+      {
+        "name": "Programm",
+        "body": "Sofortiger Effekt. Bezahle die Kosten, handle ihn ab und lege die Karte dann auf die Ablage."
+      },
+      {
+        "name": "Gear",
+        "body": "Rüstet eine verbündete Einheit oder Legende aus. Verlässt der Träger seinen Bereich, geht das Gear mit."
+      }
+    ]
+  },
+  "triggers": {
+    "title": "Auslöser",
+    "intro": "Auslöser sagen dir, wann ein Effekt eintritt.",
+    "items": [
+      {
+        "name": "Play",
+        "body": "Wenn du diese Karte spielst."
+      },
+      {
+        "name": "Call",
+        "body": "Wenn du diese Legende durch Call auf eine Legende umdrehst."
+      },
+      {
+        "name": "Attack",
+        "body": "Wenn diese Einheit angreift (bevor dein Rivale reagiert)."
+      },
+      {
+        "name": "Defeated",
+        "body": "Wenn diese Einheit besiegt wird."
+      }
+    ]
+  },
+  "keywords": {
+    "title": "Schlüsselwörter",
+    "intro": "Standardeffekte, die viele Karten teilen — jeweils mit einem Beispiel aus dem Katalog.",
+    "items": [
+      {
+        "name": "Adrenaline",
+        "body": "Diese Einheit kann in dem Zug angreifen, in dem sie gespielt wird."
+      },
+      {
+        "name": "Go Solo",
+        "body": "Bezahle die Kosten dieser Legende, um sie als bereite Einheit zu spielen. Sie kann in diesem Zug angreifen. Verlässt sie das Spielfeld, entferne sie aus dem Spiel."
+      },
+      {
+        "name": "Quick",
+        "body": "Du kannst diesen Effekt auch als Reaktion aktivieren (oder dieses Programm spielen), wenn eine gegnerische Einheit angreift."
+      },
+      {
+        "name": "Blocker",
+        "body": "Greift eine gegnerische Einheit an, kannst du diese Einheit erschöpfen, um den Angriff stattdessen auf sie umzuleiten."
+      }
+    ]
+  },
+  "setup": {
+    "title": "Spielaufbau",
+    "intro": "Jeder Spieler führt vor der Partie diese Schritte aus.",
+    "steps": [
+      {
+        "title": "1. Mischen",
+        "body": "Mische dein Deck und lege deine Legenden verdeckt in zufälliger Reihenfolge in den Legenden-Bereich."
+      },
+      {
+        "title": "2. Spielreihenfolge",
+        "body": "Beide Spieler werfen einen d20 (bei Gleichstand erneut). Der höhere Wurf entscheidet, wer beginnt. Der Startspieler erschöpft seine 2 Legenden ganz links und macht sie in seinem ersten Zug nicht bereit."
+      },
+      {
+        "title": "3. 6 Karten ziehen",
+        "body": "Du darfst einmal einen Mulligan nehmen: Mische deine Hand ins Deck und ziehe 6 neue Karten."
+      }
+    ]
+  },
+  "turn": {
+    "title": "Zugablauf",
+    "intro": "Jeder Zug hat zwei Phasen: die Startphase, dann die Hauptphase.",
+    "startTitle": "Startphase (in dieser Reihenfolge)",
+    "startSteps": [
+      {
+        "title": "Bereitmachen",
+        "body": "Drehe alle erschöpften (quer liegenden) Karten wieder in die bereite (aufrechte) Position."
+      },
+      {
+        "title": "1 Karte ziehen",
+        "body": "Nimm die oberste Karte deines Decks auf die Hand."
+      },
+      {
+        "title": "Einen Gig erhalten",
+        "body": "Nimm einen Würfel aus deinem Fixer-Bereich, wirf ihn und lege ihn in deinen Gig-Bereich. Jeder Würfel außer dem d20, der immer zuletzt kommt."
+      }
+    ],
+    "mainTitle": "Hauptphase (beliebige Reihenfolge)",
+    "mainIntro": "Führe beliebig viele dieser Aktionen aus, soweit die Regeln es erlauben.",
+    "mainActions": [
+      {
+        "title": "Für einen Eddie verkaufen (einmal pro Zug)",
+        "body": "Verkaufe eine Handkarte mit Verkaufssymbol. Decke sie auf und lege sie dann verdeckt in den Eddie-Bereich. Als Eddie ist sie immer 1 €$ wert."
+      },
+      {
+        "title": "Eine Karte spielen",
+        "body": "Erschöpfe Eddies (und/oder Legenden, je 1 €$) in Höhe der Kosten. Einheiten kommen mit Lag bis zum Ende des Zuges ins Spiel: Sie können weder angreifen noch Effekte aktivieren, für die sie sich selbst erschöpfen."
+      },
+      {
+        "title": "Call auf eine Legende (einmal pro Zug)",
+        "body": "Erschöpfe 1 €$, um eine Legende offen umzudrehen, ohne vorher hinzusehen."
+      },
+      {
+        "title": "Angreifen",
+        "body": "Erschöpfe die angreifende Einheit. Greife eine erschöpfte gegnerische Einheit an oder den gegnerischen Gig-Bereich, um einen Gig zu stehlen."
+      }
+    ]
+  },
+  "attack": {
+    "title": "Angreifen",
+    "intro": "Jede Einheit greift einzeln an und führt den ganzen Ablauf zu Ende, bevor eine andere angreifen kann. Ziel ist eine erschöpfte gegnerische Einheit oder der Gig-Bereich deines Rivalen.",
+    "steps": [
+      {
+        "title": "1. Angreifer erschöpfen",
+        "body": "Drehe die Einheit quer und handle {Attack}-Effekte ab. Einheiten können in dem Zug, in dem sie gespielt werden, nicht angreifen (außer mit Adrenaline)."
+      },
+      {
+        "title": "2. Ziel ansagen",
+        "body": "Erschöpfte gegnerische Einheit → Kampf. Gegnerischer Gig-Bereich → Diebstahl."
+      }
+    ],
+    "reactTitle": "3. Der Rivale reagiert",
+    "reactIntro": "Der angegriffene Rivale kann beliebig viele dieser Reaktionen nutzen.",
+    "reactions": [
+      {
+        "title": "Call auf eine Legende (einmal pro Zug)",
+        "body": "Erschöpfe 1 €$, um eine Legende offen umzudrehen."
+      },
+      {
+        "title": "Quick",
+        "body": "Aktiviere Effekte oder spiele Karten mit Quick."
+      },
+      {
+        "title": "Blocker",
+        "body": "Erschöpfe eine Einheit mit Blocker, um den Angriff auf sie umzuleiten."
+      }
+    ],
+    "fightTitle": "Kampf (Ziel = erschöpfte Einheit)",
+    "fightBody": [
+      "Vergleicht die Power beider Einheiten.",
+      "Die höhere Power besiegt die andere. Bei Gleichstand werden beide besiegt.",
+      "Lege besiegte Einheiten auf die Ablage und handle {Defeated}-Effekte ab."
+    ],
+    "stealTitle": "Diebstahl (Ziel = Gig-Bereich)",
+    "stealBody": "Wähle einen gegnerischen Gig-Würfel und lege ihn in deinen Gig-Bereich. Je 10 Power stiehlst du einen zusätzlichen Gig (0 Gigs bei Power 0).",
+    "stealTiers": [
+      "Power 1+ → 1 Gig",
+      "Power 10+ → 2 Gigs",
+      "Power 20+ → 3 Gigs usw."
+    ],
+    "tip": "Bereite Einheiten können nicht angegriffen werden. Nur Quick / Blocker (und Ähnliches) können Angriffe unterbrechen — genau diese Einheiten lohnt es sich meist bereit zu halten. Leitet ein Blocker einen direkten Angriff auf deinen Rivalen um, findet stattdessen ein Kampf gegen den Blocker statt — selbst wenn du ihn besiegst, stiehlst du keine Gigs."
+  },
+  "deckbuilding": {
+    "title": "Deckbau & RAM",
+    "intro": "Anforderungen an ein gültiges Deck:",
+    "rules": [
+      "Genau 3 Legenden mit unterschiedlichen Namen.",
+      "40–50 Karten (Legenden nicht mitgezählt).",
+      "Höchstens 3 Exemplare derselben Karte.",
+      "Das RAM-Limit deiner Legenden einhalten."
+    ],
+    "ramTitle": "RAM",
+    "ramBody": [
+      "Jede Legende hat eine Farbe und einen RAM-Wert. Ihr gemeinsames RAM je Farbe begrenzt, welche Karten du aufnehmen darfst: Das RAM jeder Karte muss ≤ der Summe deiner Legenden in dieser Farbe sein.",
+      "Beispiel: Goro Takemura (2 Grün) + Saburo Arasaka (2 Grün) + Yorinobu Arasaka (2 Rot) → grüne Karten bis 4 RAM, rote Karten bis 2 RAM."
+    ]
+  },
+  "glossary": {
+    "title": "Glossar",
+    "items": [
+      {
+        "term": "Erschöpfen / Erschöpft",
+        "definition": "Eine Karte quer drehen. Erschöpfte Karten können erst wieder erschöpft werden, wenn sie bereit gemacht wurden. Eddies und Legenden werden zum Bezahlen erschöpft, Einheiten zum Angreifen."
+      },
+      {
+        "term": "Bereit",
+        "definition": "Aufrecht liegende Karte. Nur bereite Einheiten können angreifen; bereite Einheiten können nicht angegriffen werden."
+      },
+      {
+        "term": "Eddies (€$)",
+        "definition": "Eurodollar. Jede verdeckte Karte im Eddie-Bereich ist 1 Eddie. Legenden können 1 €$ bezahlen, sind aber keine Eddies."
+      },
+      {
+        "term": "Kosten",
+        "definition": "Zahl oben links. Erschöpfe ebenso viele €$, um die Karte zu spielen."
+      },
+      {
+        "term": "Verkaufen",
+        "definition": "Einmal pro Zug: eine Karte mit Verkaufssymbol aufdecken und verdeckt als 1 Eddie ablegen."
+      },
+      {
+        "term": "Gigs",
+        "definition": "Job-Würfel. Wer als Erster seinen Zug mit 7+ Gigs beginnt, gewinnt. Gestohlen werden sie durch einen Angriff auf den gegnerischen Gig-Bereich."
+      },
+      {
+        "term": "Street Cred",
+        "definition": "Summe der Augenzahlen deiner Gig-Würfel. Manche Effekte verlangen einen Mindestwert."
+      },
+      {
+        "term": "Fixer",
+        "definition": "Bereich der Jobangebote. Nimm jeden Zug einen Würfel (den d20 zuletzt), wirf ihn und lege ihn in den Gig-Bereich."
+      },
+      {
+        "term": "Lag",
+        "definition": "Einheiten kommen mit Lag bis zum Ende des Zuges ins Spiel: kein Angriff und keine Effekte, für die sie sich selbst erschöpfen."
+      },
+      {
+        "term": "Power",
+        "definition": "Zahl unten rechts. Zählt in Kämpfen und beim Stehlen von Gigs (+1 Gig je 10 Power)."
+      },
+      {
+        "term": "Call auf eine Legende",
+        "definition": "Einmal pro Zug 1 €$ erschöpfen, um eine Legende umzudrehen. Erlaubt in der Hauptphase oder als Reaktion auf einen Angriff."
+      },
+      {
+        "term": "Unter das Deck legen",
+        "definition": "Karten in beliebiger Reihenfolge unter dein Deck legen."
+      },
+      {
+        "term": "Entsorgen",
+        "definition": "Die oberste(n) Karte(n) des Decks auf die Ablage legen; die Ablage ist auch der Bereich für besiegte Karten."
+      }
+    ]
+  }
+}

@@ -20,11 +20,12 @@ export const SITE = {
   contactEmail: "",
   host: {
     name: "Vercel Inc.",
-    address: "440 N Barranca Ave #4133, Covina, CA 91723, États-Unis",
+    /** Adresse sans le pays, ajouté dans la langue de la page (bloc legal). */
+    address: "440 N Barranca Ave #4133, Covina, CA 91723",
     url: "https://vercel.com",
   },
-  /** Date de dernière mise à jour des pages légales. */
-  legalUpdatedAt: "11 octobre 2026",
+  /** Date de dernière mise à jour des pages légales (AAAA-MM-JJ, affichée au format de la langue). */
+  legalUpdatedAt: "2026-10-11",
 };
 
 /**

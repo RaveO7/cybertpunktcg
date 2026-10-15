@@ -1,0 +1,74 @@
+{
+  "title": "Karten lesen",
+  "intro": "Alle Karten haben denselben Aufbau. Fahre über eine Markierung oder klicke sie an, um die Erklärung zur Karte zu lesen.",
+  "hint": "Wähle einen Kartentyp:",
+  "cards": {
+    "unit": {
+      "tab": "Einheit",
+      "caption": "Jackie Welles: Ride or Die Choom"
+    },
+    "program": {
+      "tab": "Programm (Verkaufssymbol)",
+      "caption": "Afterparty at Lizzie's"
+    },
+    "legend": {
+      "tab": "Legende",
+      "caption": "Jackie Welles: Mama's Favorite"
+    }
+  },
+  "parts": {
+    "cost": {
+      "name": "Kosten",
+      "body": "Erschöpfe Eddies in Höhe der Kosten einer Karte, um sie zu spielen. (Du kannst auch offene oder verdeckte Legenden für je 1 €$ erschöpfen.)"
+    },
+    "sell": {
+      "name": "Verkaufssymbol",
+      "body": "Karten mit diesem Symbol kannst du für Eddies verkaufen. Legenden mit Verkaufssymbol können im Legenden-Bereich erschöpft werden, um 1 €$ zu bezahlen."
+    },
+    "type": {
+      "name": "Typ",
+      "body": "Gibt an, ob die Karte eine Legende, Einheit, ein Programm oder Gear ist."
+    },
+    "ram": {
+      "name": "RAM",
+      "body": "Die gesamte RAM-Menge und Farbe deiner Legenden bestimmen, welche anderen Karten in dein Deck dürfen."
+    },
+    "art": {
+      "name": "Illustration",
+      "body": "Das Kartenbild. Die Rahmenfarbe entspricht der RAM-Farbe."
+    },
+    "name": {
+      "name": "Name",
+      "body": "Name der Karte, manchmal mit Untertitel. Bis zu 3 Exemplare derselben Karte; deine 3 Legenden müssen unterschiedliche Namen haben."
+    },
+    "classes": {
+      "name": "Zugehörigkeiten",
+      "body": "Gibt die Zugehörigkeiten einer Karte an. Effekte können sich darauf beziehen."
+    },
+    "keyword": {
+      "name": "Schlüsselwort",
+      "body": "Ein Standardeffekt (Go Solo, Adrenaline, Quick, Blocker). Oft folgt ein Erinnerungstext in Klammern."
+    },
+    "text": {
+      "name": "Effekttext",
+      "body": "Was die Karte bewirkt. Auslöser (Play, Call, Attack, Defeated) sagen dir, wann der Effekt eintritt. Widerspricht der Kartentext den Regeln, gilt die Karte."
+    },
+    "power": {
+      "name": "Power",
+      "body": "Zählt beim Angreifen. Entscheidet über Kämpfe gegen gegnerische Einheiten. Eine Einheit stiehlt zwei Gigs ab 10 Power, drei ab 20 und so weiter."
+    },
+    "set": {
+      "name": "Erweiterung & Nummer",
+      "body": "Erweiterungscode (MS01 – WNC) und Sammlernummer, praktisch, um die Karte im Katalog zu finden."
+    },
+    "illustrator": {
+      "name": "Illustrator",
+      "body": "Der Name des Illustrators, am Kartenrand gedruckt."
+    }
+  },
+  "legendOverrides": {
+    "cost": "Bei einer Legende ist das der Preis, um sie mit Go Solo als Einheit zu spielen. Sonst bleibt die Legende in ihrem Bereich und kann 1 €$ bezahlen.",
+    "ram": "Bei einer Legende ist das das RAM, das sie deinem Deck gibt. Addiere das RAM deiner 3 Legenden je Farbe, um deine Grenzen beim Deckbau zu erhalten.",
+    "power": "Power, die zählt, wenn die Legende mit Go Solo aufs Spielfeld kommt."
+  }
+}

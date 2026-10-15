@@ -2,38 +2,24 @@
 
 import { useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useMessages } from "next-intl";
 import { HowToPlayRules } from "@/components/HowToPlayRules";
 import { HowToPlayTutorial } from "@/components/HowToPlayTutorial";
-import { useI18n } from "@/components/LocaleProvider";
-import { tutorialCopy } from "@/lib/rules/tutorial";
+import { useTutorialCopy } from "@/lib/rules/use-rules";
 import { isInHorizontalScroller } from "@/lib/swipe";
 
 type Mode = "learn" | "rules";
 
 export function HowToPlayScreen() {
-  const { locale } = useI18n();
-  const contentLocale = locale === "fr" ? "fr" : "en";
-  const t = tutorialCopy(contentLocale);
+  const t = useTutorialCopy();
+  const screen = useMessages().rules.tutorial;
   const [mode, setMode] = useState<Mode>("rules");
   const [progress, setProgress] = useState<{ step: number; total: number } | null>(null);
   const rulesScrollRef = useRef<HTMLDivElement>(null);
   const [showTop, setShowTop] = useState(false);
-  const backToTopLabel = contentLocale === "fr" ? "Remonter en haut" : "Back to top";
+  const backToTopLabel = screen.backToTop;
   const [leaveConfirm, setLeaveConfirm] = useState(false);
-  const leaveCopy =
-    contentLocale === "fr"
-      ? {
-          title: "Quitter le parcours débutant ?",
-          body: "Ta progression dans le parcours sera perdue et il faudra le recommencer depuis le début.",
-          stay: "Continuer le parcours",
-          leave: "Quitter",
-        }
-      : {
-          title: "Leave the beginner path?",
-          body: "Your progress in the path will be lost and you will have to start over from the beginning.",
-          stay: "Keep going",
-          leave: "Leave",
-        };
+  const leaveCopy = screen.leave;
 
   const onProgress = useCallback((step: number, total: number) => {
     setProgress({ step, total });
@@ -161,7 +147,6 @@ export function HowToPlayScreen() {
       ) : (
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-3 pb-2 sm:px-4">
           <HowToPlayTutorial
-            locale={contentLocale}
             onOpenRules={leaveLearn}
             onProgress={onProgress}
           />

@@ -1,0 +1,346 @@
+{
+  "eyebrow": "FORMATION NIGHT CITY",
+  "title": "Apprendre à jouer",
+  "subtitle": "6 mini-missions. Clique, essaie, gagne. Pas besoin d’avoir déjà joué à un TCG.",
+  "learnTab": "Parcours débutant",
+  "rulesTab": "Règles détaillées",
+  "startCta": "Commencer l’entraînement",
+  "continueCta": "Continuer",
+  "nextCta": "Mission suivante",
+  "backCta": "Retour",
+  "skipCta": "Passer",
+  "retryCta": "Réessayer",
+  "hintCta": "Indice",
+  "progressLabel": "Mission {current} / {total}",
+  "streetCred": "Street Cred",
+  "correct": "Bien joué, choom.",
+  "almost": "Pas tout à fait — essaie encore.",
+  "missions": [
+    {
+      "badge": "00",
+      "title": "Briefing",
+      "blurb": "Le but du jeu en 30 secondes."
+    },
+    {
+      "badge": "01",
+      "title": "Les Gigs",
+      "blurb": "Comment on gagne."
+    },
+    {
+      "badge": "02",
+      "title": "Le tapis",
+      "blurb": "Où poser quoi."
+    },
+    {
+      "badge": "03",
+      "title": "Les cartes",
+      "blurb": "4 types, 4 jobs."
+    },
+    {
+      "badge": "04",
+      "title": "Ton tour",
+      "blurb": "Dans quel ordre jouer."
+    },
+    {
+      "badge": "05",
+      "title": "Combats",
+      "blurb": "Frapper ou voler."
+    },
+    {
+      "badge": "06",
+      "title": "Examen rue",
+      "blurb": "Vérifie ce que tu retiens."
+    },
+    {
+      "badge": "OK",
+      "title": "Diplôme",
+      "blurb": "Tu es prêt·e."
+    }
+  ],
+  "intro": {
+    "needTitle": "Ce qu’il te faut",
+    "needItems": [
+      "Un deck Cyberpunk TCG (40–50 cartes + 3 Legends)",
+      "6 dés : d4, d6, d8, d10, d12, d20",
+      "Un Rival en face de toi"
+    ],
+    "promise": "Tu es le chef d’un crew à Night City. Tu gagnes en contrôlant des jobs : les Gigs (des dés).",
+    "tip": "Astuce : un Gig = un dé. Ce n’est pas la valeur du dé qui compte pour gagner, c’est le nombre de dés."
+  },
+  "goal": {
+    "title": "Objectif : 7 Gigs",
+    "explain": "Chaque tour tu prends un dé dans ta zone Fixer, tu le lances, tu le mets dans ta zone Gig. Si tu commences ton tour avec déjà 7 dés Gig → tu gagnes.",
+    "challenge": "Simule une partie : ajoute des Gigs jusqu’à 7, puis « commence ton tour ».",
+    "winLine": "7 Gigs au début du tour = victoire. Night City est à toi.",
+    "addGig": "Prendre un Gig (début de tour)",
+    "stealGig": "Voler 1 Gig au Rival",
+    "fixerEmpty": "Fixer vide — vole le 7e au Rival",
+    "reset": "Recommencer",
+    "diceLeft": "{n, plural, one {# dé encore au Fixer} other {# dés encore au Fixer}}",
+    "yourGigs": "Tes Gigs"
+  },
+  "board": {
+    "title": "Chasse aux zones",
+    "explain": "Le tapis a 7 zones. Clique sur la bonne zone pour chaque question.",
+    "challenge": "Trouve les 4 zones demandées. Tu peux te tromper, aucun Eddie n’est perdu.",
+    "prompts": [
+      {
+        "ask": "Où places-tu tes Units pour combattre ?",
+        "hint": "C’est le grand espace au centre…",
+        "success": "Le Field : tes Units vivent ici."
+      },
+      {
+        "ask": "Où vont les cartes vendues pour payer (Eddies) ?",
+        "hint": "C’est ta « banque » face cachée.",
+        "success": "Zone Eddies : chaque carte face cachée = 1 €$."
+      },
+      {
+        "ask": "Où sont tes 3 personnages spéciaux au début ?",
+        "hint": "Ils commencent face cachée…",
+        "success": "Zone Legends : 3 cartes, ordre aléatoire."
+      },
+      {
+        "ask": "Où arrivent les dés après les avoir lancés ?",
+        "hint": "C’est ce qui te fait gagner.",
+        "success": "Zone Gig : protège-les, ou vole ceux du Rival."
+      }
+    ],
+    "foundAll": "Tapis validé. Tu sais où poser ton crew."
+  },
+  "cards": {
+    "title": "4 types de cartes",
+    "explain": "Retourne chaque carte pour découvrir son job. Une seule idée par type.",
+    "challenge": "Découvre les 4 types.",
+    "flipHint": "Touche la carte",
+    "roles": [
+      {
+        "typeLabel": "Legend",
+        "oneLiner": "Boss du deck",
+        "detail": "3 au total, face cachée. Tu peux en retourner 1 par tour (1 €$) ou les utiliser comme 1 €$ chacune."
+      },
+      {
+        "typeLabel": "Unit",
+        "oneLiner": "Ton crew",
+        "detail": "Reste sur le Field. Attaque les Units adverses ou vole des Gigs. Pas d’attaque le tour où elle arrive (sauf Adrenaline)."
+      },
+      {
+        "typeLabel": "Program",
+        "oneLiner": "Effet flash",
+        "detail": "Tu paies, l’effet se résout, la carte va à la Trash. Certains sont Quick (jouables en réaction)."
+      },
+      {
+        "typeLabel": "Gear",
+        "oneLiner": "Équipement",
+        "detail": "S’attache à une Unit ou Legend. Si la carte part, le Gear part avec."
+      }
+    ],
+    "allSeen": "Tu connais les 4 rôles. On enchaîne sur le rythme d’un tour."
+  },
+  "turn": {
+    "title": "Déroule un tour",
+    "explain": "Chaque tour = Start Phase (obligatoire, dans l’ordre) puis Main Phase (tu choisis).",
+    "challenge": "Enchaîne les étapes en cliquant « Faire cette action ».",
+    "steps": [
+      {
+        "title": "1. Ready",
+        "body": "Remets tes cartes tournées à l’endroit.",
+        "action": "Ready mes cartes"
+      },
+      {
+        "title": "2. Piocher",
+        "body": "Prends 1 carte du dessus du deck.",
+        "action": "Piocher 1"
+      },
+      {
+        "title": "3. Gagner un Gig",
+        "body": "Prends un dé du Fixer (pas le d20 tant qu’il en reste), lance-le, mets-le en zone Gig.",
+        "action": "Lancer mon Gig"
+      },
+      {
+        "title": "4. Vendre (optionnel, 1×)",
+        "body": "Révèle une carte « vendable », pose-la face cachée = +1 Eddie.",
+        "action": "Vendre pour 1 €$"
+      },
+      {
+        "title": "5. Jouer des cartes",
+        "body": "Dépense des Eddies (ou Legends) pour jouer Units, Gear, Programs.",
+        "action": "Jouer Jackie (exemple)"
+      },
+      {
+        "title": "6. Attaquer",
+        "body": "Tourne une Unit pour attaquer une Unit adverse spent, ou la zone Gig adverse.",
+        "action": "Attaquer"
+      }
+    ],
+    "done": "Tour terminé. Tu as le rythme : Ready → Piocher → Gig → puis ce que tu veux."
+  },
+  "combat": {
+    "title": "Frapper ou voler ?",
+    "explain": "Deux cibles possibles. Choisis la bonne action pour chaque situation.",
+    "scenarios": [
+      {
+        "setup": "Adam Smasher (Power 15) est ready. Le Rival a des Gigs et aucune Unit spent.",
+        "question": "Que faire pour avancer vers la victoire ?",
+        "choices": [
+          {
+            "label": "Attaquer la zone Gig → voler 2 Gigs",
+            "feedback": "Power 15 = 2 Gigs (1 dès 1+, +1 dès 10+)."
+          },
+          {
+            "label": "Attaquer une Unit ready adverse",
+            "feedback": "Tu ne peux pas attaquer une Unit ready (sauf effet spécial)."
+          },
+          {
+            "label": "Ne rien faire : trop risqué",
+            "feedback": "Possible, mais ici le vol de Gig est l’objectif principal."
+          }
+        ]
+      },
+      {
+        "setup": "Jackie (forte) face à Meredith adverse qui est spent (tournée).",
+        "question": "Comment dégager le Field ?",
+        "choices": [
+          {
+            "label": "Attaquer Meredith → combat Power vs Power",
+            "feedback": "Le plus haut Power vainc. Égalité = les deux partent à la Trash."
+          },
+          {
+            "label": "Attaquer directement les Gigs sans regarder",
+            "feedback": "Tu peux, mais une Unit spent dangereuse mérite souvent d’être enlevée d’abord."
+          },
+          {
+            "label": "Jouer un Gear sur le Rival",
+            "feedback": "Le Gear s’équipe sur TES Units / Legends, pas sur le Rival."
+          }
+        ]
+      },
+      {
+        "setup": "Le Rival attaque ta zone Gig. Tu as Meredith avec Blocker, ready.",
+        "question": "Peux-tu réagir ?",
+        "choices": [
+          {
+            "label": "Spend Meredith (Blocker) pour prendre le coup",
+            "feedback": "Blocker redirige l’attaque. Même si tu gagnes le combat, l’attaquant ne vole pas de Gig."
+          },
+          {
+            "label": "Impossible, les Gigs sont sans défense",
+            "feedback": "Blocker (et Quick) existent justement pour ça."
+          },
+          {
+            "label": "Piocher 3 cartes en réaction",
+            "feedback": "Pas une règle de base — sauf si une carte le dit."
+          }
+        ]
+      }
+    ],
+    "allClear": "Tu gères combat et vol. Dernière étape : le quiz."
+  },
+  "quiz": {
+    "title": "Examen de rue",
+    "explain": "5 questions. 4 bonnes réponses = diplôme Night City.",
+    "questions": [
+      {
+        "prompt": "Quand gagnes-tu la partie ?",
+        "choices": [
+          {
+            "label": "Dès que tu as 7 Gigs, même au milieu du tour du Rival",
+            "feedback": "Il faut commencer TON tour avec 7 Gigs (sauf prolongations)."
+          },
+          {
+            "label": "Au début de ton tour, si tu as déjà 7 Gigs",
+            "feedback": "Exact."
+          },
+          {
+            "label": "Quand la somme des dés atteint 50",
+            "feedback": "La somme = Street Cred (pouvoirs), pas la victoire."
+          }
+        ]
+      },
+      {
+        "prompt": "À quoi sert un Eddie ?",
+        "choices": [
+          {
+            "label": "Payer le coût des cartes",
+            "feedback": "1 carte face cachée dans la zone Eddies = 1 €$."
+          },
+          {
+            "label": "Attaquer le Rival",
+            "feedback": "Ce sont les Units qui attaquent."
+          },
+          {
+            "label": "Remplacer les dés Gig",
+            "feedback": "Les Gigs restent des dés."
+          }
+        ]
+      },
+      {
+        "prompt": "Une Unit vient d’être jouée. Peut-elle attaquer ?",
+        "choices": [
+          {
+            "label": "Oui, toujours",
+            "feedback": "Elle a du Lag jusqu’à la fin du tour."
+          },
+          {
+            "label": "Non, sauf si elle a Adrenaline (ou effet similaire)",
+            "feedback": "Lag = pas d’attaque le tour d’arrivée."
+          },
+          {
+            "label": "Seulement si c’est une Legend",
+            "feedback": "Les Legends Go Solo sont un autre cas."
+          }
+        ]
+      },
+      {
+        "prompt": "Ordre de la Start Phase ?",
+        "choices": [
+          {
+            "label": "Piocher → Ready → Gig",
+            "feedback": "Presque : Ready d’abord."
+          },
+          {
+            "label": "Ready → Piocher → Gig",
+            "feedback": "Dans cet ordre, toujours."
+          },
+          {
+            "label": "Gig → Piocher → Attaquer",
+            "feedback": "L’attaque est en Main Phase."
+          }
+        ]
+      },
+      {
+        "prompt": "Power 20 en attaque sur la zone Gig : combien de Gigs volés ?",
+        "choices": [
+          {
+            "label": "1",
+            "feedback": "1 dès Power 1+, +1 tous les 10."
+          },
+          {
+            "label": "2",
+            "feedback": "20+ = 3 Gigs."
+          },
+          {
+            "label": "3",
+            "feedback": "1+ → 1, 10+ → 2, 20+ → 3."
+          }
+        ]
+      }
+    ],
+    "scoreLine": "{score} / {total} bonnes réponses",
+    "pass": "Diplôme validé. Tu peux lire les règles détaillées quand tu veux.",
+    "retry": "Encore un effort — refais le quiz."
+  },
+  "done": {
+    "title": "Bienvenue à Night City",
+    "body": "Tu as les bases : Gigs, zones, types de cartes, tour, combat. Le reste s’apprend en jouant — et dans les règles détaillées.",
+    "restart": "Refaire le parcours",
+    "openRules": "Voir les règles détaillées",
+    "source": "Guide officiel Cyberpunk TCG"
+  },
+  "backToTop": "Remonter en haut",
+  "leave": {
+    "title": "Quitter le parcours débutant ?",
+    "body": "Ta progression dans le parcours sera perdue et il faudra le recommencer depuis le début.",
+    "stay": "Continuer le parcours",
+    "leave": "Quitter"
+  }
+}

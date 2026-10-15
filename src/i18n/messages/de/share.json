@@ -1,0 +1,14 @@
+{
+  "eyebrow": "GETEILTE MAPPE",
+  "binderNav": "Mappe",
+  "title": "Mappe von {name}",
+  "subtitle": "Nur-Lesen-Ansicht — keine Änderungen möglich.",
+  "cardsBanner": "Karten von {name} · nur lesen",
+  "openOwned": "Besessene Karten anzeigen",
+  "openAll": "Gesamten Katalog durchsuchen",
+  "editionsNote": "Fortschritt bei Welcome to Night City",
+  "marketHint": "{n} Exemplar(e) mit Marktpreis.",
+  "notFoundTitle": "Link nicht gefunden",
+  "notFoundBody": "Dieser Link wurde widerrufen oder existiert nicht.",
+  "loadFailed": "Mappe konnte nicht geladen werden."
+}

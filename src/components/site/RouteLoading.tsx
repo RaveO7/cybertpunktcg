@@ -1,8 +1,8 @@
 "use client";
 
-import { useI18n } from "@/components/LocaleProvider";
+import { useTranslations } from "next-intl";
 
 export default function Loading() {
-  const { t } = useI18n();
-  return <p className="p-6 text-sm text-muted">{t.common.loading}</p>;
+  const t = useTranslations();
+  return <p className="p-6 text-sm text-muted">{t("common.loading")}</p>;
 }

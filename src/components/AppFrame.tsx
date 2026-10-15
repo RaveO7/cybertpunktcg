@@ -3,15 +3,16 @@
 import { BottomNav, Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { OfflineBanner } from "@/components/OfflineSupport";
-import { LanguageSuggestion } from "@/components/site/LanguageSuggestion";
-import { PreferredLanguageRedirect } from "@/components/site/PreferredLanguageRedirect";
+import { LanguageSuggestion, type SuggestionCopy } from "@/components/site/LanguageSuggestion";
+import { LegacyLocalePreference, PreferredLanguageRedirect } from "@/components/site/PreferredLanguageRedirect";
 import { RequireUser } from "@/components/site/RequireUser";
-import { routeOfPath } from "@/lib/seo/routes";
 import { LEGAL_PATHS } from "@/lib/site";
-import { usePathname } from "next/navigation";
+import { publicRouteOfPath } from "@/i18n/paths";
+import { useInternalPathname } from "@/i18n/useInternalPathname";
 
-export function AppFrame({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+export function AppFrame({ children, suggestionCopy }: { children: React.ReactNode; suggestionCopy: SuggestionCopy }) {
+  // Chemin interne (segments français, sans préfixe de langue) : mêmes règles dans toutes les langues.
+  const pathname = useInternalPathname();
   const isSharedView = pathname.startsWith("/classeur/");
   // Pages joueur d'un tournoi (/t/…), pages publiques bilingues (accueil, catalogue, tutoriel, tournois
   // publics, boutiques), connexion et pages légales : ouvertes aux invités sans compte. L'accueil
@@ -19,7 +20,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const isPublicPage =
     isSharedView ||
     pathname.startsWith("/t/") ||
-    routeOfPath(pathname) !== null ||
+    publicRouteOfPath(pathname) !== null ||
     pathname === "/connexion" ||
     LEGAL_PATHS.includes(pathname);
   // Le didacticiel occupe toute la hauteur : pas de pied de page.
@@ -29,7 +30,8 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     <div className="relative flex h-dvh flex-col overflow-clip">
       <Header />
       <OfflineBanner />
-      <LanguageSuggestion />
+      <LanguageSuggestion copy={suggestionCopy} />
+      <LegacyLocalePreference />
       <PreferredLanguageRedirect />
       <main className="app-main @container/main px-safe relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain [container-type:size]">
         {content}

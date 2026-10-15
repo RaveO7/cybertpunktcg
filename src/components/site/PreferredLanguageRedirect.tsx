@@ -1,34 +1,38 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useLocale } from "next-intl";
+import { useEffect, useSyncExternalStore } from "react";
 import { useCollection } from "@/components/CollectionProvider";
-import { useI18n } from "@/components/LocaleProvider";
-import { LOCALE_STORAGE_KEY } from "@/lib/i18n/messages";
-import { alternatePath } from "@/lib/seo/routes";
+import { alternatePath } from "@/i18n/paths";
+import { isLocaleSwitching, migrateLegacyLocalePreference, readLocalePreference, subscribeLocalePreference } from "@/i18n/preference";
 
 /**
- * Utilisateur connecté sur une page publique bilingue dans l'autre langue que celle choisie dans
- * ses paramètres (français ou anglais) : on l'emmène sur la version de sa langue. Les visiteurs et
- * les robots ne sont jamais redirigés.
+ * Reprise de la langue choisie avec l'ancienne version du site (localStorage) : recopiée une fois dans
+ * le cookie de préférence, pour tous les visiteurs (la suggestion de langue en tient compte).
+ */
+export function LegacyLocalePreference() {
+  useEffect(() => {
+    migrateLegacyLocalePreference();
+  }, []);
+  return null;
+}
+
+/**
+ * Utilisateur connecté sur une page dans une autre langue que celle qu'il a choisie : même page dans
+ * sa langue. Le proxy le fait à chaque requête ; ce composant couvre la connexion sur une page déjà
+ * ouverte et la reprise de l'ancienne préférence. Les visiteurs et les robots ne sont jamais redirigés.
  */
 export function PreferredLanguageRedirect() {
   const { user } = useCollection();
-  const { routeLocale } = useI18n();
-  const pathname = usePathname();
+  const locale = useLocale();
+  const preference = useSyncExternalStore(subscribeLocalePreference, readLocalePreference, () => null);
 
   useEffect(() => {
-    if (!user || !routeLocale) return;
-    let stored: string | null = null;
-    try {
-      stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-    } catch {
-      return;
-    }
-    if ((stored !== "fr" && stored !== "en") || stored === routeLocale) return;
-    const target = alternatePath(pathname, window.location.search, stored);
-    if (target) window.location.replace(target);
-  }, [user, routeLocale, pathname]);
+    // Changement de langue en cours (sélecteur) : la navigation est déjà lancée.
+    if (!user || !preference || preference === locale || isLocaleSwitching()) return;
+    const target = alternatePath(window.location.pathname, window.location.search, preference);
+    if (target) window.location.replace(`${target}${window.location.hash}`);
+  }, [user, preference, locale]);
 
   return null;
 }

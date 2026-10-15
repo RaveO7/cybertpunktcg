@@ -1,0 +1,12 @@
+{
+  "home": {
+    "title": "TCG Tracker — Carte, collezione e tornei di Cyberpunk TCG",
+    "description": "Tutte le carte di Cyberpunk TCG, la gestione della tua collezione e del suo valore, i tuoi mazzi, e tornei e negozi vicino a te. Gratis."
+  },
+  "og": {
+    "tagline": "Carte, collezione e tornei di Cyberpunk TCG",
+    "tournament": "Torneo di Cyberpunk TCG",
+    "shop": "Negozio di Cyberpunk TCG",
+    "free": "Gratis"
+  }
+}

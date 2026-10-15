@@ -1,0 +1,14 @@
+{
+  "banner": "Hors ligne : consultation seule. Les modifications reprendront avec le réseau.",
+  "title": "Mode hors-ligne",
+  "hint": "Le catalogue et votre collection restent consultables sans réseau (boutique, tournoi). Téléchargez les images des cartes pour les afficher aussi hors ligne.",
+  "download": "Télécharger les images ({n})",
+  "downloading": "Téléchargement… {done} / {total}",
+  "status": "{cached} / {total} images enregistrées sur cet appareil",
+  "failed": "{n} image(s) non téléchargée(s). Relancez pour réessayer.",
+  "cancel": "Arrêter",
+  "clear": "Supprimer les images hors-ligne",
+  "cleared": "Images supprimées de cet appareil.",
+  "unsupported": "Ce navigateur ne permet pas le mode hors-ligne.",
+  "hdNote": "Les images en grand format sont enregistrées au fil de leur consultation."
+}

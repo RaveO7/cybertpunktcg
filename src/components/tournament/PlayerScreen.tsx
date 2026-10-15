@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useCollection } from "@/components/CollectionProvider";
-import { useI18n } from "@/components/LocaleProvider";
 import type { MatchResult } from "@/lib/tournament/scores";
 import type { MatchView, RoundView, TournamentView } from "@/lib/tournament/view";
 import { ApiError, postJson, useServerNow, useTournamentState } from "./hooks";
@@ -49,36 +49,36 @@ function useResolvedTournament(code: string) {
 }
 
 export function PlayerScreen({ code }: { code: string }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const { initial, error } = useResolvedTournament(code);
   const state = useTournamentState(initial?.tournament.id ?? null);
   const view = state.view ?? initial;
   const now = useServerNow(state.offsetMs);
 
-  if (error === "notFound" || state.error === "notFound") return <Centered>{t.tournaments.notFound}</Centered>;
-  if (error === "limited") return <Centered>{t.tournaments.tooManyAttempts}</Centered>;
-  if (!view) return <Centered>{error ? t.tournaments.loadFailed : t.common.loading}</Centered>;
+  if (error === "notFound" || state.error === "notFound") return <Centered>{t("tournaments.notFound")}</Centered>;
+  if (error === "limited") return <Centered>{t("tournaments.tooManyAttempts")}</Centered>;
+  if (!view) return <Centered>{error ? t("tournaments.loadFailed") : t("common.loading")}</Centered>;
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[900px] flex-col gap-4 px-3 py-4 sm:px-4 sm:py-6">
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl text-yellow sm:text-3xl">{view.tournament.name}</h1>
-          <Tag tone="cyan">{t.tournaments.statuses[view.tournament.status]}</Tag>
+          <Tag tone="cyan">{t(`tournaments.statuses.${view.tournament.status}`)}</Tag>
         </div>
         {view.role === "organizer" ? (
-          <Link href={`/tournois/${view.tournament.id}`} className="text-sm text-cyan underline">
-            {t.tournaments.openConsole}
+          <Link href={{ pathname: "/tournois/[id]", params: { id: view.tournament.id } }} className="text-sm text-cyan underline">
+            {t("tournaments.openConsole")}
           </Link>
         ) : null}
-        {state.error === "failed" ? <p className="text-xs text-danger">{t.tournaments.offline}</p> : null}
+        {state.error === "failed" ? <p className="text-xs text-danger">{t("tournaments.offline")}</p> : null}
       </div>
       {view.me ? <PlayerHome view={view} now={now} refresh={state.refresh} /> : <JoinForm code={code} view={view} onJoined={state.refresh} />}
       <FinalStandings view={view} />
       <PublicRound view={view} />
       {view.standings.length ? (
         <section className={panelClass}>
-          <h2 className="mb-2 text-lg">{t.tournaments.tabs.standings}</h2>
+          <h2 className="mb-2 text-lg">{t("tournaments.tabs.standings")}</h2>
           <StandingsTable standings={view.standings} players={view.players} view={view} highlight={view.me?.id} />
         </section>
       ) : null}
@@ -87,7 +87,7 @@ export function PlayerScreen({ code }: { code: string }) {
 }
 
 function JoinForm({ code, view, onJoined }: { code: string; view: TournamentView; onJoined: () => Promise<void> }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const { user } = useCollection();
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
@@ -101,13 +101,13 @@ function JoinForm({ code, view, onJoined }: { code: string; view: TournamentView
       await postJson(`/api/t/${encodeURIComponent(code)}/join`, withAccount && !name.trim() ? {} : { name: name.trim() });
       await onJoined();
     } catch (error) {
-      setMessage(error instanceof ApiError && error.status === 0 ? t.tournaments.offline : error instanceof Error ? error.message : t.tournaments.failed);
+      setMessage(error instanceof ApiError && error.status === 0 ? t("tournaments.offline") : error instanceof Error ? error.message : t("tournaments.failed"));
     } finally {
       setPending(false);
     }
   }
 
-  if (!open) return <p className={`${panelClass} text-sm text-muted`}>{t.tournaments.registrationClosedHint}</p>;
+  if (!open) return <p className={`${panelClass} text-sm text-muted`}>{t("tournaments.registrationClosedHint")}</p>;
   const accountName = user && user.displayName !== "Ma collection" ? user.displayName : null;
   const { maxPlayers } = view.tournament;
   const full = maxPlayers !== null && view.players.filter((player) => player.status === "active").length >= maxPlayers;
@@ -120,27 +120,27 @@ function JoinForm({ code, view, onJoined }: { code: string; view: TournamentView
         void join(Boolean(user));
       }}
     >
-      <h2 className="text-lg">{t.tournaments.joinTitle}</h2>
+      <h2 className="text-lg">{t("tournaments.joinTitle")}</h2>
       <label className="flex flex-col gap-1">
-        <span className="hud-label">{t.tournaments.joinAs}</span>
+        <span className="hud-label">{t("tournaments.joinAs")}</span>
         <input
           className={inputClass}
           value={name}
           maxLength={32}
-          placeholder={accountName ?? t.tournaments.playerName}
+          placeholder={accountName ?? t("tournaments.playerName")}
           onChange={(event) => setName(event.target.value)}
           autoComplete="nickname"
         />
       </label>
-      {!user ? <p className="text-xs text-muted">{t.tournaments.guestHint}</p> : null}
-      {full ? <p className="text-xs text-yellow">{t.publicTournaments.fullHint}</p> : null}
+      {!user ? <p className="text-xs text-muted">{t("tournaments.guestHint")}</p> : null}
+      {full ? <p className="text-xs text-yellow">{t("publicTournaments.fullHint")}</p> : null}
       {message ? (
         <p role="alert" className="text-sm text-danger">
           {message}
         </p>
       ) : null}
       <button type="submit" className={`${primaryClass} h-12`} disabled={pending || (!user && !name.trim()) || (Boolean(user) && !accountName && !name.trim())}>
-        {user && accountName && !name.trim() ? t.tournaments.joinWithAccount(accountName) : t.tournaments.joinButton}
+        {user && accountName && !name.trim() ? t("tournaments.joinWithAccount", { name: accountName }) : t("tournaments.joinButton")}
       </button>
     </form>
   );
@@ -153,7 +153,7 @@ function visibleRound(view: TournamentView): RoundView | null {
 }
 
 function PlayerHome({ view, now, refresh }: { view: TournamentView; now: Date; refresh: () => Promise<void> }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const me = view.me!;
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -169,7 +169,7 @@ function PlayerHome({ view, now, refresh }: { view: TournamentView; now: Date; r
       await postJson(`/api/tournaments/${view.tournament.id}/player`, command);
       await refresh();
     } catch (error) {
-      setMessage(error instanceof ApiError && error.status === 0 ? t.tournaments.offline : error instanceof Error ? error.message : t.tournaments.failed);
+      setMessage(error instanceof ApiError && error.status === 0 ? t("tournaments.offline") : error instanceof Error ? error.message : t("tournaments.failed"));
     } finally {
       setPending(false);
     }
@@ -178,7 +178,7 @@ function PlayerHome({ view, now, refresh }: { view: TournamentView; now: Date; r
   return (
     <section className={`${panelClass} flex flex-col gap-3`}>
       <p className="text-sm">
-        <span className="hud-label mr-2">{t.tournaments.you}</span>
+        <span className="hud-label mr-2">{t("tournaments.you")}</span>
         <span className="text-lg">{me.name}</span>
       </p>
       {message ? (
@@ -186,25 +186,25 @@ function PlayerHome({ view, now, refresh }: { view: TournamentView; now: Date; r
           {message}
         </p>
       ) : null}
-      {me.status === "pending" ? <p className="text-sm text-yellow">{t.tournaments.waitingApproval}</p> : null}
+      {me.status === "pending" ? <p className="text-sm text-yellow">{t("tournaments.waitingApproval")}</p> : null}
       {me.status === "waitlist" ? (
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-yellow">{t.publicTournaments.waitlistPosition(me.waitlistPosition ?? 1)}</p>
-          <p className="text-xs text-muted">{t.publicTournaments.waitlistHint}</p>
+          <p className="text-sm text-yellow">{t("publicTournaments.waitlistPosition", { n: me.waitlistPosition ?? 1 })}</p>
+          <p className="text-xs text-muted">{t("publicTournaments.waitlistHint")}</p>
           {!finished ? (
             <button type="button" className={`${buttonClass} self-start`} disabled={pending} onClick={() => void send({ type: "withdraw" })}>
-              {t.publicTournaments.leaveWaitlist}
+              {t("publicTournaments.leaveWaitlist")}
             </button>
           ) : null}
         </div>
       ) : null}
-      {me.status === "dropped" ? <p className="text-sm text-muted">{t.tournaments.droppedHint}</p> : null}
-      {me.status === "dq" ? <p className="text-sm text-danger">{t.tournaments.dqHint}</p> : null}
-      {me.status === "active" && !round && !finished ? <p className="text-sm text-muted">{t.tournaments.waitingStart}</p> : null}
-      {view.tournament.championId === me.id ? <p className="text-lg text-yellow">{t.tournaments.youWon}</p> : null}
+      {me.status === "dropped" ? <p className="text-sm text-muted">{t("tournaments.droppedHint")}</p> : null}
+      {me.status === "dq" ? <p className="text-sm text-danger">{t("tournaments.dqHint")}</p> : null}
+      {me.status === "active" && !round && !finished ? <p className="text-sm text-muted">{t("tournaments.waitingStart")}</p> : null}
+      {view.tournament.championId === me.id ? <p className="text-lg text-yellow">{t("tournaments.youWon")}</p> : null}
 
       {round && match ? <MyMatch view={view} round={round} match={match} now={now} pending={pending} send={send} /> : null}
-      {round && !match && me.status === "active" && round.status !== "closed" ? <p className="text-sm text-muted">{t.tournaments.notInRound}</p> : null}
+      {round && !match && me.status === "active" && round.status !== "closed" ? <p className="text-sm text-muted">{t("tournaments.notInRound")}</p> : null}
 
       {!finished && me.status === "active" ? (
         <div className="flex flex-wrap gap-2 border-t border-line pt-3">
@@ -214,21 +214,21 @@ function PlayerHome({ view, now, refresh }: { view: TournamentView; now: Date; r
               className={dangerClass}
               disabled={pending}
               onClick={() => {
-                if (window.confirm(t.tournaments.confirmDropMe)) void send({ type: "drop" });
+                if (window.confirm(t("tournaments.confirmDropMe"))) void send({ type: "drop" });
               }}
             >
-              {t.tournaments.dropMe}
+              {t("tournaments.dropMe")}
             </button>
           ) : (
             <button type="button" className={buttonClass} disabled={pending} onClick={() => void send({ type: "withdraw" })}>
-              {t.tournaments.withdraw}
+              {t("tournaments.withdraw")}
             </button>
           )}
         </div>
       ) : null}
       {!finished && me.status === "pending" ? (
         <button type="button" className={buttonClass} disabled={pending} onClick={() => void send({ type: "withdraw" })}>
-          {t.tournaments.withdraw}
+          {t("tournaments.withdraw")}
         </button>
       ) : null}
     </section>
@@ -250,7 +250,7 @@ function MyMatch({
   pending: boolean;
   send: (command: Record<string, unknown>) => Promise<void>;
 }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const [editing, setEditing] = useState(false);
   const me = view.me!;
   const mySide = match.playerAId === me.id ? "A" : "B";
@@ -268,32 +268,32 @@ function MyMatch({
         <h2 className="text-lg">{roundTitle(round, t)}</h2>
         <RoundClockDisplay round={round} now={now} extraSeconds={match.extraSeconds} large />
       </div>
-      {round.status === "published" ? <p className="text-sm text-muted">{t.tournaments.roundNotStarted}</p> : null}
+      {round.status === "published" ? <p className="text-sm text-muted">{t("tournaments.roundNotStarted")}</p> : null}
 
       {match.playerBId === null ? (
-        <p className="text-base text-cyan">{t.tournaments.yourBye}</p>
+        <p className="text-base text-cyan">{t("tournaments.yourBye")}</p>
       ) : (
         <p className="text-base">
-          <span className="hud-label mr-2">{t.tournaments.yourTable(match.table)}</span>
-          <span className="text-muted">{t.tournaments.vs}</span> <span className="text-lg text-yellow">{opponent?.name ?? "?"}</span>
-          {opponent && !opponent.hasApp ? <Tag>{t.tournaments.paper}</Tag> : null}
+          <span className="hud-label mr-2">{t("tournaments.yourTable", { n: match.table })}</span>
+          <span className="text-muted">{t("tournaments.vs")}</span> <span className="text-lg text-yellow">{opponent?.name ?? "?"}</span>
+          {opponent && !opponent.hasApp ? <Tag>{t("tournaments.paper")}</Tag> : null}
         </p>
       )}
 
       {match.playerBId !== null && match.status === "valide" ? (
-        <p className="text-sm text-cyan">{t.tournaments.validatedScore(scoreLabel(matchResult(match), t))}</p>
+        <p className="text-sm text-cyan">{t("tournaments.validatedScore", { score: scoreLabel(matchResult(match), t) })}</p>
       ) : null}
-      {match.status === "conteste" ? <p className="text-sm text-danger">{t.tournaments.contestedHint}</p> : null}
+      {match.status === "conteste" ? <p className="text-sm text-danger">{t("tournaments.contestedHint")}</p> : null}
 
       {running && match.playerBId !== null && match.status === "declare" && theirs && !mine ? (
         <div className="flex flex-col gap-2">
-          <p className="text-sm">{t.tournaments.opponentDeclared(opponent?.name ?? "?", scoreLabel(theirs, t))}</p>
+          <p className="text-sm">{t("tournaments.opponentDeclared", { name: opponent?.name ?? "?", score: scoreLabel(theirs, t) })}</p>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={`${primaryClass} h-12`} disabled={pending} onClick={() => void send({ type: "confirm", matchId: match.id })}>
-              {t.tournaments.confirmScore}
+              {t("tournaments.confirmScore")}
             </button>
             <button type="button" className={`${dangerClass} h-12`} disabled={pending} onClick={() => void send({ type: "refuse", matchId: match.id })}>
-              {t.tournaments.refuseScore}
+              {t("tournaments.refuseScore")}
             </button>
           </div>
         </div>
@@ -302,16 +302,16 @@ function MyMatch({
       {running && match.playerBId !== null && match.status === "declare" && mine && !editing ? (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted">
-            {scoreLabel(mine, t)} · {match.confirmedOnSite ? t.tournaments.waitingOrganizer : t.tournaments.waitingOpponent(opponent?.name ?? "?")}
+            {scoreLabel(mine, t)} · {match.confirmedOnSite ? t("tournaments.waitingOrganizer") : t("tournaments.waitingOpponent", { name: opponent?.name ?? "?" })}
           </p>
           {!match.confirmedOnSite ? (
             <>
-              {opponent && !opponent.hasApp ? <p className="text-xs text-muted">{t.tournaments.confirmOnSiteHint(opponent.name)}</p> : null}
+              {opponent && !opponent.hasApp ? <p className="text-xs text-muted">{t("tournaments.confirmOnSiteHint", { name: opponent.name })}</p> : null}
               <button type="button" className={`${primaryClass} h-12`} disabled={pending} onClick={() => void send({ type: "confirmOnSite", matchId: match.id })}>
-                {t.tournaments.confirmOnSite(opponent?.name ?? "?")}
+                {t("tournaments.confirmOnSite", { name: opponent?.name ?? "?" })}
               </button>
               <button type="button" className={buttonClass} disabled={pending} onClick={() => setEditing(true)}>
-                {t.tournaments.editDeclaration}
+                {t("tournaments.editDeclaration")}
               </button>
             </>
           ) : null}
@@ -320,7 +320,7 @@ function MyMatch({
 
       {running && match.playerBId !== null && (match.status === "en_cours" || editing) ? (
         <div className="flex flex-col gap-2">
-          <h3 className="hud-label">{t.tournaments.declareTitle}</h3>
+          <h3 className="hud-label">{t("tournaments.declareTitle")}</h3>
           <ScorePicker
             matchType={view.tournament.matchType}
             phase={round.phase}
@@ -339,21 +339,21 @@ function MyMatch({
 
 /** Appariements de la ronde visible, pour tous. */
 function PublicRound({ view }: { view: TournamentView }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const round = visibleRound(view);
   if (!round) return null;
-  const name = (id: string | null) => (id ? (view.players.find((player) => player.id === id)?.name ?? "?") : t.tournaments.bye);
+  const name = (id: string | null) => (id ? (view.players.find((player) => player.id === id)?.name ?? "?") : t("tournaments.bye"));
   return (
     <section className={panelClass}>
       <h2 className="mb-2 text-lg">
-        {t.tournaments.pairings} · {roundTitle(round, t)}
+        {t("tournaments.pairings")} · {roundTitle(round, t)}
       </h2>
       <ul className="flex flex-col text-sm">
         {round.matches.map((match) => (
           <li key={match.id} className={`flex flex-wrap items-center justify-between gap-2 border-t border-line py-2 ${match.playerAId === view.me?.id || match.playerBId === view.me?.id ? "text-yellow" : ""}`}>
             <span>
-              <span className="hud-label mr-2">{t.tournaments.table(match.table)}</span>
-              {name(match.playerAId)} <span className="text-muted">{t.tournaments.vs}</span> {name(match.playerBId)}
+              <span className="hud-label mr-2">{t("tournaments.table", { n: match.table })}</span>
+              {name(match.playerAId)} <span className="text-muted">{t("tournaments.vs")}</span> {name(match.playerBId)}
             </span>
             <span className="font-mono">{scoreLabel(matchResult(match), t)}</span>
           </li>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useI18n } from "@/components/LocaleProvider";
+import { useExampleNote } from "@/lib/rules/use-rules";
 import type { ExampleCard } from "@/lib/rules/examples";
 import { CardImage } from "@/components/CardImage";
 
@@ -21,7 +21,7 @@ export function RulesExampleCard({
   spent?: boolean;
   label?: string;
 }) {
-  const { locale } = useI18n();
+  const exampleNote = useExampleNote();
   const width = size === "lg" ? "w-[7.5rem] sm:w-36" : size === "sm" ? "w-14 sm:w-16" : "w-[5.5rem] sm:w-24";
 
   const [hover, setHover] = useState(false);
@@ -70,7 +70,7 @@ export function RulesExampleCard({
     />
   );
 
-  const zoomNote = locale === "fr" ? card.noteFr : card.noteEn;
+  const zoomNote = exampleNote(card);
 
   return (
     <figure className={`flex flex-col gap-1.5 ${width}`}>

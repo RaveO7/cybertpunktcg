@@ -1,24 +1,27 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import NextLink from "next/link";
+import { usePathname as useBrowserPathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
-import { useI18n } from "@/components/LocaleProvider";
-import { useLocalizedHref } from "@/components/site/useLocalizedHref";
-import { LOCALES, type Locale } from "@/lib/i18n/messages";
+import { chooseLocale } from "@/i18n/choose-locale";
+import { LANGUAGES, type Locale } from "@/i18n/config";
+import { Link, useRouter, type Href } from "@/i18n/navigation";
+import { useInternalPathname } from "@/i18n/useInternalPathname";
 import { isInHorizontalScroller } from "@/lib/swipe";
 
 type NavIcon = "dashboard" | "cards" | "investment" | "decks" | "tournaments" | "wishlist" | "howto" | "binder";
 
-type NavLink = { href: string; label: string; match: string; icon: NavIcon; badge?: number };
+type NavLink = { href: Href; label: string; match: string; icon: NavIcon; badge?: number };
 
 function useNavigation() {
-  const pathname = usePathname();
+  // Chemin interne (segments français, sans préfixe de langue) : repère l'onglet actif dans toutes les langues.
+  const pathname = useInternalPathname();
   const { cardsHref } = useBrowseSelection();
   const { user, ready } = useCollection();
-  const { t } = useI18n();
+  const t = useTranslations();
   const sharedMatch = pathname.match(/^\/classeur\/([^/]+)/);
   const isSharedView = Boolean(sharedMatch);
   const shareToken = sharedMatch?.[1] ?? null;
@@ -26,39 +29,42 @@ function useNavigation() {
 
   const links: NavLink[] = isSharedView && shareToken
     ? [
-        { href: `/classeur/${shareToken}`, label: t.share.binderNav, match: `/classeur/${shareToken}`, icon: "binder" },
         {
-          href: `/classeur/${shareToken}/cartes`,
-          label: t.nav.cards,
+          href: { pathname: "/classeur/[token]", params: { token: shareToken } },
+          label: t("share.binderNav"),
+          match: `/classeur/${shareToken}`,
+          icon: "binder",
+        },
+        {
+          href: { pathname: "/classeur/[token]/cartes", params: { token: shareToken } },
+          label: t("nav.cards"),
           match: `/classeur/${shareToken}/cartes`,
           icon: "cards",
         },
       ]
     : [
-        { href: "/", label: t.nav.dashboard, match: "/", icon: "dashboard" },
-        { href: cardsHref, label: t.nav.cards, match: "/cards", icon: "cards" },
-        { href: "/investissement", label: t.nav.investment, match: "/investissement", icon: "investment" },
-        { href: "/decks", label: t.nav.decks, match: "/decks", icon: "decks" },
-        { href: "/tournois", label: t.nav.tournaments, match: "/tournois", icon: "tournaments" },
+        { href: "/", label: t("nav.dashboard"), match: "/", icon: "dashboard" },
+        { href: cardsHref, label: t("nav.cards"), match: "/cards", icon: "cards" },
+        { href: "/investissement", label: t("nav.investment"), match: "/investissement", icon: "investment" },
+        { href: "/decks", label: t("nav.decks"), match: "/decks", icon: "decks" },
+        { href: "/tournois", label: t("nav.tournaments"), match: "/tournois", icon: "tournaments" },
         // Page /souhaits masquée pour l'instant. Pour la réafficher, lire `const { unseenAlerts } = useWishlist();`
         // en haut du hook puis ajouter :
         // { href: "/souhaits", label: t.nav.wishlist, match: "/souhaits", icon: "wishlist", badge: unseenAlerts },
-        { href: "/comment-jouer", label: t.nav.howto, match: "/comment-jouer", icon: "howto" },
+        { href: "/comment-jouer", label: t("nav.howto"), match: "/comment-jouer", icon: "howto" },
       ];
 
   return { pathname, user, t, isSharedView, shareToken, showNav, links };
 }
 
 /**
- * Choix de la langue parmi toutes celles de l'application. Sur une page publique bilingue, le français
- * et l'anglais mènent à la version correspondante ; les autres langues sont enregistrées (application
- * après connexion) et affichent la version anglaise. Le `<select>` natif, transparent, couvre le
- * bouton affiché : clavier, lecteurs d'écran et sélecteur du téléphone fonctionnent tels quels.
+ * Choix de la langue parmi toutes celles du site. Sur une page publique, mène à la même page dans la
+ * langue choisie ; ailleurs, change la langue de l'application. Le `<select>` natif, transparent,
+ * couvre le bouton affiché : clavier, lecteurs d'écran et sélecteur du téléphone fonctionnent tels quels.
  */
 function LanguageSelect() {
-  const { t, locale, routeLocale, preferredLocale, setLocale } = useI18n();
-  // Page anglaise lue avec l'allemand, l'espagnol ou l'italien choisi : on montre ce choix.
-  const current = routeLocale === "en" && preferredLocale !== "fr" ? preferredLocale : locale;
+  const t = useTranslations();
+  const current = useLocale();
   return (
     <label className="relative inline-flex h-9 shrink-0 items-center gap-1 border border-line px-2 font-mono text-xs uppercase text-muted focus-within:border-cyan hover:border-cyan hover:text-foreground">
       <span aria-hidden="true">{current}</span>
@@ -67,12 +73,15 @@ function LanguageSelect() {
       </svg>
       <select
         value={current}
-        onChange={(event) => setLocale(event.target.value as Locale)}
-        aria-label={t.nav.language}
+        onChange={(event) => {
+          const next = event.target.value as Locale;
+          if (next !== current) chooseLocale(next);
+        }}
+        aria-label={t("nav.language")}
         className="absolute inset-0 cursor-pointer appearance-none opacity-0"
       >
-        {LOCALES.map((entry) => (
-          <option key={entry.id} value={entry.id} lang={entry.id}>
+        {LANGUAGES.map((entry) => (
+          <option key={entry.code} value={entry.code} lang={entry.code}>
             {entry.label}
           </option>
         ))}
@@ -82,14 +91,15 @@ function LanguageSelect() {
 }
 
 /** Barre des visiteurs sans compte : tout est sur l'accueil, donc seulement la langue et la connexion. */
-function VisitorNav({ pathname }: { pathname: string }) {
-  const { t } = useI18n();
-  const loginHref = `/connexion?next=${encodeURIComponent(pathname)}`;
+function VisitorNav() {
+  const t = useTranslations();
+  // Retour après connexion : l'URL affichée, dans sa langue.
+  const next = useBrowserPathname();
   return (
     <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-1 gap-y-1">
       <LanguageSelect />
-      <Link href={loginHref} rel="nofollow" className="inline-flex h-9 items-center border border-cyan px-3 text-sm text-cyan hover:bg-cyan/10">
-        {t.nav.login}
+      <Link href={{ pathname: "/connexion", query: { next } }} rel="nofollow" className="inline-flex h-9 items-center border border-cyan px-3 text-sm text-cyan hover:bg-cyan/10">
+        {t("nav.login")}
       </Link>
     </div>
   );
@@ -97,12 +107,10 @@ function VisitorNav({ pathname }: { pathname: string }) {
 
 export function Header() {
   const { pathname, user, t, isSharedView, shareToken, showNav, links } = useNavigation();
-  const { routeLocale } = useI18n();
-  const href = useLocalizedHref();
   // Visiteur sur une page publique (aussi au rendu serveur, pour les liens internes) : navigation publique.
   const showVisitorNav = !user && !isSharedView && !showNav && pathname !== "/connexion";
-  // Page d'où l'on a ouvert les paramètres : un second clic sur le bouton y ramène.
-  const [settingsReturn, setSettingsReturn] = useState("/");
+  // Page d'où l'on a ouvert les paramètres (URL complète, dans sa langue) : un second clic y ramène.
+  const [settingsReturn, setSettingsReturn] = useState<string | null>(null);
   const inSettings = pathname === "/parametres";
 
   const actionClass =
@@ -111,12 +119,15 @@ export function Header() {
   return (
     <header className="pt-safe px-safe relative z-30 shrink-0 border-b border-line bg-background">
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-2">
-        <Link href={isSharedView && shareToken ? `/classeur/${shareToken}` : routeLocale ? href("home") : "/"} className="shrink-0 text-sm text-yellow">
+        <Link
+          href={isSharedView && shareToken ? { pathname: "/classeur/[token]", params: { token: shareToken } } : "/"}
+          className="shrink-0 text-sm text-yellow"
+        >
           TCG Tracker
         </Link>
         {showNav ? (
           // Sur téléphone, la navigation passe dans la barre d'onglets du bas (BottomNav).
-          <nav className="ml-auto hidden border border-line sm:flex" aria-label={t.common.sections}>
+          <nav className="ml-auto hidden border border-line sm:flex" aria-label={t("common.sections")}>
             {links.map((link) => {
               const active = pathname === link.match;
               return (
@@ -127,27 +138,39 @@ export function Header() {
                   aria-current={active ? "page" : undefined}
                 >
                   {link.label}
-                  <NavBadge count={link.badge} label={t.wishlist.newAlerts} />
+                  <NavBadge count={link.badge} label={(n) => t("wishlist.newAlerts", { n })} />
                 </Link>
               );
             })}
           </nav>
         ) : showVisitorNav ? (
-          <VisitorNav pathname={pathname} />
+          <VisitorNav />
         ) : null}
         {user && !isSharedView ? (
-          <Link
-            href={inSettings ? settingsReturn : "/parametres"}
-            onClick={() => {
-              if (!inSettings) setSettingsReturn(window.location.pathname + window.location.search);
-            }}
-            className={`${actionClass} ml-auto sm:ml-0 ${inSettings ? "border-yellow bg-yellow text-black hover:border-yellow hover:text-black" : ""}`}
-            aria-label={t.common.settings}
-            title={t.common.settings}
-            aria-pressed={inSettings}
-          >
-            <SettingsIcon />
-          </Link>
+          inSettings && settingsReturn ? (
+            <NextLink
+              href={settingsReturn}
+              className={`${actionClass} ml-auto border-yellow bg-yellow text-black hover:border-yellow hover:text-black sm:ml-0`}
+              aria-label={t("common.settings")}
+              title={t("common.settings")}
+              aria-pressed
+            >
+              <SettingsIcon />
+            </NextLink>
+          ) : (
+            <Link
+              href={inSettings ? "/" : "/parametres"}
+              onClick={() => {
+                if (!inSettings) setSettingsReturn(window.location.pathname + window.location.search);
+              }}
+              className={`${actionClass} ml-auto sm:ml-0 ${inSettings ? "border-yellow bg-yellow text-black hover:border-yellow hover:text-black" : ""}`}
+              aria-label={t("common.settings")}
+              title={t("common.settings")}
+              aria-pressed={inSettings}
+            >
+              <SettingsIcon />
+            </Link>
+          )
         ) : null}
       </div>
     </header>
@@ -174,7 +197,7 @@ export function BottomNav() {
   return (
     <nav
       className="pb-safe px-safe relative z-30 shrink-0 border-t border-line bg-background/95 backdrop-blur sm:hidden"
-      aria-label={t.common.sections}
+      aria-label={t("common.sections")}
     >
       <ul className="flex h-[3.75rem]">
         {links.map((link) => {
@@ -191,7 +214,7 @@ export function BottomNav() {
                 {active ? <span className="absolute inset-x-4 top-0 h-0.5 bg-yellow" aria-hidden="true" /> : null}
                 <span className="relative">
                   <NavGlyph icon={link.icon} />
-                  <NavBadge count={link.badge} label={t.wishlist.newAlerts} floating />
+                  <NavBadge count={link.badge} label={(n) => t("wishlist.newAlerts", { n })} floating />
                 </span>
                 <span className="max-w-full truncate text-[11px] leading-none">{link.label}</span>
               </Link>

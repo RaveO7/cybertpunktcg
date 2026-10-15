@@ -5,8 +5,29 @@ import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, 
 
 export type ShowcaseFeature = { key: string; title: string; body: string; points: string[]; href: string; external: boolean };
 
+/** Textes des aperçus (bloc landing.showcase). */
+export type ShowcaseText = {
+  completion: string;
+  value: string;
+  legal: string[];
+  missing: string;
+  round: string;
+  table: string;
+  live: string;
+  verified: string;
+  nextEvent: string;
+  store: string;
+  gigs: string;
+  win: string;
+  price: string;
+  red: string;
+  green: string;
+};
+
 export type ShowcaseData = {
-  locale: "fr" | "en";
+  text: ShowcaseText;
+  /** Coût d'exemple des cartes manquantes, au format de la langue. */
+  missingCost: string;
   legends: { name: string; thumb: string }[];
   sample: { name: string; thumb: string; cost: number | null; power: number | null; ram: number | null; price: string | null } | null;
   totalCards: number;
@@ -265,43 +286,6 @@ export function FeatureShowcase({
   );
 }
 
-const MOCK = {
-  fr: {
-    completion: "Complétion",
-    value: "Valeur",
-    legal: ["3 Légendes", "45 cartes", "RAM respectée"],
-    missing: "Manque 3 cartes",
-    round: "Ronde 3 / 5",
-    table: "Table",
-    live: "Classement en direct",
-    verified: "Vérifiée",
-    nextEvent: "Prochain tournoi : samedi 14 h",
-    store: "Boutique de Night City",
-    gigs: "Gigs",
-    win: "7 Gigs au début de votre tour : victoire",
-    price: "Prix",
-    red: "Rouge",
-    green: "Vert",
-  },
-  en: {
-    completion: "Completion",
-    value: "Value",
-    legal: ["3 Legends", "45 cards", "RAM within limit"],
-    missing: "3 cards missing",
-    round: "Round 3 / 5",
-    table: "Table",
-    live: "Live standings",
-    verified: "Verified",
-    nextEvent: "Next tournament: Saturday 2 pm",
-    store: "Night City store",
-    gigs: "Gigs",
-    win: "7 Gigs at the start of your turn: you win",
-    price: "Price",
-    red: "Red",
-    green: "Green",
-  },
-};
-
 function Segments({ total, filled, tone = "yellow" }: { total: number; filled: number; tone?: "yellow" | "cyan" | "red" }) {
   const color = tone === "yellow" ? "var(--yellow)" : tone === "cyan" ? "var(--cyan)" : "var(--cp-red)";
   return (
@@ -318,7 +302,7 @@ function HudLabel({ children }: { children: ReactNode }) {
 }
 
 function Visual({ feature, data }: { feature: string; data: ShowcaseData }) {
-  const m = MOCK[data.locale];
+  const m = data.text;
   switch (feature) {
     case "collection": {
       const owned = Math.round(data.totalCards * 0.78);
@@ -386,7 +370,7 @@ function Visual({ feature, data }: { feature: string; data: ShowcaseData }) {
               </li>
             ))}
           </ul>
-          <p className="font-mono text-sm text-yellow">{m.missing} · 7,80 €</p>
+          <p className="font-mono text-sm text-yellow">{m.missing} · {data.missingCost}</p>
         </div>
       );
     case "tournaments": {

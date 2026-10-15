@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { useI18n } from "@/components/LocaleProvider";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 /** Écran plein (erreur, 404) dans le style des pages du classeur partagé. */
 export function StatusScreen({
@@ -16,7 +16,7 @@ export function StatusScreen({
   body: string;
   children?: ReactNode;
 }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
       <p className="font-mono text-xs tracking-[0.18em] text-cyan">{eyebrow}</p>
@@ -28,7 +28,7 @@ export function StatusScreen({
           href="/"
           className="inline-flex h-12 items-center border border-line px-4 text-sm text-muted hover:border-cyan hover:text-foreground"
         >
-          {t.errors.home}
+          {t("errors.home")}
         </Link>
       </div>
     </div>

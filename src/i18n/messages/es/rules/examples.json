@@ -1,0 +1,15 @@
+{
+  "notes": {
+    "legendJackie": "Leyenda con Go Solo: puede entrar al Campo como Unidad.",
+    "legendJohnny": "Leyenda boca arriba en la zona de Leyendas.",
+    "legendJudy": "Leyenda azul: potencia los Programas BRAINDANCE.",
+    "unitJackie": "Unidad en el Campo: ataca y arrebata Gigs.",
+    "unitBlocker": "Unidad con Blocker: desvía un ataque.",
+    "unitAdrenaline": "Adrenaline: puede atacar el turno en que se juega.",
+    "unitSmasher": "Power 15 → arrebata 2 Gigs al atacar la zona de Gigs.",
+    "programDetonate": "Programa con Quick: se puede jugar como reacción a un ataque.",
+    "programReaper": "Programa: efecto inmediato y luego al descarte.",
+    "gearConverter": "Gear: se equipa a una Unidad o Leyenda.",
+    "eddieFace": "Vendida boca abajo = 1 Eddie en la zona de Eddies."
+  }
+}

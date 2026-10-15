@@ -1,0 +1,14 @@
+{
+  "eyebrow": "CLASSEUR PARTAGÉ",
+  "binderNav": "Classeur",
+  "title": "Classeur de {name}",
+  "subtitle": "Consultation en lecture seule — aucune modification possible.",
+  "cardsBanner": "Cartes de {name} · lecture seule",
+  "openOwned": "Voir les cartes possédées",
+  "openAll": "Parcourir tout le catalogue",
+  "editionsNote": "Progression sur Welcome to Night City",
+  "marketHint": "{n} exemplaire(s) avec prix marché.",
+  "notFoundTitle": "Lien introuvable",
+  "notFoundBody": "Ce lien a été révoqué ou n’existe pas.",
+  "loadFailed": "Impossible de charger ce classeur."
+}

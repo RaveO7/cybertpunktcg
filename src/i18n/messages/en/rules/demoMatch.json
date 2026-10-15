@@ -1,0 +1,240 @@
+{
+  "table": {
+    "eyebrow": "DEMO DUEL",
+    "title": "Your first match",
+    "subtitle": "Hover a card (long-press on mobile) to zoom. Click pulsing targets — like an online client.",
+    "tipLabel": "Coach",
+    "yourHand": "Hand",
+    "endTurn": "End turn",
+    "begin": "Start match",
+    "next": "Next",
+    "rivalPhase": "Rival’s turn",
+    "restart": "Replay",
+    "openRules": "Detailed rules",
+    "exit": "Exit tutorial",
+    "fixer": "Fixer",
+    "yourGigs": "Your Gigs",
+    "rivalGigs": "Rival Gigs",
+    "legends": "Legends",
+    "eddies": "Eddies",
+    "yourField": "Your Field",
+    "rivalField": "Rival Field",
+    "deck": "Deck",
+    "trash": "Trash",
+    "spent": "spent",
+    "paying": "Paying",
+    "wrong": "Not now — follow the pulsing target.",
+    "fx": {
+      "begin": "Your move",
+      "gig": "Gig gained",
+      "streetCred": "Street Cred {face}",
+      "sell": "+1 €$",
+      "legend": "Legend revealed",
+      "deployed": "Deployed",
+      "equip": "Gear equipped",
+      "steal": "Gig stolen!",
+      "fight": "Fight!",
+      "rivalTurn": "Rival’s turn",
+      "rivalPlay": "Rival plays",
+      "attack": "Attack!",
+      "lost": "Gig lost",
+      "block": "Blocked!",
+      "win": "Demo complete",
+      "winSub": "3 Gigs — you need 7 at the start of your turn to win"
+    },
+    "turnYou": "Turn {n}",
+    "turnRival": "Rival · Turn {n}"
+  },
+  "steps": {
+    "begin": {
+      "tip": "You go second. Click to start the match.",
+      "title": "Welcome to the table",
+      "explain": "You go second. Goal: 7 Gigs at the start of your turn. Hover cards (long-press on mobile) to read their text. Next we’ll cover card types and zones."
+    },
+    "intro-types": {
+      "tip": "Next: card types.",
+      "title": "4 card types",
+      "explain": "Unit = crew on the Field (attacks). Program = one-shot effect (often trashed after). Gear = equips a Unit/Legend. Legend = 3 deck characters (left zone). Eddies = money made by selling."
+    },
+    "intro-legends": {
+      "tip": "Look at the Legends zone.",
+      "title": "Your 3 Legends",
+      "explain": "They start face-down. Once per turn you can Call a Legend (1 €$) to flip one at random. Face-up or down, a Legend can also pay 1 €$ (like an Eddie)."
+    },
+    "t1-die": {
+      "tip": "Click the Fixer d6.",
+      "title": "Gain a Gig",
+      "explain": "Each turn: Ready → draw → Gig. Take a Fixer die (d20 always last), roll it, put it in your Gig area. 1 die = 1 Gig. The face = Street Cred."
+    },
+    "t1-sell": {
+      "tip": "Click Afterparty to sell it.",
+      "title": "Sell → 1 Eddie",
+      "explain": "Once per turn: sell a card with the sell tag. It goes face-down to Eddies and is always worth 1 €$ (not its printed cost)."
+    },
+    "t1-play": {
+      "tip": "Click Meredith to play her.",
+      "title": "Play a Unit (cost 4)",
+      "explain": "The cost is top-left: Meredith Stout costs 4 €$. Pick her from hand, then pay 4 €$: your Eddie, then your 3 Legends (1 €$ each)."
+    },
+    "t1-pay-eddie": {
+      "tip": "Click your Eddie to pay 1 €$.",
+      "title": "Pay with an Eddie",
+      "explain": "Each face-down Eddie is worth 1 €$. Click it to spend (it turns). It readies at the start of your next turn."
+    },
+    "t1-pay-legend-1": {
+      "tip": "Click a Legend (3 €$ left).",
+      "title": "Finish with Legends",
+      "explain": "3 €$ left. Legends also pay 1 €$ each when spent. Click a Legend."
+    },
+    "t1-pay-legend-2": {
+      "tip": "Another Legend (2 €$ left).",
+      "title": "Second Legend",
+      "explain": "Another 1 €$ paid. 1 €$ will remain: your last Legend."
+    },
+    "t1-pay-legend-3": {
+      "tip": "Last Legend — Meredith enters.",
+      "title": "Last €$ → Unit enters",
+      "explain": "Meredith enters your Field ready, but with Lag: without Adrenaline, a Unit can’t attack the turn it’s played. She has Blocker: she can protect your Gigs during the Rival’s turn."
+    },
+    "t1-end": {
+      "tip": "End turn.",
+      "title": "Pass the turn",
+      "explain": "All your €$ is spent and Meredith has Lag: nothing else to do. End your turn: the Rival then takes their Start and Main phases."
+    },
+    "r1-ready": {
+      "tip": "Next: Rival Start Phase.",
+      "title": "Rival Start Phase",
+      "explain": "Like you, the Rival readies spent cards (their Meredith stands up), draws a card, then takes a Fixer die for a Gig."
+    },
+    "r1-gig": {
+      "tip": "Next: Rival Gig.",
+      "title": "Rival gains a Gig",
+      "explain": "They roll a d8 from the Fixer and place an 8 in their Gig area. Each Gig counts toward winning."
+    },
+    "r1-play": {
+      "tip": "Next: Rival plays a Unit.",
+      "title": "Main Phase — Jackie",
+      "explain": "The Rival pays the cost and plays Jackie Welles (Power 8) onto their Field. She enters ready but with Lag: she can’t attack this turn."
+    },
+    "r1-attack": {
+      "tip": "Next: declare attack.",
+      "title": "Rival Meredith attacks",
+      "explain": "The Rival spends their Meredith (Power 5), in play since the start of their turn, and targets your Gig area. Your Meredith could block, but 5 vs 5 is a tie: both would go to Trash. You let it through."
+    },
+    "r1-steal": {
+      "tip": "Next: Gig stolen.",
+      "title": "You lose a Gig",
+      "explain": "Successful Gig attack: one die moves from your area to the Rival’s (Power 5 → 1 Gig stolen)."
+    },
+    "t2-die": {
+      "tip": "Click the d8.",
+      "title": "Start Phase (Turn 2)",
+      "explain": "Ready (cards upright) + draw + new Gig. Click the d8: the d20 is always last."
+    },
+    "t2-sell": {
+      "tip": "Sell Detonate (a Program).",
+      "title": "Program → Eddie",
+      "explain": "Detonate is a Program: in a real game you can also play it for its effect (then Trash). Here we sell it for 1 Eddie — you’ll have 2 Eddies to pay for Gear."
+    },
+    "t2-gear": {
+      "tip": "Play the Gear (cost 2).",
+      "title": "Equip Gear",
+      "explain": "Adrenaline Converter costs 2 €$ and gives +3 Power to the Unit carrying it. Click the Gear, then pay with your 2 Eddies."
+    },
+    "t2-gear-pay-1": {
+      "tip": "Spend an Eddie (1/2).",
+      "title": "Eddies first",
+      "explain": "Usually spend Eddies before Legends. Click a ready Eddie."
+    },
+    "t2-gear-pay-2": {
+      "tip": "Spend the 2nd Eddie — equip.",
+      "title": "Gear on Meredith",
+      "explain": "The Gear attaches to Meredith: Power 5 + 3 = 8. It follows her if she moves zones."
+    },
+    "t2-call-pay": {
+      "tip": "Call a Legend: spend 1 Legend.",
+      "title": "Call a Legend (once/turn)",
+      "explain": "Your Eddies are spent but your 3 Legends are ready. Spend one (1 €$) to Call a Legend: flip a Legend face-up without peeking."
+    },
+    "t2-call-flip": {
+      "tip": "Click a face-down Legend.",
+      "title": "Flip a Legend",
+      "explain": "The Legend flips face-up. Resolve its {Call} effects. It can still pay 1 €$ later."
+    },
+    "t2-end": {
+      "tip": "End turn.",
+      "title": "End of Turn 2",
+      "explain": "Meredith could attack, but she’d stay spent during the Rival’s turn. Keep her ready: with Blocker and 8 Power, she protects your Gigs."
+    },
+    "r2-ready": {
+      "tip": "Next: Rival turn.",
+      "title": "Rival Start Phase",
+      "explain": "New Rival turn: their Meredith readies again. Jackie stayed ready, so she couldn’t be attacked."
+    },
+    "r2-gig": {
+      "tip": "Next: Rival Gig.",
+      "title": "Rival gains a Gig",
+      "explain": "They draw, then roll a d4 from the Fixer: a 4 joins their Gig area."
+    },
+    "r2-attack": {
+      "tip": "Next: attack on your Gigs.",
+      "title": "Attack on your Gigs",
+      "explain": "Rival Meredith (Power 5) spends and targets your Gig area. You can react with a ready Blocker — your Meredith!"
+    },
+    "r2-block": {
+      "tip": "Click Meredith to block.",
+      "title": "Blocker reaction",
+      "explain": "Spend Meredith to redirect the attack onto her. Fight: 8 (5 + Gear) vs 5, the Rival’s Meredith goes to Trash. No Gig is stolen — this is your key defense."
+    },
+    "t3-die": {
+      "tip": "Click the d10.",
+      "title": "Turn 3 — new Gig",
+      "explain": "Ready → draw → Gig. Meredith, your Eddies and your Legends are ready again."
+    },
+    "t3-play": {
+      "tip": "Play Riding Nomad (cost 5).",
+      "title": "An Adrenaline Unit",
+      "explain": "Riding Nomad costs 5 €$: your 2 Eddies + your 3 Legends. It has Adrenaline: it can attack this very turn. Click Nomad."
+    },
+    "t3-pay-eddie-1": {
+      "tip": "Spend an Eddie (1/5).",
+      "title": "Pay for Nomad",
+      "explain": "Click a ready Eddie."
+    },
+    "t3-pay-eddie-2": {
+      "tip": "Spend the 2nd Eddie (2/5).",
+      "title": "Second Eddie",
+      "explain": "Your 2nd Eddie pays another 1 €$. 3 €$ left to pay with your Legends."
+    },
+    "t3-pay-legend-1": {
+      "tip": "Click a Legend (3/5).",
+      "title": "Then Legends",
+      "explain": "Face-up or down, each Legend pays 1 €$. Click a Legend."
+    },
+    "t3-pay-legend-2": {
+      "tip": "Another Legend (4/5).",
+      "title": "1 €$ to go",
+      "explain": "Another 1 €$ paid. One last Legend and Nomad enters."
+    },
+    "t3-pay-legend-3": {
+      "tip": "Last Legend — Nomad enters.",
+      "title": "Nomad enters",
+      "explain": "Paid. Thanks to Adrenaline, Nomad ignores Lag: it can attack right away."
+    },
+    "t3-atk-select": {
+      "tip": "Click Nomad to attack.",
+      "title": "Declare the attacker",
+      "explain": "To attack, spend a ready Unit (turn it). Target: a spent rival Unit, or the rival Gig area. Jackie is ready, so she can’t be attacked: go for the Gigs."
+    },
+    "t3-atk-target": {
+      "tip": "Click Rival Gigs.",
+      "title": "Steal a Gig",
+      "explain": "Attacking the Gig area steals dice: Power 1+ → 1 Gig, 10+ → 2, 20+ → 3. Nomad (P4) steals 1 Gig. A real game continues until 7 Gigs at the start of your turn."
+    },
+    "done": {
+      "tip": "Demo complete.",
+      "title": "You’ve got the basics",
+      "explain": "You’ve seen: types (Unit/Program/Gear/Legend), Eddies, costs, Lag and Adrenaline, Call a Legend, attack, Blocker, fights, Gear. For RAM, deckbuilding and all keywords → Detailed rules."
+    }
+  }
+}

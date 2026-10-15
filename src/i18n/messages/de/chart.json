@@ -1,0 +1,6 @@
+{
+  "label": "Trend",
+  "empty": "Noch keine Historie. Preisimport über mehrere Tage ausführen.",
+  "period": "Über den angezeigten Zeitraum",
+  "days": "{n, plural, one {# Tag} other {# Tage}}"
+}

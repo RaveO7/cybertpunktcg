@@ -1,0 +1,11 @@
+{
+  "eyebrow": "FEHLER",
+  "title": "Ein Fehler ist aufgetreten",
+  "body": "Diese Seite konnte nicht geladen werden. Bitte versuche es gleich erneut.",
+  "retry": "Erneut versuchen",
+  "home": "Zur Startseite",
+  "notFoundEyebrow": "404",
+  "notFoundTitle": "Seite nicht gefunden",
+  "notFoundBody": "Diese Seite existiert nicht oder wurde verschoben.",
+  "reference": "Referenz"
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useCollection } from "@/components/CollectionProvider";
 
 /**
@@ -18,11 +18,11 @@ export function LandingActions({ register, login, openApp }: { register: string;
   }
   return (
     <>
-      <Link href="/connexion?mode=register" rel="nofollow" className="cp-btn">
+      <Link href={{ pathname: "/connexion", query: { mode: "register" } }} rel="nofollow" className="cp-btn">
         {register}
       </Link>
       {login ? (
-        <Link href="/connexion?mode=login" rel="nofollow" className="cp-btn cp-btn-ghost">
+        <Link href={{ pathname: "/connexion", query: { mode: "login" } }} rel="nofollow" className="cp-btn cp-btn-ghost">
           {login}
         </Link>
       ) : null}

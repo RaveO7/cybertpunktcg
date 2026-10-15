@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import { useI18n } from "@/components/LocaleProvider";
+import { useTranslations } from "next-intl";
 
 function subscribe(onChange: () => void) {
   window.addEventListener("online", onChange);
@@ -32,11 +32,11 @@ export function ServiceWorkerRegister() {
 
 export function OfflineBanner() {
   const offline = useIsOffline();
-  const { t } = useI18n();
+  const t = useTranslations();
   if (!offline) return null;
   return (
     <p role="status" className="shrink-0 border-b border-yellow/40 bg-yellow/10 px-4 py-1.5 text-center text-xs text-yellow">
-      {t.offline.banner}
+      {t("offline.banner")}
     </p>
   );
 }

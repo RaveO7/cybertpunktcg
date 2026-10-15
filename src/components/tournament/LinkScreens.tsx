@@ -1,13 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useI18n } from "@/components/LocaleProvider";
+import { useTranslations } from "next-intl";
 import { ApiError, postJson } from "./hooks";
 import { panelClass, primaryClass } from "./ui";
+import { useRouter } from "@/i18n/navigation";
 
 function useLinkAction() {
-  const { t } = useI18n();
+  const t = useTranslations();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   async function run<T>(action: () => Promise<T>, then: (result: T) => void) {
@@ -16,7 +16,7 @@ function useLinkAction() {
     try {
       then(await action());
     } catch (error) {
-      setMessage(error instanceof ApiError && error.status === 0 ? t.tournaments.offline : error instanceof Error ? error.message : t.tournaments.failed);
+      setMessage(error instanceof ApiError && error.status === 0 ? t("tournaments.offline") : error instanceof Error ? error.message : t("tournaments.failed"));
       setPending(false);
     }
   }
@@ -28,11 +28,11 @@ function useLinkAction() {
  * le QR à usage unique).
  */
 export function ClaimScreen({ token }: { token: string }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const router = useRouter();
   const { pending, message, run } = useLinkAction();
   return (
-    <LinkPanel title={t.tournaments.claimTitle} hint={t.tournaments.claimHint} message={message}>
+    <LinkPanel title={t("tournaments.claimTitle")} hint={t("tournaments.claimHint")} message={message}>
       <button
         type="button"
         className={`${primaryClass} h-12`}
@@ -40,11 +40,11 @@ export function ClaimScreen({ token }: { token: string }) {
         onClick={() =>
           void run(
             () => postJson<{ code: string }>("/api/t/claim", { token }),
-            (result) => router.replace(`/t/${result.code}`),
+            (result) => router.replace({ pathname: "/t/[code]", params: { code: result.code } }),
           )
         }
       >
-        {t.tournaments.claimButton}
+        {t("tournaments.claimButton")}
       </button>
     </LinkPanel>
   );
@@ -52,11 +52,11 @@ export function ClaimScreen({ token }: { token: string }) {
 
 /** Invitation de co-organisateur (compte requis : la page est protégée). */
 export function InviteScreen({ token }: { token: string }) {
-  const { t } = useI18n();
+  const t = useTranslations();
   const router = useRouter();
   const { pending, message, run } = useLinkAction();
   return (
-    <LinkPanel title={t.tournaments.inviteTitle} hint={t.tournaments.inviteAcceptHint} message={message}>
+    <LinkPanel title={t("tournaments.inviteTitle")} hint={t("tournaments.inviteAcceptHint")} message={message}>
       <button
         type="button"
         className={`${primaryClass} h-12`}
@@ -64,11 +64,11 @@ export function InviteScreen({ token }: { token: string }) {
         onClick={() =>
           void run(
             () => postJson<{ tournamentId: string }>(`/api/tournaments/invite/${encodeURIComponent(token)}`, {}),
-            (result) => router.replace(`/tournois/${result.tournamentId}`),
+            (result) => router.replace({ pathname: "/tournois/[id]", params: { id: result.tournamentId } }),
           )
         }
       >
-        {t.tournaments.acceptInvite}
+        {t("tournaments.acceptInvite")}
       </button>
     </LinkPanel>
   );

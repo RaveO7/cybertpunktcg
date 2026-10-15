@@ -1,0 +1,602 @@
+{
+  "6th-street-recruits": {
+    "source": "When a friendly Unit steals a d6, increase a Gig by up to 6.",
+    "text": "Quando un'Unità alleata ruba un d6, aumenta un Gig fino a 6."
+  },
+  "adam-smasher-ender-of-legends": {
+    "source": "{Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. If it leaves the field, remove it from the game.)\n{Play} Defeat a rival Unit.",
+    "text": "{Go Solo} (Paga il costo di questa Leggenda per giocarla come Unità pronta. Può attaccare in questo turno. Se lascia il campo, rimuovila dalla partita.)\n{Play} Sconfiggi un'Unità rivale."
+  },
+  "adam-smasher-metal-over-meat": {
+    "source": "{Play} Defeat all other Units.",
+    "text": "{Play} Sconfiggi tutte le altre Unità."
+  },
+  "adrenaline-converter": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\nIf a Rival controls at least 2 more Gigs than you, this Unit has {Adrenaline}. (This Unit can attack the turn it's played.)",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\nSe un Rivale controlla almeno 2 Gig più di te, questa Unità ha {Adrenaline}. (Questa Unità può attaccare nel turno in cui viene giocata.)"
+  },
+  "afterparty-at-lizzie-s": {
+    "source": "Adjust a Gig by up to 1. If you control 2 or more Gigs with different values, draw 1.",
+    "text": "Regola un Gig fino a 1. Se controlli 2 o più Gig con valori diversi, pesca 1."
+  },
+  "all-is-lost": {
+    "source": "Trash 3. Add a Unit from among them to your hand.",
+    "text": "Getta 3. Aggiungi alla tua mano un'Unità tra quelle."
+  },
+  "alt-cunningham-mother-of-daemons": {
+    "source": "When a friendly equipped Unit or Legend is spent, draw 1.\nWhen a rival Unit would steal a Gig, you may discard 1 with cost equal to that Gig's value. If you do, the Gig isn't stolen.",
+    "text": "Quando un'Unità o Leggenda alleata equipaggiata viene esaurita, pesca 1.\nQuando un'Unità rivale sta per rubare un Gig, puoi scartare 1 carta con costo pari al valore di quel Gig. Se lo fai, il Gig non viene rubato."
+  },
+  "alt-cunningham-soulkiller-architect": {
+    "source": "1 €$, {Spend} Play a Program from your trash. Bottom-deck it after you play it. (You still pay its cost.)",
+    "text": "1 €$, {Spend} Gioca un Programma dai tuoi scarti. Mettilo in fondo al mazzo dopo averlo giocato. (Ne paghi comunque il costo.)"
+  },
+  "animals-wrecker": {
+    "source": "[Flavour Text] Takes a lot of juice to break bones like they do.",
+    "text": "[Flavour Text] Ci vuole un bel po' di energia per spezzare ossa come fanno loro."
+  },
+  "appetite-for-destruction": {
+    "source": "The next time a friendly Unit wins a fight by 3+ power this turn, it also steals a Gig.",
+    "text": "La prossima volta che un'Unità alleata vince un combattimento con 3+ Power di scarto in questo turno, ruba anche un Gig."
+  },
+  "arasaka-emergency-radioport": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\nWhen this Unit or Legend is spent, you may look at a friendly face-down Legend. If that Legend is ARASAKA or has {Go Solo}, you may Call it for free. (You may only Call a Legend once per turn.)",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\nQuando questa Unità o Leggenda viene esaurita, puoi guardare una Leggenda alleata a faccia in giù. Se quella Leggenda è ARASAKA o ha {Go Solo}, puoi fare Call su di essa gratuitamente. (Puoi fare Call su una Leggenda solo una volta per turno.)"
+  },
+  "augmented-negotiators": {
+    "source": "{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)\nWhen this Unit uses {Blocker}, a Rival discards 1.",
+    "text": "{Blocker} (Puoi esaurire questa Unità per deviare su di essa l'attacco di un'Unità rivale.)\nQuando questa Unità usa {Blocker}, un Rivale scarta 1."
+  },
+  "bonnie-and-clyde": {
+    "source": "Defeat a rival Unit with power 4 or less. You may defeat 2 instead if a Rival controls at least 2 Gigs more than you.",
+    "text": "Sconfiggi un'Unità rivale con Power 4 o meno. Puoi invece sconfiggerne 2 se un Rivale controlla almeno 2 Gig più di te."
+  },
+  "bootleg-black-sapphire-show": {
+    "source": "Sell the top card of your deck.\nIf you control a Gig with an even value and a Gig with an odd value, draw 2.",
+    "text": "Vendi la prima carta del tuo mazzo.\nSe controlli un Gig con valore pari e un Gig con valore dispari, pesca 2."
+  },
+  "caliber-totentanz-s-top-dog": {
+    "source": "{Play} Defeat a rival Unit with cost 2 or less.\n{Defeated} A Rival discards 1. If the card's cost equals the value of a friendly Gig, that Rival discards 1 more.",
+    "text": "{Play} Sconfiggi un'Unità rivale con costo 2 o meno.\n{Defeated} Un Rivale scarta 1. Se il costo della carta è pari al valore di un Gig alleato, quel Rivale scarta 1 carta in più."
+  },
+  "carnage-at-the-colosseum": {
+    "source": "Play this Program for -1 €$ for each friendly Gig with 8+ value, to a minimum of 1 €$.\nDefeat a rival Unit with less power than a friendly Unit.",
+    "text": "Gioca questo Programma per -1 €$ per ogni Gig alleato con valore 8+, fino a un minimo di 1 €$.\nSconfiggi un'Unità rivale con meno Power di un'Unità alleata."
+  },
+  "chrome-fang": {
+    "source": "{Play} Until your next turn, rival Units can't steal friendly Gigs with value higher than their power.",
+    "text": "{Play} Fino al tuo prossimo turno, le Unità rivali non possono rubare Gig alleati con valore superiore al loro Power."
+  },
+  "chrome-reverie": {
+    "source": "A rival Unit can't attack until your next turn. If you control a min Gig, you may Call a Legend for free. (You can only Call a Legend once per turn.)",
+    "text": "Un'Unità rivale non può attaccare fino al tuo prossimo turno. Se controlli un Gig al minimo, puoi fare Call su una Leggenda gratuitamente. (Puoi fare Call su una Leggenda solo una volta per turno.)"
+  },
+  "corpo-security": {
+    "source": "This Unit can't attack.\n{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)",
+    "text": "Questa Unità non può attaccare.\n{Blocker} (Puoi esaurire questa Unità per deviare su di essa l'attacco di un'Unità rivale.)"
+  },
+  "corporate-surveillance": {
+    "source": "Spend a rival Unit with cost 4 or less.",
+    "text": "Esaurisci un'Unità rivale con costo 4 o meno."
+  },
+  "cyberpsychosis": {
+    "source": "{Quick} Give an equipped Unit +3 power this turn for each of its equipped Gears. If that Unit steals or fights, defeat it at the end of this turn.",
+    "text": "{Quick} Dai a un'Unità equipaggiata +3 Power in questo turno per ogni Gear equipaggiato su di essa. Se quell'Unità ruba o combatte, sconfiggila alla fine di questo turno."
+  },
+  "deadman-transmitter": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\nIf this Unit would be defeated, defeat its \"DEADMAN TRANSMITTER\" instead.",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\nSe questa Unità sta per essere sconfitta, sconfiggi invece il suo «DEADMAN TRANSMITTER»."
+  },
+  "delamain-cab": {
+    "source": "At the end of your turn, if this Unit stole a Gig this turn, ready 1 Eddie.",
+    "text": "Alla fine del tuo turno, se questa Unità ha rubato un Gig in questo turno, prepara 1 Eddie."
+  },
+  "delamain-rideshare-ai": {
+    "source": "{Play} Draw 2.\n(Units with power 0 don't steal Gigs.)",
+    "text": "{Play} Pesca 2.\n(Le Unità con Power 0 non rubano Gig.)"
+  },
+  "detonate": {
+    "source": "{Quick} Defeat a rival Gear with power 2 or less.",
+    "text": "{Quick} Sconfiggi un Gear rivale con Power 2 o meno."
+  },
+  "dexter-deshawn-off-the-grid": {
+    "source": "{Call} Choose one effect.\nGive a friendly Unit +2 power this turn. // Draw 1.\n{Spend}: Increase a Gig by up to 2.",
+    "text": "{Call} Scegli un effetto.\nDai +2 Power a un'Unità alleata in questo turno. // Pesca 1.\n{Spend}: Aumenta un Gig fino a 2."
+  },
+  "dexter-deshawn-one-last-chance": {
+    "source": "{Play} {Attack} Adjust a Gig by up to 1.\n{Defeated} If your ☆ (Street Cred) differs from a Rival's by 10+, draw 2.",
+    "text": "{Play} {Attack} Regola un Gig fino a 1.\n{Defeated} Se la tua ☆ (Street Cred) differisce di 10+ da quella di un Rivale, pesca 2."
+  },
+  "don-t-fear-the-reaper": {
+    "source": "Spend all rival Units. Then, defeat a spent Unit.",
+    "text": "Esaurisci tutte le Unità rivali. Poi sconfiggi un'Unità esaurita."
+  },
+  "dum-dum-maelstrom-triggerman": {
+    "source": "{Call} You may defeat a friendly Gear. If you do, draw 2. Otherwise, draw 1.\n{Quick} 1 €$, {Spend} Give a friendly Unit +1 power this turn for each of its equipped Gear.",
+    "text": "{Call} Puoi sconfiggere un Gear alleato. Se lo fai, pesca 2. Altrimenti, pesca 1.\n{Quick} 1 €$, {Spend} Dai a un'Unità alleata +1 Power in questo turno per ogni Gear equipaggiato su di essa."
+  },
+  "dying-night-v-s-pistol": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\n{Attack} Decrease a Gig by up to 2. At the end of your turn, if this Unit is named \"V\", ready 2 Eddies.",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\n{Attack} Riduci un Gig fino a 2. Alla fine del tuo turno, se questa Unità si chiama «V», prepara 2 Eddie."
+  },
+  "el-sombrero-n-la-venganza-lenta": {
+    "source": "{Attack} You may pay 2 €$. If you do, this Unit gains power equal to a friendly max Gig this turn.",
+    "text": "{Attack} Puoi pagare 2 €$. Se lo fai, questa Unità ottiene in questo turno Power pari a un Gig alleato al massimo."
+  },
+  "emergency-atlus": {
+    "source": "\"Grab the policyholder, leave the rest for the city meatwagon.\"",
+    "text": "«Prendete l'assicurato, il resto lasciatelo al furgone mortuario della città.»"
+  },
+  "evelyn-parker-beautiful-enigma": {
+    "source": "When a friendly CORPO or GANGER Unit steals 1 or more Gigs, ready 1 Eddie.\n1 €$, {Spend} A rival Unit must attack next turn if it can.",
+    "text": "Quando un'Unità CORPO o GANGER alleata ruba 1 o più Gig, prepara 1 Eddie.\n1 €$, {Spend} Un'Unità rivale deve attaccare nel prossimo turno, se può."
+  },
+  "evelyn-parker-scheming-siren": {
+    "source": "{Attack} Draw 1. Then, if you have more ☆ (Street Cred) than a Rival, discard 1.\n(Units with power 0 don't steal Gigs.)",
+    "text": "{Attack} Pesca 1. Poi, se hai più ☆ (Street Cred) di un Rivale, scarta 1.\n(Le Unità con Power 0 non rubano Gig.)"
+  },
+  "field-operator": {
+    "source": "{Play} If your ☆ (Street Cred) is an even number, draw 1.",
+    "text": "{Play} Se la tua ☆ (Street Cred) è un numero pari, pesca 1."
+  },
+  "floor-it": {
+    "source": "{Quick} Give a rival Unit -1 power this turn. Draw 1.",
+    "text": "{Quick} Dai -1 Power a un'Unità rivale in questo turno. Pesca 1."
+  },
+  "fool-on-the-hill": {
+    "source": "Reveal the top 2 cards of your deck. A Rival chooses whether you add them to your hand or trash them. If you trash them, draw 2.",
+    "text": "Rivela le prime 2 carte del tuo mazzo. Un Rivale sceglie se le aggiungi alla tua mano o le getti. Se le getti, pesca 2."
+  },
+  "gilded-mato-n": {
+    "source": "{Play} You may defeat a friendly Gear. If you do, defeat a rival Unit with cost 3 or less.",
+    "text": "{Play} Puoi sconfiggere un Gear alleato. Se lo fai, sconfiggi un'Unità rivale con costo 3 o meno."
+  },
+  "gorilla-arms": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\nThe first time this Unit steals 1 or more Gigs each turn, steal a rival Gig with a value not shared by a friendly Gig.",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\nLa prima volta in ogni turno che questa Unità ruba 1 o più Gig, ruba un Gig rivale con un valore che nessun Gig alleato ha."
+  },
+  "goro-takemura-hands-unclean": {
+    "source": "{Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. If it leaves the field, remove it from the game.)\n{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)",
+    "text": "{Go Solo} (Paga il costo di questa Leggenda per giocarla come Unità pronta. Può attaccare in questo turno. Se lascia il campo, rimuovila dalla partita.)\n{Blocker} (Puoi esaurire questa Unità per deviare su di essa l'attacco di un'Unità rivale.)"
+  },
+  "goro-takemura-losing-his-way": {
+    "source": "{Attack} If all friendly Legends are face-up, this Unit has +5 power this turn.",
+    "text": "{Attack} Se tutte le Leggende alleate sono a faccia in su, questa Unità ha +5 Power in questo turno."
+  },
+  "goro-takemura-vengeful-bodyguard": {
+    "source": "{Quick} 1 €$, {Spend} Give a friendly Unit with cost 4 or less {Blocker} this turn. If you control a value-pair of Gigs, also give it +1 power this turn.\nWhen a friendly Unit uses {Blocker}, you may discard 1. If you do, draw 1.",
+    "text": "{Quick} 1 €$, {Spend} Dai {Blocker} a un'Unità alleata con costo 4 o meno in questo turno. Se controlli una coppia di Gig dello stesso valore, dalle anche +1 Power in questo turno.\nQuando un'Unità alleata usa {Blocker}, puoi scartare 1. Se lo fai, pesca 1."
+  },
+  "gunpoint-diplomacy": {
+    "source": "Give a friendly Unit these effects. If you have less ☆ (Street Cred) than a Rival, they instead choose one effect for you.\nThe next time this Unit attacks this turn, it may attack ready Units. // Give this Unit +3 power this turn.",
+    "text": "Dai a un'Unità alleata questi effetti. Se hai meno ☆ (Street Cred) di un Rivale, è lui a scegliere invece un effetto per te.\nLa prossima volta che questa Unità attacca in questo turno, può attaccare Unità pronte. // Dai +3 Power a questa Unità in questo turno."
+  },
+  "hacked-corpo": {
+    "source": "{Play} Trash 3. Add a Program from among them to your hand.",
+    "text": "{Play} Getta 3. Aggiungi alla tua mano un Programma tra quelle."
+  },
+  "hanako-arasaka-daughter-of-the-emperor": {
+    "source": "{Spend} Swap a friendly Gig with a rival Gig.\nAt the start of your turn, draw 1 for each friendly value-pair of Gigs.",
+    "text": "{Spend} Scambia un Gig alleato con un Gig rivale.\nAll'inizio del tuo turno, pesca 1 per ogni coppia di Gig alleati dello stesso valore."
+  },
+  "hanako-arasaka-in-a-gilded-cage": {
+    "source": "{Play} Search the top 4 cards of your deck. Reveal any number of cards with cost equal to any friendly Gig values and add them to your hand. Bottom-deck the rest.",
+    "text": "{Play} Guarda le prime 4 carte del tuo mazzo. Rivela un numero qualsiasi di carte con costo pari al valore di un Gig alleato e aggiungile alla tua mano. Metti il resto in fondo al mazzo."
+  },
+  "heywood-ripperdoc": {
+    "source": "{Play} You may defeat a Gear. If its cost equals the value of a friendly Gig, draw 1.",
+    "text": "{Play} Puoi sconfiggere un Gear. Se il suo costo è pari al valore di un Gig alleato, pesca 1."
+  },
+  "industrial-assembly": {
+    "source": "Increase a Gig by up to 4. If you control a Gig with 8+ value, draw 1.",
+    "text": "Aumenta un Gig fino a 4. Se controlli un Gig con valore 8+, pesca 1."
+  },
+  "jacked-in-voodoo-boy": {
+    "source": "This Unit can't attack unless you played a Program this turn.",
+    "text": "Questa Unità non può attaccare a meno che tu non abbia giocato un Programma in questo turno."
+  },
+  "jackie-welles-mama-s-favorite": {
+    "source": "{Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. If it leaves the field, remove it from the game.)\nIf a friendly Unit would be defeated, you may pay 1 €$ to defeat this Legend instead. (Remove it from the game.)",
+    "text": "{Go Solo} (Paga il costo di questa Leggenda per giocarla come Unità pronta. Può attaccare in questo turno. Se lascia il campo, rimuovila dalla partita.)\nSe un'Unità alleata sta per essere sconfitta, puoi pagare 1 €$ per sconfiggere invece questa Leggenda. (Rimuovila dalla partita.)"
+  },
+  "jackie-welles-pour-one-out-for-me": {
+    "source": "The first time you play a Blue Unit or Blue Gear each turn, you may decrease a friendly Gig by up to 2. If it becomes a min Gig, draw 1.",
+    "text": "La prima volta in ogni turno che giochi un'Unità blu o un Gear blu, puoi ridurre un Gig alleato fino a 2. Se diventa un Gig al minimo, pesca 1."
+  },
+  "jackie-welles-ride-or-die-choom": {
+    "source": "{Attack} Give this Unit +2 power this turn for each friendly Gig with an even value.\n{Defeated} Draw 1 for each friendly Gig with an odd value.",
+    "text": "{Attack} Dai a questa Unità +2 Power in questo turno per ogni Gig alleato con valore pari.\n{Defeated} Pesca 1 per ogni Gig alleato con valore dispari."
+  },
+  "japantown-jonin": {
+    "source": "{Play} Give a friendly Unit +2 power this turn.\n(Units with power 0 don't steal Gigs.)",
+    "text": "{Play} Dai +2 Power a un'Unità alleata in questo turno.\n(Le Unità con Power 0 non rubano Gig.)"
+  },
+  "johnny-silverhand-never-stop-fighting": {
+    "source": "The first time this Unit wins a fight each turn, ready it.\nThis Unit wins all fights against CORPO Units.",
+    "text": "La prima volta in ogni turno che questa Unità vince un combattimento, preparala.\nQuesta Unità vince tutti i combattimenti contro Unità CORPO."
+  },
+  "johnny-silverhand-rocking-renegade": {
+    "source": "2 €$, {Spend} A friendly Unit can attack spent rival Units the turn it's played. If it's a ROCKER Unit, also give it +2 power this turn. This effect costs -1 €$ for each friendly Gig with 8+ value.",
+    "text": "2 €$, {Spend} Un'Unità alleata può attaccare Unità rivali esaurite nel turno in cui viene giocata. Se è un'Unità ROCKER, dalle anche +2 Power in questo turno. Questo effetto costa -1 €$ per ogni Gig alleato con valore 8+."
+  },
+  "judy-a-lvarez-braindance-maestro": {
+    "source": "When you play a BRAINDANCE Program, give a friendly Unit +1 power this turn.\n{Spend} Trash the top card of your deck. If it's a Program, you may add it to your hand.",
+    "text": "Quando giochi un Programma BRAINDANCE, dai +1 Power a un'Unità alleata in questo turno.\n{Spend} Getta la prima carta del tuo mazzo. Se è un Programma, puoi aggiungerlo alla tua mano."
+  },
+  "judy-a-lvarez-nothing-to-doubt": {
+    "source": "1 €$, {Spend} Reveal the top card of your deck. You may play it for free. Otherwise, add it to your hand.",
+    "text": "1 €$, {Spend} Rivela la prima carta del tuo mazzo. Puoi giocarla gratuitamente. Altrimenti, aggiungila alla tua mano."
+  },
+  "kerry-eurodyne-axe-attitude-audience": {
+    "source": "When you roll in a Gig from your fixer area, you may ignore the result and reroll it once.\nWhen you roll a min or max value on a Gig, draw 1. If it's a d20, draw 3 instead.",
+    "text": "Quando lanci un Gig dalla tua zona Fixer, puoi ignorare il risultato e rilanciarlo una volta.\nQuando ottieni il valore minimo o massimo su un Gig, pesca 1. Se è un d20, pesca invece 3."
+  },
+  "kerry-eurodyne-the-last-rockerboy": {
+    "source": "{Spend} If you control a Gig with 8+ value, draw 2.",
+    "text": "{Spend} Se controlli un Gig con valore 8+, pesca 2."
+  },
+  "kiroshi-optics": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\n{Attack} Look at a friendly face-down Legend. (Don't reveal it.)",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\n{Attack} Guarda una Leggenda alleata a faccia in giù. (Non rivelarla.)"
+  },
+  "la-llorona-ghost-of-the-past": {
+    "source": "{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)\nWhen this Unit uses {Blocker}, increase a Gig by up to 3.",
+    "text": "{Blocker} (Puoi esaurire questa Unità per deviare su di essa l'attacco di un'Unità rivale.)\nQuando questa Unità usa {Blocker}, aumenta un Gig fino a 3."
+  },
+  "les-e-le-mens": {
+    "source": "Bottom-deck a Rival's lowest-power Unit. (If there are multiple, choose 1.)",
+    "text": "Metti in fondo al mazzo l'Unità di un Rivale con meno Power. (Se ce ne sono diverse, scegline 1.)"
+  },
+  "live-with-the-aftermath": {
+    "source": "Each player defeats one of their Units.",
+    "text": "Ogni giocatore sconfigge una delle proprie Unità."
+  },
+  "lizzy-wizzy-delicate-weapon": {
+    "source": "{Play} You may play a Program with cost 3 or less from your hand or trash for free. Bottom-deck it after you play it.\n{Blocker}",
+    "text": "{Play} Puoi giocare gratuitamente un Programma con costo 3 o meno dalla tua mano o dai tuoi scarti. Mettilo in fondo al mazzo dopo averlo giocato.\n{Blocker}"
+  },
+  "maelstrom-goons": {
+    "source": "When this Unit steals a Gig, if it's equipped, a Rival discards 1.",
+    "text": "Quando questa Unità ruba un Gig, se è equipaggiata, un Rivale scarta 1."
+  },
+  "maelstrom-zealots": {
+    "source": "When this Unit loses a fight, defeat the opposing rival Unit.\n(Units with power 0 don't steal Gigs.)",
+    "text": "Quando questa Unità perde un combattimento, sconfiggi l'Unità rivale avversaria.\n(Le Unità con Power 0 non rubano Gig.)"
+  },
+  "maman-brigitte-spirit-of-death": {
+    "source": "{Play} You may discard 2 Programs. If you do, bottom-deck a rival unequipped Unit.",
+    "text": "{Play} Puoi scartare 2 Programmi. Se lo fai, metti in fondo al mazzo un'Unità rivale non equipaggiata."
+  },
+  "mandibular-upgrade": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\n{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\n{Blocker} (Puoi esaurire questa Unità per deviare su di essa l'attacco di un'Unità rivale.)"
+  },
+  "mantis-blades": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\n\"One cut, one kill.\"",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\n«Un taglio, un morto.»"
+  },
+  "maxtac-av": {
+    "source": "{Play} You may swap a friendly Gig with a rival Gig.",
+    "text": "{Play} Puoi scambiare un Gig alleato con un Gig rivale."
+  },
+  "maxtac-heavy": {
+    "source": "Play this Unit for -1 €$ for each of a Rival’s Units, to a minimum of 1 €$.",
+    "text": "Gioca questa Unità per -1 €$ per ogni Unità di un Rivale, fino a un minimo di 1 €$."
+  },
+  "maxtac-squadron": {
+    "source": "At the end of your turn, if this Unit is spent, ready a friendly face-up Legend.",
+    "text": "Alla fine del tuo turno, se questa Unità è esaurita, prepara una Leggenda alleata a faccia in su."
+  },
+  "maxtac-suppression-team": {
+    "source": "Rival Units can't attack the turn they're played.",
+    "text": "Le Unità rivali non possono attaccare nel turno in cui vengono giocate."
+  },
+  "memory-relapse": {
+    "source": "Spend a rival Unit. It can't ready until your next turn. If your ☆ (Street Cred) is an even number, draw 1.",
+    "text": "Esaurisci un'Unità rivale. Non può essere preparata fino al tuo prossimo turno. Se la tua ☆ (Street Cred) è un numero pari, pesca 1."
+  },
+  "meredith-stout-stone-cold-corpo": {
+    "source": "{Blocker}\nThis Unit has +2 power while fighting a Legend.\nWhen a Rival adjusts or swaps 1 or more friendly Gigs, you may add a card from your trash to your hand.",
+    "text": "{Blocker}\nQuesta Unità ha +2 Power mentre combatte contro una Leggenda.\nQuando un Rivale regola o scambia 1 o più Gig alleati, puoi aggiungere alla tua mano una carta dai tuoi scarti."
+  },
+  "minotaur": {
+    "source": "{Play} If you have more ☆ (Street Cred) than a Rival, defeat a rival Unit with power 5 or less.",
+    "text": "{Play} Se hai più ☆ (Street Cred) di un Rivale, sconfiggi un'Unità rivale con Power 5 o meno."
+  },
+  "misty-olszewski-mender-of-broken-spirits": {
+    "source": "This Unit can't attack.\nAt the end of your turn, choose a card type. Then, reveal the top card of your deck. If it's the chosen type, add it to your hand and ready 1 Eddie. Otherwise, trash it.\n(Unit, Gear, and Program are card types.)",
+    "text": "Questa Unità non può attaccare.\nAlla fine del tuo turno, scegli un tipo di carta. Poi rivela la prima carta del tuo mazzo. Se è del tipo scelto, aggiungila alla tua mano e prepara 1 Eddie. Altrimenti, gettala.\n(Unità, Gear e Programma sono tipi di carta.)"
+  },
+  "modded-kusanagi": {
+    "source": "{Adrenaline} (This Unit can attack the turn it's played.)\nAt the end of your turn, return this Unit to its owner's hand.",
+    "text": "{Adrenaline} (Questa Unità può attaccare nel turno in cui viene giocata.)\nAlla fine del tuo turno, riporta questa Unità nella mano del suo proprietario."
+  },
+  "modded-muramasa": {
+    "source": "At the end of your turn, if you have less ☆ (Street Cred) than a Rival, ready this Unit.",
+    "text": "Alla fine del tuo turno, se hai meno ☆ (Street Cred) di un Rivale, prepara questa Unità."
+  },
+  "mox-inciters": {
+    "source": "{Play} A rival Unit must attack next turn if it can.\n{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)",
+    "text": "{Play} Un'Unità rivale deve attaccare nel prossimo turno, se può.\n{Blocker} (Puoi esaurire questa Unità per deviare su di essa l'attacco di un'Unità rivale.)"
+  },
+  "mt0d12-flathead": {
+    "source": "If you have less ☆ (Street Cred) than a Rival, this Unit can't be blocked.",
+    "text": "Se hai meno ☆ (Street Cred) di un Rivale, questa Unità non può essere bloccata."
+  },
+  "muamar-reyes-el-capita-n": {
+    "source": "{Call} Choose one effect.\nA friendly Unit can't be defeated in a fight this turn. // Draw 1.\n{Spend} Adjust a Gig by 1.",
+    "text": "{Call} Scegli un effetto.\nUn'Unità alleata non può essere sconfitta in combattimento in questo turno. // Pesca 1.\n{Spend} Regola un Gig di 1."
+  },
+  "nadia-fighting-through-grief": {
+    "source": "If a Rival controls more Gigs than you, this Unit can attack their Gig area the turn it's played.",
+    "text": "Se un Rivale controlla più Gig di te, questa Unità può attaccare la sua zona Gig nel turno in cui viene giocata."
+  },
+  "netwatch-netdriver": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\nWhen this Unit or Legend is spent, draw 1.",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\nQuando questa Unità o Leggenda viene esaurita, pesca 1."
+  },
+  "nocturne-op55-n1": {
+    "source": "If your fixer area is empty, play this Program for 1 €$. Choose one effect.\nDraw 2. // A Unit can't attack until your next turn. // A friendly Legend may use {Go Solo} for -2 €$ this turn, to a minimum of 1 €$.",
+    "text": "Se la tua zona Fixer è vuota, gioca questo Programma per 1 €$. Scegli un effetto.\nPesca 2. // Un'Unità non può attaccare fino al tuo prossimo turno. // Una Leggenda alleata può usare {Go Solo} per -2 €$ in questo turno, fino a un minimo di 1 €$."
+  },
+  "octant": {
+    "source": "Play this Unit for -1 €$ for each friendly Gig with 8+ value, to a minimum of 1 €$.",
+    "text": "Gioca questa Unità per -1 €$ per ogni Gig alleato con valore 8+, fino a un minimo di 1 €$."
+  },
+  "offduty-malfini": {
+    "source": "{Play} Spend this Unit and a rival Unit.",
+    "text": "{Play} Esaurisci questa Unità e un'Unità rivale."
+  },
+  "over-the-edge": {
+    "source": "Defeat a Unit with power equal to or less than the value of a friendly d20.",
+    "text": "Sconfiggi un'Unità con Power pari o inferiore al valore di un d20 alleato."
+  },
+  "overwatch-panam-s-gift": {
+    "source": "{Quick} 1 €$, {Spend} Discard 1. Defeat a spent rival Unit with cost equal to or less than the discarded card's cost.",
+    "text": "{Quick} 1 €$, {Spend} Scarta 1. Sconfiggi un'Unità rivale esaurita con costo pari o inferiore al costo della carta scartata."
+  },
+  "pacifica-netrunner": {
+    "source": "{Play} If your ☆ (Street Cred) is an even number, a rival Unit can't ready until your next turn.",
+    "text": "{Play} Se la tua ☆ (Street Cred) è un numero pari, un'Unità rivale non può essere preparata fino al tuo prossimo turno."
+  },
+  "padre-man-of-the-cross": {
+    "source": "{Call} Choose one effect.\nSpend a rival Unit. // Draw 1.\n{Spend} Set a player's Gig to the same value as another player's Gig.",
+    "text": "{Call} Scegli un effetto.\nEsaurisci un'Unità rivale. // Pesca 1.\n{Spend} Porta il Gig di un giocatore allo stesso valore del Gig di un altro giocatore."
+  },
+  "panam-palmer-nomad-cavalry": {
+    "source": "2 €$, {Spend} Move a Gear from this Legend to an unequipped friendly Unit. If you do, ready that Unit.\nAt the end of your turn, if 5 or more friendly Units and/or Legends are equipped, ready them.",
+    "text": "2 €$, {Spend} Sposta un Gear da questa Leggenda a un'Unità alleata non equipaggiata. Se lo fai, prepara quell'Unità.\nAlla fine del tuo turno, se 5 o più Unità e/o Leggende alleate sono equipaggiate, preparale."
+  },
+  "panam-palmer-strength-through-family": {
+    "source": "During your turn, you may Call a Legend for free.\n{Attack} Discard 1. If you do, draw 1 for each friendly face-up Legend.",
+    "text": "Durante il tuo turno, puoi fare Call su una Leggenda gratuitamente.\n{Attack} Scarta 1. Se lo fai, pesca 1 per ogni Leggenda alleata a faccia in su."
+  },
+  "peace-offering": {
+    "source": "You may set a Gig's value to the value of another Gig. Then, if you control a value-pair, draw 1.",
+    "text": "Puoi portare il valore di un Gig al valore di un altro Gig. Poi, se controlli una coppia di valori, pesca 1."
+  },
+  "pepe-najarro-working-doubles": {
+    "source": "{Attack} If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area.",
+    "text": "{Attack} Se controlli una coppia di Gig dello stesso valore, prepara fino a 2 Leggende MERC nella tua zona Leggende."
+  },
+  "placide-voodoo-sentinel": {
+    "source": "{Play} {Attack} You may discard 1 Program. If you do, bottom-deck a rival Unit.",
+    "text": "{Play} {Attack} Puoi scartare 1 Programma. Se lo fai, metti in fondo al mazzo un'Unità rivale."
+  },
+  "psycho-squad": {
+    "source": "[Flavour] Their protocol stops at “shoot first.”",
+    "text": "[Flavour] Il loro protocollo si ferma a «spara per primo»."
+  },
+  "pyramid-song": {
+    "source": "Choose one effect. If a friendly d4 is a min Gig, choose both instead.\nGive a rival Unit -5 power this turn. // Bottom-deck a rival Unit with power 0.",
+    "text": "Scegli un effetto. Se un d4 alleato è un Gig al minimo, scegli invece entrambi.\nDai -5 Power a un'Unità rivale in questo turno. // Metti in fondo al mazzo un'Unità rivale con Power 0."
+  },
+  "reboot-optics": {
+    "source": "{Quick} The next time a rival Unit fights this turn, it doesn't defeat the opposing friendly Unit.",
+    "text": "{Quick} La prossima volta che un'Unità rivale combatte in questo turno, non sconfigge l'Unità alleata avversaria."
+  },
+  "riding-nomad": {
+    "source": "{Adrenaline} (This Unit can attack the turn it's played.)",
+    "text": "{Adrenaline} (Questa Unità può attaccare nel turno in cui viene giocata.)"
+  },
+  "riot-shield": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\n{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)\nRivals must pay +2 €$ to use {Go Solo}.",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\n{Blocker} (Puoi esaurire questa Unità per deviare su di essa l'attacco di un'Unità rivale.)\nI Rivali devono pagare +2 €$ per usare {Go Solo}."
+  },
+  "rita-wheeler-no-stupid-questions": {
+    "source": "{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)\nThe first time this Unit is spent each turn, draw 1, then discard 1.",
+    "text": "{Blocker} (Puoi esaurire questa Unità per deviare su di essa l'attacco di un'Unità rivale.)\nLa prima volta in ogni turno che questa Unità viene esaurita, pesca 1, poi scarta 1."
+  },
+  "river-ward-detective-on-the-hunt": {
+    "source": "{Quick} {Spend} Play a Gear with cost 2 or less from your hand for free.\nWhen a friendly equipped Unit is defeated, search the top 2 cards of your deck and trash 1.",
+    "text": "{Quick} {Spend} Gioca gratuitamente un Gear con costo 2 o meno dalla tua mano.\nQuando un'Unità alleata equipaggiata viene sconfitta, guarda le prime 2 carte del tuo mazzo e gettane 1."
+  },
+  "rockn-rockerboy": {
+    "source": "[Flavor] Scream your throat raw for something. Anything.",
+    "text": "[Flavor] Urla fino a spaccarti la gola per qualcosa. Qualsiasi cosa."
+  },
+  "rogue-amendiares-preem-solo": {
+    "source": "{Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. If it leaves the field, remove it from the game.)\nWhen a friendly Legend steals a Gig, if its value is even, draw 1. If its value is odd, a Rival discards 1.",
+    "text": "{Go Solo} (Paga il costo di questa Leggenda per giocarla come Unità pronta. Può attaccare in questo turno. Se lascia il campo, rimuovila dalla partita.)\nQuando una Leggenda alleata ruba un Gig, se il suo valore è pari, pesca 1. Se il suo valore è dispari, un Rivale scarta 1."
+  },
+  "rogue-amendiares-queen-of-the-afterlife": {
+    "source": "The first time another friendly Unit steals a Gig with value less than its power each turn, ready 2 Eddies.\n{Quick} 2 €$,  {Spend} A rival Unit loses power equal to this Unit's power this turn.",
+    "text": "La prima volta in ogni turno che un'altra Unità alleata ruba un Gig con valore inferiore al suo Power, prepara 2 Eddie.\n{Quick} 2 €$,  {Spend} Un'Unità rivale perde in questo turno Power pari al Power di questa Unità."
+  },
+  "royce-don-t-call-me-simon": {
+    "source": "{Play} Defeat a rival Unit with power 2 or less. If you have more ☆ (Street Cred) than a Rival, defeat a rival Unit with power 3 or less instead.",
+    "text": "{Play} Sconfiggi un'Unità rivale con Power 2 o meno. Se hai più ☆ (Street Cred) di un Rivale, sconfiggi invece un'Unità rivale con Power 3 o meno."
+  },
+  "royce-psycho-on-the-edge": {
+    "source": "{Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. If it leaves the field, remove it from the game.)\nDuring your turn, this Legend has +2 power for each of its equipped Gear.",
+    "text": "{Go Solo} (Paga il costo di questa Leggenda per giocarla come Unità pronta. Può attaccare in questo turno. Se lascia il campo, rimuovila dalla partita.)\nDurante il tuo turno, questa Leggenda ha +2 Power per ogni Gear equipaggiato su di essa."
+  },
+  "ruthless-lowlife": {
+    "source": "This Unit can only attack rival Units. (It can't attack Gig areas.)",
+    "text": "Questa Unità può attaccare solo Unità rivali. (Non può attaccare le zone Gig.)"
+  },
+  "saburo-arasaka-stubborn-patriarch": {
+    "source": "Friendly ARASAKA Units have +1 power while attacking.\n(Units steal an extra Gig for every 10 power.)",
+    "text": "Le Unità ARASAKA alleate hanno +1 Power mentre attaccano.\n(Le Unità rubano un Gig in più ogni 10 di Power.)"
+  },
+  "safety-override": {
+    "source": "{Quick} The next time a friendly Unit loses a fight this turn, defeat the opposing rival Unit.",
+    "text": "{Quick} La prossima volta che un'Unità alleata perde un combattimento in questo turno, sconfiggi l'Unità rivale avversaria."
+  },
+  "sandayu-oda-hanako-s-guardian": {
+    "source": "{Play} Spend a rival Unit for each friendly value-pair of Gigs.\nThis Unit can attack rival Units the turn it's played.",
+    "text": "{Play} Esaurisci un'Unità rivale per ogni coppia di Gig alleati dello stesso valore.\nQuesta Unità può attaccare Unità rivali nel turno in cui viene giocata."
+  },
+  "sandevistan": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\nAt the end of your turn, ready this Unit or Legend.",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\nAlla fine del tuo turno, prepara questa Unità o Leggenda."
+  },
+  "sasha-yakovleva-won-t-let-you-down": {
+    "source": "{Go Solo}\n{Attack} Reveal the top card of your deck and add it to your hand. This Unit gains power equal to that card's cost this turn.\n{Defeated} A Rival discards 1.",
+    "text": "{Go Solo}\n{Attack} Rivela la prima carta del tuo mazzo e aggiungila alla tua mano. Questa Unità ottiene in questo turno Power pari al costo di quella carta.\n{Defeated} Un Rivale scarta 1."
+  },
+  "satori-sword-of-saburo": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\nWhen this Unit wins a fight against a rival Unit, draw 1.",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\nQuando questa Unità vince un combattimento contro un'Unità rivale, pesca 1."
+  },
+  "saul-bright-stormrider": {
+    "source": "Other friendly Units have +2 power while attacking.\nAt the end of your turn, ready up to 3 friendly Units.",
+    "text": "Le altre Unità alleate hanno +2 Power mentre attaccano.\nAlla fine del tuo turno, prepara fino a 3 Unità alleate."
+  },
+  "screw-lovelorn-fool": {
+    "source": "{Defeated} Add another Unit from your trash to your hand.",
+    "text": "{Defeated} Aggiungi alla tua mano un'altra Unità dai tuoi scarti."
+  },
+  "secondhand-bombus": {
+    "source": "{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)\n(Units with power 0 don't steal Gigs.)",
+    "text": "{Blocker} (Puoi esaurire questa Unità per deviare su di essa l'attacco di un'Unità rivale.)\n(Le Unità con Power 0 non rubano Gig.)"
+  },
+  "shattered-memories": {
+    "source": "Each player discards their hand and may draw 5.\nIf the total number of discarded cards equals the value of a friendly Gig, draw 2.",
+    "text": "Ogni giocatore scarta la propria mano e può pescare 5.\nSe il numero totale di carte scartate è pari al valore di un Gig alleato, pesca 2."
+  },
+  "sketchy-ripper": {
+    "source": "{Attack} Search the top 3 cards of your deck. Reveal a Gear and add it to your hand. Bottom-deck the rest.\n(Units with power 0 don't steal Gigs.)",
+    "text": "{Attack} Guarda le prime 3 carte del tuo mazzo. Rivela un Gear e aggiungilo alla tua mano. Metti il resto in fondo al mazzo.\n(Le Unità con Power 0 non rubano Gig.)"
+  },
+  "swordwise-huscle": {
+    "source": "{Attack} If this Unit has power 5+, draw 1.",
+    "text": "{Attack} Se questa Unità ha Power 5+, pesca 1."
+  },
+  "synapse-burnout": {
+    "source": "{Quick} A friendly Unit has +1 power for each friendly face-up Legend while fighting rival Units this turn.",
+    "text": "{Quick} Un'Unità alleata ha +1 Power per ogni Leggenda alleata a faccia in su mentre combatte contro Unità rivali in questo turno."
+  },
+  "t-bug-amateur-philosopher": {
+    "source": "{Defeated} Look at all friendly face-down Legends. Then, you may Call a Legend for free. (You can only Call a Legend once per turn.)",
+    "text": "{Defeated} Guarda tutte le Leggende alleate a faccia in giù. Poi puoi fare Call su una Leggenda gratuitamente. (Puoi fare Call su una Leggenda solo una volta per turno.)"
+  },
+  "take-control": {
+    "source": "{Quick} A rival Unit steals 1 fewer Gig this turn. If that Unit is an AI, DRONE, or VEHICLE, draw 1.",
+    "text": "{Quick} Un'Unità rivale ruba 1 Gig in meno in questo turno. Se quell'Unità è AI, DRONE o VEHICLE, pesca 1."
+  },
+  "tetratronic-rippler": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\nWhen this Unit or Legend is spent, search the top card of your deck. You may trash it. (Otherwise, keep it on the top of your deck.)",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\nQuando questa Unità o Leggenda viene esaurita, guarda la prima carta del tuo mazzo. Puoi gettarla. (Altrimenti, lasciala in cima al tuo mazzo.)"
+  },
+  "the-heist": {
+    "source": "Trash 4. Add a Gear from among them to your hand. If that Gear's cost equals the value of a friendly Gig, you may play it for free instead.",
+    "text": "Getta 4. Aggiungi alla tua mano un Gear tra quelle. Se il costo di quel Gear è pari al valore di un Gig alleato, puoi invece giocarlo gratuitamente."
+  },
+  "the-relic-experimental-biochip": {
+    "source": "{Defeated} Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit.",
+    "text": "{Defeated} Gioca gratuitamente un'altra Unità con costo 9 o meno dai tuoi scarti. Poi metti questa Unità in fondo al mazzo."
+  },
+  "three-mouths-one-desire": {
+    "source": "Search the top 3 cards of your deck. Add 1 to your hand. You may add 1 more for each friendly min Gig. Bottom-deck the rest.",
+    "text": "Guarda le prime 3 carte del tuo mazzo. Aggiungine 1 alla tua mano. Puoi aggiungerne 1 in più per ogni Gig alleato al minimo. Metti il resto in fondo al mazzo."
+  },
+  "towerfall": {
+    "source": "Choose one effect. If you have less ☆ (Street Cred) than a Rival, choose both instead.\nGive all rival Units -5 power this turn. // Bottom-deck all rival Units with power 0.",
+    "text": "Scegli un effetto. Se hai meno ☆ (Street Cred) di un Rivale, scegli invece entrambi.\nDai -5 Power a tutte le Unità rivali in questo turno. // Metti in fondo al mazzo tutte le Unità rivali con Power 0."
+  },
+  "trauma-team-operatives": {
+    "source": "Play this Unit for -1 €$ for each Unit in your trash, to a minimum of 1 €$.",
+    "text": "Gioca questa Unità per -1 €$ per ogni Unità nei tuoi scarti, fino a un minimo di 1 €$."
+  },
+  "trust-no-one": {
+    "source": "Decrease a Gig by up to 3. Then, if you control a min Gig, draw 1.",
+    "text": "Riduci un Gig fino a 3. Poi, se controlli un Gig al minimo, pesca 1."
+  },
+  "tyger-s-whisper": {
+    "source": "{Play} You may Call a Legend for free. (You can only Call a Legend once per turn.)\n(Units with power 0 don't steal Gigs.)",
+    "text": "{Play} Puoi fare Call su una Leggenda gratuitamente. (Puoi fare Call su una Leggenda solo una volta per turno.)\n(Le Unità con Power 0 non rubano Gig.)"
+  },
+  "unlikely-bond": {
+    "source": "Bottom-deck a ready friendly Unit. If you do, bottom-deck a spent rival Unit.",
+    "text": "Metti in fondo al mazzo un'Unità alleata pronta. Se lo fai, metti in fondo al mazzo un'Unità rivale esaurita."
+  },
+  "v-corporate-exile": {
+    "source": "{Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. When it leaves the field, remove it from the game.)",
+    "text": "{Go Solo} (Paga il costo di questa Leggenda per giocarla come Unità pronta. Può attaccare in questo turno. Quando lascia il campo, rimuovila dalla partita.)"
+  },
+  "v-roamer-of-the-badlands": {
+    "source": "When this Unit steals a Gig, increase it by up to 5.\nAt the end of your turn, if you control 2 or more Gigs with 8+ value, draw 1.",
+    "text": "Quando questa Unità ruba un Gig, aumentalo fino a 5.\nAlla fine del tuo turno, se controlli 2 o più Gig con valore 8+, pesca 1."
+  },
+  "v-streetkid": {
+    "source": "{Call} Trash 3. Then, add 1 BRAINDANCE Program from your trash to your hand.\n{Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. If it leaves the field, remove it from the game.)",
+    "text": "{Call} Getta 3. Poi aggiungi alla tua mano 1 Programma BRAINDANCE dai tuoi scarti.\n{Go Solo} (Paga il costo di questa Leggenda per giocarla come Unità pronta. Può attaccare in questo turno. Se lascia il campo, rimuovila dalla partita.)"
+  },
+  "valentino-guerrera": {
+    "source": "If you have more ☆ (Street Cred) than a Rival, this Unit can attack ready Units with {Blocker}.",
+    "text": "Se hai più ☆ (Street Cred) di un Rivale, questa Unità può attaccare Unità pronte con {Blocker}."
+  },
+  "valentino-street-racer": {
+    "source": "{Play} Give another friendly Unit with cost 5 or less {Adrenaline} this turn. (A Unit with Adrenaline can attack the turn it's played.)",
+    "text": "{Play} Dai {Adrenaline} a un'altra Unità alleata con costo 5 o meno in questo turno. (Un'Unità con Adrenaline può attaccare nel turno in cui viene giocata.)"
+  },
+  "viktor-vektor-drop-your-illusions": {
+    "source": "Play your first CYBERWARE Gear each turn for -3 €$, to a minimum of 1 €$.",
+    "text": "Gioca il tuo primo Gear CYBERWARE di ogni turno per -3 €$, fino a un minimo di 1 €$."
+  },
+  "viktor-vektor-sit-down-and-relax": {
+    "source": "{Call} Search the top 5 cards of your deck. Reveal up to 2 Gears with cost 2 or less and add them to your hand. Bottom-deck the rest in a random order.",
+    "text": "{Call} Guarda le prime 5 carte del tuo mazzo. Rivela fino a 2 Gear con costo 2 o meno e aggiungili alla tua mano. Metti il resto in fondo al mazzo in ordine casuale."
+  },
+  "viktor-vektor-you-might-feel-a-little-pinch": {
+    "source": "{Play} Play a CYBERWARE Gear with cost 2 or less from your trash for free. Equip it only to another friendly Unit.",
+    "text": "{Play} Gioca gratuitamente un Gear CYBERWARE con costo 2 o meno dai tuoi scarti. Equipaggialo solo a un'altra Unità alleata."
+  },
+  "wakako-okada-peace-and-harmony": {
+    "source": "{Call} Choose one effect.\nGive a rival Unit -2 power this turn. // Draw 1.\n{Spend}: Decrease a Gig by up to 2.",
+    "text": "{Call} Scegli un effetto.\nDai -2 Power a un'Unità rivale in questo turno. // Pesca 1.\n{Spend}: Riduci un Gig fino a 2."
+  },
+  "we-gotta-live-together": {
+    "source": "If a Rival controls at least 2 more Gigs than you, play this Program for 3 €$.\nPlay up to 2 Units with cost 3 or less from your trash for free.",
+    "text": "Se un Rivale controlla almeno 2 Gig più di te, gioca questo Programma per 3 €$.\nGioca gratuitamente fino a 2 Unità con costo 3 o meno dai tuoi scarti."
+  },
+  "westbrook-netrunner": {
+    "source": "{Play} Until your next turn, rival Legends can't steal friendly Gigs with value less than their power.",
+    "text": "{Play} Fino al tuo prossimo turno, le Leggende rivali non possono rubare Gig alleati con valore inferiore al loro Power."
+  },
+  "wild-in-the-streets": {
+    "source": "Defeat a spent Unit.",
+    "text": "Sconfiggi un'Unità esaurita."
+  },
+  "wraith-marauders": {
+    "source": "When this Unit steals a Gig, ready another friendly Unit with power equal to the Gig's value.",
+    "text": "Quando questa Unità ruba un Gig, prepara un'altra Unità alleata con Power pari al valore del Gig."
+  },
+  "yorinobu-arasaka-embracing-destruction": {
+    "source": "The first time a friendly ARASAKA Unit attacks each turn, draw 1. Then, if you have less than 20 ☆ (Street Cred), discard 1.",
+    "text": "La prima volta in ogni turno che un'Unità ARASAKA alleata attacca, pesca 1. Poi, se hai meno di 20 ☆ (Street Cred), scarta 1."
+  },
+  "yorinobu-arasaka-steel-dragon": {
+    "source": "{Play} You may play a Unit with cost 4 or less from your hand or trash for free. It can attack rival Units this turn.\nThe first time an ARASAKA Unit is defeated each turn, draw 1.",
+    "text": "{Play} Puoi giocare gratuitamente un'Unità con costo 4 o meno dalla tua mano o dai tuoi scarti. Può attaccare Unità rivali in questo turno.\nLa prima volta in ogni turno che un'Unità ARASAKA viene sconfitta, pesca 1."
+  },
+  "zetatech-berserk": {
+    "source": "Play this Gear for -1 €$ for each friendly face-up Legend, to a minimum of 1 €$.",
+    "text": "Gioca questo Gear per -1 €$ per ogni Leggenda alleata a faccia in su, fino a un minimo di 1 €$."
+  },
+  "zetatech-faceplate": {
+    "source": "(Equip to a friendly Unit or face-up Legend.)\nWhen this Unit or Legend is spent, adjust a Gig by up to 1. Then, if you control 3 or more Gigs with different values, draw 1.",
+    "text": "(Equipaggia un'Unità alleata o una Leggenda a faccia in su.)\nQuando questa Unità o Leggenda viene esaurita, regola un Gig fino a 1. Poi, se controlli 3 o più Gig con valori diversi, pesca 1."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "notes": {
+    "legendJackie": "Legend avec Go Solo — peut entrer sur le Field comme Unit.",
+    "legendJohnny": "Legend face visible dans la zone Legends.",
+    "legendJudy": "Legend bleu — booste les Programs BRAINDANCE.",
+    "unitJackie": "Unit sur le Field — attaque et vole des Gigs.",
+    "unitBlocker": "Unit avec Blocker — redirige une attaque.",
+    "unitAdrenaline": "Adrenaline — peut attaquer le tour où elle est jouée.",
+    "unitSmasher": "Power 15 → vole 2 Gigs en attaquant la zone Gig.",
+    "programDetonate": "Program Quick — jouable en réaction à une attaque.",
+    "programReaper": "Program — effet immédiat, puis Trash.",
+    "gearConverter": "Gear — s’équipe sur une Unit ou Legend.",
+    "eddieFace": "Vendue face cachée = 1 Eddie dans la zone Eddies."
+  }
+}

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { DecksScreen } from "@/components/DecksScreen";
 import { privateMetadata } from "@/lib/seo/metadata";
@@ -5,9 +6,10 @@ import { privateMetadata } from "@/lib/seo/metadata";
 // Page privée, derrière connexion ou ouverte par un lien à jeton : jamais indexée.
 export const metadata = privateMetadata;
 
-export default function DecksPage() {
+export default async function DecksPage() {
+  const t = await getTranslations();
   return (
-    <Suspense fallback={<p className="p-6 text-sm text-muted">Chargement des decks…</p>}>
+    <Suspense fallback={<p className="p-6 text-sm text-muted">{t("decks.loading")}</p>}>
       <DecksScreen />
     </Suspense>
   );

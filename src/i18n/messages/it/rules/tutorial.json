@@ -1,0 +1,346 @@
+{
+  "eyebrow": "ADDESTRAMENTO NIGHT CITY",
+  "title": "Impara a giocare",
+  "subtitle": "6 brevi missioni. Clicca, prova, vinci. Nessuna esperienza di TCG richiesta.",
+  "learnTab": "Percorso per principianti",
+  "rulesTab": "Regole complete",
+  "startCta": "Inizia l'addestramento",
+  "continueCta": "Continua",
+  "nextCta": "Missione successiva",
+  "backCta": "Indietro",
+  "skipCta": "Salta",
+  "retryCta": "Riprova",
+  "hintCta": "Suggerimento",
+  "progressLabel": "Missione {current} / {total}",
+  "streetCred": "Street Cred",
+  "correct": "Ottimo lavoro, choom.",
+  "almost": "Non proprio — riprova.",
+  "missions": [
+    {
+      "badge": "00",
+      "title": "Briefing",
+      "blurb": "L'obiettivo in 30 secondi."
+    },
+    {
+      "badge": "01",
+      "title": "Gig",
+      "blurb": "Come si vince."
+    },
+    {
+      "badge": "02",
+      "title": "Tappetino",
+      "blurb": "Dove va ogni cosa."
+    },
+    {
+      "badge": "03",
+      "title": "Carte",
+      "blurb": "4 tipi, 4 compiti."
+    },
+    {
+      "badge": "04",
+      "title": "Il tuo turno",
+      "blurb": "In che ordine agire."
+    },
+    {
+      "badge": "05",
+      "title": "Combattimento",
+      "blurb": "Combattere o rubare."
+    },
+    {
+      "badge": "06",
+      "title": "Esame di strada",
+      "blurb": "Verifica cosa hai imparato."
+    },
+    {
+      "badge": "OK",
+      "title": "Diploma",
+      "blurb": "Sei pronto."
+    }
+  ],
+  "intro": {
+    "needTitle": "Cosa ti serve",
+    "needItems": [
+      "Un mazzo di Cyberpunk TCG (40–50 carte + 3 Leggende)",
+      "6 dadi: d4, d6, d8, d10, d12, d20",
+      "Un Rivale dall'altra parte del tavolo"
+    ],
+    "promise": "Guidi una crew di Night City. Vinci controllando i lavori: i Gig (dadi).",
+    "tip": "Consiglio: un Gig = un dado. Il valore delle facce conta per la Street Cred, non per il numero che dà la vittoria."
+  },
+  "goal": {
+    "title": "Obiettivo: 7 Gig",
+    "explain": "Ogni turno prendi un dado dal tuo Fixer, lancialo e mettilo nella tua zona Gig. Se inizi il tuo turno avendo già 7 dadi Gig → vinci.",
+    "challenge": "Simula una partita: aggiungi Gig fino a 7, poi «inizia il tuo turno».",
+    "winLine": "7 Gig all'inizio del tuo turno = vittoria.",
+    "addGig": "Prendi un Gig (inizio del turno)",
+    "stealGig": "Ruba 1 Gig al Rivale",
+    "fixerEmpty": "Fixer vuoto: ruba il 7º al Rivale",
+    "reset": "Ricomincia",
+    "diceLeft": "{n, plural, one {Rimane # dado nel Fixer} other {Rimangono # dadi nel Fixer}}",
+    "yourGigs": "I tuoi Gig"
+  },
+  "board": {
+    "title": "Caccia alla zona",
+    "explain": "Il tappetino ha 7 zone. Fai clic sulla zona giusta per ogni domanda.",
+    "challenge": "Trova tutte e 4 le zone richieste. I clic sbagliati non contano.",
+    "prompts": [
+      {
+        "ask": "Dove vanno le Unità per combattere?",
+        "hint": "Il grande spazio al centro…",
+        "success": "Campo: qui vivono le tue Unità."
+      },
+      {
+        "ask": "Dove vanno le carte vendute per pagare (Eddie)?",
+        "hint": "La tua «banca» a faccia in giù.",
+        "success": "Zona Eddie: ogni carta a faccia in giù = 1 €$."
+      },
+      {
+        "ask": "Dove sono i tuoi 3 personaggi speciali all'inizio?",
+        "hint": "Iniziano a faccia in giù…",
+        "success": "Zona Leggende: 3 carte in ordine casuale."
+      },
+      {
+        "ask": "Dove vanno i dadi dopo averli lanciati?",
+        "hint": "È così che vinci.",
+        "success": "Zona Gig: proteggi i tuoi, ruba i suoi."
+      }
+    ],
+    "foundAll": "Tappetino esplorato. Sai dove siede la tua crew."
+  },
+  "cards": {
+    "title": "4 tipi di carta",
+    "explain": "Gira ogni carta per scoprirne il compito. Un'idea per tipo.",
+    "challenge": "Scopri tutti e 4 i tipi.",
+    "flipHint": "Tocca la carta",
+    "roles": [
+      {
+        "typeLabel": "Leggenda",
+        "oneLiner": "I boss del mazzo",
+        "detail": "Esattamente 3, iniziano a faccia in giù. Girane una per turno (1 €$) o esauriscine una qualsiasi come 1 €$."
+      },
+      {
+        "typeLabel": "Unità",
+        "oneLiner": "La tua crew",
+        "detail": "Resta nel Campo. Attacca Unità esaurite o ruba Gig. Non può attaccare nel turno in cui viene giocata (salvo Adrenaline)."
+      },
+      {
+        "typeLabel": "Programma",
+        "oneLiner": "Effetto istantaneo",
+        "detail": "Paga, risolvi, negli scarti. Alcuni hanno Quick (si giocano come reazione)."
+      },
+      {
+        "typeLabel": "Gear",
+        "oneLiner": "Equipaggiamento",
+        "detail": "Si attacca a un'Unità o Leggenda. Se ne va con chi lo porta."
+      }
+    ],
+    "allSeen": "Conosci i quattro ruoli. Ora: il ritmo del turno."
+  },
+  "turn": {
+    "title": "Giocare un turno",
+    "explain": "Ogni turno = fase iniziale (ordine fisso) e poi fase principale (a tua scelta).",
+    "challenge": "Passa ogni fase con «Fallo».",
+    "steps": [
+      {
+        "title": "1. Preparare",
+        "body": "Rimetti in verticale le carte esaurite.",
+        "action": "Prepara le mie carte"
+      },
+      {
+        "title": "2. Pescare",
+        "body": "Prendi la prima carta del tuo mazzo.",
+        "action": "Pesca 1"
+      },
+      {
+        "title": "3. Ottenere un Gig",
+        "body": "Prendi un dado del Fixer (il d20 per ultimo), lancialo e spostalo nei Gig.",
+        "action": "Lancia il mio Gig"
+      },
+      {
+        "title": "4. Vendere (facoltativo, una volta)",
+        "body": "Rivela una carta vendibile e mettila a faccia in giù = +1 Eddie.",
+        "action": "Vendi per 1 €$"
+      },
+      {
+        "title": "5. Giocare carte",
+        "body": "Esaurisci Eddie (o Leggende) per giocare Unità, Gear e Programmi.",
+        "action": "Gioca Jackie (esempio)"
+      },
+      {
+        "title": "6. Attaccare",
+        "body": "Esaurisci un'Unità per attaccare un'Unità rivale esaurita o la zona Gig rivale.",
+        "action": "Attacca"
+      }
+    ],
+    "done": "Turno completato. Ritmo: Preparare → Pescare → Gig → poi quello che vuoi."
+  },
+  "combat": {
+    "title": "Combattere o rubare?",
+    "explain": "Due bersagli possibili. Scegli la mossa giusta per ogni situazione.",
+    "scenarios": [
+      {
+        "setup": "Adam Smasher (Power 15) è pronto. Il Rivale ha dei Gig e nessuna Unità esaurita.",
+        "question": "Qual è il modo migliore per avvicinarti alla vittoria?",
+        "choices": [
+          {
+            "label": "Attaccare la zona Gig → rubare 2 Gig",
+            "feedback": "Power 15 = 2 Gig (1 da 1+, +1 da 10+)."
+          },
+          {
+            "label": "Attaccare un'Unità rivale pronta",
+            "feedback": "Non puoi attaccare Unità pronte (salvo che una carta lo consenta)."
+          },
+          {
+            "label": "Non fare nulla: troppo rischioso",
+            "feedback": "È permesso, ma qui rubare Gig è la via principale verso la vittoria."
+          }
+        ]
+      },
+      {
+        "setup": "Jackie (forte) contro la Meredith rivale esaurita.",
+        "question": "Come liberi il Campo?",
+        "choices": [
+          {
+            "label": "Attaccare Meredith → Power contro Power",
+            "feedback": "Vince il Power più alto. Parità = entrambe negli scarti."
+          },
+          {
+            "label": "Ignorare sempre le Unità e rubare soltanto",
+            "feedback": "A volte è vero, ma spesso conviene eliminare un'Unità esaurita pericolosa."
+          },
+          {
+            "label": "Equipaggiare Gear al Rivale",
+            "feedback": "Il Gear si equipaggia solo alle tue Unità / Leggende."
+          }
+        ]
+      },
+      {
+        "setup": "Il Rivale attacca la tua zona Gig. Hai Meredith pronta con Blocker.",
+        "question": "Puoi reagire?",
+        "choices": [
+          {
+            "label": "Esaurire Meredith (Blocker) per incassare il colpo",
+            "feedback": "Blocker devia l'attacco. Anche se vinci il combattimento, non viene rubato nessun Gig."
+          },
+          {
+            "label": "No: i Gig non si possono proteggere",
+            "feedback": "Blocker (e Quick) esistono proprio per questo."
+          },
+          {
+            "label": "Pescare 3 come reazione gratuita",
+            "feedback": "Non è una regola di base: solo se una carta lo dice."
+          }
+        ]
+      }
+    ],
+    "allClear": "Combattimenti e furti: acquisiti. Ultima tappa: il quiz."
+  },
+  "quiz": {
+    "title": "Esame di strada",
+    "explain": "5 domande. Fai 4+ per diplomarti a Night City.",
+    "questions": [
+      {
+        "prompt": "Quando vinci?",
+        "choices": [
+          {
+            "label": "Appena arrivi a 7 Gig, anche a metà del turno rivale",
+            "feedback": "Devi iniziare il TUO turno con 7 (salvo nei supplementari)."
+          },
+          {
+            "label": "All'inizio del tuo turno, se hai già 7 Gig",
+            "feedback": "Esatto."
+          },
+          {
+            "label": "Quando le facce dei dadi sommano 50",
+            "feedback": "Quella è la Street Cred, non la condizione di vittoria."
+          }
+        ]
+      },
+      {
+        "prompt": "A cosa servono gli Eddie?",
+        "choices": [
+          {
+            "label": "A pagare il costo delle carte",
+            "feedback": "Ogni carta a faccia in giù nella zona Eddie = 1 €$."
+          },
+          {
+            "label": "Ad attaccare il tuo Rivale",
+            "feedback": "Ad attaccare sono le Unità."
+          },
+          {
+            "label": "A sostituire i dadi Gig",
+            "feedback": "I Gig restano dadi."
+          }
+        ]
+      },
+      {
+        "prompt": "Hai appena giocato un'Unità. Può attaccare?",
+        "choices": [
+          {
+            "label": "Sì, sempre",
+            "feedback": "Ha Lag fino alla fine del turno."
+          },
+          {
+            "label": "No, salvo che abbia Adrenaline (o simili)",
+            "feedback": "Il Lag impedisce di attaccare all'arrivo."
+          },
+          {
+            "label": "Solo se è una Leggenda",
+            "feedback": "Le Leggende con Go Solo sono un caso a parte."
+          }
+        ]
+      },
+      {
+        "prompt": "Ordine della fase iniziale?",
+        "choices": [
+          {
+            "label": "Pescare → Preparare → Gig",
+            "feedback": "Preparare viene prima."
+          },
+          {
+            "label": "Preparare → Pescare → Gig",
+            "feedback": "Sempre in quest'ordine."
+          },
+          {
+            "label": "Gig → Pescare → Attaccare",
+            "feedback": "Attaccare fa parte della fase principale."
+          }
+        ]
+      },
+      {
+        "prompt": "Quanti Gig ruba Power 20 attaccando la zona Gig?",
+        "choices": [
+          {
+            "label": "1",
+            "feedback": "1 da Power 1+, +1 ogni 10."
+          },
+          {
+            "label": "2",
+            "feedback": "20+ = 3 Gig."
+          },
+          {
+            "label": "3",
+            "feedback": "1+ → 1, 10+ → 2, 20+ → 3."
+          }
+        ]
+      }
+    ],
+    "scoreLine": "{score} / {total} corrette",
+    "pass": "Diploma sbloccato. Consulta le regole complete quando vuoi.",
+    "retry": "Quasi: rifai il quiz."
+  },
+  "done": {
+    "title": "Benvenuto a Night City",
+    "body": "Hai le basi: Gig, zone, tipi di carta, turni, combattimento. Il resto arriva giocando, e con le regole dettagliate.",
+    "restart": "Rifai il percorso",
+    "openRules": "Apri le regole dettagliate",
+    "source": "Guida ufficiale di Cyberpunk TCG"
+  },
+  "backToTop": "Torna su",
+  "leave": {
+    "title": "Lasciare il percorso per principianti?",
+    "body": "I tuoi progressi nel percorso andranno persi e dovrai ricominciare dall'inizio.",
+    "stay": "Continua il percorso",
+    "leave": "Esci"
+  }
+}

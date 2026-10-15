@@ -1,18 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
+import { useNumberFormat } from "@/i18n/number-format";
+import { Link, type Href } from "@/i18n/navigation";
+import type { MessageKey, Translator } from "@/i18n/translator";
 import { PriceChart, type ChartPoint } from "@/components/PriceChart";
 import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
 import { useCollection } from "@/components/CollectionProvider";
-import { useI18n } from "@/components/LocaleProvider";
 import {
   applyInvestmentPeriod,
   buildInvestmentLines,
   filterInvestmentLines,
-  formatInt,
-  formatMoney,
   investmentBySet,
   summarizeInvestment,
   type InvestmentLine,
@@ -26,7 +26,6 @@ import {
   partitionCatalogSets,
   SEALED_GROUP_FILTER,
 } from "@/lib/reference-data";
-import type { Messages } from "@/lib/i18n/messages";
 import { CardImage } from "@/components/CardImage";
 
 type SortDir = "asc" | "desc";
@@ -46,13 +45,13 @@ type ChartRange = "1d" | "1w" | "1m" | "1y" | "all";
 
 const CHART_RANGE_DAYS: Record<ChartRange, number | null> = { "1d": 1, "1w": 7, "1m": 30, "1y": 365, all: null };
 
-function chartRangeOptions(t: Messages): { value: ChartRange; label: string }[] {
+function chartRangeOptions(t: Translator): { value: ChartRange; label: string }[] {
   return [
-    { value: "1d", label: t.investment.range1d },
-    { value: "1w", label: t.investment.range1w },
-    { value: "1m", label: t.investment.range1m },
-    { value: "1y", label: t.investment.range1y },
-    { value: "all", label: t.investment.rangeAll },
+    { value: "1d", label: t("investment.range1d") },
+    { value: "1w", label: t("investment.range1w") },
+    { value: "1m", label: t("investment.range1m") },
+    { value: "1y", label: t("investment.range1y") },
+    { value: "all", label: t("investment.rangeAll") },
   ];
 }
 
@@ -91,27 +90,27 @@ function initialSortDir(columnKey: string): SortDir {
 const SET_SORT_KEYS: SetSortKey[] = ["marketValue", "marketVar", "purchasePnL", "invested", "copies", "set"];
 const LINE_SORT_KEYS: LineSortKey[] = ["market", "marketVar", "purchasePnL", "purchase", "qty", "card", "set"];
 
-function setSortLabel(key: SetSortKey, t: Messages) {
+function setSortLabel(key: SetSortKey, t: Translator) {
   const labels: Record<SetSortKey, string> = {
-    set: t.investment.set,
-    copies: t.investment.copies,
-    marketValue: t.investment.marketValue,
-    marketVar: t.investment.marketVar,
-    invested: t.investment.investedCol,
-    purchasePnL: t.investment.purchasePnL,
+    set: t("investment.set"),
+    copies: t("investment.copies"),
+    marketValue: t("investment.marketValue"),
+    marketVar: t("investment.marketVar"),
+    invested: t("investment.investedCol"),
+    purchasePnL: t("investment.purchasePnL"),
   };
   return labels[key];
 }
 
-function lineSortLabel(key: LineSortKey, t: Messages) {
+function lineSortLabel(key: LineSortKey, t: Translator) {
   const labels: Record<LineSortKey, string> = {
-    card: t.investment.card,
-    set: t.investment.set,
-    qty: t.investment.qty,
-    purchase: t.investment.purchase,
-    market: t.investment.market,
-    marketVar: t.investment.marketVar,
-    purchasePnL: t.investment.purchasePnL,
+    card: t("investment.card"),
+    set: t("investment.set"),
+    qty: t("investment.qty"),
+    purchase: t("investment.purchase"),
+    market: t("investment.market"),
+    marketVar: t("investment.marketVar"),
+    purchasePnL: t("investment.purchasePnL"),
   };
   return labels[key];
 }
@@ -120,21 +119,22 @@ function languageParam(value: string | null) {
   return value === "en" || value === "fr" ? value : "";
 }
 
-function performanceOptions(t: Messages): { value: InvestmentPerformance; label: string }[] {
+function performanceOptions(t: Translator): { value: InvestmentPerformance; label: string }[] {
   return [
-    { value: "all", label: t.investment.perfAll },
-    { value: "profit", label: t.investment.perfProfit },
-    { value: "loss", label: t.investment.perfLoss },
-    { value: "flat", label: t.investment.perfFlat },
-    { value: "unknown", label: t.investment.perfUnknown },
-    { value: "rising", label: t.investment.perfRising },
-    { value: "falling", label: t.investment.perfFalling },
+    { value: "all", label: t("investment.perfAll") },
+    { value: "profit", label: t("investment.perfProfit") },
+    { value: "loss", label: t("investment.perfLoss") },
+    { value: "flat", label: t("investment.perfFlat") },
+    { value: "unknown", label: t("investment.perfUnknown") },
+    { value: "rising", label: t("investment.perfRising") },
+    { value: "falling", label: t("investment.perfFalling") },
   ];
 }
 
 export function InvestmentScreen() {
+  const fmt = useNumberFormat();
   const { ready, error, catalog, items } = useCollection();
-  const { t } = useI18n();
+  const t = useTranslations();
   // Filtres initiaux passés par l'URL (ex. clic sur une extension du tableau de bord).
   const searchParams = useSearchParams();
   const [setFilter, setSetFilter] = useState(() => searchParams.get("set") || "all");
@@ -272,9 +272,9 @@ export function InvestmentScreen() {
     setFilter === "all"
       ? null
       : setFilter === CARDS_GROUP_FILTER
-        ? t.investment.groupCards
+        ? t("investment.groupCards")
         : setFilter === SEALED_GROUP_FILTER
-          ? t.investment.groupSealed
+          ? t("investment.groupSealed")
           : (catalog?.sets.find((set) => set.code === setFilter)?.name ?? setFilter);
 
   // Re-cliquer l'extension sélectionnée la désélectionne (évite de remonter aux filtres sur mobile).
@@ -282,7 +282,7 @@ export function InvestmentScreen() {
 
   const renderSetChip = () =>
     selectedSetLabel ? (
-      <SetChip label={selectedSetLabel} ariaLabel={t.investment.clearSet(selectedSetLabel)} onClear={() => setSetFilter("all")} />
+      <SetChip label={selectedSetLabel} ariaLabel={t("investment.clearSet", { set: selectedSetLabel })} onClear={() => setSetFilter("all")} />
     ) : null;
 
   const activeFilterCount =
@@ -292,8 +292,8 @@ export function InvestmentScreen() {
     <input
       value={query}
       onChange={(event) => setQuery(event.target.value)}
-      placeholder={t.investment.searchPlaceholder}
-      aria-label={t.investment.search}
+      placeholder={t("investment.searchPlaceholder")}
+      aria-label={t("investment.search")}
       type="search"
       enterKeyHint="search"
       className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
@@ -301,44 +301,44 @@ export function InvestmentScreen() {
   );
 
   if (error) return <p className="p-6 text-danger">{error}</p>;
-  if (!ready || !catalog) return <p className="p-6 text-muted">{t.investment.loading}</p>;
+  if (!ready || !catalog) return <p className="p-6 text-muted">{t("investment.loading")}</p>;
   if (catalog.printings.length === 0) {
     return (
       <p className="p-6 text-sm text-muted">
-        {t.investment.emptyCatalog} <code className="text-cyan">npm run import:cards</code>.
+        {t("investment.emptyCatalog")} <code className="text-cyan">npm run import:cards</code>.
       </p>
     );
   }
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6">
-      <h1 className="text-2xl text-yellow sm:text-4xl">{t.investment.eyebrow}</h1>
+      <h1 className="text-2xl text-yellow sm:text-4xl">{t("investment.eyebrow")}</h1>
 
       <section className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         <SummaryStat
-          label={t.investment.marketValue}
-          value={summary.pricedCopies > 0 ? formatMoney(summary.marketTotal) : "—"}
+          label={t("investment.marketValue")}
+          value={summary.pricedCopies > 0 ? fmt.money(summary.marketTotal) : "—"}
           delta={summary.marketDelta}
           deltaAmount={summary.marketDeltaAmount}
         />
         <SummaryStat
-          label={t.investment.invested}
-          value={summary.investedEur > 0 ? formatMoney(summary.investedEur) : "—"}
+          label={t("investment.invested")}
+          value={summary.investedEur > 0 ? fmt.money(summary.investedEur) : "—"}
         />
         <SummaryStat
-          label={t.investment.pnl}
-          value={summary.profitEur == null ? "—" : formatMoney(summary.profitEur)}
+          label={t("investment.pnl")}
+          value={summary.profitEur == null ? "—" : fmt.money(summary.profitEur)}
           tone={summary.profitEur == null ? undefined : summary.profitEur >= 0 ? "gain" : "loss"}
         />
         <SummaryStat
-          label={t.investment.trackedCopies}
-          value={`${formatInt(summary.pricedCopies)} / ${formatInt(summary.copies)}`}
+          label={t("investment.trackedCopies")}
+          value={`${fmt.int(summary.pricedCopies)} / ${fmt.int(summary.copies)}`}
         />
       </section>
 
       {!catalog.hasPrices ? (
         <p className="text-sm text-muted">
-          {t.investment.noPrices} <code className="text-cyan">npm run import:prices</code>.
+          {t("investment.noPrices")} <code className="text-cyan">npm run import:prices</code>.
         </p>
       ) : null}
 
@@ -355,7 +355,7 @@ export function InvestmentScreen() {
               filtersOpen || activeFilterCount > 0 ? "border-cyan text-cyan" : "border-line text-muted"
             }`}
           >
-            {t.filters.title}
+            {t("filters.title")}
             {activeFilterCount > 0 ? (
               <span className="grid h-5 min-w-5 place-items-center bg-cyan px-1 font-mono text-xs text-background">
                 {activeFilterCount}
@@ -368,17 +368,17 @@ export function InvestmentScreen() {
           className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-3 sm:grid-cols-3 md:grid md:grid-cols-4`}
         >
           <label className="text-sm">
-            <span className="mb-1 block text-muted">{t.investment.set}</span>
+            <span className="mb-1 block text-muted">{t("investment.set")}</span>
             <select
               className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
               value={setFilter}
               onChange={(event) => setSetFilter(event.target.value)}
             >
-              <option value="all">{t.investment.allSets}</option>
+              <option value="all">{t("investment.allSets")}</option>
               {setOptions.cardSets.length > 0 ? (
                 <>
                   <option value={CARDS_GROUP_FILTER} className="font-semibold">
-                    {t.investment.groupCards}
+                    {t("investment.groupCards")}
                   </option>
                   {setOptions.cardSets.map((set) => (
                     <option key={set.code} value={set.code}>
@@ -391,7 +391,7 @@ export function InvestmentScreen() {
               {setOptions.sealedSets.length > 0 ? (
                 <>
                   <option value={SEALED_GROUP_FILTER} className="font-semibold">
-                    {t.investment.groupSealed}
+                    {t("investment.groupSealed")}
                   </option>
                   {setOptions.sealedSets.map((set) => (
                     <option key={set.code} value={set.code}>
@@ -404,19 +404,19 @@ export function InvestmentScreen() {
             </select>
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-muted">{t.investment.language}</span>
+            <span className="mb-1 block text-muted">{t("investment.language")}</span>
             <select
               className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
               value={language}
               onChange={(event) => setLanguage(event.target.value)}
             >
-              <option value="">{t.investment.allLanguages}</option>
-              <option value="en">{t.common.english}</option>
-              <option value="fr">{t.common.french}</option>
+              <option value="">{t("investment.allLanguages")}</option>
+              <option value="en">{t("common.english")}</option>
+              <option value="fr">{t("common.french")}</option>
             </select>
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-muted">{t.investment.performance}</span>
+            <span className="mb-1 block text-muted">{t("investment.performance")}</span>
             <select
               className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
               value={performance}
@@ -430,14 +430,14 @@ export function InvestmentScreen() {
             </select>
           </label>
           <label className="hidden text-sm md:block">
-            <span className="mb-1 block text-muted">{t.investment.search}</span>
+            <span className="mb-1 block text-muted">{t("investment.search")}</span>
             {renderSearch()}
           </label>
         </div>
       </section>
 
       <section className="flex flex-col gap-2">
-        <div role="group" aria-label={t.investment.range} className="flex border border-line bg-panel sm:self-start">
+        <div role="group" aria-label={t("investment.range")} className="flex border border-line bg-panel sm:self-start">
           {chartRangeOptions(t).map((option) => {
             const active = option.value === chartRange;
             return (
@@ -456,9 +456,9 @@ export function InvestmentScreen() {
           })}
         </div>
         {chartStatus === "loading" && !chartLoaded ? (
-          <p className="border border-line bg-panel px-4 py-8 text-sm text-muted">{t.investment.chartLoading}</p>
+          <p className="border border-line bg-panel px-4 py-8 text-sm text-muted">{t("investment.chartLoading")}</p>
         ) : chartStatus === "error" ? (
-          <p className="border border-line bg-panel px-4 py-8 text-sm text-danger">{t.investment.chartError}</p>
+          <p className="border border-line bg-panel px-4 py-8 text-sm text-danger">{t("investment.chartError")}</p>
         ) : (
           <div
             aria-busy={chartStatus === "loading"}
@@ -466,8 +466,8 @@ export function InvestmentScreen() {
           >
             <PriceChart
               points={rangedChartPoints}
-              label={t.investment.chartLabel}
-              emptyHint={t.investment.chartEmpty}
+              label={t("investment.chartLabel")}
+              emptyHint={t("investment.chartEmpty")}
             />
           </div>
         )}
@@ -475,11 +475,11 @@ export function InvestmentScreen() {
 
       <section>
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <h2 className="text-lg">{t.investment.bySet}</h2>
+          <h2 className="text-lg">{t("investment.bySet")}</h2>
           {renderSetChip()}
         </div>
         {bySet.length === 0 ? (
-          <p className="border border-line bg-panel px-4 py-6 text-sm text-muted">{t.investment.emptyFiltered}</p>
+          <p className="border border-line bg-panel px-4 py-6 text-sm text-muted">{t("investment.emptyFiltered")}</p>
         ) : (
           <>
             <MobileSort
@@ -491,7 +491,7 @@ export function InvestmentScreen() {
             <ul className="border border-line bg-panel md:hidden">
               {sortedCardSets.length > 0 && (sortedSealedSets.length > 0 || setFilter === CARDS_GROUP_FILTER) ? (
                 <GroupItem
-                  label={t.investment.groupCards}
+                  label={t("investment.groupCards")}
                   active={setFilter === CARDS_GROUP_FILTER}
                   onSelect={() => toggleSet(CARDS_GROUP_FILTER)}
                 />
@@ -501,7 +501,7 @@ export function InvestmentScreen() {
               ))}
               {sortedSealedSets.length > 0 ? (
                 <GroupItem
-                  label={t.investment.groupSealed}
+                  label={t("investment.groupSealed")}
                   active={setFilter === SEALED_GROUP_FILTER}
                   onSelect={() => toggleSet(SEALED_GROUP_FILTER)}
                 />
@@ -515,42 +515,42 @@ export function InvestmentScreen() {
                 <thead className="bg-panel-2 text-muted">
                   <tr>
                     <SortableTh
-                      label={t.investment.set}
+                      label={t("investment.set")}
                       columnKey="set"
                       sort={setSort}
                       onSort={setSetSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.copies}
+                      label={t("investment.copies")}
                       columnKey="copies"
                       sort={setSort}
                       onSort={setSetSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.marketValue}
+                      label={t("investment.marketValue")}
                       columnKey="marketValue"
                       sort={setSort}
                       onSort={setSetSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.marketVar}
+                      label={t("investment.marketVar")}
                       columnKey="marketVar"
                       sort={setSort}
                       onSort={setSetSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.investedCol}
+                      label={t("investment.investedCol")}
                       columnKey="invested"
                       sort={setSort}
                       onSort={setSetSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.purchasePnL}
+                      label={t("investment.purchasePnL")}
                       columnKey="purchasePnL"
                       sort={setSort}
                       onSort={setSetSort}
@@ -561,7 +561,7 @@ export function InvestmentScreen() {
                 <tbody>
                   {sortedCardSets.length > 0 && (sortedSealedSets.length > 0 || setFilter === CARDS_GROUP_FILTER) ? (
                     <GroupRow
-                      label={t.investment.groupCards}
+                      label={t("investment.groupCards")}
                       active={setFilter === CARDS_GROUP_FILTER}
                       onSelect={() => toggleSet(CARDS_GROUP_FILTER)}
                     />
@@ -571,7 +571,7 @@ export function InvestmentScreen() {
                   ))}
                   {sortedSealedSets.length > 0 ? (
                     <GroupRow
-                      label={t.investment.groupSealed}
+                      label={t("investment.groupSealed")}
                       active={setFilter === SEALED_GROUP_FILTER}
                       onSelect={() => toggleSet(SEALED_GROUP_FILTER)}
                     />
@@ -588,14 +588,14 @@ export function InvestmentScreen() {
 
       <section>
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          <h2 className="text-lg">{t.investment.detail}</h2>
+          <h2 className="text-lg">{t("investment.detail")}</h2>
           {renderSetChip()}
         </div>
         <p className="mb-3 text-xs text-muted sm:text-sm">
-          {t.investment.detailHint(formatInt(filtered.length), t.common.lines(filtered.length))}
+          {t("investment.detailHint", { count: fmt.int(filtered.length), noun: t("common.lines", { n: filtered.length }) })}
         </p>
         {filtered.length === 0 ? (
-          <p className="border border-line bg-panel px-4 py-6 text-sm text-muted">{t.investment.noResults}</p>
+          <p className="border border-line bg-panel px-4 py-6 text-sm text-muted">{t("investment.noResults")}</p>
         ) : (
           <>
             <MobileSort
@@ -614,49 +614,49 @@ export function InvestmentScreen() {
                 <thead className="bg-panel-2 text-muted">
                   <tr>
                     <SortableTh
-                      label={t.investment.card}
+                      label={t("investment.card")}
                       columnKey="card"
                       sort={lineSort}
                       onSort={setLineSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.set}
+                      label={t("investment.set")}
                       columnKey="set"
                       sort={lineSort}
                       onSort={setLineSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.qty}
+                      label={t("investment.qty")}
                       columnKey="qty"
                       sort={lineSort}
                       onSort={setLineSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.purchase}
+                      label={t("investment.purchase")}
                       columnKey="purchase"
                       sort={lineSort}
                       onSort={setLineSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.market}
+                      label={t("investment.market")}
                       columnKey="market"
                       sort={lineSort}
                       onSort={setLineSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.marketVar}
+                      label={t("investment.marketVar")}
                       columnKey="marketVar"
                       sort={lineSort}
                       onSort={setLineSort}
                       t={t}
                     />
                     <SortableTh
-                      label={t.investment.purchasePnL}
+                      label={t("investment.purchasePnL")}
                       columnKey="purchasePnL"
                       sort={lineSort}
                       onSort={setLineSort}
@@ -689,12 +689,13 @@ function SortableTh<K extends string>({
   columnKey: K;
   sort: SortState<K> | null;
   onSort: (next: SortState<K>) => void;
-  t: Messages;
+  t: Translator;
 }) {
   const active = sort != null && sort.key === columnKey;
   const nextDir: SortDir = active ? (sort.dir === "asc" ? "desc" : "asc") : initialSortDir(columnKey);
-  const directionLabel = nextDir === "asc" ? t.investment.sortAsc : t.investment.sortDesc;
-  const hint = (t.investment.colHints as Record<string, string>)[columnKey];
+  const directionLabel = nextDir === "asc" ? t("investment.sortAsc") : t("investment.sortDesc");
+  const hintKey = `investment.colHints.${columnKey}` as MessageKey;
+  const hint = t.has(hintKey) ? t(hintKey) : undefined;
   const hintId = useId();
   const alignRight = RIGHT_HINT_COLUMNS.has(columnKey);
 
@@ -711,7 +712,7 @@ function SortableTh<K extends string>({
           active ? "text-cyan" : "text-muted"
         }`}
         onClick={() => onSort({ key: columnKey, dir: nextDir })}
-        aria-label={t.investment.sortBy(label, directionLabel)}
+        aria-label={t("investment.sortBy", { column: label, direction: directionLabel })}
         aria-describedby={hint ? hintId : undefined}
       >
         <span className="min-w-0 flex-1">{label}</span>
@@ -762,13 +763,13 @@ function MobileSort<K extends string>({
   options: { key: K; label: string }[];
   sort: SortState<K>;
   onSort: (next: SortState<K>) => void;
-  t: Messages;
+  t: Translator;
 }) {
   const nextDir: SortDir = sort.dir === "asc" ? "desc" : "asc";
   return (
     <div className="mb-2 flex items-center gap-2 text-sm md:hidden">
       <label className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="shrink-0 text-muted">{t.investment.sortLabel}</span>
+        <span className="shrink-0 text-muted">{t("investment.sortLabel")}</span>
         <select
           className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
           value={sort.key}
@@ -787,7 +788,7 @@ function MobileSort<K extends string>({
       <button
         type="button"
         className="grid h-10 w-10 shrink-0 place-items-center border border-line text-cyan hover:border-cyan"
-        aria-label={nextDir === "asc" ? t.investment.sortAsc : t.investment.sortDesc}
+        aria-label={nextDir === "asc" ? t("investment.sortAsc") : t("investment.sortDesc")}
         onClick={() => onSort({ key: sort.key, dir: nextDir })}
       >
         <SortArrow active dir={sort.dir} />
@@ -951,6 +952,7 @@ function GroupRow({ label, active, onSelect }: { label: string; active: boolean;
 }
 
 function SetRow({ row, active, onOpen }: { row: SetInvestment; active: boolean; onOpen: () => void }) {
+  const fmt = useNumberFormat();
   return (
     <tr className={`border-t border-line ${active ? "bg-cyan/10" : "hover:bg-white/5"}`}>
       <td className="p-0">
@@ -964,21 +966,22 @@ function SetRow({ row, active, onOpen }: { row: SetInvestment; active: boolean; 
         </button>
       </td>
       <td className="px-3 py-2 font-mono">
-        {formatInt(row.pricedCopies)} / {formatInt(row.copies)}
+        {fmt.int(row.pricedCopies)} / {fmt.int(row.copies)}
       </td>
-      <td className="px-3 py-2 font-mono">{row.pricedCopies > 0 ? formatMoney(row.marketTotal) : "—"}</td>
+      <td className="px-3 py-2 font-mono">{row.pricedCopies > 0 ? fmt.money(row.marketTotal) : "—"}</td>
       <td className="px-3 py-2">
         <TrendBadge delta={row.marketDelta} amount={row.marketDeltaAmount} />
       </td>
-      <td className="px-3 py-2 font-mono">{row.investedLines > 0 ? formatMoney(row.investedEur) : "—"}</td>
+      <td className="px-3 py-2 font-mono">{row.investedLines > 0 ? fmt.money(row.investedEur) : "—"}</td>
       <td className={`px-3 py-2 font-mono ${profitClass(row.profitEur)}`}>
-        {row.profitEur == null ? "—" : formatSignedMoney(row.profitEur)}
+        {row.profitEur == null ? "—" : formatSignedMoney(fmt, row.profitEur)}
       </td>
     </tr>
   );
 }
 
 function LineRow({ line }: { line: InvestmentLine }) {
+  const fmt = useNumberFormat();
   const href = lineHref(line);
   return (
     <tr className="border-t border-line hover:bg-white/5">
@@ -1004,9 +1007,9 @@ function LineRow({ line }: { line: InvestmentLine }) {
       <td className="px-3 py-2 font-mono">
         {line.purchaseTotal == null
           ? "—"
-          : formatMoney(line.purchaseTotal, line.purchaseCurrency || "EUR")}
+          : fmt.money(line.purchaseTotal, line.purchaseCurrency || "EUR")}
       </td>
-      <td className="px-3 py-2 font-mono">{line.marketTotal == null ? "—" : formatMoney(line.marketTotal)}</td>
+      <td className="px-3 py-2 font-mono">{line.marketTotal == null ? "—" : fmt.money(line.marketTotal)}</td>
       <td className="px-3 py-2">
         <TrendBadge
           delta={line.marketDelta}
@@ -1014,7 +1017,7 @@ function LineRow({ line }: { line: InvestmentLine }) {
         />
       </td>
       <td className={`px-3 py-2 font-mono ${profitClass(line.profit)}`}>
-        {line.profit == null ? "—" : formatSignedMoney(line.profit)}
+        {line.profit == null ? "—" : formatSignedMoney(fmt, line.profit)}
       </td>
     </tr>
   );
@@ -1061,26 +1064,27 @@ function GroupItem({ label, active, onSelect }: { label: string; active: boolean
   );
 }
 
-function SetItem({ row, t, active, onOpen }: { row: SetInvestment; t: Messages; active: boolean; onOpen: () => void }) {
+function SetItem({ row, t, active, onOpen }: { row: SetInvestment; t: Translator; active: boolean; onOpen: () => void }) {
+  const fmt = useNumberFormat();
   return (
     <li className={`border-t border-line first:border-t-0 ${active ? "bg-cyan/10" : ""}`}>
       <button type="button" aria-pressed={active} className="block w-full px-3 py-3 text-left hover:bg-white/5" onClick={onOpen}>
         <span className="flex items-baseline justify-between gap-3">
           <span className={`min-w-0 truncate ${active ? "text-cyan" : ""}`}>{row.setName}</span>
-          <span className="shrink-0 font-mono">{row.pricedCopies > 0 ? formatMoney(row.marketTotal) : "—"}</span>
+          <span className="shrink-0 font-mono">{row.pricedCopies > 0 ? fmt.money(row.marketTotal) : "—"}</span>
         </span>
         <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-          <MobileStat label={t.investment.copies}>
-            {formatInt(row.pricedCopies)} / {formatInt(row.copies)}
+          <MobileStat label={t("investment.copies")}>
+            {fmt.int(row.pricedCopies)} / {fmt.int(row.copies)}
           </MobileStat>
-          <MobileStat label={t.investment.marketVar}>
+          <MobileStat label={t("investment.marketVar")}>
             <TrendBadge delta={row.marketDelta} amount={row.marketDeltaAmount} />
           </MobileStat>
-          <MobileStat label={t.investment.investedCol}>
-            {row.investedLines > 0 ? formatMoney(row.investedEur) : "—"}
+          <MobileStat label={t("investment.investedCol")}>
+            {row.investedLines > 0 ? fmt.money(row.investedEur) : "—"}
           </MobileStat>
-          <MobileStat label={t.investment.purchasePnL} className={profitClass(row.profitEur)}>
-            {row.profitEur == null ? "—" : formatSignedMoney(row.profitEur)}
+          <MobileStat label={t("investment.purchasePnL")} className={profitClass(row.profitEur)}>
+            {row.profitEur == null ? "—" : formatSignedMoney(fmt, row.profitEur)}
           </MobileStat>
         </dl>
       </button>
@@ -1088,7 +1092,8 @@ function SetItem({ row, t, active, onOpen }: { row: SetInvestment; t: Messages; 
   );
 }
 
-function LineItem({ line, t }: { line: InvestmentLine; t: Messages }) {
+function LineItem({ line, t }: { line: InvestmentLine; t: Translator }) {
+  const fmt = useNumberFormat();
   return (
     <li className="border-t border-line first:border-t-0">
       <Link href={lineHref(line)} className="flex gap-3 px-3 py-3 hover:bg-white/5">
@@ -1108,7 +1113,7 @@ function LineItem({ line, t }: { line: InvestmentLine; t: Messages }) {
               <p className="truncate text-xs text-muted">{line.setName}</p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="font-mono">{line.marketTotal == null ? "—" : formatMoney(line.marketTotal)}</p>
+              <p className="font-mono">{line.marketTotal == null ? "—" : fmt.money(line.marketTotal)}</p>
               <p className="text-xs">
                 <TrendBadge delta={line.marketDelta} amount={lineMarketDelta(line)} />
               </p>
@@ -1116,19 +1121,19 @@ function LineItem({ line, t }: { line: InvestmentLine; t: Messages }) {
           </div>
           <dl className="mt-2 grid grid-cols-3 gap-x-3 text-xs">
             <div className="min-w-0">
-              <dt className="text-muted">{t.investment.qty}</dt>
+              <dt className="text-muted">{t("investment.qty")}</dt>
               <dd className="font-mono">×{line.quantity}</dd>
             </div>
             <div className="min-w-0">
-              <dt className="truncate text-muted">{t.investment.purchase}</dt>
+              <dt className="truncate text-muted">{t("investment.purchase")}</dt>
               <dd className="truncate font-mono">
-                {line.purchaseTotal == null ? "—" : formatMoney(line.purchaseTotal, line.purchaseCurrency || "EUR")}
+                {line.purchaseTotal == null ? "—" : fmt.money(line.purchaseTotal, line.purchaseCurrency || "EUR")}
               </dd>
             </div>
             <div className="min-w-0 text-right">
-              <dt className="truncate text-muted">{t.investment.purchasePnL}</dt>
+              <dt className="truncate text-muted">{t("investment.purchasePnL")}</dt>
               <dd className={`truncate font-mono ${profitClass(line.profit)}`}>
-                {line.profit == null ? "—" : formatSignedMoney(line.profit)}
+                {line.profit == null ? "—" : formatSignedMoney(fmt, line.profit)}
               </dd>
             </div>
           </dl>
@@ -1138,8 +1143,8 @@ function LineItem({ line, t }: { line: InvestmentLine; t: Messages }) {
   );
 }
 
-function lineHref(line: InvestmentLine) {
-  return `/cards?set=${encodeURIComponent(line.setCode)}&language=${line.language}&printing=${line.printingId}`;
+function lineHref(line: InvestmentLine): Href {
+  return { pathname: "/cards", query: { set: line.setCode, language: line.language, printing: line.printingId } };
 }
 
 function profitClass(value: number | null) {

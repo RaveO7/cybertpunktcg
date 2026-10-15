@@ -3,9 +3,10 @@
 // des interfaces de Cyberpunk 2077 (classes .cp-* dans globals.css).
 
 import type { Metadata } from "next";
+import { getFormatter, getTranslations } from "next-intl/server";
 import type { CSSProperties } from "react";
 import { PublicDirectory } from "@/components/public/PublicDirectory";
-import { FeatureShowcase } from "@/components/public-site/FeatureShowcase";
+import { FeatureShowcase, type ShowcaseFeature, type ShowcaseText } from "@/components/public-site/FeatureShowcase";
 import { GlitchDirector } from "@/components/public-site/GlitchDirector";
 import { HeroCardFan } from "@/components/public-site/HeroCardFan";
 import { LandingActions } from "@/components/public-site/LandingActions";
@@ -16,19 +17,16 @@ import { initialTournamentDirectory } from "@/components/public-site/tournament-
 import { ShopDirectory } from "@/components/shops/ShopDirectory";
 import { JsonLd } from "@/components/site/JsonLd";
 import { loadPublicCards } from "@/lib/seo/catalog-data";
-import { colorLabel, COPY, typeLabel } from "@/lib/seo/copy";
-import { HOME_COPY, pageMetadata } from "@/lib/seo/metadata";
-import { LANDING_SECTIONS, localizedPath, type SiteLocale } from "@/lib/seo/routes";
+import { cardLabels } from "@/lib/seo/card-labels";
+import { homeCopy, pageMetadata } from "@/lib/seo/metadata";
 import { itemListLd, organizationLd, tournamentListLd, webApplicationLd, websiteLd } from "@/lib/seo/structured-data";
+import type { Locale } from "@/i18n/config";
+import { localizedPath, routePath } from "@/i18n/paths";
+import { landingSections } from "@/i18n/routing";
 
-export function landingMetadata(locale: SiteLocale): Metadata {
-  return pageMetadata({
-    locale,
-    page: { key: "home" },
-    title: HOME_COPY[locale].title,
-    absoluteTitle: true,
-    description: HOME_COPY[locale].description,
-  });
+export async function landingMetadata(locale: Locale): Promise<Metadata> {
+  const home = await homeCopy(locale);
+  return pageMetadata({ locale, page: { key: "home" }, title: home.title, absoluteTitle: true, description: home.description });
 }
 
 /** Destination de chaque module : liste des cartes, section de cette page, ou inscription pour l'application. */
@@ -77,33 +75,42 @@ function reveal(delay = 0, kind: "up" | "left" | "right" | "fade" | "wipe" = "up
   return { "data-reveal": kind, style: { "--reveal-delay": `${delay}ms` } as CSSProperties };
 }
 
-export async function Landing({ locale }: { locale: SiteLocale }) {
-  const copy = COPY[locale].landing;
-  const sections = LANDING_SECTIONS[locale];
-  const [cards, tournaments, shops] = await Promise.all([loadPublicCards(locale), initialTournamentDirectory({}), initialShopDirectory({})]);
+export async function Landing({ locale }: { locale: Locale }) {
+  const sections = landingSections[locale];
+  const [t, tCard, labels, format, home, cards, tournaments, shops] = await Promise.all([
+    getTranslations({ locale, namespace: "landing" }),
+    getTranslations({ locale, namespace: "card" }),
+    cardLabels(locale),
+    getFormatter({ locale }),
+    homeCopy(locale),
+    loadPublicCards(locale),
+    initialTournamentDirectory({}),
+    initialShopDirectory({}),
+  ]);
+  const featureCopy = t.raw("features") as Omit<ShowcaseFeature, "href" | "external">[];
   const legends = cards.filter((card) => card.cardType === "Legend" && card.thumb);
-  const money = new Intl.NumberFormat(COPY[locale].intl, { style: "currency", currency: "EUR" });
+  const money = (value: number) => format.number(value, { style: "currency", currency: "EUR" });
   const fan = legends.slice(0, 5).map((card) => ({
     slug: card.slug,
     name: card.name,
     href: localizedPath("card", locale, { slug: card.slug }),
     thumb: card.thumb!,
-    alt: COPY[locale].card.imageAlt(card.name),
-    kind: [typeLabel(locale, card.cardType), colorLabel(locale, card.color)].filter(Boolean).join(" · "),
+    alt: tCard("imageAlt", { name: card.name }),
+    kind: [labels.type(card.cardType), labels.color(card.color)].filter(Boolean).join(" · "),
     color: card.color,
     cost: card.cost,
     power: card.power,
     ram: card.ram,
     rules: card.rulesText,
-    price: card.marketPrice ? money.format(Number(card.marketPrice)) : null,
+    price: card.marketPrice ? money(Number(card.marketPrice)) : null,
     printingId: card.mainPrintingId,
   }));
   // Carte du module « Catalogue » : une vraie Unité, avec son prix si possible.
   const sample = cards.find((card) => card.cardType === "Unit" && card.thumb && card.marketPrice) ?? cards.find((card) => card.thumb);
-  const features = copy.features.map((feature) => {
+  const features = featureCopy.map((feature) => {
     const target = FEATURE_TARGET[feature.key] ?? "register";
     const href =
-      target === "register" ? "/connexion?mode=register" : target === "cards" ? localizedPath("cards", locale) : `#${sections[target]}`;
+      target === "register" ? `${routePath("/connexion", locale)}?mode=register` : target === "cards" ? localizedPath("cards", locale) : `#${sections[target]}`;
     return { ...feature, href, external: target === "register" };
   });
 
@@ -115,7 +122,7 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
         data={[
           websiteLd(locale),
           organizationLd(),
-          webApplicationLd(locale, HOME_COPY[locale].description, copy.features.map((feature) => feature.title)),
+          webApplicationLd(locale, home.description, featureCopy.map((feature) => feature.title)),
           tournamentListLd(tournaments.initial?.tournaments ?? [], locale),
           itemListLd((shops.initial?.shops ?? []).map((shop) => ({ name: shop.name, path: localizedPath("shop", locale, { slug: shop.slug }) }))),
         ]}
@@ -126,24 +133,24 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
         <div className="relative mx-auto grid w-full max-w-[1100px] items-center gap-10 px-3 py-12 sm:px-4 md:grid-cols-[1.05fr_1fr] md:py-20">
           <div className="flex flex-col gap-6">
             <div {...intro(0, "left")} className="self-start">
-              <p className="cp-index cp-glitch" data-text={`// ${copy.eyebrow}`} data-glitch="hero-eyebrow">
-                {`// ${copy.eyebrow}`}
+              <p className="cp-index cp-glitch" data-text={`// ${t("eyebrow")}`} data-glitch="hero-eyebrow">
+                {`// ${t("eyebrow")}`}
               </p>
             </div>
             <div {...intro(60)}>
               <h1
                 className="cp-glitch font-display text-3xl font-bold uppercase leading-[1.05] tracking-wide text-yellow sm:text-5xl"
-                data-text={copy.title}
+                data-text={t("title")}
                 data-glitch="hero-title"
               >
-                {copy.title}
+                {t("title")}
               </h1>
             </div>
             <p {...intro(160)} className="max-w-xl border-l-2 border-cyan/60 pl-4 text-base leading-7 text-muted">
-              {copy.lead}
+              {t("lead")}
             </p>
             <div {...intro(260)} className="flex flex-wrap gap-3">
-              <LandingActions register={copy.register} openApp={copy.openApp} />
+              <LandingActions register={t("register")} openApp={t("openApp")} />
             </div>
           </div>
           {/* Pas d'apparition au défilement : l'éventail a sa propre arrivée (donne des cartes). */}
@@ -151,10 +158,10 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
             <HeroCardFan
               cards={fan}
               labels={{
-                list: copy.fanLabel,
-                close: copy.cardClose,
-                track: COPY[locale].card.addToCollection,
-                price: COPY[locale].card.marketPrice,
+                list: t("fanLabel"),
+                close: t("cardClose"),
+                track: tCard("addToCollection"),
+                price: tCard("marketPrice"),
               }}
             />
           ) : null}
@@ -169,23 +176,24 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
             <div className="mb-8 flex flex-col gap-2">
               <p {...reveal(0, "left")} className="cp-index">
                 {"01 // "}
-                {copy.modulesLabel}
+                {t("modulesLabel")}
               </p>
               <div {...reveal(120)} className="self-start">
                 <h2
                   className="cp-glitch font-display text-3xl font-bold uppercase tracking-wide text-yellow sm:text-4xl"
-                  data-text={copy.featuresTitle}
+                  data-text={t("featuresTitle")}
                   data-glitch="modules-title"
                 >
-                  {copy.featuresTitle}
+                  {t("featuresTitle")}
                 </h2>
               </div>
             </div>
           }
           features={features}
-          labels={{ preview: copy.preview, example: copy.example, open: copy.open }}
+          labels={{ preview: t("preview"), example: t("example"), open: t("open") }}
           data={{
-            locale,
+            text: t.raw("showcase") as ShowcaseText,
+            missingCost: money(7.8),
             legends: legends.slice(0, 3).map((card) => ({ name: card.name, thumb: card.thumb! })),
             sample: sample?.thumb
               ? {
@@ -194,7 +202,7 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
                   cost: sample.cost,
                   power: sample.power,
                   ram: sample.ram,
-                  price: sample.marketPrice ? money.format(Number(sample.marketPrice)) : null,
+                  price: sample.marketPrice ? money(Number(sample.marketPrice)) : null,
                 }
               : null,
             totalCards: cards.length,
@@ -207,19 +215,19 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
         <div className="mx-auto mb-8 flex w-full max-w-[1100px] flex-col gap-2 px-3 sm:px-4">
           <p {...reveal(0, "left")} className="cp-index">
             {"02 // "}
-            {copy.findLabel}
+            {t("findLabel")}
           </p>
           <div {...reveal(120)} className="self-start">
             <h2
               className="cp-glitch font-display text-3xl font-bold uppercase tracking-wide text-yellow sm:text-4xl"
-              data-text={copy.findTitle}
+              data-text={t("findTitle")}
               data-glitch="find-title"
             >
-              {copy.findTitle}
+              {t("findTitle")}
             </h2>
           </div>
           <p {...reveal(240)} className="max-w-2xl text-sm text-muted">
-            {copy.findBody}
+            {t("findBody")}
           </p>
         </div>
         <div {...reveal(300, "fade")}>
@@ -227,13 +235,13 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
             tabs={{
               tournaments: {
                 id: sections.tournaments,
-                label: copy.tabTournaments,
+                label: t("tabTournaments"),
                 count: tournaments.initial?.total ?? null,
                 panel: <PublicDirectory initialParams={tournaments.params} initial={tournaments.initial} embedded />,
               },
               shops: {
                 id: sections.shops,
-                label: copy.tabShops,
+                label: t("tabShops"),
                 count: shops.initial?.total ?? null,
                 panel: <ShopDirectory initialParams={shops.params} initial={shops.initial} embedded />,
               },
@@ -246,13 +254,13 @@ export async function Landing({ locale }: { locale: SiteLocale }) {
       <section {...reveal(0, "wipe")} className="cp-on-yellow bg-yellow text-black">
         <div className="mx-auto flex w-full max-w-[1100px] flex-col items-start gap-5 px-3 py-14 sm:px-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-2">
-            <h2 className="cp-glitch self-start font-display text-3xl font-bold uppercase tracking-wide" data-text={copy.finalTitle} data-glitch="final-title">
-              {copy.finalTitle}
+            <h2 className="cp-glitch self-start font-display text-3xl font-bold uppercase tracking-wide" data-text={t("finalTitle")} data-glitch="final-title">
+              {t("finalTitle")}
             </h2>
-            <p className="max-w-xl text-sm">{copy.finalBody}</p>
+            <p className="max-w-xl text-sm">{t("finalBody")}</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <LandingActions register={copy.register} login={copy.login} openApp={copy.openApp} />
+            <LandingActions register={t("register")} login={t("login")} openApp={t("openApp")} />
           </div>
         </div>
       </section>

@@ -2,8 +2,10 @@
 
 import { ImageResponse } from "next/og";
 import { BRAND } from "@/lib/seo/metadata";
-import { COPY } from "@/lib/seo/copy";
-import type { SiteLocale } from "@/lib/seo/routes";
+import type { Locale } from "@/i18n/config";
+import { translatorFor } from "@/i18n/server";
+export { isLocale } from "@/i18n/config";
+
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
@@ -11,10 +13,6 @@ const COLORS = { background: "#07080d", yellow: "#f5e642", cyan: "#3ee0ff", text
 
 /** Mise en cache CDN : l'image change rarement, une heure de retard est acceptable. */
 const CACHE_HEADERS = { "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400" };
-
-export function isSiteLocale(value: string): value is SiteLocale {
-  return value === "fr" || value === "en";
-}
 
 export function ogImage({
   eyebrow,
@@ -68,6 +66,7 @@ export function ogImage({
   );
 }
 
-export function defaultOgImage(locale: SiteLocale) {
-  return ogImage({ eyebrow: "Cyberpunk TCG", title: BRAND, lines: [COPY[locale].og.tagline] });
+export async function defaultOgImage(locale: Locale) {
+  const t = await translatorFor(locale, "site");
+  return ogImage({ eyebrow: "Cyberpunk TCG", title: BRAND, lines: [t("og.tagline")] });
 }
