@@ -51,6 +51,7 @@ export async function rootMetadata(locale: Locale): Promise<Metadata> {
     title: { default: home.title, template: `%s · ${BRAND}` },
     description: home.description,
     applicationName: BRAND,
+    manifest: `/${locale}/manifest.webmanifest`,
     icons: { apple: "/icons/apple-icon.png" },
     appleWebApp: {
       capable: true,

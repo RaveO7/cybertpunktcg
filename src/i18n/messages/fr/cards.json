@@ -44,5 +44,7 @@
   "sortAscending": "Croissant",
   "sortDescending": "Décroissant",
   "sortToggleDirection": "Inverser l’ordre",
-  "loading": "Chargement des cartes…"
+  "loading": "Chargement des cartes…",
+  "queueCopy": "Ajouter un exemplaire de {title}",
+  "unqueueCopy": "Retirer un exemplaire de {title}"
 }

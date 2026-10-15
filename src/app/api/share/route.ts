@@ -8,18 +8,19 @@ import {
   revokeShare,
   sharePath,
 } from "@/lib/share";
+import { requestLocale, sessionRequired } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const user = await requireUser(request);
-  if (!user) return NextResponse.json({ error: "Session requise." }, { status: 401 });
+  if (!user) return sessionRequired(request);
   const share = await getShareForUser(user.id);
   if (!share) return NextResponse.json({ active: false });
   return NextResponse.json({
     active: true,
     token: share.token,
-    path: sharePath(share.token),
+    path: sharePath(share.token, requestLocale(request)),
     url: absoluteShareUrl(request, share.token),
     createdAt: share.createdAt.toISOString(),
   });
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const user = await requireUser(request);
-  if (!user) return NextResponse.json({ error: "Session requise." }, { status: 401 });
+  if (!user) return sessionRequired(request);
   const parsed = await readJsonBody(request, shareSchema);
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       active: true,
       token: existing.token,
-      path: sharePath(existing.token),
+      path: sharePath(existing.token, requestLocale(request)),
       url: absoluteShareUrl(request, existing.token),
       createdAt: existing.createdAt.toISOString(),
     });
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     active: true,
     token: share.token,
-    path: sharePath(share.token),
+    path: sharePath(share.token, requestLocale(request)),
     url: absoluteShareUrl(request, share.token),
     createdAt: share.createdAt.toISOString(),
   });
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const user = await requireUser(request);
-  if (!user) return NextResponse.json({ error: "Session requise." }, { status: 401 });
+  if (!user) return sessionRequired(request);
   await revokeShare(user.id);
   return NextResponse.json({ active: false });
 }

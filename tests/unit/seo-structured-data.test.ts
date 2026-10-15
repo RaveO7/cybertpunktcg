@@ -185,6 +185,6 @@ describe("seo : données structurées", () => {
     const ld = cardLd({ name: "V", slug: "v-streetkid", description: "Texte", image: "/card-images/v.webp", artist: null }, "fr");
     assert.ok(!("author" in ld));
     assert.equal(ld.image, "https://tcgtracker.test/card-images/v.webp");
-    assert.equal(ld.url, "https://tcgtracker.test/cartes/v-streetkid");
+    assert.equal(ld.url, "https://tcgtracker.test/fr/cartes/v-streetkid");
   });
 });

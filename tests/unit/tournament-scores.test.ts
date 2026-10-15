@@ -19,18 +19,18 @@ describe("scores autorisés", () => {
   });
 
   it("refuse 3-0, 2-2 et les valeurs négatives ou non entières en Bo3", () => {
-    assert.equal(resultError(normal(3, 0), "bo3", "swiss"), "Score invalide.");
-    assert.equal(resultError(normal(2, 2), "bo3", "swiss"), "Score invalide.");
-    assert.equal(resultError(normal(-1, 0), "bo3", "swiss"), "Score invalide.");
-    assert.equal(resultError(normal(1.5, 0), "bo3", "swiss"), "Score invalide.");
+    assert.equal(resultError(normal(3, 0), "bo3", "swiss"), "tournaments.invalidScore");
+    assert.equal(resultError(normal(2, 2), "bo3", "swiss"), "tournaments.invalidScore");
+    assert.equal(resultError(normal(-1, 0), "bo3", "swiss"), "tournaments.invalidScore");
+    assert.equal(resultError(normal(1.5, 0), "bo3", "swiss"), "tournaments.invalidScore");
   });
 
   it("n'accepte que 1-0, 0-1 et 0-0 en Bo1", () => {
     assert.equal(resultError(normal(1, 0), "bo1", "swiss"), null);
     assert.equal(resultError(normal(0, 1), "bo1", "swiss"), null);
     assert.equal(resultError(normal(0, 0), "bo1", "swiss"), null);
-    assert.equal(resultError(normal(2, 0), "bo1", "swiss"), "Score invalide.");
-    assert.equal(resultError(normal(1, 1), "bo1", "swiss"), "Score invalide.");
+    assert.equal(resultError(normal(2, 0), "bo1", "swiss"), "tournaments.invalidScore");
+    assert.equal(resultError(normal(1, 1), "bo1", "swiss"), "tournaments.invalidScore");
   });
 
   it("1-1 au temps est un nul qui rapporte 1 point à chacun", () => {
@@ -57,19 +57,19 @@ describe("résultats spéciaux", () => {
     const result: MatchResult = { kind: "id", gamesA: 0, gamesB: 0 };
     assert.equal(resultError(result, "bo3", "swiss"), null);
     assert.deepEqual(matchPoints(result), { a: 1, b: 1 });
-    assert.equal(resultError({ kind: "id", gamesA: 1, gamesB: 0 }, "bo3", "swiss"), "Score invalide.");
+    assert.equal(resultError({ kind: "id", gamesA: 1, gamesB: 0 }, "bo3", "swiss"), "tournaments.invalidScore");
   });
 
   it("interdits en top cut", () => {
-    assert.equal(resultError({ kind: "id", gamesA: 0, gamesB: 0 }, "bo3", "top_cut"), "Un vainqueur est requis en top cut.");
-    assert.equal(resultError({ kind: "double_loss", gamesA: 0, gamesB: 0 }, "bo3", "top_cut"), "Un vainqueur est requis en top cut.");
+    assert.equal(resultError({ kind: "id", gamesA: 0, gamesB: 0 }, "bo3", "top_cut"), "tournaments.winnerRequired");
+    assert.equal(resultError({ kind: "double_loss", gamesA: 0, gamesB: 0 }, "bo3", "top_cut"), "tournaments.winnerRequired");
   });
 });
 
 describe("pas de nul en top cut", () => {
   it("refuse 1-1 et 0-0 en demi-finale", () => {
-    assert.equal(resultError(normal(1, 1), "bo3", "top_cut"), "Un vainqueur est requis en top cut.");
-    assert.equal(resultError(normal(0, 0), "bo1", "top_cut"), "Un vainqueur est requis en top cut.");
+    assert.equal(resultError(normal(1, 1), "bo3", "top_cut"), "tournaments.winnerRequired");
+    assert.equal(resultError(normal(0, 0), "bo1", "top_cut"), "tournaments.winnerRequired");
     assert.equal(resultError(normal(2, 1), "bo3", "top_cut"), null);
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, MouseEvent } from "react";
+import { useTranslations } from "next-intl";
 import type { CardDTO, PrintingDTO } from "@/lib/types";
 import { CardImage } from "@/components/CardImage";
 
@@ -70,6 +71,7 @@ export function CardTile({
   onQueue: () => void;
   onUnqueue: () => void;
 }) {
+  const t = useTranslations();
   const { name, subname } = nameParts(card, printing);
   const title = subname ? `${name} — ${subname}` : name;
   const accent = active ? "hud-panel-active" : queued > 0 || ownedQty > 0 ? "hud-panel-owned" : "";
@@ -160,7 +162,7 @@ export function CardTile({
             <button
               type="button"
               className="h-11 w-11 text-lg"
-              aria-label={`Retirer un exemplaire de ${title}`}
+              aria-label={t("cards.unqueueCopy", { title })}
               onClick={onUnqueue}
             >
               −
@@ -169,7 +171,7 @@ export function CardTile({
             <button
               type="button"
               className="h-11 w-11 text-lg"
-              aria-label={`Ajouter un exemplaire de ${title}`}
+              aria-label={t("cards.queueCopy", { title })}
               onClick={onQueue}
             >
               +

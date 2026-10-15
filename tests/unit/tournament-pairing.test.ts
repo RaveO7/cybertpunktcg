@@ -58,7 +58,7 @@ describe("ronde 1", () => {
   });
 
   it("refuse moins de 2 joueurs", () => {
-    assert.throws(() => pairFirstRound(["A"], seededRng(1)), /au moins 2 joueurs/);
+    assert.throws(() => pairFirstRound(["A"], seededRng(1)), /tournaments.needTwoPlayers/);
   });
 });
 
@@ -147,7 +147,7 @@ describe("corrections manuelles", () => {
   });
 
   it("refuse un joueur absent de la ronde", () => {
-    assert.throws(() => swapPlayers(base, "A", "Z"), /Joueur absent/);
+    assert.throws(() => swapPlayers(base, "A", "Z"), /tournaments.playerNotInRound/);
   });
 });
 

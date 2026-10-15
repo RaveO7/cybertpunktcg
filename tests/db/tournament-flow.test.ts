@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
 import type { OrganizerCommand } from "../../src/lib/api-schemas";
+import { frenchText } from "../helpers/api-text";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
 type Commands = typeof import("../../src/lib/tournament/commands");
@@ -268,7 +269,7 @@ describe("tournoi complet", () => {
 
 async function expectRejects(promise: Promise<unknown>, message: RegExp) {
   await assert.rejects(promise, (error: unknown) => {
-    assert.match((error as Error).message, message);
+    assert.match(frenchText(error), message);
     return true;
   });
 }

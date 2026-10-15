@@ -26,38 +26,53 @@ function rewrite(response: Response) {
 
 describe("proxy : langue de l'URL", () => {
   it("URL publique : servie par la page interne de sa langue, sans redirection", () => {
-    assert.equal(rewrite(proxy(request("/cartes/v-streetkid"))), "/fr/cartes/v-streetkid");
+    assert.equal(rewrite(proxy(request("/fr/cartes/v-streetkid"))), "/fr/cartes/v-streetkid");
     assert.equal(rewrite(proxy(request("/de/karten/v-streetkid"))), "/de/cartes/v-streetkid");
-    assert.equal(rewrite(proxy(request("/"))), "/fr");
+    assert.equal(rewrite(proxy(request("/fr"))), "/fr");
     assert.equal(rewrite(proxy(request("/it?ref=a"))), "/it?ref=a");
   });
 
+  it("lien sans langue : redirection définitive vers la même page en anglais", () => {
+    const response = proxy(request("/cards/v-streetkid?ref=a"));
+    assert.equal(response.status, 308);
+    assert.equal(location(response), "/en/cards/v-streetkid?ref=a");
+    assert.equal(location(proxy(request("/"))), "/en");
+    assert.equal(location(proxy(request("/?ref=a"))), "/en?ref=a");
+    assert.equal(location(proxy(request("/decks", SESSION))), "/en/decks");
+    // Anciens segments français : même page, adresse anglaise.
+    assert.equal(location(proxy(request("/cartes/v-streetkid"))), "/en/cards/v-streetkid");
+    assert.equal(location(proxy(request("/mentions-legales"))), "/en/legal-notice");
+    assert.equal(location(proxy(request("/tournois/publics/abc"))), "/en/tournaments/abc");
+    // Page inconnue : « /en » + le chemin, qui affichera la 404 anglaise.
+    assert.equal(location(proxy(request("/xyz"))), "/en/xyz");
+  });
+
   it("/cards : explorateur en français, liste des cartes en anglais", () => {
-    assert.equal(rewrite(proxy(request("/cards"))), "/fr/cards");
+    assert.equal(rewrite(proxy(request("/fr/cards"))), "/fr/cards");
     assert.equal(rewrite(proxy(request("/en/cards"))), "/en/cartes");
     assert.equal(rewrite(proxy(request("/de/explorer?q=v"))), "/de/cards?q=v");
   });
 
   it("visiteur et robot : jamais redirigés, même avec une préférence enregistrée", () => {
-    const visitor = proxy(request("/cartes/v-streetkid", { "cptcg-locale": "de" }));
+    const visitor = proxy(request("/fr/cartes/v-streetkid", { "cptcg-locale": "de" }));
     assert.equal(visitor.status, 200);
     assert.equal(location(visitor), null);
-    const bot = proxy(request("/cartes/v-streetkid", {}, { "user-agent": "Googlebot/2.1", "accept-language": "de-DE" }));
+    const bot = proxy(request("/fr/cartes/v-streetkid", {}, { "user-agent": "Googlebot/2.1", "accept-language": "de-DE" }));
     assert.equal(bot.status, 200);
     assert.equal(rewrite(bot), "/fr/cartes/v-streetkid");
   });
 
   it("utilisateur connecté germanophone : même page dans sa langue", () => {
-    const response = proxy(request("/cartes/v-streetkid", { ...SESSION, "cptcg-locale": "de" }));
+    const response = proxy(request("/fr/cartes/v-streetkid", { ...SESSION, "cptcg-locale": "de" }));
     assert.equal(response.status, 307);
     assert.equal(location(response), "/de/karten/v-streetkid");
-    assert.equal(location(proxy(request("/decks?tab=a", { ...SESSION, "cptcg-locale": "es" }))), "/es/decks?tab=a");
-    assert.equal(location(proxy(request("/en/cards", { ...SESSION, "cptcg-locale": "fr" }))), "/cartes");
+    assert.equal(location(proxy(request("/fr/decks?tab=a", { ...SESSION, "cptcg-locale": "es" }))), "/es/decks?tab=a");
+    assert.equal(location(proxy(request("/en/cards", { ...SESSION, "cptcg-locale": "fr" }))), "/fr/cartes");
   });
 
   it("utilisateur connecté déjà dans sa langue, ou sans préférence : pas de redirection", () => {
     assert.equal(rewrite(proxy(request("/de/decks", { ...SESSION, "cptcg-locale": "de" }))), "/de/decks");
-    assert.equal(rewrite(proxy(request("/decks", SESSION))), "/fr/decks");
+    assert.equal(rewrite(proxy(request("/fr/decks", SESSION))), "/fr/decks");
   });
 
   it("chemin technique non traduit : redirection définitive vers l'URL publique", () => {
@@ -65,17 +80,16 @@ describe("proxy : langue de l'URL", () => {
     assert.equal(response.status, 308);
     assert.equal(location(response), "/de/karten/v-streetkid");
     assert.equal(location(proxy(request("/de/cartes/v-streetkid"))), "/de/karten/v-streetkid");
-    assert.equal(location(proxy(request("/fr/cartes"))), "/cartes");
   });
 
   it("langue inconnue : aucune page (404 servie par l'application)", () => {
     const response = proxy(request("/nl/cards"));
-    assert.equal(location(response), null);
-    assert.equal(rewrite(response), "/fr/nl/cards");
+    assert.equal(rewrite(response), null);
+    assert.equal(location(response), "/en/nl/cards");
   });
 
   it("annuaires réservés aux comptes : visiteur renvoyé vers l'accueil de sa langue", () => {
-    assert.equal(location(proxy(request("/tournois/publics"))), "/#tournois");
+    assert.equal(location(proxy(request("/fr/tournois/publics"))), "/fr#tournois");
     assert.equal(location(proxy(request("/de/boutiques"))), "/de#shops");
     assert.equal(location(proxy(request("/it/comment-jouer"))), "/it");
     assert.equal(rewrite(proxy(request("/de/boutiques", SESSION))), "/de/boutiques");

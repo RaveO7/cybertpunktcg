@@ -11,13 +11,13 @@ type Context = { params: Promise<{ id: string }> };
 /** Commande organisateur, idempotente par `clientActionId` (file hors connexion). */
 export async function POST(request: Request, context: Context) {
   const user = await requireUser(request);
-  if (!user) return sessionRequired();
+  if (!user) return sessionRequired(request);
   const { id } = await context.params;
   const parsed = await readJsonBody(request, organizerCommandSchema);
   if (!parsed.ok) return parsed.response;
   try {
     return NextResponse.json(await runOrganizerCommand(id, user.id, parsed.data));
   } catch (error) {
-    return errorResponse("tournament-action", error);
+    return errorResponse(request, "tournament-action", error);
   }
 }

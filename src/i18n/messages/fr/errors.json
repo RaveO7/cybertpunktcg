@@ -7,5 +7,17 @@
   "notFoundEyebrow": "404",
   "notFoundTitle": "Page introuvable",
   "notFoundBody": "Cette page n’existe pas ou a été déplacée.",
-  "reference": "Référence"
+  "reference": "Référence",
+  "request": {
+    "offline": "Hors ligne : modification impossible pour le moment.",
+    "sessionExpired": "Session expirée. Reconnectez-vous.",
+    "sessionLost": "La session n’a pas été conservée. Réessayez.",
+    "saveFailed": "Enregistrement impossible.",
+    "addFailed": "Ajout impossible.",
+    "importFailed": "Import impossible.",
+    "loginFailed": "Connexion impossible.",
+    "logoutFailed": "Déconnexion impossible.",
+    "loadCollection": "Impossible de charger la collection.",
+    "loadDecks": "Impossible de charger les decks."
+  }
 }

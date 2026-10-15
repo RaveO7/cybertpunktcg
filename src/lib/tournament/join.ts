@@ -28,22 +28,18 @@ export async function joinTournament(
     const already = findViewerPlayer(t, viewer);
     if (already) return { playerId: already.id, existing: true, status: already.status, deviceToken: null };
 
-    if (t.status !== "inscriptions" && t.status !== "suisse") fail("Les inscriptions sont terminées.", 409);
-    if (!t.registrationOpen) fail("Les inscriptions sont fermées : adressez-vous à l'organisateur.", 403);
+    if (t.status !== "inscriptions" && t.status !== "suisse") fail("tournaments.registrationsOver", 409);
+    if (!t.registrationOpen) fail("tournaments.registrationsClosed", 403);
 
     const accountName = viewer.userId && viewer.displayName !== DEFAULT_DISPLAY_NAME ? viewer.displayName : null;
-    const playerName = name ?? accountName ?? fail("Choisissez un pseudo.", 400);
+    const playerName = name ?? accountName ?? fail("tournaments.pseudoRequired", 400);
     const nameKey = playerNameKey(playerName);
     const clash = t.players.find((player) => player.nameKey === nameKey);
     if (clash) {
       if (!hasApp(clash)) {
-        fail(
-          `Un joueur « ${clash.name} » existe déjà : demandez à l'organisateur de vous montrer votre QR personnel.`,
-          409,
-          { reason: "paper_player", name: clash.name },
-        );
+        fail("tournaments.nameClash", 409, { reason: "paper_player", name: clash.name }, { name: clash.name });
       }
-      fail("Pseudo déjà utilisé dans ce tournoi.", 409, { reason: "name_taken" });
+      fail("tournaments.pseudoTaken", 409, { reason: "name_taken" });
     }
 
     const joinedRound = nextJoinRound(t);

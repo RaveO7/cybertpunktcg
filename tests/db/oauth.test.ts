@@ -145,7 +145,7 @@ function expectFailure(response: Response, message: RegExp) {
   assert.ok([302, 303, 307].includes(response.status), `redirection attendue, reçu ${response.status}`);
   const target = location(response);
   assert.equal(target.origin, ORIGIN);
-  assert.equal(target.pathname, "/connexion");
+  assert.equal(target.pathname, "/fr/connexion");
   assert.match(target.searchParams.get("authError") ?? "", message);
   assert.equal(
     response.headers.getSetCookie().some((line) => line.startsWith(`${SESSION_COOKIE}=`) && !/Max-Age=0/i.test(line)),
@@ -158,7 +158,7 @@ function expectFailure(response: Response, message: RegExp) {
 async function expectSuccess(response: Response) {
   assert.ok([302, 303, 307].includes(response.status), `redirection attendue, reçu ${response.status}`);
   const target = location(response);
-  assert.equal(target.toString(), `${ORIGIN}/`, `échec inattendu : ${target.searchParams.get("authError")}`);
+  assert.equal(target.toString(), `${ORIGIN}/fr`, `échec inattendu : ${target.searchParams.get("authError")}`);
   const line = response.headers.getSetCookie().find((item) => item.startsWith(`${SESSION_COOKIE}=`));
   assert.ok(line, "cookie de session posé");
   assert.match(line, /HttpOnly/i);
@@ -313,23 +313,23 @@ describe("vérification du state", () => {
 
 describe.sequential("callback", () => {
   it("fournisseur inconnu ou non configuré : retour à l'accueil avec une erreur", async () => {
-    expectFailure(await callback("github", { code: "c", state: "s" }), /inconnu/i);
+    expectFailure(await callback("github", { code: "c", state: "s" }), /^unknownProvider$/);
     setEnv({ APPLE_PRIVATE_KEY: undefined });
-    expectFailure(await callback("apple", { code: "c", state: createOAuthState("apple", null) }), /non configurée/i);
+    expectFailure(await callback("apple", { code: "c", state: createOAuthState("apple", null) }), /^notConfigured$/);
     assert.equal(fetchCalls.length, 0);
   });
 
   it("annulation, code ou state manquant, state invalide : aucun appel au fournisseur", async () => {
     const state = createOAuthState("google", null);
-    expectFailure(await callback("google", { error: "access_denied", code: "c", state }), /annulée/i);
-    expectFailure(await callback("google", { state }), /invalide/i);
-    expectFailure(await callback("google", { code: "c" }), /invalide/i);
-    expectFailure(await callback("google", { code: "c", state: "falsifie.signature" }), /expirée/i);
+    expectFailure(await callback("google", { error: "access_denied", code: "c", state }), /^cancelled$/);
+    expectFailure(await callback("google", { state }), /^invalidResponse$/);
+    expectFailure(await callback("google", { code: "c" }), /^invalidResponse$/);
+    expectFailure(await callback("google", { code: "c", state: "falsifie.signature" }), /^expired$/);
     expectFailure(
       await callback("google", { code: "c", state: signedState({ n: "x", p: "google", l: null, e: Date.now() - 1000 }) }),
-      /expirée/i,
+      /^expired$/,
     );
-    expectFailure(await callback("google", { code: "c", state: createOAuthState("apple", null) }), /expirée/i);
+    expectFailure(await callback("google", { code: "c", state: createOAuthState("apple", null) }), /^expired$/);
     assert.equal(fetchCalls.length, 0, "aucun échange de code sans state valide");
   });
 
@@ -342,7 +342,7 @@ describe.sequential("callback", () => {
       }),
       context("apple"),
     );
-    expectFailure(response, /annulée/i);
+    expectFailure(response, /^cancelled$/);
   });
 
   it("Google : crée le compte, ouvre la session, puis retrouve le même compte", async () => {
@@ -377,7 +377,7 @@ describe.sequential("callback", () => {
     expectStateCookieCleared(first);
     googleProfile({ sub: `google-replay-${stamp}`, email, email_verified: true });
     // Le navigateur a perdu le cookie : rejouer le même lien échoue.
-    expectFailure(await callback("google", { code: "code-b", state }, null), /expirée/i);
+    expectFailure(await callback("google", { code: "code-b", state }, null), /^expired$/);
   });
 
   it("login CSRF : un lien de callback ouvert dans un autre navigateur est refusé", async () => {
@@ -385,9 +385,9 @@ describe.sequential("callback", () => {
     const victimState = createOAuthState("google", null);
     googleProfile({ sub: `google-csrf-${stamp}`, email: `oauth.csrf.${stamp}@example.com`, email_verified: true });
     // Victime sans cookie, ou avec le cookie de sa propre tentative.
-    expectFailure(await callback("google", { code: "c", state: attackerState }, null), /expirée/i);
-    expectFailure(await callback("google", { code: "c", state: attackerState }, victimState), /expirée/i);
-    expectFailure(await applePost({ code: "c", state: createOAuthState("apple", null) }, "apple", null), /expirée/i);
+    expectFailure(await callback("google", { code: "c", state: attackerState }, null), /^expired$/);
+    expectFailure(await callback("google", { code: "c", state: attackerState }, victimState), /^expired$/);
+    expectFailure(await applePost({ code: "c", state: createOAuthState("apple", null) }, "apple", null), /^expired$/);
     assert.equal(fetchCalls.length, 0, "aucun échange de code sans cookie correspondant");
     assert.equal(await prisma.user.count({ where: { email: `oauth.csrf.${stamp}@example.com` } }), 0);
   });
@@ -399,27 +399,27 @@ describe.sequential("callback", () => {
 
   it("Google : e-mail non vérifié, compte existant, erreurs du fournisseur", async () => {
     googleProfile({ sub: `google-unverified-${stamp}`, email: `oauth.nv.${stamp}@example.com`, email_verified: false });
-    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /e-mail est requise/i);
+    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /^emailRequired$/);
     assert.equal(await prisma.user.count({ where: { email: `oauth.nv.${stamp}@example.com` } }), 0);
 
     const existingEmail = `oauth.existant.${stamp}@example.com`;
     const existing = await registerAccount({ email: existingEmail, password: "motdepasse-robuste", displayName: "Existant" });
     createdUserIds.push(existing.id);
     googleProfile({ sub: `google-thief-${stamp}`, email: existingEmail, email_verified: true });
-    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /existe déjà/i);
+    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /^accountExists$/);
     assert.equal(await prisma.oAuthAccount.count({ where: { userId: existing.id } }), 0, "aucune liaison silencieuse");
 
     replies = { [GOOGLE_TOKEN]: { status: 400, body: { error: "invalid_grant" } } };
-    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /impossible/i);
+    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /^failed$/);
     replies = { [GOOGLE_TOKEN]: { body: {} } };
-    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /impossible/i);
+    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /^failed$/);
     googleProfile({ email: `oauth.nosub.${stamp}@example.com` });
-    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /impossible/i);
+    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /^failed$/);
     replies = {
       [GOOGLE_TOKEN]: { body: { access_token: "a" } },
       [GOOGLE_USERINFO]: { status: 500, body: {} },
     };
-    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /impossible/i);
+    expectFailure(await callback("google", { code: "c", state: createOAuthState("google", null) }), /^failed$/);
   });
 
   it("Apple : form_post, nom du premier envoi, client_secret signé", async () => {
@@ -465,17 +465,17 @@ describe.sequential("callback", () => {
       { ...base, sub: undefined },
     ]) {
       appleClaims(claims);
-      expectFailure(await applePost({ code: "c", state: createOAuthState("apple", null) }), /impossible/i);
+      expectFailure(await applePost({ code: "c", state: createOAuthState("apple", null) }), /^failed$/);
     }
     appleClaims({ ...base, email_verified: "false" });
-    expectFailure(await applePost({ code: "c", state: createOAuthState("apple", null) }), /e-mail est requise/i);
+    expectFailure(await applePost({ code: "c", state: createOAuthState("apple", null) }), /^emailRequired$/);
     replies = { [APPLE_TOKEN]: { body: { id_token: "pas-un-jwt" } } };
-    expectFailure(await applePost({ code: "c", state: createOAuthState("apple", null) }), /impossible/i);
+    expectFailure(await applePost({ code: "c", state: createOAuthState("apple", null) }), /^failed$/);
     assert.equal(await prisma.user.count({ where: { email: base.email } }), 0);
   });
 
   it("Apple : un state Google est refusé", async () => {
-    expectFailure(await applePost({ code: "c", state: createOAuthState("google", null) }), /expirée/i);
+    expectFailure(await applePost({ code: "c", state: createOAuthState("google", null) }), /^expired$/);
     assert.equal(fetchCalls.length, 0);
   });
 });

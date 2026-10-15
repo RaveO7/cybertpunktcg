@@ -2,9 +2,9 @@ import { defineRouting } from "next-intl/routing";
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "@/i18n/config";
 
 /**
- * URL de chaque page dans chaque langue. Les dossiers de src/app/[locale]/ portent les noms français
- * (chemin interne = URL française, sans préfixe) ; les autres langues sont préfixées (« /de ») et
- * peuvent traduire leurs segments. Une route absente de cette liste n'a pas de lien typé.
+ * URL de chaque page dans chaque langue, toujours préfixée par la langue (« /fr/cartes », « /de/karten »).
+ * Les dossiers de src/app/[locale]/ portent les segments français, qui servent d'identifiants de route ;
+ * chaque langue peut traduire ses segments. Une route absente de cette liste n'a pas de lien typé.
  *
  * Ordre significatif : à segments égaux, next-intl essaie les entrées dans cet ordre. « /cartes »
  * vient avant « /cards » pour qu'un ancien chemin « /de/cards/… » renvoie vers la liste des cartes.
@@ -89,8 +89,8 @@ export const landingSections: Record<Locale, Record<"tournaments" | "shops", str
 export const routing = defineRouting({
   locales: LOCALES,
   defaultLocale: DEFAULT_LOCALE,
-  // Français sans préfixe, autres langues sous leur code.
-  localePrefix: "as-needed",
+  // Toutes les langues sous leur code, français compris (« /fr »).
+  localePrefix: "always",
   // Jamais de redirection automatique selon le navigateur : visiteurs et robots reçoivent l'URL demandée.
   localeDetection: false,
   // La préférence (cookie cptcg-locale) n'est écrite que par un choix explicite, jamais par la visite

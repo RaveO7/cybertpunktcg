@@ -4,6 +4,7 @@ import type { PrismaClient } from "@prisma/client";
 import { wishlistTargetReached } from "./logic";
 import { prisma } from "./prisma";
 import type { WishlistItemDTO } from "./types";
+import { fail } from "./app-error";
 
 /** Nombre maximum de cartes dans la liste de souhaits d'un compte. */
 export const MAX_WISHLIST_ITEMS = 1000;
@@ -63,11 +64,11 @@ export async function loadWishlist(userId: string) {
 /** Ajoute une carte (ou met à jour sa cible si elle est déjà dans la liste). */
 export async function saveWishlistItem(userId: string, input: SaveInput) {
   const printing = await prisma.printing.findFirst({ where: { id: input.printingId, isActive: true }, select: { id: true } });
-  if (!printing) throw new Error("Carte introuvable.");
+  if (!printing) fail("common.cardNotFound");
   const where = { userId_printingId: { userId, printingId: printing.id } };
   const existing = await prisma.wishlistItem.findUnique({ where });
   if (!existing && (await prisma.wishlistItem.count({ where: { userId } })) >= MAX_WISHLIST_ITEMS) {
-    throw new Error(`Liste de souhaits pleine (${MAX_WISHLIST_ITEMS} cartes maximum).`);
+    fail("wishlist.full", 400, undefined, { max: MAX_WISHLIST_ITEMS });
   }
   const targetPrice = input.targetPrice === undefined ? (existing?.targetPrice?.toString() ?? null) : input.targetPrice;
   const notes = input.notes === undefined ? (existing?.notes ?? null) : input.notes;
@@ -82,7 +83,7 @@ export async function saveWishlistItem(userId: string, input: SaveInput) {
 
 export async function patchWishlistItem(userId: string, id: string, input: PatchInput) {
   const existing = await prisma.wishlistItem.findFirst({ where: { id, userId } });
-  if (!existing) throw new Error("Carte absente de la liste de souhaits.");
+  if (!existing) fail("wishlist.notInList", 404);
   const data: Record<string, unknown> = {};
   if (input.notes !== undefined) data.notes = input.notes;
   if (input.targetPrice !== undefined) {

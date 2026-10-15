@@ -2,6 +2,8 @@
 // doit passer par readJsonBody(request, schéma) : pas de parsing manuel.
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { apiError } from "./api-response";
+import { apiMessage as m, decodeApiMessage, type ApiMessageKey, type ApiMessageValues } from "./app-error";
 import { normalizeDisplayName, normalizeEmail, normalizeLoginPassword, normalizePassword } from "./auth";
 import { MAX_IMPORT_LINES } from "./collection-csv";
 import { normalizePlace, type Place } from "./geo/location";
@@ -11,7 +13,7 @@ import { DESCRIPTION_MAX, PRIZES_MAX, SEARCH_RADII_KM, TOURNAMENT_CURRENCIES } f
 import type { MatchResult } from "./tournament/scores";
 import { TOP_CUT_SETTINGS } from "./tournament/top-cut";
 
-const INVALID_REQUEST = "Requête invalide.";
+const INVALID_REQUEST = m("common.invalidRequest");
 
 /** Applique une fonction de normalisation existante (null = invalide) avec un message dédié. */
 function normalized<T>(normalize: (value: unknown) => T | null, message: string) {
@@ -31,7 +33,7 @@ const conditionCode = z.string().trim().min(1).max(16);
 // Accepte un nombre ou une chaîne numérique (« 3 »).
 export const quantitySchema = z.preprocess(
   (value) => (typeof value === "string" && value.trim() !== "" ? Number(value) : value),
-  z.number({ error: "Quantité invalide." }).int("Quantité invalide.").min(0, "Quantité invalide.").max(999, "Quantité invalide."),
+  z.number({ error: m("collection.invalidQuantity") }).int(m("collection.invalidQuantity")).min(0, m("collection.invalidQuantity")).max(999, m("collection.invalidQuantity")),
 );
 
 // "", espaces ou null effacent le prix ; accepte la virgule décimale (« 12,50 »). Sortie : chaîne à 2 décimales.
@@ -43,16 +45,16 @@ const priceSchema = z
       return value;
     },
     z
-      .number({ error: "Prix invalide." })
-      .min(0, "Prix invalide.")
-      .max(1_000_000, "Prix invalide.")
+      .number({ error: m("collection.invalidPrice") })
+      .min(0, m("collection.invalidPrice"))
+      .max(1_000_000, m("collection.invalidPrice"))
       .transform((amount) => amount.toFixed(2))
       .nullable(),
   )
   .optional();
 
 const notesSchema = z
-  .string({ error: "Notes invalides." })
+  .string({ error: m("collection.invalidNotes") })
   .nullable()
   .optional()
   .transform((value) => {
@@ -61,7 +63,7 @@ const notesSchema = z
     return trimmed ? trimmed.slice(0, 2000) : null;
   });
 
-const currencySchema = z.enum(CURRENCIES, { error: "Devise invalide." }).nullable().optional();
+const currencySchema = z.enum(CURRENCIES, { error: m("common.invalidCurrency") }).nullable().optional();
 
 /** Devise cohérente avec le prix : effacée avec lui, EUR par défaut quand un prix est donné. */
 function resolveCurrency(currency: string | null | undefined, price: string | null | undefined) {
@@ -72,13 +74,13 @@ function resolveCurrency(currency: string | null | undefined, price: string | nu
 }
 
 export const loginSchema = z.object({
-  email: normalized(normalizeEmail, "Adresse e-mail ou mot de passe incorrect."),
-  password: normalized(normalizeLoginPassword, "Adresse e-mail ou mot de passe incorrect."),
+  email: normalized(normalizeEmail, m("auth.invalidCredentials")),
+  password: normalized(normalizeLoginPassword, m("auth.invalidCredentials")),
 });
 
 export const registerSchema = z.object({
-  email: normalized(normalizeEmail, "Adresse e-mail invalide."),
-  password: normalized(normalizePassword, "Le mot de passe doit contenir au moins 8 caractères."),
+  email: normalized(normalizeEmail, m("auth.invalidEmail")),
+  password: normalized(normalizePassword, m("auth.passwordTooShort", { min: 8 })),
   displayName: z
     .string()
     .optional()
@@ -86,7 +88,7 @@ export const registerSchema = z.object({
       if (!value?.trim()) return null;
       const name = normalizeDisplayName(value);
       if (!name) {
-        ctx.addIssue({ code: "custom", message: "Le nom affiché doit contenir entre 1 et 40 caractères." });
+        ctx.addIssue({ code: "custom", message: m("auth.displayNameLength", { min: 1, max: 40 }) });
         return z.NEVER;
       }
       return name;
@@ -120,10 +122,10 @@ export const bulkSchema = z.object({
   conditionCode: conditionCode.default("NM"),
   lines: z
     .array(z.object({ printingId: id, quantity: quantitySchema }))
-    .max(400, "Trop de cartes d'un coup.")
+    .max(400, m("collection.tooManyCards"))
     // Les lignes à 0 sont ignorées.
     .transform((lines) => lines.filter((line) => line.quantity > 0))
-    .refine((lines) => lines.length > 0, "Aucune carte à ajouter."),
+    .refine((lines) => lines.length > 0, m("collection.nothingToAdd")),
 });
 
 /** Import CSV : lignes déjà reconnues côté client (carte × état). Les champs absents ne sont pas modifiés. */
@@ -138,16 +140,16 @@ export const importSchema = z.object({
           quantity: quantitySchema,
           notes: notesSchema.transform((value) => value ?? undefined),
           purchasePrice: priceSchema.transform((value) => value ?? undefined),
-          purchaseCurrency: z.enum(CURRENCIES, { error: "Devise invalide." }).optional(),
+          purchaseCurrency: z.enum(CURRENCIES, { error: m("common.invalidCurrency") }).optional(),
         })
         .transform((line) => ({
           ...line,
           purchaseCurrency: line.purchasePrice ? (line.purchaseCurrency ?? "EUR") : undefined,
         })),
     )
-    .max(MAX_IMPORT_LINES, "Fichier trop volumineux.")
+    .max(MAX_IMPORT_LINES, m("collection.fileTooLarge"))
     .transform((lines) => lines.filter((line) => line.quantity > 0))
-    .refine((lines) => lines.length > 0, "Aucune carte à importer."),
+    .refine((lines) => lines.length > 0, m("collection.nothingToImport")),
 });
 
 /** Liste de souhaits : prix cible en EUR (vide ou null = pas d'alerte). */
@@ -163,20 +165,20 @@ export const wishlistPatchSchema = z.object({
 });
 
 const deckNameSchema = z
-  .string({ error: "Nom du deck invalide." })
+  .string({ error: m("decks.invalidName") })
   .trim()
-  .min(1, "Donnez un nom au deck.")
-  .max(60, "Nom du deck trop long (60 caractères maximum).");
+  .min(1, m("decks.nameRequired"))
+  .max(60, m("decks.nameTooLong", { max: 60 }));
 
 /** Liste complète des cartes d'un deck (remplace l'existante). Un deck peut rester incomplet ou illégal. */
 const deckCardsSchema = z
   .array(
     z.object({
       cardId: id,
-      quantity: z.number({ error: "Quantité invalide." }).int("Quantité invalide.").min(1, "Quantité invalide.").max(9, "Quantité invalide."),
+      quantity: z.number({ error: m("collection.invalidQuantity") }).int(m("collection.invalidQuantity")).min(1, m("collection.invalidQuantity")).max(9, m("collection.invalidQuantity")),
     }),
   )
-  .max(150, "Trop de cartes différentes dans le deck.");
+  .max(150, m("decks.tooManyCards"));
 
 export const deckCreateSchema = z.object({
   name: deckNameSchema.optional(),
@@ -199,24 +201,24 @@ const intIn = (min: number, max: number, message: string) =>
   z.number({ error: message }).int(message).min(min, message).max(max, message);
 
 const tournamentNameSchema = z
-  .string({ error: "Nom du tournoi invalide." })
+  .string({ error: m("tournaments.invalidName") })
   .trim()
-  .min(1, "Donnez un nom au tournoi.")
-  .max(60, "Nom du tournoi trop long (60 caractères maximum).");
+  .min(1, m("tournaments.nameRequired"))
+  .max(60, m("tournaments.nameTooLong", { max: 60 }));
 
-const playerNameSchema = normalized(normalizePlayerName, "Le pseudo doit contenir entre 1 et 32 caractères.");
+const playerNameSchema = normalized(normalizePlayerName, m("tournaments.pseudoLength", { min: 1, max: 32 }));
 
 const tournamentSettingsFields = {
   name: tournamentNameSchema.optional(),
-  format: z.enum(["boutique", "competitif"], { error: "Format invalide." }).optional(),
-  matchType: z.enum(["bo1", "bo3"], { error: "Type de match invalide." }).optional(),
-  roundMinutes: intIn(10, 180, "Durée de ronde invalide (10 à 180 minutes).").optional(),
-  topCutExtraMinutes: intIn(0, 120, "Temps supplémentaire du top cut invalide (0 à 120 minutes).").optional(),
-  topCutSetting: z.enum(TOP_CUT_SETTINGS, { error: "Taille de top cut invalide." }).optional(),
+  format: z.enum(["boutique", "competitif"], { error: m("tournaments.invalidFormat") }).optional(),
+  matchType: z.enum(["bo1", "bo3"], { error: m("tournaments.invalidMatchType") }).optional(),
+  roundMinutes: intIn(10, 180, m("tournaments.invalidRoundMinutes", { min: 10, max: 180 })).optional(),
+  topCutExtraMinutes: intIn(0, 120, m("tournaments.invalidTopCutExtra", { min: 0, max: 120 })).optional(),
+  topCutSetting: z.enum(TOP_CUT_SETTINGS, { error: m("tournaments.invalidTopCut") }).optional(),
   requireApproval: z.boolean().optional(),
-  oneDeviceMode: z.enum(["direct", "organizer"], { error: "Mode de validation invalide." }).optional(),
-  declareTimeoutMinutes: intIn(1, 120, "Délai de confirmation invalide (1 à 120 minutes).").optional(),
-  lateEntryPolicy: z.enum(["zero", "loss"], { error: "Règle des retardataires invalide." }).optional(),
+  oneDeviceMode: z.enum(["direct", "organizer"], { error: m("tournaments.invalidValidationMode") }).optional(),
+  declareTimeoutMinutes: intIn(1, 120, m("tournaments.invalidDeclareTimeout", { min: 1, max: 120 })).optional(),
+  lateEntryPolicy: z.enum(["zero", "loss"], { error: m("tournaments.invalidLateEntry") }).optional(),
 };
 
 export const tournamentCreateSchema = z.object({ ...tournamentSettingsFields, name: tournamentNameSchema });
@@ -224,36 +226,36 @@ export type TournamentCreateInput = z.output<typeof tournamentCreateSchema>;
 
 const matchResultSchema = z
   .object({
-    kind: z.enum(["normal", "id", "double_loss"], { error: "Résultat invalide." }).default("normal"),
-    gamesA: intIn(0, 2, "Score invalide."),
-    gamesB: intIn(0, 2, "Score invalide."),
+    kind: z.enum(["normal", "id", "double_loss"], { error: m("tournaments.invalidResult") }).default("normal"),
+    gamesA: intIn(0, 2, m("tournaments.invalidScore")),
+    gamesB: intIn(0, 2, m("tournaments.invalidScore")),
   })
   .transform((result): MatchResult => result);
 
 // --- Lieux, tournois publics, boutiques ------------------------------------------------------
 
 const countrySchema = z
-  .string({ error: "Pays invalide." })
+  .string({ error: m("common.invalidCountry") })
   .trim()
   .toUpperCase()
-  .regex(/^[A-Z]{2}$/, "Pays invalide.");
+  .regex(/^[A-Z]{2}$/, m("common.invalidCountry"));
 
 /** Lieu déjà résolu par le géocodage (suggestion choisie ou « Localiser »). */
 export const placeSchema = z
   .object({
-    venueName: z.string().max(100, "Nom de salle trop long (100 caractères maximum).").nullable().optional(),
-    address: z.string({ error: "Adresse invalide." }).max(200, "Adresse trop longue."),
-    postalCode: z.string().max(20, "Code postal invalide.").nullable().optional(),
-    city: z.string({ error: "Ville invalide." }).max(100, "Ville trop longue."),
+    venueName: z.string().max(100, m("geo.venueTooLong", { max: 100 })).nullable().optional(),
+    address: z.string({ error: m("geo.invalidAddress") }).max(200, m("geo.addressTooLong")),
+    postalCode: z.string().max(20, m("geo.invalidPostalCode")).nullable().optional(),
+    city: z.string({ error: m("geo.invalidCity") }).max(100, m("geo.cityTooLong")),
     region: z.string().max(100).nullable().optional(),
     country: countrySchema,
-    lat: z.number({ error: "Lieu non localisé." }).min(-90).max(90),
-    lng: z.number({ error: "Lieu non localisé." }).min(-180).max(180),
+    lat: z.number({ error: m("geo.notLocated") }).min(-90).max(90),
+    lng: z.number({ error: m("geo.notLocated") }).min(-180).max(180),
   })
   .transform((value, ctx): Place => {
     const place = normalizePlace(value);
     if (!place) {
-      ctx.addIssue({ code: "custom", message: "Lieu incomplet : précisez l'adresse et localisez-la." });
+      ctx.addIssue({ code: "custom", message: m("geo.incompletePlace") });
       return z.NEVER;
     }
     return place;
@@ -261,9 +263,9 @@ export const placeSchema = z
 
 export const geocodeResolveSchema = z.object({
   country: countrySchema,
-  street: z.string({ error: "Adresse invalide." }).trim().min(1, "Indiquez la rue.").max(200, "Adresse trop longue."),
-  postalCode: z.string().trim().max(20, "Code postal invalide.").optional(),
-  city: z.string({ error: "Ville invalide." }).trim().min(1, "Indiquez la ville.").max(100, "Ville trop longue."),
+  street: z.string({ error: m("geo.invalidAddress") }).trim().min(1, m("geo.streetRequired")).max(200, m("geo.addressTooLong")),
+  postalCode: z.string().trim().max(20, m("geo.invalidPostalCode")).optional(),
+  city: z.string({ error: m("geo.invalidCity") }).trim().min(1, m("geo.cityRequired")).max(100, m("geo.cityTooLong")),
 });
 
 
@@ -285,12 +287,12 @@ const optionalText = (max: number, message: string) =>
 /** Informations de présentation d'un tournoi (publics ou non), cf. specs/tournaments/public-listing. */
 export const tournamentListingFields = {
   startsAt: z.iso
-    .datetime({ offset: true, error: "Date de début invalide." })
+    .datetime({ offset: true, error: m("tournaments.invalidStartDate") })
     .transform((value) => new Date(value))
     .nullable()
     .optional(),
   timeZone: z
-    .string({ error: "Fuseau horaire invalide." })
+    .string({ error: m("tournaments.invalidTimeZone") })
     .max(64)
     .refine((value) => {
       try {
@@ -299,21 +301,21 @@ export const tournamentListingFields = {
       } catch {
         return false;
       }
-    }, "Fuseau horaire invalide.")
+    }, m("tournaments.invalidTimeZone"))
     .nullable()
     .optional(),
   place: placeSchema.nullable().optional(),
-  entryFeeCents: intIn(1, 100_000_00, "Prix d'entrée invalide.").nullable().optional(),
-  currency: z.enum(TOURNAMENT_CURRENCIES, { error: "Devise invalide." }).optional(),
-  maxPlayers: intIn(2, 512, "Nombre de places invalide (2 à 512).").nullable().optional(),
-  description: optionalText(DESCRIPTION_MAX, `Description trop longue (${DESCRIPTION_MAX} caractères maximum).`),
-  prizes: optionalText(PRIZES_MAX, `Lots trop longs (${PRIZES_MAX} caractères maximum).`),
+  entryFeeCents: intIn(1, 100_000_00, m("tournaments.invalidEntryFee")).nullable().optional(),
+  currency: z.enum(TOURNAMENT_CURRENCIES, { error: m("common.invalidCurrency") }).optional(),
+  maxPlayers: intIn(2, 512, m("tournaments.invalidMaxPlayers", { min: 2, max: 512 })).nullable().optional(),
+  description: optionalText(DESCRIPTION_MAX, m("tournaments.descriptionTooLong", { max: DESCRIPTION_MAX })),
+  prizes: optionalText(PRIZES_MAX, m("tournaments.prizesTooLong", { max: PRIZES_MAX })),
 };
 
 const httpUrlSchema = z
-  .string({ error: "Lien invalide." })
+  .string({ error: m("common.invalidLink") })
   .trim()
-  .max(300, "Lien trop long.")
+  .max(300, m("shops.linkTooLong"))
   .refine((value) => {
     try {
       const url = new URL(value);
@@ -321,34 +323,34 @@ const httpUrlSchema = z
     } catch {
       return false;
     }
-  }, "Lien invalide : il doit commencer par https://.");
+  }, m("shops.linkProtocol"));
 
 export const SHOP_SOCIAL_KINDS = ["instagram", "facebook", "discord", "x", "youtube", "twitch", "tiktok", "autre"] as const;
 
 const shopNameSchema = z
-  .string({ error: "Nom de boutique invalide." })
+  .string({ error: m("shops.invalidName") })
   .trim()
-  .min(2, "Le nom de la boutique doit contenir au moins 2 caractères.")
-  .max(80, "Nom de boutique trop long (80 caractères maximum).");
+  .min(2, m("shops.nameTooShort", { min: 2 }))
+  .max(80, m("shops.nameTooLong", { max: 80 }));
 
 const shopFields = {
   name: shopNameSchema,
   slug: z
-    .string({ error: "Adresse de page invalide." })
+    .string({ error: m("shops.invalidSlug") })
     .trim()
     .toLowerCase()
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Adresse de page invalide : lettres, chiffres et tirets.")
-    .min(2, "Adresse de page trop courte.")
-    .max(60, "Adresse de page trop longue."),
-  description: optionalText(2000, "Description trop longue (2000 caractères maximum)."),
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, m("shops.invalidSlugChars"))
+    .min(2, m("shops.slugTooShort"))
+    .max(60, m("shops.slugTooLong")),
+  description: optionalText(2000, m("shops.descriptionTooLong", { max: 2000 })),
   website: httpUrlSchema.nullable().optional().or(z.literal("").transform(() => null)),
   socials: z
-    .array(z.object({ kind: z.enum(SHOP_SOCIAL_KINDS, { error: "Réseau invalide." }), url: httpUrlSchema }))
-    .max(8, "8 liens au maximum.")
+    .array(z.object({ kind: z.enum(SHOP_SOCIAL_KINDS, { error: m("shops.invalidSocial") }), url: httpUrlSchema }))
+    .max(8, m("shops.tooManyLinks", { max: 8 }))
     .optional(),
-  phone: optionalText(30, "Téléphone invalide."),
+  phone: optionalText(30, m("shops.invalidPhone")),
   contactEmail: z
-    .string({ error: "E-mail invalide." })
+    .string({ error: m("shops.invalidEmail") })
     .trim()
     .max(254)
     .nullable()
@@ -357,12 +359,12 @@ const shopFields = {
       if (!value) return null;
       const email = normalizeEmail(value);
       if (!email) {
-        ctx.addIssue({ code: "custom", message: "E-mail de contact invalide." });
+        ctx.addIssue({ code: "custom", message: m("shops.invalidContactEmail") });
         return z.NEVER;
       }
       return email;
     }),
-  hours: optionalText(500, "Horaires trop longs (500 caractères maximum)."),
+  hours: optionalText(500, m("shops.hoursTooLong", { max: 500 })),
   place: placeSchema,
 };
 
@@ -380,15 +382,15 @@ export type ShopUpdateInput = z.output<typeof shopUpdateSchema>;
 
 export const shopReviewSchema = z
   .object({
-    decision: z.enum(["verify", "reject", "revoke"], { error: "Décision invalide." }),
-    note: z.string().trim().max(500, "Motif trop long (500 caractères maximum).").optional(),
+    decision: z.enum(["verify", "reject", "revoke"], { error: m("shops.invalidDecision") }),
+    note: z.string().trim().max(500, m("shops.noteTooLong", { max: 500 })).optional(),
   })
   .refine((value) => value.decision === "verify" || Boolean(value.note), {
-    message: "Indiquez le motif du refus.",
+    message: m("shops.noteRequired"),
     path: ["note"],
   });
 
-const clientActionId = z.string({ error: "Requête invalide." }).trim().min(8).max(64);
+const clientActionId = z.string({ error: m("common.invalidRequest") }).trim().min(8).max(64);
 const entityId = id;
 
 /** Commandes organisateur (POST /api/tournaments/[id]/actions), rejouables par la file hors connexion. */
@@ -399,7 +401,7 @@ export const organizerCommandSchema = z.discriminatedUnion("type", [
     settings: z.object({
       ...tournamentSettingsFields,
       ...tournamentListingFields,
-      swissRounds: intIn(1, 20, "Nombre de rondes invalide (1 à 20).").optional(),
+      swissRounds: intIn(1, 20, m("tournaments.invalidSwissRounds", { min: 1, max: 20 })).optional(),
     }),
   }),
   z.object({ type: z.literal("setVisibility"), clientActionId, public: z.boolean() }),
@@ -420,7 +422,7 @@ export const organizerCommandSchema = z.discriminatedUnion("type", [
     type: z.literal("disqualify"),
     clientActionId,
     playerId: entityId,
-    reason: z.string({ error: "Motif invalide." }).trim().min(1, "Indiquez un motif.").max(200, "Motif trop long."),
+    reason: z.string({ error: m("tournaments.invalidReason") }).trim().min(1, m("tournaments.reasonRequired")).max(200, m("tournaments.reasonTooLong")),
   }),
   z.object({ type: z.literal("pairRound"), clientActionId }),
   z.object({ type: z.literal("swapPlayers"), clientActionId, playerA: entityId, playerB: entityId }),
@@ -434,8 +436,8 @@ export const organizerCommandSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("pauseClock"), clientActionId }),
   z.object({ type: z.literal("resumeClock"), clientActionId }),
-  z.object({ type: z.literal("adjustClock"), clientActionId, seconds: intIn(-7200, 7200, "Durée invalide.") }),
-  z.object({ type: z.literal("addTableTime"), clientActionId, matchId: entityId, seconds: intIn(-3600, 3600, "Durée invalide.") }),
+  z.object({ type: z.literal("adjustClock"), clientActionId, seconds: intIn(-7200, 7200, m("tournaments.invalidDuration")) }),
+  z.object({ type: z.literal("addTableTime"), clientActionId, matchId: entityId, seconds: intIn(-3600, 3600, m("tournaments.invalidDuration")) }),
   z.object({
     type: z.literal("setResult"),
     clientActionId,
@@ -472,9 +474,9 @@ const param = <S extends z.ZodType>(schema: S) =>
   z.preprocess((value) => (value === null || value === "" ? undefined : value), schema.optional());
 
 const numberParam = (min: number, max: number) =>
-  param(z.coerce.number({ error: "Paramètre invalide." }).min(min, "Paramètre invalide.").max(max, "Paramètre invalide."));
+  param(z.coerce.number({ error: m("common.invalidParam") }).min(min, m("common.invalidParam")).max(max, m("common.invalidParam")));
 
-const dayParam = param(z.iso.datetime({ offset: true, error: "Date invalide." }).or(z.iso.date({ error: "Date invalide." })));
+const dayParam = param(z.iso.datetime({ offset: true, error: m("common.invalidDate") }).or(z.iso.date({ error: m("common.invalidDate") })));
 
 const flagParam = param(z.enum(["1", "0", "true", "false"]).transform((value) => value === "1" || value === "true"));
 
@@ -484,15 +486,15 @@ const nearParams = {
   lng: numberParam(-180, 180),
   radius: param(
     z.coerce
-      .number({ error: "Rayon invalide." })
-      .refine((value) => (SEARCH_RADII_KM as readonly number[]).includes(value), "Rayon invalide."),
+      .number({ error: m("geo.invalidRadius") })
+      .refine((value) => (SEARCH_RADII_KM as readonly number[]).includes(value), m("geo.invalidRadius")),
   ),
 };
 
 function withNear<T extends { lat?: number; lng?: number; radius?: number }>(value: T, ctx: z.RefinementCtx) {
   const { lat, lng, radius, ...rest } = value;
   const given = [lat, lng].filter((part) => part !== undefined).length;
-  if (given === 1) ctx.addIssue({ code: "custom", message: "Point de recherche incomplet." });
+  if (given === 1) ctx.addIssue({ code: "custom", message: m("geo.incompleteSearchPoint") });
   return {
     ...rest,
     near: lat !== undefined && lng !== undefined ? { lat, lng, radiusKm: radius ?? 25 } : undefined,
@@ -508,15 +510,15 @@ export const directoryQuerySchema = z
     ...nearParams,
     from: dayParam,
     to: dayParam,
-    format: param(z.enum(["boutique", "competitif"], { error: "Format invalide." })),
-    match: param(z.enum(["bo1", "bo3"], { error: "Type de match invalide." })),
-    price: param(z.enum(["free", "paid"], { error: "Filtre de prix invalide." })),
+    format: param(z.enum(["boutique", "competitif"], { error: m("tournaments.invalidFormat") })),
+    match: param(z.enum(["bo1", "bo3"], { error: m("tournaments.invalidMatchType") })),
+    price: param(z.enum(["free", "paid"], { error: m("directory.invalidPriceFilter") })),
     seats: flagParam,
     open: flagParam,
     shop: param(z.string().trim().toLowerCase().max(60)),
-    sort: param(z.enum(["date", "distance"], { error: "Tri invalide." })),
+    sort: param(z.enum(["date", "distance"], { error: m("directory.invalidSort") })),
     page: numberParam(1, 1000),
-    view: param(z.enum(["list", "map"], { error: "Vue invalide." })),
+    view: param(z.enum(["list", "map"], { error: m("directory.invalidView") })),
   })
   .transform((value, ctx) => withNear(value, ctx));
 
@@ -539,19 +541,31 @@ export const tournamentJoinSchema = z.object({ name: playerNameSchema.optional()
 
 export const tournamentTokenSchema = z.object({ token: shareTokenSchema });
 
-type ParseResult<T> = { ok: true; data: T } | { ok: false; response: NextResponse };
+export type ValidationFailure = { key: ApiMessageKey; values?: ApiMessageValues; status: number };
 
-/** Valide une valeur ; renvoie une réponse 400 avec le premier message utile sinon. */
+type ParseResult<T> = { ok: true; data: T } | { ok: false; failure: ValidationFailure };
+
+/** Valide une valeur ; renvoie sinon le premier message utile (clé du bloc `api`) et le statut. */
 export function validate<S extends z.ZodType>(schema: S, value: unknown, status = 400): ParseResult<z.output<S>> {
   // Les messages non personnalisés (types inattendus, champs absents) deviennent « Requête invalide. ».
   const result = schema.safeParse(value, { error: () => INVALID_REQUEST });
   if (result.success) return { ok: true, data: result.data };
-  const message = result.error.issues[0]?.message || INVALID_REQUEST;
-  return { ok: false, response: NextResponse.json({ error: message }, { status }) };
+  const decoded = decodeApiMessage(result.error.issues[0]?.message ?? "") ?? { key: "common.invalidRequest" };
+  return { ok: false, failure: { ...decoded, status } };
+}
+
+/** Réponse `{ error }` traduite d'une validation refusée. */
+export function validationError(request: Request, failure: ValidationFailure) {
+  return apiError(request, failure.key, failure.status, { values: failure.values });
 }
 
 /** Lit le corps JSON puis le valide. Un corps absent ou mal formé vaut `null`. */
-export async function readJsonBody<S extends z.ZodType>(request: Request, schema: S, status = 400) {
+export async function readJsonBody<S extends z.ZodType>(
+  request: Request,
+  schema: S,
+  status = 400,
+): Promise<{ ok: true; data: z.output<S> } | { ok: false; response: NextResponse }> {
   const body: unknown = await request.json().catch(() => null);
-  return validate(schema, body, status);
+  const parsed = validate(schema, body, status);
+  return parsed.ok ? parsed : { ok: false, response: await validationError(request, parsed.failure) };
 }

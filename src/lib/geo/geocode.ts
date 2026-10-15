@@ -13,8 +13,8 @@ const TIMEOUT_MS = 6_000;
 
 /** Service indisponible, saturé ou réponse illisible : l'utilisateur doit réessayer. */
 export class GeocodeUnavailableError extends Error {
-  constructor(message = "Service de localisation indisponible, réessayez dans un instant.") {
-    super(message);
+  constructor(readonly key: "geo.unavailable" | "geo.busy" = "geo.unavailable") {
+    super(key);
   }
 }
 
@@ -206,7 +206,7 @@ export function createGeocoder(deps: GeocoderDeps) {
       }
       return cached(deps, `nominatim:resolve:${key}`, async () => {
         if (!(await deps.acquireNominatimSlot())) {
-          throw new GeocodeUnavailableError("Service de localisation très sollicité, réessayez dans un instant.");
+          throw new GeocodeUnavailableError("geo.busy");
         }
         const url = new URL(NOMINATIM_SEARCH_URL);
         url.searchParams.set("format", "jsonv2");

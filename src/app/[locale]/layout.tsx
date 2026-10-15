@@ -9,7 +9,7 @@ import "../globals.css";
 
 export const viewport = siteViewport;
 
-// Chaque page existe dans chaque langue du registre (français sans préfixe, autres sous /<code>).
+// Chaque page existe dans chaque langue du registre (sous /<code>, français compris : /fr).
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
 }

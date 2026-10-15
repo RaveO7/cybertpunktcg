@@ -7,5 +7,17 @@
   "notFoundEyebrow": "404",
   "notFoundTitle": "Pagina non trovata",
   "notFoundBody": "Questa pagina non esiste o è stata spostata.",
-  "reference": "Riferimento"
+  "reference": "Riferimento",
+  "request": {
+    "offline": "Offline: al momento non è possibile apportare modifiche.",
+    "sessionExpired": "Sessione scaduta. Accedi di nuovo.",
+    "sessionLost": "La sessione non è stata mantenuta. Riprova.",
+    "saveFailed": "Impossibile salvare.",
+    "addFailed": "Impossibile aggiungere.",
+    "importFailed": "Importazione non riuscita.",
+    "loginFailed": "Accesso non riuscito.",
+    "logoutFailed": "Disconnessione non riuscita.",
+    "loadCollection": "Impossibile caricare la collezione.",
+    "loadDecks": "Impossibile caricare i mazzi."
+  }
 }

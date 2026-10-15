@@ -168,11 +168,11 @@ function renderRulesBody(text: string): ReactNode[] {
 
 export function RulesText({
   text,
-  label = "Texte de règles",
+  label,
   compact = false,
 }: {
   text: string;
-  label?: string;
+  label: string;
   compact?: boolean;
 }) {
   const trimmed = text.trim();

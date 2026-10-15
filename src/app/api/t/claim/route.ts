@@ -19,6 +19,6 @@ export async function POST(request: Request) {
     setPlayerCookie(response, request, claimed.tournamentId, claimed.deviceToken);
     return response;
   } catch (error) {
-    return errorResponse("tournament-claim", error);
+    return errorResponse(request, "tournament-claim", error);
   }
 }

@@ -52,7 +52,7 @@ export type Locale = (typeof LANGUAGES)[number]["code"];
 /** Codes des langues, dans l'ordre du registre. */
 export const LOCALES = LANGUAGES.map((language) => language.code) as readonly Locale[];
 
-/** Langue par défaut (URL sans préfixe) et langue de référence des textes. */
+/** Langue par défaut et langue de référence des textes. */
 export const DEFAULT_LOCALE: Locale = "fr";
 
 /** Langue de repli quand un texte manque dans une langue (avant le français). */

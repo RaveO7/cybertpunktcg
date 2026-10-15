@@ -1,4 +1,7 @@
 import { randomBytes } from "node:crypto";
+import { DEFAULT_LOCALE, type Locale } from "@/i18n/config";
+import { formatRoute } from "@/i18n/match";
+import { requestLocale } from "@/lib/api-response";
 import { shareTokenSchema } from "@/lib/api-schemas";
 import { prisma } from "@/lib/prisma";
 import type { CollectionItemDTO } from "@/lib/types";
@@ -7,8 +10,9 @@ export function createShareToken() {
   return randomBytes(24).toString("base64url");
 }
 
-export function sharePath(token: string) {
-  return `/classeur/${token}`;
+/** Adresse du classeur partagé, dans la langue de celui qui partage. */
+export function sharePath(token: string, locale: Locale = DEFAULT_LOCALE) {
+  return formatRoute("/classeur/[token]", locale, { token });
 }
 
 export async function getShareForUser(userId: string) {
@@ -69,6 +73,7 @@ export async function loadSharedBinder(token: string) {
 
 export function absoluteShareUrl(request: Request, token: string) {
   const configured = process.env.APP_URL?.trim().replace(/\/$/, "");
-  if (configured) return `${configured}${sharePath(token)}`;
-  return new URL(sharePath(token), request.url).toString();
+  const path = sharePath(token, requestLocale(request));
+  if (configured) return `${configured}${path}`;
+  return new URL(path, request.url).toString();
 }

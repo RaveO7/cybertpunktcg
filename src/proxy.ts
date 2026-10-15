@@ -1,7 +1,7 @@
 import createMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
-import { DEFAULT_LOCALE, isLocale, LOCALE_COOKIE, type Locale } from "@/i18n/config";
-import { formatRoute, internalPath, matchRoute, type MatchedRoute } from "@/i18n/match";
+import { INTERNATIONAL_LOCALE, isLocale, LOCALE_COOKIE, type Locale } from "@/i18n/config";
+import { formatRoute, internalPath, matchRoute, splitLocale, type MatchedRoute } from "@/i18n/match";
 import { landingSections, routing, type AppPathname } from "@/i18n/routing";
 import { COUNTRY_COOKIE, isCountryCode } from "@/lib/i18n/geo-locale";
 import { SESSION_COOKIE } from "@/lib/session-cookie";
@@ -34,12 +34,20 @@ function internalUrl(request: NextRequest, match: MatchedRoute) {
 
 function route(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
-  // Correspondance dans la langue de l'URL : « /cards » est l'explorateur en français, la liste des
-  // cartes sous « /en/cards ». Une URL française préfixée (« /fr/cartes ») est laissée à next-intl.
-  const match = matchRoute(pathname);
-  const canonical = match && !(match.locale === DEFAULT_LOCALE && pathname.split("/")[1] === DEFAULT_LOCALE);
+  // Correspondance dans la langue de l'URL : « /fr/cards » est l'explorateur, la liste des cartes
+  // sous « /en/cards ».
+  // Lien sans langue : renvoi définitif vers la même page en anglais, qu'il utilise les segments anglais
+  // (« /cards/x ») ou les anciens segments français (« /cartes/x ») ; sinon « /en » + le chemin (404).
+  if (!splitLocale(pathname).prefixed) {
+    const target = INTERNATIONAL_LOCALE;
+    const found = matchRoute(pathname === "/" ? `/${target}` : `/${target}${pathname}`) ?? matchRoute(pathname);
+    const destination = found ? formatRoute(found.route, target, found.params) : `/${target}${pathname}`;
+    return redirect(request, `${destination}${search}`, 308);
+  }
 
-  if (match && canonical) {
+  const match = matchRoute(pathname);
+
+  if (match) {
     const hasSession = request.cookies.has(SESSION_COOKIE);
     const guestTarget = GUEST_TARGETS[match.route];
     if (guestTarget && !hasSession) return redirect(request, guestTarget(match.locale), 307);
@@ -56,8 +64,8 @@ function route(request: NextRequest): NextResponse {
     return NextResponse.rewrite(internalUrl(request, match), { request: { headers } });
   }
 
-  // Préfixe français superflu, chemin d'une autre langue (« /de/cards/x » → « /de/karten/x ») ou URL
-  // inconnue (404). Les redirections de next-intl sont définitives : ce sont des adresses en double.
+  // Chemin d'une autre langue (« /de/cards/x » → « /de/karten/x »), URL sans langue ou URL inconnue
+  // (404). Les redirections de next-intl sont définitives : ce sont des adresses en double.
   const response = handleI18nRouting(request);
   const location = response.headers.get("location");
   if (location && response.status === 307) return NextResponse.redirect(location, 308);

@@ -10,5 +10,10 @@
   "clear": "Offline-Bilder löschen",
   "cleared": "Bilder von diesem Gerät gelöscht.",
   "unsupported": "Dieser Browser unterstützt den Offline-Modus nicht.",
-  "hdNote": "Bilder in voller Größe werden beim Öffnen gespeichert."
+  "hdNote": "Bilder in voller Größe werden beim Öffnen gespeichert.",
+  "page": {
+    "title": "Offline",
+    "body": "Diese Seite wurde auf diesem Gerät noch nicht gespeichert.",
+    "home": "Zurück zur Startseite"
+  }
 }

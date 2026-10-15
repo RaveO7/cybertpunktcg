@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
+import { frenchText } from "../helpers/api-text";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
 type PlayerAuth = typeof import("../../src/lib/tournament/player-auth");
@@ -29,7 +30,7 @@ let counter = 0;
 async function expectError(promise: Promise<unknown>, status: number, message?: RegExp) {
   await assert.rejects(promise, (error: unknown) => {
     assert.equal((error as { status?: number }).status, status, (error as Error).message);
-    if (message) assert.match((error as Error).message, message);
+    if (message) assert.match(frenchText(error), message);
     return true;
   });
 }

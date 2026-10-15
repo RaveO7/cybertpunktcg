@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { viewerFromRequest } from "@/lib/tournament/player-auth";
 import { loadTournament, tournamentRevision } from "@/lib/tournament/repository";
 import { buildView } from "@/lib/tournament/view";
+import { apiError } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +21,12 @@ export async function GET(request: Request, context: Context) {
   const headers = { "cache-control": "no-store" };
   if (known !== null && Number.isInteger(known) && known >= 0) {
     const revision = await tournamentRevision(id);
-    if (revision === null) return NextResponse.json({ error: "Tournoi introuvable." }, { status: 404, headers });
+    if (revision === null) return apiError(request, "tournaments.notFound", 404, { headers });
     if (revision === known) {
       return NextResponse.json({ unchanged: true, revision, serverNow: new Date().toISOString() }, { headers });
     }
   }
   const tournament = await loadTournament(prisma, id);
-  if (!tournament) return NextResponse.json({ error: "Tournoi introuvable." }, { status: 404, headers });
+  if (!tournament) return apiError(request, "tournaments.notFound", 404, { headers });
   return NextResponse.json(buildView(tournament, await viewerFromRequest(request, id)), { headers });
 }

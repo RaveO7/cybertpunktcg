@@ -7,5 +7,17 @@
   "notFoundEyebrow": "404",
   "notFoundTitle": "Página no encontrada",
   "notFoundBody": "Esta página no existe o se ha movido.",
-  "reference": "Referencia"
+  "reference": "Referencia",
+  "request": {
+    "offline": "Sin conexión: no se pueden hacer cambios por ahora.",
+    "sessionExpired": "La sesión ha caducado. Vuelve a iniciar sesión.",
+    "sessionLost": "No se ha conservado la sesión. Inténtalo de nuevo.",
+    "saveFailed": "No se pudo guardar.",
+    "addFailed": "No se pudo añadir.",
+    "importFailed": "No se pudo importar.",
+    "loginFailed": "No se pudo iniciar sesión.",
+    "logoutFailed": "No se pudo cerrar la sesión.",
+    "loadCollection": "No se pudo cargar la colección.",
+    "loadDecks": "No se pudieron cargar los mazos."
+  }
 }

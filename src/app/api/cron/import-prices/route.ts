@@ -10,6 +10,7 @@ import { reportError } from "@/lib/monitoring";
 import { importPrices } from "@/lib/price-import";
 import { prisma } from "@/lib/prisma";
 import { purgeExpiredRateLimits } from "@/lib/rate-limit";
+import { apiError } from "@/lib/api-response";
 
 // Appelé chaque jour par Vercel Cron (vercel.json). Vercel envoie « Authorization: Bearer $CRON_SECRET ».
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ function authorized(request: Request) {
 }
 
 export async function GET(request: Request) {
-  if (!authorized(request)) return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  if (!authorized(request)) return apiError(request, "common.unauthorized", 401);
 
   // Ménage annexe : un échec ici ne doit pas empêcher l'import.
   await purgeExpiredRateLimits().catch((error) => reportError("purge rate-limit", error));

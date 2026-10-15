@@ -1,4 +1,4 @@
-import { LANGUAGE_LABELS, isSealedSetCode } from "./reference-data";
+import { isSealedSetCode } from "./reference-data";
 import type { PrintingDTO, SetDTO } from "./types";
 
 /** Le dernier jeu sert de repli. Un nouveau TCG s'insère avant, avec un test sur le code ou le nom. */
@@ -6,30 +6,26 @@ export const GAMES: { id: string; name: string; test: (set: Pick<SetDTO, "code" 
   { id: "cyberpunk", name: "Cyberpunk TCG", test: () => true },
 ];
 
-const GROUP_ORDER = ["Extensions", "Decks", "Promos", "Événements", "Produits annexes", "Scellé"];
+/** Familles de produits (identifiants : le libellé affiché vient des traductions). */
+const GROUP_ORDER = ["expansions", "decks", "promos", "events", "accessories", "sealed"];
 
 export function gameForSet(set: Pick<SetDTO, "code" | "name">) {
   return GAMES.find((game) => game.test(set)) ?? GAMES[GAMES.length - 1];
 }
 
 export function productGroup(name: string, code?: string) {
-  if (code && isSealedSetCode(code)) return "Scellé";
+  if (code && isSealedSetCode(code)) return "sealed";
   const value = name.toLowerCase();
-  if (value.includes("promo")) return "Promos";
-  if (value.includes("starter") || /\bdemo\b/.test(value) || /\bdeck\b/.test(value)) return "Decks";
-  if (value.includes("topper")) return "Produits annexes";
-  if (/pre-?\s*release|\bopen\b|\bbrawl\b|\bshowdown\b/.test(value)) return "Événements";
-  return "Extensions";
+  if (value.includes("promo")) return "promos";
+  if (value.includes("starter") || /\bdemo\b/.test(value) || /\bdeck\b/.test(value)) return "decks";
+  if (value.includes("topper")) return "accessories";
+  if (/pre-?\s*release|\bopen\b|\bbrawl\b|\bshowdown\b/.test(value)) return "events";
+  return "expansions";
 }
 
 export function displaySetName(name: string, language: string) {
   if (language !== "fr") return name;
   return name.replace(/\s+[—–-]\s*FR\s*$/i, "").replace(/\s+FR\s*$/i, "").trim();
-}
-
-export function languageLabel(language: string) {
-  if (!language) return "Toutes les langues";
-  return Object.hasOwn(LANGUAGE_LABELS, language) ? LANGUAGE_LABELS[language] : language;
 }
 
 export function gamesInCatalog(sets: SetDTO[], printings: PrintingDTO[]) {

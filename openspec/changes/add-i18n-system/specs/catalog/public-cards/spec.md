@@ -21,7 +21,7 @@ La fiche française MUST utiliser le nom, le texte de règles et l'image de l'im
 Une page publique, consultable sans compte et rendue côté serveur, MUST lister toutes les cartes de jeu actives (hors produits scellés), regroupées par type, avec leur image, leur nom dans la langue de la page et un lien vers leur fiche. Le contenu de la liste MUST être présent dans le HTML initial, sans dépendre de JavaScript. La liste MUST être accessible depuis le pied de page de toutes les pages et depuis le fil d'Ariane de chaque fiche.
 
 #### Scenario: Visiteur sans compte
-- **WHEN** un visiteur non connecté ouvre `/cartes`
+- **WHEN** un visiteur non connecté ouvre `/fr/cartes`
 - **THEN** il voit toutes les cartes de jeu, regroupées par type, sans écran de connexion
 
 #### Scenario: Produit scellé

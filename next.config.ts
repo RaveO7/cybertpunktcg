@@ -5,7 +5,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   experimental: {
-    // Plusieurs mises en page racines ((fr) et (en)) : la 404 des URL sans route est rendue à part.
+    // Mise en page racine sous [locale] : la 404 des URL sans route est rendue à part.
     globalNotFound: true,
   },
   async redirects() {

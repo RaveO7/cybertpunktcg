@@ -10,5 +10,10 @@
   "clear": "Eliminar imágenes sin conexión",
   "cleared": "Imágenes eliminadas de este dispositivo.",
   "unsupported": "Este navegador no admite el modo sin conexión.",
-  "hdNote": "Las imágenes a tamaño completo se guardan a medida que las abres."
+  "hdNote": "Las imágenes a tamaño completo se guardan a medida que las abres.",
+  "page": {
+    "title": "Sin conexión",
+    "body": "Esta página aún no se ha guardado en este dispositivo.",
+    "home": "Volver al inicio"
+  }
 }

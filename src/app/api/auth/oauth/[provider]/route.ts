@@ -6,6 +6,7 @@ import {
   isOAuthProvider,
   oauthConfigured,
 } from "@/lib/oauth";
+import { apiError } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +15,10 @@ type Context = { params: Promise<{ provider: string }> };
 export async function GET(request: Request, context: Context) {
   const { provider: raw } = await context.params;
   if (!isOAuthProvider(raw)) {
-    return NextResponse.json({ error: "Fournisseur inconnu." }, { status: 404 });
+    return apiError(request, "auth.unknownProvider", 404);
   }
   if (!oauthConfigured(raw)) {
-    return NextResponse.json(
-      { error: `Connexion ${raw === "google" ? "Google" : "Apple"} non configurée.` },
-      { status: 503 },
-    );
+    return apiError(request, "auth.providerNotConfigured", 503, { values: { provider: raw === "google" ? "Google" : "Apple" } });
   }
 
   const url = new URL(request.url);
@@ -29,10 +27,7 @@ export async function GET(request: Request, context: Context) {
   try {
     state = createOAuthState(raw, localUserId);
   } catch {
-    return NextResponse.json(
-      { error: "Configuration OAuth incomplète (secret de state manquant)." },
-      { status: 503 },
-    );
+    return apiError(request, "auth.oauthIncomplete", 503);
   }
   const response = NextResponse.redirect(buildAuthorizationUrl(raw, request, state));
   applyOAuthStateCookie(response, request, state);

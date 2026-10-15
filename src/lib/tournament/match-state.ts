@@ -23,8 +23,8 @@ export type MatchState = {
 
 export type MatchContext = { matchType: MatchType; phase: Phase; oneDeviceMode: OneDeviceMode; now: Date };
 
-const ALREADY_VALIDATED = "Ce match est déjà validé.";
-const CONTESTED = "Résultat contesté : l'organisateur doit trancher.";
+const ALREADY_VALIDATED = "tournaments.alreadyValidated" as const;
+const CONTESTED = "tournaments.contested" as const;
 
 export function otherSide(side: Side): Side {
   return side === "A" ? "B" : "A";
@@ -43,13 +43,13 @@ function validated(state: MatchState, result: MatchResult): MatchState {
 }
 
 function assertOpenForPlayers(state: MatchState) {
-  if (state.isBye) fail("Un bye n'a pas de résultat à déclarer.");
+  if (state.isBye) fail("tournaments.byeNoResult");
   if (state.status === "valide") fail(ALREADY_VALIDATED, 409);
   if (state.status === "conteste") fail(CONTESTED, 409);
 }
 
 function assertPlayerResult(result: MatchResult, ctx: MatchContext) {
-  if (result.kind !== "normal" && result.kind !== "id") fail("Résultat réservé à l'organisateur.", 403);
+  if (result.kind !== "normal" && result.kind !== "id") fail("tournaments.organizerResultOnly", 403);
   const error = resultError(result, ctx.matchType, ctx.phase);
   if (error) fail(error);
 }
@@ -72,8 +72,8 @@ export function confirmResult(state: MatchState, side: Side): MatchState {
   assertOpenForPlayers(state);
   const declared = declarationOf(state, otherSide(side));
   if (!declared) {
-    if (declarationOf(state, side)) fail("Vous ne pouvez pas confirmer votre propre déclaration.");
-    fail("Aucun score à confirmer.");
+    if (declarationOf(state, side)) fail("tournaments.cannotConfirmOwn");
+    fail("tournaments.nothingToConfirm");
   }
   return validated(withDeclaration(state, side, declared), declared);
 }
@@ -81,7 +81,7 @@ export function confirmResult(state: MatchState, side: Side): MatchState {
 /** L'adversaire du déclarant refuse le score : le match part chez l'organisateur. */
 export function refuseResult(state: MatchState, side: Side): MatchState {
   assertOpenForPlayers(state);
-  if (!declarationOf(state, otherSide(side))) fail("Aucun score à refuser.");
+  if (!declarationOf(state, otherSide(side))) fail("tournaments.nothingToRefuse");
   return { ...state, status: "conteste" };
 }
 
@@ -92,15 +92,15 @@ export function refuseResult(state: MatchState, side: Side): MatchState {
 export function confirmOnSite(state: MatchState, declarerSide: Side, ctx: MatchContext): MatchState {
   assertOpenForPlayers(state);
   const declared = declarationOf(state, declarerSide);
-  if (!declared) fail("Aucun score à confirmer.");
+  if (!declared) fail("tournaments.nothingToConfirm");
   const next = { ...withDeclaration(state, otherSide(declarerSide), declared), confirmedOnSite: true };
   return ctx.oneDeviceMode === "direct" ? validated(next, declared) : { ...next, status: "declare" };
 }
 
 /** Saisie, validation ou correction par un organisateur, quel que soit l'état du match. */
 export function organizerSetResult(state: MatchState, result: MatchResult, ctx: MatchContext): MatchState {
-  if (state.isBye) fail("Un bye ne se modifie pas.");
-  if (result.kind === "bye" || result.kind === "no_show") fail("Résultat invalide.");
+  if (state.isBye) fail("tournaments.byeLocked");
+  if (result.kind === "bye" || result.kind === "no_show") fail("tournaments.invalidResult");
   const error = resultError(result, ctx.matchType, ctx.phase);
   if (error) fail(error);
   return validated(state, result);
@@ -108,7 +108,7 @@ export function organizerSetResult(state: MatchState, result: MatchResult, ctx: 
 
 /** Défaite par absence : victoire sans jeu pour l'adversaire. */
 export function noShowResult(state: MatchState, absentSide: Side, ctx: MatchContext): MatchState {
-  if (state.isBye) fail("Un bye ne se modifie pas.");
+  if (state.isBye) fail("tournaments.byeLocked");
   const games = walkoverGames(ctx.matchType);
   return validated(state, {
     kind: "no_show",
@@ -119,7 +119,7 @@ export function noShowResult(state: MatchState, absentSide: Side, ctx: MatchCont
 
 /** Annulation du résultat par un organisateur : le match redevient en cours. */
 export function resetResult(state: MatchState): MatchState {
-  if (state.isBye) fail("Un bye ne se modifie pas.");
+  if (state.isBye) fail("tournaments.byeLocked");
   return {
     ...state,
     status: "en_cours",

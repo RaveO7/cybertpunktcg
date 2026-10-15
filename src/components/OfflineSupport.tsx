@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { getPathname } from "@/i18n/navigation";
 
 function subscribe(onChange: () => void) {
   window.addEventListener("online", onChange);
@@ -21,12 +22,28 @@ export function useIsOffline() {
   );
 }
 
-/** Enregistre public/sw.js (production uniquement : en dev, le cache gênerait le rechargement à chaud). */
+/** Écrans gardés hors ligne dès l'installation, dans la langue de la page. */
+const SHELL_ROUTES = ["/", "/cards", "/investissement", "/decks", "/souhaits", "/comment-jouer", "/parametres"] as const;
+
+/**
+ * Enregistre public/sw.js (production uniquement : en dev, le cache gênerait le rechargement à chaud).
+ * Les adresses des écrans et le texte de la page « hors ligne » lui sont passés dans l'URL du script,
+ * dans la langue de la page : changer de langue installe une nouvelle version du service worker.
+ */
 export function ServiceWorkerRegister() {
+  const locale = useLocale();
+  const t = useTranslations("offline.page");
+  const params = new URLSearchParams({
+    lang: locale,
+    pages: SHELL_ROUTES.map((href) => getPathname({ href, locale })).join(","),
+    title: t("title"),
+    body: t("body"),
+    home: t("home"),
+  }).toString();
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).catch(() => undefined);
-  }, []);
+    navigator.serviceWorker.register(`/sw.js?${params}`, { scope: "/", updateViaCache: "none" }).catch(() => undefined);
+  }, [params]);
   return null;
 }
 

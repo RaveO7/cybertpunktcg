@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatRoute } from "@/i18n/match";
 import type { PlayerView, TournamentView } from "@/lib/tournament/view";
 import type { RunCommand } from "./TournamentConsole";
 import { absoluteUrl, buttonClass, dangerClass, inputClass, panelClass, primaryClass, QrCode, Tag } from "./ui";
 
 export function PlayersTab({ view, run }: { view: TournamentView; run: RunCommand }) {
   const t = useTranslations();
+  const locale = useLocale();
   const [name, setName] = useState("");
   const [showCode, setShowCode] = useState(view.players.length === 0);
   const [open, setOpen] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export function PlayersTab({ view, run }: { view: TournamentView; run: RunComman
   const players = view.players.filter((player) => player.status !== "pending" && player.status !== "waitlist");
   const maxPlayers = view.tournament.maxPlayers;
   const seatsTaken = view.players.filter((player) => player.status === "active" || player.status === "pending").length;
-  const joinUrl = code ? absoluteUrl(`/t/${code}`) : "";
+  const joinUrl = code ? absoluteUrl(formatRoute("/t/[code]", locale, { code })) : "";
 
   async function add(event: React.FormEvent) {
     event.preventDefault();
@@ -184,6 +186,7 @@ function PlayerRow({
   onToggle: () => void;
 }) {
   const t = useTranslations();
+  const locale = useLocale();
   const [mode, setMode] = useState<Mode>("none");
   const [text, setText] = useState("");
   const [claim, setClaim] = useState<{ token: string; expiresAt: string } | null>(null);
@@ -266,7 +269,7 @@ function PlayerRow({
 
           {mode === "qr" && claim ? (
             <div className="flex flex-col items-center gap-2 sm:items-start">
-              <QrCode value={absoluteUrl(`/t/claim/${claim.token}`)} label={t("tournaments.personalQr")} />
+              <QrCode value={absoluteUrl(formatRoute("/t/claim/[token]", locale, { token: claim.token }))} label={t("tournaments.personalQr")} />
               <p className="max-w-sm text-sm text-muted">{t("tournaments.personalQrHint", { name: player.name })}</p>
             </div>
           ) : null}

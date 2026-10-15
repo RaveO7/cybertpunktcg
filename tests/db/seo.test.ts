@@ -113,16 +113,16 @@ describe("sitemap", () => {
     const entries = await sitemap.buildSitemap();
     const urls = new Set(entries.map((entry) => entry.url));
 
-    assert.ok(urls.has(`${SITE}/boutiques/${pending}`));
+    assert.ok(urls.has(`${SITE}/fr/boutiques/${pending}`));
     assert.ok(urls.has(`${SITE}/en/shops/${pending}`));
-    assert.ok(!urls.has(`${SITE}/boutiques/${rejected}`));
-    assert.ok(!urls.has(`${SITE}/tournois/publics/${privateId}`));
-    assert.ok(!urls.has(`${SITE}/tournois/publics/${cancelledId}`));
-    assert.ok(urls.has(`${SITE}/tournois/publics/${upcomingId}`));
+    assert.ok(!urls.has(`${SITE}/fr/boutiques/${rejected}`));
+    assert.ok(!urls.has(`${SITE}/fr/tournois/publics/${privateId}`));
+    assert.ok(!urls.has(`${SITE}/fr/tournois/publics/${cancelledId}`));
+    assert.ok(urls.has(`${SITE}/fr/tournois/publics/${upcomingId}`));
 
     const upcoming = entries.find((entry) => entry.url === `${SITE}/en/tournaments/${upcomingId}`);
     assert.deepEqual(upcoming?.alternates?.languages, {
-      fr: `${SITE}/tournois/publics/${upcomingId}`,
+      fr: `${SITE}/fr/tournois/publics/${upcomingId}`,
       en: `${SITE}/en/tournaments/${upcomingId}`,
       de: `${SITE}/de/turniere/${upcomingId}`,
       es: `${SITE}/es/torneos/${upcomingId}`,
@@ -134,15 +134,15 @@ describe("sitemap", () => {
   it("accueil, liste des cartes, pages légales dans les cinq langues et fiches de carte hors scellés", async () => {
     const entries = await sitemap.buildSitemap();
     const byUrl = new Map(entries.map((entry) => [entry.url, entry]));
-    for (const path of ["/", "/en", "/de", "/es", "/it", "/cartes", "/en/cards", "/de/karten", "/es/cartas", "/it/carte"]) {
+    for (const path of ["/fr", "/en", "/de", "/es", "/it", "/fr/cartes", "/en/cards", "/de/karten", "/es/cartas", "/it/carte"]) {
       assert.ok(byUrl.has(`${SITE}${path}`), path);
     }
     // Plus d'autres pages de liste publiques (la liste des cartes reste) : tout est sur l'accueil.
-    for (const path of ["/comment-jouer", "/en/how-to-play", "/tournois/publics", "/boutiques"]) {
+    for (const path of ["/fr/comment-jouer", "/en/how-to-play", "/fr/tournois/publics", "/fr/boutiques"]) {
       assert.ok(!byUrl.has(`${SITE}${path}`), path);
     }
     const terms = {
-      fr: `${SITE}/cgu`,
+      fr: `${SITE}/fr/cgu`,
       en: `${SITE}/en/terms`,
       de: `${SITE}/de/nutzungsbedingungen`,
       es: `${SITE}/es/condiciones`,
@@ -155,25 +155,25 @@ describe("sitemap", () => {
       assert.deepEqual(legal.alternates?.languages, terms);
       assert.equal(legal.lastModified, undefined);
     }
-    for (const path of ["/mentions-legales", "/en/legal-notice", "/de/impressum", "/confidentialite", "/it/privacy"]) {
+    for (const path of ["/fr/mentions-legales", "/en/legal-notice", "/de/impressum", "/fr/confidentialite", "/it/privacy"]) {
       assert.ok(byUrl.has(`${SITE}${path}`), path);
     }
 
     const gameCard = await prisma.card.findFirst({ where: { isActive: true, cardType: "Legend" }, select: { slug: true } });
     if (gameCard) {
-      assert.ok(byUrl.has(`${SITE}/cartes/${gameCard.slug}`));
+      assert.ok(byUrl.has(`${SITE}/fr/cartes/${gameCard.slug}`));
       assert.ok(byUrl.get(`${SITE}/en/cards/${gameCard.slug}`)?.lastModified instanceof Date);
     }
     const sealed = await prisma.card.findFirst({ where: { cardType: "Sealed" }, select: { slug: true } });
-    if (sealed) assert.ok(!byUrl.has(`${SITE}/cartes/${sealed.slug}`));
+    if (sealed) assert.ok(!byUrl.has(`${SITE}/fr/cartes/${sealed.slug}`));
   });
 
   it("modifier un tournoi met à jour sa date de modification", async () => {
     const id = await tournament({ publicInDays: 12 });
-    const before = (await sitemap.buildSitemap()).find((entry) => entry.url === `${SITE}/tournois/publics/${id}`)?.lastModified as Date;
+    const before = (await sitemap.buildSitemap()).find((entry) => entry.url === `${SITE}/fr/tournois/publics/${id}`)?.lastModified as Date;
     await new Promise((resolve) => setTimeout(resolve, 20));
     await run(id, { type: "updateSettings", settings: { description: "Nouvelle description" } });
-    const after = (await sitemap.buildSitemap()).find((entry) => entry.url === `${SITE}/tournois/publics/${id}`)?.lastModified as Date;
+    const after = (await sitemap.buildSitemap()).find((entry) => entry.url === `${SITE}/fr/tournois/publics/${id}`)?.lastModified as Date;
     assert.ok(after.getTime() > before.getTime());
   });
 });
@@ -185,12 +185,12 @@ describe("métadonnées des fiches", () => {
     assert.match(String(meta.title), /Night City Open .* — Cyberpunk TCG tournament/);
     assert.equal(meta.alternates?.canonical, `/en/tournaments/${id}`);
     assert.deepEqual(meta.alternates?.languages, {
-      fr: `/tournois/publics/${id}`,
+      fr: `/fr/tournois/publics/${id}`,
       en: `/en/tournaments/${id}`,
       de: `/de/turniere/${id}`,
       es: `/es/torneos/${id}`,
       it: `/it/tornei/${id}`,
-      "x-default": `/tournois/publics/${id}`,
+      "x-default": `/en/tournaments/${id}`,
     });
     const italian = await tournamentPages.tournamentMetadata("it", id);
     assert.match(String(italian.title), /Night City Open .* — torneo di Cyberpunk TCG/);

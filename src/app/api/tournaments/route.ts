@@ -8,18 +8,18 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const user = await requireUser(request);
-  if (!user) return sessionRequired();
+  if (!user) return sessionRequired(request);
   return NextResponse.json({ tournaments: await listTournaments(user.id) });
 }
 
 export async function POST(request: Request) {
   const user = await requireUser(request);
-  if (!user) return sessionRequired();
+  if (!user) return sessionRequired(request);
   const parsed = await readJsonBody(request, tournamentCreateSchema);
   if (!parsed.ok) return parsed.response;
   try {
     return NextResponse.json({ tournament: await createTournament(user.id, parsed.data) }, { status: 201 });
   } catch (error) {
-    return errorResponse("tournament-create", error);
+    return errorResponse(request, "tournament-create", error);
   }
 }

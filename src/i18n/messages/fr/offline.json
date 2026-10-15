@@ -10,5 +10,10 @@
   "clear": "Supprimer les images hors-ligne",
   "cleared": "Images supprimées de cet appareil.",
   "unsupported": "Ce navigateur ne permet pas le mode hors-ligne.",
-  "hdNote": "Les images en grand format sont enregistrées au fil de leur consultation."
+  "hdNote": "Les images en grand format sont enregistrées au fil de leur consultation.",
+  "page": {
+    "title": "Hors ligne",
+    "body": "Cette page n’a pas encore été enregistrée sur cet appareil.",
+    "home": "Revenir à l’accueil"
+  }
 }

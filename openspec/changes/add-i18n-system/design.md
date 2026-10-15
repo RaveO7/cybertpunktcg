@@ -52,7 +52,7 @@ src/i18n/messages/
 
 ### 4. Routage : une seule arborescence `app/[locale]`, dossiers aux noms français
 - Toutes les pages passent sous `src/app/[locale]/` avec une seule mise en page racine (`<html lang={locale}>`, `generateStaticParams` sur les langues du registre, `setRequestLocale` pour le rendu statique). Les dossiers gardent leurs noms français actuels : `src/app/(fr)/*` devient `src/app/[locale]/*` presque tel quel, et les URL françaises ne changent pas.
-- `src/i18n/routing.ts` (`defineRouting`) : `localePrefix: "as-needed"` (français sans préfixe), `localeDetection: false` (aucune redirection automatique des visiteurs ni des robots), et `pathnames` pour les routes dont l'URL diffère selon la langue :
+- `src/i18n/routing.ts` (`defineRouting`) : `localePrefix: "always"` (toutes les langues préfixées, français sous `/fr` ; les adresses sans préfixe sont redirigées en 308 vers l'anglais par le proxy), `localeDetection: false` (aucune redirection automatique des visiteurs ni des robots), et `pathnames` pour les routes dont l'URL diffère selon la langue :
   - `/cartes`, `/cartes/[slug]` → `/cards`, `/karten`, `/cartas`, `/carte` ;
   - `/tournois/publics/[id]` → `/tournaments/[id]`, `/turniere/[id]`, `/torneos/[id]`, `/tornei/[id]` ;
   - `/boutiques/[slug]` → `/shops/[slug]`, `/shops/[slug]`, `/tiendas/[slug]`, `/negozi/[slug]` ;
@@ -91,7 +91,8 @@ Le texte de chaque page devient un bloc `legal.json` (sections, paragraphes, lis
 - [Écarts d'hydratation avec les URL réécrites] → `usePathname` de `next-intl` renvoie le chemin interne de façon identique au serveur et au client ; plus de déduction de la langue depuis l'URL côté client.
 - [Poids des messages côté client] → Découpage décrit en décision 7 ; mesure de la taille des pages publiques avant et après.
 - [Qualité des traductions de/es/it (règles, cartes, légal)] → Glossaire de termes de jeu fixé par langue avant traduction, en s'appuyant sur la version française officielle ; relecture par un locuteur natif recommandée avant mise en ligne, en particulier pour les pages légales.
-- [Changement d'URL des écrans de l'application hors français] → Écrans en `noindex`, donc sans impact SEO ; les anciens liens sans préfixe restent valides (affichage en français ou redirection d'un utilisateur connecté vers sa langue).
+- [Changement d'URL des écrans de l'application hors français] → Écrans en `noindex`, donc sans impact SEO ; les anciens liens sans préfixe restent valides (redirection permanente vers la même page en anglais, puis vers la langue d'un utilisateur connecté).
+- [Préfixe `/fr` pour le français, décidé après coup] → Toutes les URL françaises changent : redirections 308 de chaque adresse sans langue vers la même page en anglais (query conservée), canoniques, hreflang et sitemap sous `/fr` ; `x-default` vers l'anglais. Les moteurs transfèrent le référencement des redirections permanentes, avec une période de réindexation.
 - [Préférences existantes en `localStorage`] → Reprise automatique au premier chargement (décision 6).
 
 ## Migration Plan

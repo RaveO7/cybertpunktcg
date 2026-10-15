@@ -20,12 +20,12 @@ describe("seo : métadonnées", () => {
     const meta = await pageMetadata({ locale: "en", page: { key: "shop", params: { slug: "night" } }, title: "Night", description: "A store." });
     assert.equal(meta.alternates?.canonical, "/en/shops/night");
     assert.deepEqual(meta.alternates?.languages, {
-      fr: "/boutiques/night",
+      fr: "/fr/boutiques/night",
       en: "/en/shops/night",
       de: "/de/shops/night",
       es: "/es/tiendas/night",
       it: "/it/negozi/night",
-      "x-default": "/boutiques/night",
+      "x-default": "/en/shops/night",
     });
     assert.deepEqual((meta.openGraph as { alternateLocale?: string[] }).alternateLocale, ["fr_FR", "de_DE", "es_ES", "it_IT"]);
     assert.equal((meta.openGraph as { url?: string }).url, "/en/shops/night");

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useCollection } from "@/components/CollectionProvider";
+import { sendJson, useRequestErrors } from "@/components/send-json";
 import type { WishlistItemDTO } from "@/lib/types";
 
 type WishInput = { targetPrice?: string | null; notes?: string | null };
@@ -25,23 +26,10 @@ export function useWishlist() {
   return value;
 }
 
-async function send<T>(url: string, init: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(url, { ...init, headers: { "content-type": "application/json", ...(init.headers ?? {}) } });
-  } catch (error) {
-    if (!navigator.onLine) throw new Error("Hors ligne : modification impossible pour le moment.");
-    throw error;
-  }
-  const body = (await response.json().catch(() => ({}))) as T & { error?: string };
-  if (response.status === 401) throw new Error("Session expirée. Reconnectez-vous.");
-  if (!response.ok) throw new Error(body.error || "Enregistrement impossible.");
-  return body;
-}
-
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useCollection();
   const userId = user?.id ?? null;
+  const errors = useRequestErrors();
   const [items, setItems] = useState<WishlistItemDTO[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
@@ -85,30 +73,32 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       items,
       unseenAlerts: items.filter((item) => item.alertAt && !item.alertSeen).length,
       save: async (printingId, input = {}) => {
-        const { item } = await send<{ item: WishlistItemDTO }>("/api/wishlist", {
-          method: "POST",
-          body: JSON.stringify({ printingId, ...input }),
-        });
+        const { item } = await sendJson<{ item: WishlistItemDTO }>(
+          "/api/wishlist",
+          { method: "POST", body: JSON.stringify({ printingId, ...input }) },
+          errors,
+        );
         upsert(item);
       },
       patch: async (id, input) => {
-        const { item } = await send<{ item: WishlistItemDTO }>(`/api/wishlist/${id}`, {
-          method: "PATCH",
-          body: JSON.stringify(input),
-        });
+        const { item } = await sendJson<{ item: WishlistItemDTO }>(
+          `/api/wishlist/${id}`,
+          { method: "PATCH", body: JSON.stringify(input) },
+          errors,
+        );
         upsert(item);
       },
       remove: async (id) => {
-        await send(`/api/wishlist/${id}`, { method: "DELETE" });
+        await sendJson(`/api/wishlist/${id}`, { method: "DELETE" }, errors);
         setItems((current) => current.filter((entry) => entry.id !== id));
       },
       acknowledge: async () => {
         if (!items.some((item) => item.alertAt && !item.alertSeen)) return;
         setItems((current) => current.map((item) => (item.alertSeen ? item : { ...item, alertSeen: true })));
-        await send("/api/wishlist/seen", { method: "POST" }).catch(() => undefined);
+        await sendJson("/api/wishlist/seen", { method: "POST" }, errors).catch(() => undefined);
       },
     };
-  }, [items, loadedFor, userId]);
+  }, [items, loadedFor, userId, errors]);
 
   return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
 }

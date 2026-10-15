@@ -53,7 +53,7 @@ export function startedSwissRounds(t: FullTournament) {
 }
 
 export function findPlayer(t: FullTournament, playerId: string): PlayerRow {
-  return t.players.find((player) => player.id === playerId) ?? fail("Joueur introuvable.", 404);
+  return t.players.find((player) => player.id === playerId) ?? fail("tournaments.playerNotFound", 404);
 }
 
 export function findMatch(t: FullTournament, matchId: string): { round: RoundRow; match: MatchRow } {
@@ -61,7 +61,7 @@ export function findMatch(t: FullTournament, matchId: string): { round: RoundRow
     const match = round.matches.find((candidate) => candidate.id === matchId);
     if (match) return { round, match };
   }
-  return fail("Match introuvable.", 404);
+  return fail("tournaments.matchNotFound", 404);
 }
 
 export function sideOf(match: Pick<MatchRow, "playerAId" | "playerBId">, playerId: string): Side | null {
@@ -198,7 +198,7 @@ export function pairingPlayers(t: FullTournament, eligibleIds: ReadonlySet<strin
 /** Appariement de la ronde suisse `number` (brouillon). */
 export async function pairSwiss(tx: Tx, t: FullTournament, number: number, rng: Rng) {
   const eligible = eligiblePlayers(t, number);
-  if (eligible.length < 2) fail("Il faut au moins 2 joueurs actifs pour apparier une ronde.");
+  if (eligible.length < 2) fail("tournaments.needTwoActiveToPair");
   const ids = new Set(eligible.map((player) => player.id));
   let matches: PairedMatch[];
   let warnings: PairingWarning[] = [];
@@ -215,7 +215,7 @@ export async function pairSwiss(tx: Tx, t: FullTournament, number: number, rng: 
 
 /** Supprime une ronde non démarrée (son appariement n'est plus à jour). */
 export async function deleteDraftRound(tx: Tx, round: RoundRow) {
-  if (isStarted(round)) fail("La ronde a démarré : appariements figés.", 409);
+  if (isStarted(round)) fail("tournaments.pairingsLocked", 409);
   await tx.tournamentRound.delete({ where: { id: round.id } });
 }
 
@@ -281,7 +281,7 @@ export async function endSwiss(tx: Tx, t: FullTournament, rng: Rng, now: Date) {
 /** Recompose le top cut (qualifié qui décline, drop, DQ) tant que son premier tour n'a pas démarré. */
 export async function rebuildCut(tx: Tx, t: FullTournament, rng: Rng, now: Date) {
   const current = readCut(t);
-  if (!current || !cutStillOpen(t)) fail("Le top cut a déjà commencé.", 409);
+  if (!current || !cutStillOpen(t)) fail("tournaments.topCutStarted", 409);
   const first = firstCutRoundRow(t);
   if (first) await deleteDraftRound(tx, first);
   // Drops, DQ et déclins viennent d'être écrits dans cette transaction : `t` est périmé, on relit.
@@ -322,7 +322,7 @@ export async function advanceCut(tx: Tx, t: FullTournament, round: RoundRow) {
   const winners = new Map<number, string>();
   for (const match of round.matches) {
     const winner = winnerId(match);
-    if (!winner || match.bracketSlot === null) fail("Tour incomplet.", 409);
+    if (!winner || match.bracketSlot === null) fail("tournaments.incompleteRound", 409);
     winners.set(match.bracketSlot, winner);
   }
   const next = nextCutRound(winners);
@@ -343,14 +343,14 @@ export async function dropPlayer(
   player: PlayerRow,
   options: { rng: Rng; now: Date; dq?: string },
 ) {
-  if (player.status === "dq") fail("Ce joueur est disqualifié.", 409);
-  if (player.status === "pending") fail("Inscription en attente : refusez-la plutôt.", 409);
-  if (player.status === "waitlist") fail("Joueur en liste d'attente : retirez-le plutôt.", 409);
-  if (player.status === "dropped" && !options.dq) fail("Ce joueur a déjà droppé.", 409);
+  if (player.status === "dq") fail("tournaments.disqualified", 409);
+  if (player.status === "pending") fail("tournaments.pendingRejectInstead", 409);
+  if (player.status === "waitlist") fail("tournaments.waitlistedRemoveInstead", 409);
+  if (player.status === "dropped" && !options.dq) fail("tournaments.alreadyDropped", 409);
   const cut = readCut(t);
   const inCut = cut?.seeds.includes(player.id) ?? false;
   if (t.status === "top_cut" && inCut && !cutStillOpen(t) && !options.dq) {
-    fail("Le top cut a commencé : saisissez une défaite pour ce joueur.", 409);
+    fail("tournaments.topCutUseLoss", 409);
   }
   await tx.tournamentPlayer.update({
     where: { id: player.id },
@@ -390,7 +390,7 @@ export async function removePlayerBeforeStart(tx: Tx, t: FullTournament, player:
     await tx.tournamentPlayer.delete({ where: { id: player.id } });
     return;
   }
-  if (startedSwissRounds(t) > 0) fail("Le tournoi a commencé : utilisez le drop.", 409);
+  if (startedSwissRounds(t) > 0) fail("tournaments.startedUseDrop", 409);
   const draft = pendingRound(t);
   if (draft && draft.matches.some((match) => sideOf(match, player.id))) await deleteDraftRound(tx, draft);
   await tx.tournamentPlayer.delete({ where: { id: player.id } });

@@ -18,7 +18,6 @@ import {
   CARDS_GROUP_FILTER,
   CONDITIONS,
   FRENCH_SOURCE_SET_CODE,
-  LANGUAGE_LABELS,
   MAIN_SET_CODE,
   PRICE_SOURCES,
   RARITY_ORDER,
@@ -42,7 +41,6 @@ import {
   gameForSet,
   gamesInCatalog,
   groupExtensions,
-  languageLabel,
   languagesFor,
   productGroup,
   scopeKey,
@@ -357,22 +355,22 @@ function printing(id: string, setCode: string, language = "en"): PrintingDTO {
 describe("dashboard", () => {
   it("productGroup : scellé, promos, decks, annexes, événements, extensions", () => {
     const cases: [string, string | undefined, string][] = [
-      ["Booster Box", "sealed-box", "Scellé"],
-      ["Promo Pack", undefined, "Promos"],
-      ["Promo Deck", undefined, "Promos"],
-      ["Starter Deck: Arasaka", undefined, "Decks"],
-      ["Demo Deck", undefined, "Decks"],
-      ["Theme Deck", undefined, "Decks"],
-      ["Deckbuilder's Guide", undefined, "Extensions"],
-      ["Booster Topper", undefined, "Produits annexes"],
-      ["Pre-release Kit", undefined, "Événements"],
-      ["Prerelease Kit", undefined, "Événements"],
-      ["Pre release", undefined, "Événements"],
-      ["Night City Open", undefined, "Événements"],
-      ["Store Brawl", undefined, "Événements"],
-      ["Showdown 2026", undefined, "Événements"],
-      ["Opening Night", undefined, "Extensions"],
-      ["Welcome to Night City", "welcometonightcityretail", "Extensions"],
+      ["Booster Box", "sealed-box", "sealed"],
+      ["Promo Pack", undefined, "promos"],
+      ["Promo Deck", undefined, "promos"],
+      ["Starter Deck: Arasaka", undefined, "decks"],
+      ["Demo Deck", undefined, "decks"],
+      ["Theme Deck", undefined, "decks"],
+      ["Deckbuilder's Guide", undefined, "expansions"],
+      ["Booster Topper", undefined, "accessories"],
+      ["Pre-release Kit", undefined, "events"],
+      ["Prerelease Kit", undefined, "events"],
+      ["Pre release", undefined, "events"],
+      ["Night City Open", undefined, "events"],
+      ["Store Brawl", undefined, "events"],
+      ["Showdown 2026", undefined, "events"],
+      ["Opening Night", undefined, "expansions"],
+      ["Welcome to Night City", "welcometonightcityretail", "expansions"],
     ];
     for (const [name, code, expected] of cases) assert.equal(productGroup(name, code), expected, name);
   });
@@ -381,7 +379,7 @@ describe("dashboard", () => {
   // (Demolition, Demon…) reste une extension, comme pour « deck » testé avec \b.
   // Observé : value.includes("demo") classe ces extensions dans « Decks ».
   it("une extension dont le nom contient « demo » (Demolition) reste une extension", () => {
-    assert.equal(productGroup("Demolition Crew"), "Extensions");
+    assert.equal(productGroup("Demolition Crew"), "expansions");
   });
 
   it("displaySetName retire le suffixe FR uniquement en français", () => {
@@ -394,16 +392,8 @@ describe("dashboard", () => {
     assert.equal(displaySetName("FR", "fr"), "FR");
   });
 
-  it("languageLabel et scopeKey", () => {
-    assert.equal(languageLabel(""), "Toutes les langues");
-    assert.equal(languageLabel("fr"), LANGUAGE_LABELS.fr);
-    assert.equal(languageLabel("de"), "de");
+  it("scopeKey", () => {
     assert.equal(scopeKey("cyberpunk", "fr"), "cyberpunk:fr");
-  });
-
-  // Attendu : code langue inconnu → le code lui-même. Observé : la fonction héritée d'Object.prototype.
-  it("languageLabel d'un code nommé comme une clé d'Object.prototype renvoie ce code", () => {
-    assert.equal(languageLabel("constructor"), "constructor");
   });
 
   it("gameForSet retombe sur le dernier jeu", () => {
@@ -470,13 +460,13 @@ describe("dashboard", () => {
     const ext = (code: string, group: string): DashboardExtension => ({ code, name: code, language: "en", group, sortOrder: 0, total: 1 });
     const grouped = groupExtensions([
       ext("x", "Inconnu"),
-      ext("p1", "Promos"),
-      ext("e1", "Extensions"),
-      ext("s", "Scellé"),
-      ext("p2", "Promos"),
-      ext("d", "Decks"),
+      ext("p1", "promos"),
+      ext("e1", "expansions"),
+      ext("s", "sealed"),
+      ext("p2", "promos"),
+      ext("d", "decks"),
     ]);
-    assert.deepEqual(grouped.map((g) => g.group), ["Extensions", "Decks", "Promos", "Scellé", "Inconnu"]);
+    assert.deepEqual(grouped.map((g) => g.group), ["expansions", "decks", "promos", "sealed", "Inconnu"]);
     assert.deepEqual(grouped[2].extensions.map((e) => e.code), ["p1", "p2"]);
     assert.deepEqual(groupExtensions([]), []);
   });

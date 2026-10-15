@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { mutationFetch, useRequestErrors } from "@/components/send-json";
 import type { ImportLine } from "@/lib/collection-csv";
 import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
 
@@ -59,16 +60,6 @@ export function useCollection() {
   return value;
 }
 
-/** fetch des modifications : sans réseau, un message explicite plutôt qu'un « Failed to fetch ». */
-async function mutationFetch(url: string, init: RequestInit) {
-  try {
-    return await fetch(url, init);
-  } catch (error) {
-    if (!navigator.onLine) throw new Error("Hors ligne : modification impossible pour le moment.");
-    throw error;
-  }
-}
-
 async function readJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
@@ -83,6 +74,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   }, [items]);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const errors = useRequestErrors();
 
   function applyResult(result: MutationResult) {
     setItems((current) => {
@@ -105,10 +97,10 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       setCatalog(null);
       setItems([]);
       setReady(true);
-      throw new Error("La session n'a pas été conservée. Réessayez.");
+      throw new Error(errors("sessionLost"));
     }
     if (!catalogResponse.ok || !collectionResponse.ok) {
-      setError("Impossible de charger la collection.");
+      setError(errors("loadCollection"));
       setReady(true);
       return;
     }
@@ -127,7 +119,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       body: JSON.stringify(body),
     });
     const result = await readJson<{ user?: AuthUser; error?: string }>(response);
-    if (!response.ok || !result.user) throw new Error(result.error || "Connexion impossible.");
+    if (!response.ok || !result.user) throw new Error(result.error || errors("loginFailed"));
     window.localStorage.removeItem(LOCAL_USER_KEY);
     setUser(result.user);
     await loadBoundData();
@@ -151,7 +143,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         await loadBoundData();
       } catch {
         if (!cancelled) {
-          setError("Impossible de charger la collection.");
+          setError(errors("loadCollection"));
           setReady(true);
         }
       }
@@ -163,22 +155,22 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   async function request(url: string, init: RequestInit) {
-    if (!user) throw new Error("Session absente.");
+    if (!user) throw new Error(errors("sessionExpired"));
     const response = await mutationFetch(url, {
       ...init,
       headers: {
         "content-type": "application/json",
         ...(init.headers ?? {}),
       },
-    });
+    }, errors);
     const result = await readJson<MutationResult>(response);
     if (response.status === 401) {
       setUser(null);
       setItems([]);
       setCatalog(null);
-      throw new Error("Session expirée. Reconnectez-vous.");
+      throw new Error(errors("sessionExpired"));
     }
-    if (!response.ok) throw new Error(result.error || "Enregistrement impossible.");
+    if (!response.ok) throw new Error(result.error || errors("saveFailed"));
     applyResult(result);
   }
 
@@ -202,7 +194,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         }),
       logout: async () => {
         const response = await fetch("/api/auth/logout", { method: "POST" });
-        if (!response.ok) throw new Error("Déconnexion impossible.");
+        if (!response.ok) throw new Error(errors("logoutFailed"));
         setUser(null);
         setItems([]);
         setCatalog(null);
@@ -211,40 +203,40 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       },
       saveLine: (input) => request("/api/collection", { method: "POST", body: JSON.stringify(input) }),
       saveBatch: async (input) => {
-        if (!user) throw new Error("Session absente.");
-        const response = await mutationFetch("/api/collection/bulk", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(input),
-        });
+        if (!user) throw new Error(errors("sessionExpired"));
+        const response = await mutationFetch(
+          "/api/collection/bulk",
+          { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) },
+          errors,
+        );
         const result = await readJson<{ items?: CollectionItemDTO[]; error?: string }>(response);
         if (response.status === 401) {
           setUser(null);
           setItems([]);
           setCatalog(null);
-          throw new Error("Session expirée. Reconnectez-vous.");
+          throw new Error(errors("sessionExpired"));
         }
-        if (!response.ok || !result.items) throw new Error(result.error || "Ajout impossible.");
+        if (!response.ok || !result.items) throw new Error(result.error || errors("addFailed"));
         setItems((current) => {
           const incoming = new Map(result.items?.map((item) => [item.id, item]) ?? []);
           return [...current.filter((item) => !incoming.has(item.id)), ...incoming.values()];
         });
       },
       importLines: async (input) => {
-        if (!user) throw new Error("Session absente.");
-        const response = await mutationFetch("/api/collection/import", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(input),
-        });
+        if (!user) throw new Error(errors("sessionExpired"));
+        const response = await mutationFetch(
+          "/api/collection/import",
+          { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) },
+          errors,
+        );
         const result = await readJson<ImportSummary & { items?: CollectionItemDTO[]; error?: string }>(response);
         if (response.status === 401) {
           setUser(null);
           setItems([]);
           setCatalog(null);
-          throw new Error("Session expirée. Reconnectez-vous.");
+          throw new Error(errors("sessionExpired"));
         }
-        if (!response.ok || !result.items) throw new Error(result.error || "Import impossible.");
+        if (!response.ok || !result.items) throw new Error(result.error || errors("importFailed"));
         setItems(result.items);
         return { created: result.created, updated: result.updated, skipped: result.skipped };
       },
@@ -273,7 +265,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     }),
     // Les fonctions ferment sur user ; ready, catalog et items sont l'état public.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ready, error, user, catalog, items],
+    [ready, error, user, catalog, items, errors],
   );
 
   return <CollectionContext.Provider value={value}>{children}</CollectionContext.Provider>;

@@ -3,6 +3,7 @@
 import { isDeckCard } from "./deck-rules";
 import { prisma } from "./prisma";
 import type { DeckDTO } from "./types";
+import { fail } from "./app-error";
 
 /** Nombre maximum de decks par compte. */
 export const MAX_DECKS = 100;
@@ -45,7 +46,7 @@ async function resolveCards(cards: CardInput[]) {
     select: { id: true, cardType: true },
   });
   const playable = new Set(known.filter(isDeckCard).map((card) => card.id));
-  if (playable.size !== quantities.size) throw new Error("Carte introuvable.");
+  if (playable.size !== quantities.size) fail("common.cardNotFound");
   return [...quantities].map(([cardId, quantity]) => ({ cardId, quantity }));
 }
 
@@ -56,7 +57,7 @@ export async function loadDecks(userId: string) {
 
 export async function createDeck(userId: string, input: CreateInput) {
   if ((await prisma.deck.count({ where: { userId } })) >= MAX_DECKS) {
-    throw new Error(`Nombre maximum de decks atteint (${MAX_DECKS}).`);
+    fail("decks.limitReached", 400, undefined, { max: MAX_DECKS });
   }
   const cards = await resolveCards(input.cards ?? []);
   const row = await prisma.deck.create({
@@ -69,7 +70,7 @@ export async function createDeck(userId: string, input: CreateInput) {
 /** Renomme le deck et/ou remplace sa liste de cartes. */
 export async function updateDeck(userId: string, id: string, input: PatchInput) {
   const existing = await prisma.deck.findFirst({ where: { id, userId }, select: { id: true } });
-  if (!existing) throw new Error("Deck introuvable.");
+  if (!existing) fail("decks.notFound", 404);
   const data: { name?: string; notes?: string | null; updatedAt: Date } = { updatedAt: new Date() };
   if (input.name !== undefined) data.name = input.name;
   if (input.notes !== undefined) data.notes = input.notes;

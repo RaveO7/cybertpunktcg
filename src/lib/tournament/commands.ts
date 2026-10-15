@@ -89,7 +89,7 @@ export async function runOrganizerCommand(
   if (command.type === "setVisibility" && command.public) {
     // Garde-fou contre le spam de l'annuaire : 10 publications par jour et par compte.
     const limited = await rateLimit(`tournament-publish:${userId}`, 10, 24 * 60 * 60_000);
-    if (!limited.ok) fail("Trop de publications aujourd'hui : réessayez demain.", 429);
+    if (!limited.ok) fail("tournaments.tooManyPublications", 429);
   }
   try {
     return await writeTournament(tournamentId, async (tx, t) => {
@@ -99,7 +99,7 @@ export async function runOrganizerCommand(
       });
       if (done) return { ...(JSON.parse(done.resultJson) as CommandResult), replayed: true };
       const role = organizerRole(t, userId);
-      if (!role) fail("Réservé aux organisateurs du tournoi.", 403);
+      if (!role) fail("tournaments.organizersOnly", 403);
       const ctx: Ctx = { userId, role, now: options.now ?? new Date(), rng: options.rng ?? cryptoRng };
       const result = await dispatch(tx, t, command, ctx);
       await tx.tournamentAction.create({
@@ -148,7 +148,7 @@ async function dispatch(tx: Tx, t: FullTournament, command: OrganizerCommand, ct
 
 async function dispatchCommand(tx: Tx, t: FullTournament, command: OrganizerCommand, ctx: Ctx): Promise<CommandResult> {
   // Tournoi terminé ou annulé : lecture seule, sauf la correction de résultats.
-  if (isReadOnly(t) && command.type !== "setResult") fail("Tournoi terminé : il est en lecture seule.", 409);
+  if (isReadOnly(t) && command.type !== "setResult") fail("tournaments.readOnly", 409);
 
   switch (command.type) {
     case "updateSettings":
@@ -159,7 +159,7 @@ async function dispatchCommand(tx: Tx, t: FullTournament, command: OrganizerComm
       return setShop(tx, t, command.shopId, ctx);
     case "promoteWaitlisted": {
       const player = findPlayer(t, command.playerId);
-      if (player.status !== "waitlist") fail("Ce joueur n'est pas en liste d'attente.", 409);
+      if (player.status !== "waitlist") fail("tournaments.notWaitlisted", 409);
       assertRegistrationPhase(t);
       // Choix explicite du TO : il vaut approbation, même au-delà du nombre de places.
       const joinedRound = nextJoinRound(t);
@@ -185,7 +185,7 @@ async function dispatchCommand(tx: Tx, t: FullTournament, command: OrganizerComm
       return approvePlayer(tx, t, command.playerId);
     case "rejectPlayer": {
       const player = findPlayer(t, command.playerId);
-      if (player.status !== "pending") fail("Cette inscription n'est pas en attente.", 409);
+      if (player.status !== "pending") fail("tournaments.notPending", 409);
       await tx.tournamentPlayer.delete({ where: { id: player.id } });
       return OK;
     }
@@ -208,7 +208,7 @@ async function dispatchCommand(tx: Tx, t: FullTournament, command: OrganizerComm
     case "moveBye":
       return editPairing(tx, t, (matches) => moveBye(matches, command.playerId));
     case "publishRound": {
-      const round = pendingRound(t) ?? fail("Aucune ronde à publier.", 409);
+      const round = pendingRound(t) ?? fail("tournaments.noRoundToPublish", 409);
       if (round.status === "draft") await tx.tournamentRound.update({ where: { id: round.id }, data: { status: "published" } });
       return OK;
     }
@@ -222,7 +222,7 @@ async function dispatchCommand(tx: Tx, t: FullTournament, command: OrganizerComm
       return updateClock(tx, t, (clock) => adjustClock(clock, command.seconds, ctx.now));
     case "addTableTime": {
       const { round, match } = findMatch(t, command.matchId);
-      if (round.status !== "running") fail("La ronde n'est pas en cours.", 409);
+      if (round.status !== "running") fail("tournaments.roundNotRunning", 409);
       await tx.tournamentMatch.update({
         where: { id: match.id },
         data: { extraSeconds: Math.max(0, match.extraSeconds + command.seconds), version: { increment: 1 } },
@@ -233,7 +233,7 @@ async function dispatchCommand(tx: Tx, t: FullTournament, command: OrganizerComm
       return setResult(tx, t, command, ctx);
     case "resetResult": {
       const { round, match } = findMatch(t, command.matchId);
-      if (round.status !== "running") fail("Seul un match de la ronde en cours peut être remis à zéro.", 409);
+      if (round.status !== "running") fail("tournaments.resetOnlyCurrentRound", 409);
       await saveMatchState(tx, match, resetResult(toMatchState(match)), { action: "reset", actorUserId: ctx.userId });
       return OK;
     }
@@ -248,8 +248,8 @@ async function dispatchCommand(tx: Tx, t: FullTournament, command: OrganizerComm
     case "removeOrganizer": {
       requireOwner(ctx);
       const target = t.organizers.find((organizer) => organizer.userId === command.userId);
-      if (!target) fail("Organisateur introuvable.", 404);
-      if (target.role === "owner") fail("L'organisateur principal ne peut pas être retiré.", 409);
+      if (!target) fail("tournaments.organizerNotFound", 404);
+      if (target.role === "owner") fail("tournaments.ownerCannotBeRemoved", 409);
       await tx.tournamentOrganizer.delete({ where: { tournamentId_userId: { tournamentId: t.id, userId: target.userId } } });
       return OK;
     }
@@ -261,7 +261,7 @@ async function dispatchCommand(tx: Tx, t: FullTournament, command: OrganizerComm
 }
 
 function requireOwner(ctx: Ctx) {
-  if (ctx.role !== "owner") fail("Réservé à l'organisateur principal.", 403);
+  if (ctx.role !== "owner") fail("tournaments.ownerOnly", 403);
 }
 
 export async function uniqueCode(db: Tx | typeof prisma, rng: Rng, tournamentId?: string) {
@@ -272,7 +272,7 @@ export async function uniqueCode(db: Tx | typeof prisma, rng: Rng, tournamentId?
     if (tournamentId) await db.tournament.update({ where: { id: tournamentId }, data: { code } });
     return code;
   }
-  return fail("Impossible de générer un code, réessayez.", 503);
+  return fail("tournaments.codeGenerationFailed", 503);
 }
 
 // --- Réglages --------------------------------------------------------------------------------
@@ -284,26 +284,26 @@ async function updateSettings(tx: Tx, t: FullTournament, settings: Settings): Pr
   if (started) {
     for (const key of ["format", "matchType", "lateEntryPolicy"] as const) {
       if (settings[key] !== undefined && settings[key] !== t[key]) {
-        fail("Ce réglage est figé une fois le tournoi démarré.", 409);
+        fail("tournaments.settingLocked", 409);
       }
     }
   }
   if (settings.topCutSetting !== undefined && settings.topCutSetting !== t.topCutSetting && t.status !== "inscriptions" && t.status !== "suisse") {
-    fail("Le top cut a déjà commencé.", 409);
+    fail("tournaments.topCutStarted", 409);
   }
   const warnings: CommandWarning[] = [];
   if (settings.swissRounds !== undefined && settings.swissRounds !== t.swissRounds) {
-    if (!started) fail("Le nombre de rondes est fixé au démarrage du tournoi.", 409);
-    if (t.status !== "suisse") fail("Les rondes suisses sont terminées.", 409);
+    if (!started) fail("tournaments.roundsFixedAtStart", 409);
+    if (t.status !== "suisse") fail("tournaments.swissFinished", 409);
     const startedCount = startedSwissRounds(t);
     const lastPlanned = t.rounds.find((round) => round.phase === "swiss" && round.number === t.swissRounds);
-    if (lastPlanned && isStarted(lastPlanned)) fail("La dernière ronde prévue a déjà démarré.", 409);
-    if (settings.swissRounds < startedCount) fail(`${startedCount} rondes ont déjà démarré.`, 409);
+    if (lastPlanned && isStarted(lastPlanned)) fail("tournaments.lastRoundStarted", 409);
+    if (settings.swissRounds < startedCount) fail("tournaments.roundsAlreadyStarted", 409, undefined, { count: startedCount });
     const draft = pendingRound(t);
     if (draft && draft.number > settings.swissRounds) await deleteDraftRound(tx, draft);
   }
   if (t.visibility === "public" && (settings.startsAt === null || settings.place === null)) {
-    fail("Un tournoi public doit garder une date et un lieu : repassez-le en privé d'abord.", 409);
+    fail("tournaments.publicNeedsDateAndPlace", 409);
   }
   const { swissRounds, place, ...rest } = settings;
   await tx.tournament.update({
@@ -334,8 +334,7 @@ async function setVisibility(tx: Tx, t: FullTournament, makePublic: boolean, ctx
   }
   const missing = missingForPublication(t, ctx.now);
   if (missing.length) {
-    const labels = missing.map((field) => (field === "startsAt" ? "une date de début à venir" : "un lieu localisé"));
-    fail(`Pour publier, il manque ${labels.join(" et ")}.`, 409, { missing });
+    fail("tournaments.publishMissing", 409, { missing }, { missing: missing.length === 1 ? missing[0] : "both" });
   }
   await tx.tournament.update({
     where: { id: t.id },
@@ -350,8 +349,8 @@ async function setShop(tx: Tx, t: FullTournament, shopId: string | null, ctx: Ct
     return OK;
   }
   const shop = await tx.shop.findUnique({ where: { id: shopId } });
-  if (!shop || shop.ownerId !== ctx.userId) fail("Vous ne gérez pas cette boutique.", 403);
-  if (shop.status === "rejected") fail("Cette boutique a été refusée : elle ne peut pas organiser de tournoi.", 409);
+  if (!shop || shop.ownerId !== ctx.userId) fail("shops.notManager", 403);
+  if (shop.status === "rejected") fail("tournaments.shopRejected", 409);
   // Sans lieu, le tournoi a lieu à la boutique (modifiable ensuite : tournoi hors les murs).
   const place = placeFromRow(t) ? {} : toPlaceColumns(placeFromRow(shop)!);
   await tx.tournament.update({ where: { id: t.id }, data: { shopId: shop.id, ...place } });
@@ -363,13 +362,13 @@ async function setShop(tx: Tx, t: FullTournament, shopId: string | null, ctx: Ct
 function assertNameFree(t: FullTournament, name: string, exceptId?: string) {
   const key = playerNameKey(name);
   if (t.players.some((player) => player.nameKey === key && player.id !== exceptId)) {
-    fail("Pseudo déjà utilisé dans ce tournoi.", 409);
+    fail("tournaments.pseudoTaken", 409);
   }
   return key;
 }
 
 function assertRegistrationPhase(t: FullTournament) {
-  if (t.status !== "inscriptions" && t.status !== "suisse") fail("Les rondes suisses sont terminées.", 409);
+  if (t.status !== "inscriptions" && t.status !== "suisse") fail("tournaments.swissFinished", 409);
 }
 
 /** Avertit quand une ronde non démarrée ne correspond plus aux joueurs éligibles. */
@@ -396,7 +395,7 @@ async function renamePlayer(tx: Tx, t: FullTournament, playerId: string, name: s
 
 async function approvePlayer(tx: Tx, t: FullTournament, playerId: string): Promise<CommandResult> {
   const player = findPlayer(t, playerId);
-  if (player.status !== "pending") fail("Cette inscription n'est pas en attente.", 409);
+  if (player.status !== "pending") fail("tournaments.notPending", 409);
   assertRegistrationPhase(t);
   const joinedRound = nextJoinRound(t);
   await tx.tournamentPlayer.update({
@@ -408,9 +407,9 @@ async function approvePlayer(tx: Tx, t: FullTournament, playerId: string): Promi
 
 async function undropPlayer(tx: Tx, t: FullTournament, playerId: string): Promise<CommandResult> {
   const player = findPlayer(t, playerId);
-  if (player.status === "dq") fail("Une disqualification est définitive.", 409);
-  if (player.status !== "dropped") fail("Ce joueur n'a pas droppé.", 409);
-  if (t.status !== "suisse" && t.status !== "inscriptions") fail("Les rondes suisses sont terminées.", 409);
+  if (player.status === "dq") fail("tournaments.disqualificationFinal", 409);
+  if (player.status !== "dropped") fail("tournaments.notDropped", 409);
+  if (t.status !== "suisse" && t.status !== "inscriptions") fail("tournaments.swissFinished", 409);
   const started = startedSwissRounds(t);
   const missedSinceDrop = Math.max(0, started - (player.droppedAfterRound ?? started));
   await tx.tournamentPlayer.update({
@@ -426,19 +425,19 @@ async function undropPlayer(tx: Tx, t: FullTournament, playerId: string): Promis
 }
 
 async function mergePlayers(tx: Tx, t: FullTournament, keepId: string, mergeId: string): Promise<CommandResult> {
-  if (keepId === mergeId) fail("Choisissez deux joueurs différents.");
+  if (keepId === mergeId) fail("tournaments.choosePlayers");
   const keep = findPlayer(t, keepId);
   const merge = findPlayer(t, mergeId);
   const roundsOf = (playerId: string) =>
     new Set(t.rounds.filter((round) => round.matches.some((match) => sideOf(match, playerId))).map((round) => round.number));
   for (const round of t.rounds) {
     for (const match of round.matches) {
-      if (sideOf(match, keep.id) && sideOf(match, merge.id)) fail("Ces deux joueurs se sont affrontés : fusion impossible.", 409);
+      if (sideOf(match, keep.id) && sideOf(match, merge.id)) fail("tournaments.mergeOpponents", 409);
     }
   }
   const keepRounds = roundsOf(keep.id);
   for (const number of roundsOf(merge.id)) {
-    if (keepRounds.has(number)) fail("Les deux profils ont un match dans la même ronde : droppez l'un des deux.", 409);
+    if (keepRounds.has(number)) fail("tournaments.mergeSameRound", 409);
   }
 
   // Le lien (compte, appareil) le plus récent l'emporte.
@@ -482,27 +481,27 @@ async function issueClaim(tx: Tx, t: FullTournament, playerId: string, ctx: Ctx)
 async function pairRound(tx: Tx, t: FullTournament, ctx: Ctx): Promise<CommandResult> {
   if (t.status === "top_cut") {
     // Top cut : recompose le premier tour tant qu'il n'a pas démarré (les tours suivants sont automatiques).
-    if (!cutStillOpen(t)) fail("Les tours suivants du top cut sont appariés automatiquement.", 409);
+    if (!cutStillOpen(t)) fail("tournaments.topCutAutoPaired", 409);
     await rebuildCut(tx, t, ctx.rng, ctx.now);
     return OK;
   }
   const last = lastRound(t);
-  if (last?.status === "running") fail("La ronde en cours n'est pas clôturée.", 409);
+  if (last?.status === "running") fail("tournaments.roundNotClosed", 409);
   let number = (last?.number ?? 0) + 1;
   if (last && !isStarted(last)) {
     // Relancer l'appariement : la ronde non démarrée est remplacée.
     await deleteDraftRound(tx, last);
     number = last.number;
   }
-  if (number > t.swissRounds) fail("Toutes les rondes suisses prévues ont été jouées.", 409);
+  if (number > t.swissRounds) fail("tournaments.allSwissPlayed", 409);
   const view: FullTournament = last && !isStarted(last) ? { ...t, rounds: t.rounds.slice(0, -1) } : t;
   const { roundId, warnings } = await pairSwiss(tx, view, number, ctx.rng);
   return { ok: true, data: { roundId }, warnings };
 }
 
 async function editPairing(tx: Tx, t: FullTournament, edit: (matches: PairedMatch[]) => PairedMatch[]): Promise<CommandResult> {
-  const round = pendingRound(t) ?? fail("La ronde a démarré : appariements figés.", 409);
-  if (round.phase !== "swiss") fail("L'arbre du top cut suit le classement : il ne se modifie pas à la main.", 409);
+  const round = pendingRound(t) ?? fail("tournaments.pairingsLocked", 409);
+  if (round.phase !== "swiss") fail("tournaments.bracketFollowsStandings", 409);
   const current = round.matches.map((match) => ({ a: match.playerAId, b: match.playerBId }));
   const next = edit(current);
   await rewriteRoundMatches(tx, t, round, next);
@@ -517,19 +516,19 @@ async function startRound(
   command: Extract<OrganizerCommand, { type: "startRound" }>,
   ctx: Ctx,
 ): Promise<CommandResult> {
-  const round = pendingRound(t) ?? fail("Aucune ronde à démarrer : appariez d'abord la ronde.", 409);
+  const round = pendingRound(t) ?? fail("tournaments.noRoundToStart", 409);
   if (round.phase === "swiss" && round.number === 1) {
     const pending = t.players.filter((player) => player.status === "pending").length;
     if (pending > 0 && !command.ignorePending) {
-      fail(`${pending} inscription(s) en attente d'approbation.`, 409, { needs: "pending", pending });
+      fail("tournaments.pendingRegistrations", 409, { needs: "pending", pending }, { count: pending });
     }
     const active = eligiblePlayers(t, 1).length;
-    if (active < 2) fail("Il faut au moins 2 joueurs actifs.", 409);
+    if (active < 2) fail("tournaments.needTwoActivePlayers", 409);
     if (active < 4 && !command.confirmFewPlayers) {
-      fail("Moins de 4 joueurs : confirmez le démarrage.", 409, { needs: "fewPlayers", active });
+      fail("tournaments.confirmFewPlayers", 409, { needs: "fewPlayers", active });
     }
   }
-  if (!roundIsUpToDate(t, round)) fail("Les inscriptions ont changé depuis l'appariement : relancez l'appariement.", 409);
+  if (!roundIsUpToDate(t, round)) fail("tournaments.registrationsChanged", 409);
   await tx.tournamentRound.update({
     where: { id: round.id },
     data: {
@@ -547,7 +546,7 @@ async function startRound(
 
 async function updateClock(tx: Tx, t: FullTournament, change: (clock: RoundClock) => RoundClock): Promise<CommandResult> {
   const round = lastRound(t);
-  if (!round || round.status !== "running") fail("Aucune ronde en cours.", 409);
+  if (!round || round.status !== "running") fail("tournaments.noRunningRound", 409);
   const next = change({
     startedAt: round.startedAt,
     durationSeconds: round.durationSeconds,
@@ -564,10 +563,10 @@ async function updateClock(tx: Tx, t: FullTournament, change: (clock: RoundClock
 
 async function closeRound(tx: Tx, t: FullTournament, ctx: Ctx): Promise<CommandResult> {
   const round = lastRound(t);
-  if (!round || round.status !== "running") fail("Aucune ronde en cours.", 409);
+  if (!round || round.status !== "running") fail("tournaments.noRunningRound", 409);
   const open = round.matches.filter((match) => match.status !== "valide");
   if (open.length > 0) {
-    fail(`${open.length} match(s) sans résultat validé.`, 409, { matchIds: open.map((match) => match.id) });
+    fail("tournaments.openMatches", 409, { matchIds: open.map((match) => match.id) }, { count: open.length });
   }
   await tx.tournamentRound.update({ where: { id: round.id }, data: { status: "closed" } });
   const closed: FullTournament = {
@@ -587,9 +586,9 @@ async function closeRound(tx: Tx, t: FullTournament, ctx: Ctx): Promise<CommandR
 }
 
 async function declineCut(tx: Tx, t: FullTournament, playerId: string, ctx: Ctx): Promise<CommandResult> {
-  if (!cutStillOpen(t)) fail("Le top cut a déjà commencé.", 409);
+  if (!cutStillOpen(t)) fail("tournaments.topCutStarted", 409);
   const cut = readCut(t);
-  if (!cut?.seeds.includes(playerId)) fail("Ce joueur n'est pas qualifié pour le top cut.", 409);
+  if (!cut?.seeds.includes(playerId)) fail("tournaments.notQualified", 409);
   await tx.tournamentPlayer.update({ where: { id: playerId }, data: { cutDeclined: true } });
   await rebuildCut(tx, t, ctx.rng, ctx.now);
   return OK;
@@ -604,7 +603,7 @@ async function setResult(
   ctx: Ctx,
 ): Promise<CommandResult> {
   const { round, match } = findMatch(t, command.matchId);
-  if (!isStarted(round)) fail("La ronde n'a pas démarré.", 409);
+  if (!isStarted(round)) fail("tournaments.roundNotStarted", 409);
   const state = toMatchState(match);
   const mctx = matchContext(t, round, ctx.now);
 
@@ -623,7 +622,7 @@ async function setResult(
     current &&
     !sameResult(current, command.result)
   ) {
-    fail("Ce match a été validé entre-temps avec un autre score.", 409, { current, proposed: command.result });
+    fail("tournaments.validatedMeanwhile", 409, { current, proposed: command.result });
   }
 
   const warnings: CommandWarning[] = [];
@@ -658,7 +657,7 @@ async function propagateCutCorrection(
     if (round.matches.length === 1) await tx.tournament.update({ where: { id: t.id }, data: { championId: newWinner } });
     return;
   }
-  if (isStarted(following)) fail("Le tour suivant a démarré : correction impossible.", 409);
+  if (isStarted(following)) fail("tournaments.nextRoundStarted", 409);
   if (match.bracketSlot === null || !newWinner) return;
   const target = nextSlot(match.bracketSlot);
   const nextMatch = following.matches.find((candidate) => candidate.bracketSlot === target.slot);
@@ -676,8 +675,8 @@ async function noShow(
   ctx: Ctx,
 ): Promise<CommandResult> {
   const { round, match } = findMatch(t, command.matchId);
-  if (round.status !== "running") fail("La ronde n'est pas en cours.", 409);
-  const side = sideOf(match, command.absentPlayerId) ?? fail("Ce joueur ne joue pas ce match.", 400);
+  if (round.status !== "running") fail("tournaments.roundNotRunning", 409);
+  const side = sideOf(match, command.absentPlayerId) ?? fail("tournaments.notInMatch", 400);
   const next = noShowResult(toMatchState(match), side, matchContext(t, round, ctx.now));
   await saveMatchState(tx, match, next, { action: "no_show", actorUserId: ctx.userId });
   if (command.drop) await dropPlayer(tx, t, findPlayer(t, command.absentPlayerId), { rng: ctx.rng, now: ctx.now });
@@ -697,10 +696,10 @@ async function inviteOrganizer(tx: Tx, t: FullTournament, ctx: Ctx): Promise<Com
 /** Accepte une invitation de co-organisateur (usage unique). */
 export async function acceptOrganizerInvite(token: string, userId: string, now = new Date()) {
   const invite = await prisma.tournamentInvite.findUnique({ where: { tokenHash: hashToken(token) } });
-  if (!invite || invite.usedAt || invite.expiresAt <= now) fail("Invitation invalide ou expirée.", 404);
+  if (!invite || invite.usedAt || invite.expiresAt <= now) fail("tournaments.invalidInvite", 404);
   return writeTournament(invite.tournamentId, async (tx, t) => {
     const { count } = await tx.tournamentInvite.updateMany({ where: { id: invite.id, usedAt: null }, data: { usedAt: now } });
-    if (count === 0) fail("Invitation invalide ou expirée.", 404);
+    if (count === 0) fail("tournaments.invalidInvite", 404);
     if (!organizerRole(t, userId)) {
       await tx.tournamentOrganizer.create({ data: { tournamentId: t.id, userId, role: "co" } });
     }
@@ -726,17 +725,17 @@ export async function createTournament(userId: string, input: TournamentCreateIn
       throw error;
     }
   }
-  return fail("Impossible de générer un code, réessayez.", 503);
+  return fail("tournaments.codeGenerationFailed", 503);
 }
 
 /** Suppression définitive, réservée à l'organisateur principal. */
 export async function deleteTournament(tournamentId: string, userId: string) {
   await writeTournament(tournamentId, async (tx, t) => {
     const role = organizerRole(t, userId);
-    if (!role) fail("Réservé aux organisateurs du tournoi.", 403);
-    if (role !== "owner") fail("Réservé à l'organisateur principal.", 403);
-    if (t.rounds.some(isStarted)) fail("Un tournoi commencé ne peut plus être supprimé : annulez-le.", 409);
-    if (t.players.length) fail("Un tournoi avec des inscrits ne peut pas être supprimé : annulez-le.", 409);
+    if (!role) fail("tournaments.organizersOnly", 403);
+    if (role !== "owner") fail("tournaments.ownerOnly", 403);
+    if (t.rounds.some(isStarted)) fail("tournaments.startedCannotDelete", 409);
+    if (t.players.length) fail("tournaments.registeredCannotDelete", 409);
     await tx.tournament.delete({ where: { id: t.id } });
   });
 }

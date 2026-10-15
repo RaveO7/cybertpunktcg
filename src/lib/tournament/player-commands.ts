@@ -19,8 +19,8 @@ export async function runPlayerCommand(
 ) {
   const now = options.now ?? new Date();
   return writeTournament(tournamentId, async (tx, t) => {
-    const player = findViewerPlayer(t, viewer) ?? fail("Vous n'êtes pas inscrit à ce tournoi.", 403);
-    if (isReadOnly(t)) fail("Tournoi terminé.", 409);
+    const player = findViewerPlayer(t, viewer) ?? fail("tournaments.notRegistered", 403);
+    if (isReadOnly(t)) fail("tournaments.finished", 409);
 
     // Une place libérée profite au premier de la liste d'attente.
     if (command.type === "drop") {
@@ -35,9 +35,9 @@ export async function runPlayerCommand(
     }
 
     const { round, match } = findMatch(t, command.matchId);
-    const side = sideOf(match, player.id) ?? fail("Ce match n'est pas le vôtre.", 403);
+    const side = sideOf(match, player.id) ?? fail("tournaments.notYourMatch", 403);
     if (round.status !== "running") {
-      fail(isStarted(round) ? "La ronde est clôturée : adressez-vous à l'organisateur." : "La ronde n'a pas démarré.", 409);
+      fail(isStarted(round) ? "tournaments.roundClosed" : "tournaments.roundNotStarted", 409);
     }
     const state = toMatchState(match);
     const ctx = matchContext(t, round, now);

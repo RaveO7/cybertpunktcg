@@ -8,13 +8,13 @@ type Expected = { pathname: AppPathname; params?: Record<string, string>; urls: 
 
 // Tableau de la spec seo/localization (pages publiques) et du design §4 (pages légales).
 const PUBLIC_URLS: Expected[] = [
-  { pathname: "/", urls: { fr: "/", en: "/en", de: "/de", es: "/es", it: "/it" } },
-  { pathname: "/cartes", urls: { fr: "/cartes", en: "/en/cards", de: "/de/karten", es: "/es/cartas", it: "/it/carte" } },
+  { pathname: "/", urls: { fr: "/fr", en: "/en", de: "/de", es: "/es", it: "/it" } },
+  { pathname: "/cartes", urls: { fr: "/fr/cartes", en: "/en/cards", de: "/de/karten", es: "/es/cartas", it: "/it/carte" } },
   {
     pathname: "/cartes/[slug]",
     params: { slug: "v-streetkid" },
     urls: {
-      fr: "/cartes/v-streetkid",
+      fr: "/fr/cartes/v-streetkid",
       en: "/en/cards/v-streetkid",
       de: "/de/karten/v-streetkid",
       es: "/es/cartas/v-streetkid",
@@ -25,7 +25,7 @@ const PUBLIC_URLS: Expected[] = [
     pathname: "/tournois/publics/[id]",
     params: { id: "abc" },
     urls: {
-      fr: "/tournois/publics/abc",
+      fr: "/fr/tournois/publics/abc",
       en: "/en/tournaments/abc",
       de: "/de/turniere/abc",
       es: "/es/torneos/abc",
@@ -36,7 +36,7 @@ const PUBLIC_URLS: Expected[] = [
     pathname: "/boutiques/[slug]",
     params: { slug: "arasaka-games" },
     urls: {
-      fr: "/boutiques/arasaka-games",
+      fr: "/fr/boutiques/arasaka-games",
       en: "/en/shops/arasaka-games",
       de: "/de/shops/arasaka-games",
       es: "/es/tiendas/arasaka-games",
@@ -45,15 +45,15 @@ const PUBLIC_URLS: Expected[] = [
   },
   {
     pathname: "/mentions-legales",
-    urls: { fr: "/mentions-legales", en: "/en/legal-notice", de: "/de/impressum", es: "/es/aviso-legal", it: "/it/note-legali" },
+    urls: { fr: "/fr/mentions-legales", en: "/en/legal-notice", de: "/de/impressum", es: "/es/aviso-legal", it: "/it/note-legali" },
   },
   {
     pathname: "/cgu",
-    urls: { fr: "/cgu", en: "/en/terms", de: "/de/nutzungsbedingungen", es: "/es/condiciones", it: "/it/termini" },
+    urls: { fr: "/fr/cgu", en: "/en/terms", de: "/de/nutzungsbedingungen", es: "/es/condiciones", it: "/it/termini" },
   },
   {
     pathname: "/confidentialite",
-    urls: { fr: "/confidentialite", en: "/en/privacy", de: "/de/datenschutz", es: "/es/privacidad", it: "/it/privacy" },
+    urls: { fr: "/fr/confidentialite", en: "/en/privacy", de: "/de/datenschutz", es: "/es/privacidad", it: "/it/privacy" },
   },
 ];
 
@@ -70,14 +70,14 @@ describe("i18n : URL de chaque page dans chaque langue", () => {
     });
   }
 
-  it("explorateur de l'application : /cards en français, /explorer ailleurs (libère /en/cards)", () => {
-    assert.equal(getPathname({ href: "/cards", locale: "fr" }), "/cards");
+  it("explorateur de l'application : /fr/cards en français, /explorer ailleurs (libère /en/cards)", () => {
+    assert.equal(getPathname({ href: "/cards", locale: "fr" }), "/fr/cards");
     assert.equal(getPathname({ href: "/cards", locale: "en" }), "/en/explorer");
     assert.equal(getPathname({ href: "/cards", locale: "de" }), "/de/explorer");
   });
 
-  it("écrans de l'application : même chemin, préfixé hors français", () => {
-    assert.equal(getPathname({ href: "/decks", locale: "fr" }), "/decks");
+  it("écrans de l'application : même chemin, préfixé par la langue", () => {
+    assert.equal(getPathname({ href: "/decks", locale: "fr" }), "/fr/decks");
     assert.equal(getPathname({ href: "/decks", locale: "de" }), "/de/decks");
     assert.equal(getPathname({ href: "/parametres", locale: "es" }), "/es/parametres");
   });

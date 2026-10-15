@@ -83,7 +83,7 @@ export async function writeTournament<R>(id: string, fn: (tx: Tx, tournament: Fu
       return await prisma.$transaction(
         async (tx) => {
           const tournament = await loadTournament(tx, id);
-          if (!tournament) fail("Tournoi introuvable.", 404);
+          if (!tournament) fail("tournaments.notFound", 404);
           const { count } = await tx.tournament.updateMany({
             where: { id, revision: tournament.revision },
             data: { revision: { increment: 1 } },
@@ -96,7 +96,7 @@ export async function writeTournament<R>(id: string, fn: (tx: Tx, tournament: Fu
       );
     } catch (error) {
       if (!isRetryable(error)) throw error;
-      if (attempt >= MAX_ATTEMPTS) fail("Le tournoi est très sollicité, réessayez dans un instant.", 503);
+      if (attempt >= MAX_ATTEMPTS) fail("tournaments.busy", 503);
     }
   }
 }

@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { loadCollection, requireUser } from "@/lib/catalog";
 import { importCollectionLines } from "@/lib/collection-mutate";
 import { importSchema, readJsonBody } from "@/lib/api-schemas";
+import { errorResponse, sessionRequired } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const user = await requireUser(request);
-  if (!user) return NextResponse.json({ error: "Session requise." }, { status: 401 });
+  if (!user) return sessionRequired(request);
   const parsed = await readJsonBody(request, importSchema);
   if (!parsed.ok) return parsed.response;
   try {
@@ -15,7 +16,6 @@ export async function POST(request: Request) {
     const items = await loadCollection(user.id);
     return NextResponse.json({ ...summary, items });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Import impossible.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return errorResponse(request, "collection-import", error, "common.importFailed");
   }
 }

@@ -5,6 +5,7 @@ import { limitCodeAttempts } from "@/lib/tournament/http";
 import { viewerFromRequest } from "@/lib/tournament/player-auth";
 import { loadTournamentByCode } from "@/lib/tournament/repository";
 import { buildView } from "@/lib/tournament/view";
+import { apiError } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,6 @@ export async function GET(request: Request, context: Context) {
   if (limited) return limited;
   const code = normalizeTournamentCode((await context.params).code);
   const tournament = code ? await loadTournamentByCode(prisma, code) : null;
-  if (!tournament) return NextResponse.json({ error: "Tournoi introuvable." }, { status: 404 });
+  if (!tournament) return apiError(request, "tournaments.notFound", 404);
   return NextResponse.json(buildView(tournament, await viewerFromRequest(request, tournament.id)));
 }

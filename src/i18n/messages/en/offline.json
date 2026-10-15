@@ -10,5 +10,10 @@
   "clear": "Delete offline images",
   "cleared": "Images deleted from this device.",
   "unsupported": "This browser does not support offline mode.",
-  "hdNote": "Full-size images are saved as you open them."
+  "hdNote": "Full-size images are saved as you open them.",
+  "page": {
+    "title": "Offline",
+    "body": "This page has not been saved on this device yet.",
+    "home": "Back to home"
+  }
 }

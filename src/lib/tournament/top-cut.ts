@@ -3,6 +3,7 @@
 
 import { randomInt, type Rng } from "./random";
 import { compareStandings, type Standing } from "./standings";
+import { fail } from "./errors";
 
 export type TopCutSetting = "aucun" | "auto" | "2" | "4" | "8" | "16" | "32";
 export const TOP_CUT_SETTINGS: readonly TopCutSetting[] = ["aucun", "auto", "2", "4", "8", "16", "32"];
@@ -92,7 +93,7 @@ export function nextCutRound(winnersBySlot: ReadonlyMap<number, string>): Bracke
   for (let slot = 0; slot < count / 2; slot += 1) {
     const a = winnersBySlot.get(2 * slot);
     const b = winnersBySlot.get(2 * slot + 1);
-    if (!a || !b) throw new Error("Tour incomplet.");
+    if (!a || !b) fail("tournaments.incompleteRound");
     matches.push({ slot, a, b });
   }
   return matches;

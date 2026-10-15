@@ -9,6 +9,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { CardImage } from "@/components/CardImage";
 import { colorDotClass } from "@/components/CardTile";
 import { useCollection } from "@/components/CollectionProvider";
+import { sendJson, useRequestErrors } from "@/components/send-json";
 import { RulesText } from "@/components/RulesText";
 import {
   DECK_RULES,
@@ -42,20 +43,6 @@ import type { CardDTO, CatalogDTO, DeckDTO, PrintingDTO } from "@/lib/types";
 
 type DeckPatch = { name?: string; cards?: DeckEntry[] };
 
-async function send<T>(url: string, init: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(url, { ...init, headers: { "content-type": "application/json", ...(init.headers ?? {}) } });
-  } catch (error) {
-    if (!navigator.onLine) throw new Error("Hors ligne : modification impossible pour le moment.");
-    throw error;
-  }
-  const body = (await response.json().catch(() => ({}))) as T & { error?: string };
-  if (response.status === 401) throw new Error("Session expirée. Reconnectez-vous.");
-  if (!response.ok) throw new Error(body.error || "Enregistrement impossible.");
-  return body;
-}
-
 /** Decks du compte : chargés une fois, mis à jour localement après chaque action. */
 function useDecks() {
   const { user } = useCollection();
@@ -63,6 +50,7 @@ function useDecks() {
   const [decks, setDecks] = useState<DeckDTO[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const errors = useRequestErrors();
 
   useEffect(() => {
     if (!userId) return;
@@ -77,7 +65,7 @@ function useDecks() {
           setError(null);
         }
       } catch {
-        if (!cancelled) setError("Impossible de charger les decks.");
+        if (!cancelled) setError(errors("loadDecks"));
       } finally {
         if (!cancelled) setLoadedFor(userId);
       }
@@ -85,7 +73,7 @@ function useDecks() {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, errors]);
 
   const replace = useCallback((deck: DeckDTO) => {
     setDecks((current) => [deck, ...current.filter((entry) => entry.id !== deck.id)]);
@@ -97,12 +85,12 @@ function useDecks() {
     decks,
     replace,
     create: async (input: { name?: string; cards?: DeckEntry[] }) => {
-      const { deck } = await send<{ deck: DeckDTO }>("/api/decks", { method: "POST", body: JSON.stringify(input) });
+      const { deck } = await sendJson<{ deck: DeckDTO }>("/api/decks", { method: "POST", body: JSON.stringify(input) }, errors);
       replace(deck);
       return deck;
     },
     remove: async (id: string) => {
-      await send(`/api/decks/${id}`, { method: "DELETE" });
+      await sendJson(`/api/decks/${id}`, { method: "DELETE" }, errors);
       setDecks((current) => current.filter((deck) => deck.id !== id));
     },
   };
@@ -419,6 +407,7 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
  * à la fois, et la dernière version part même si l'on quitte la page entre-temps.
  */
 function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
+  const errors = useRequestErrors();
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const pending = useRef<DeckPatch | null>(null);
@@ -441,7 +430,11 @@ function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
         pending.current = null;
         setStatus("saving");
         try {
-          const { deck } = await send<{ deck: DeckDTO }>(`/api/decks/${deckId}`, { method: "PATCH", body: JSON.stringify(body) });
+          const { deck } = await sendJson<{ deck: DeckDTO }>(
+            `/api/decks/${deckId}`,
+            { method: "PATCH", body: JSON.stringify(body) },
+            errors,
+          );
           onSavedRef.current(deck);
           setError(null);
           setStatus("saved");
@@ -456,7 +449,7 @@ function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
     } finally {
       inFlight.current = false;
     }
-  }, [deckId]);
+  }, [deckId, errors]);
 
   const queue = useCallback(
     (patch: DeckPatch) => {

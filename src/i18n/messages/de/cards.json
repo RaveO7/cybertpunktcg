@@ -44,5 +44,7 @@
   "sortAscending": "Aufsteigend",
   "sortDescending": "Absteigend",
   "sortToggleDirection": "Reihenfolge umkehren",
-  "loading": "Karten werden geladen…"
+  "loading": "Karten werden geladen…",
+  "queueCopy": "Ein Exemplar von {title} hinzufügen",
+  "unqueueCopy": "Ein Exemplar von {title} entfernen"
 }

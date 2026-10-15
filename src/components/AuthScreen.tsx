@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useDirectoryHref } from "@/components/site/useDirectoryHref";
-import { Link } from "@/i18n/navigation";
+import { getPathname, Link } from "@/i18n/navigation";
+import type { MessageKey } from "@/i18n/translator";
 import { useCollection } from "@/components/CollectionProvider";
 
 const LOCAL_USER_KEY = "cptcg-user-id";
@@ -64,10 +65,11 @@ function AppleMark() {
  */
 export function AuthScreen({
   initialMode = null,
-  redirectTo = "/",
+  redirectTo,
 }: { initialMode?: "login" | "register" | null; redirectTo?: string | null } = {}) {
   const { login, register } = useCollection();
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations();
   const directoryHref = useDirectoryHref("tournaments");
   const hasLocal = useSyncExternalStore(subscribeLocalCollection, localCollectionStored, noLocalCollection);
@@ -85,8 +87,9 @@ export function AuthScreen({
     const authError = params.get("authError");
     if (authError) {
       // Erreur OAuth transmise par l'URL : lisible seulement dans le navigateur, après l'hydratation.
+      const key = `auth.oauthErrors.${authError}` as MessageKey;
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setError(authError);
+      setError(t.has(key) ? t(key) : t("auth.oauthErrors.failed"));
       params.delete("authError");
       const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
       window.history.replaceState(window.history.state, "", next);
@@ -104,7 +107,7 @@ export function AuthScreen({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   function switchMode(next: "login" | "register") {
     setChosenMode(next);
@@ -130,7 +133,7 @@ export function AuthScreen({
       } else {
         await register({ email, password, displayName });
       }
-      if (redirectTo) router.replace(redirectTo);
+      if (redirectTo !== null) router.replace(redirectTo ?? getPathname({ href: "/", locale }));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t("auth.failed"));
     } finally {

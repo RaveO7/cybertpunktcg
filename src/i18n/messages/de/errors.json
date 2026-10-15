@@ -7,5 +7,17 @@
   "notFoundEyebrow": "404",
   "notFoundTitle": "Seite nicht gefunden",
   "notFoundBody": "Diese Seite existiert nicht oder wurde verschoben.",
-  "reference": "Referenz"
+  "reference": "Referenz",
+  "request": {
+    "offline": "Offline: Änderungen sind gerade nicht möglich.",
+    "sessionExpired": "Sitzung abgelaufen. Melde dich erneut an.",
+    "sessionLost": "Die Sitzung wurde nicht gespeichert. Versuche es erneut.",
+    "saveFailed": "Speichern nicht möglich.",
+    "addFailed": "Hinzufügen nicht möglich.",
+    "importFailed": "Import nicht möglich.",
+    "loginFailed": "Anmeldung fehlgeschlagen.",
+    "logoutFailed": "Abmeldung fehlgeschlagen.",
+    "loadCollection": "Die Sammlung konnte nicht geladen werden.",
+    "loadDecks": "Die Decks konnten nicht geladen werden."
+  }
 }

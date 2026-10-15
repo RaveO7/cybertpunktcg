@@ -54,6 +54,17 @@
 - [x] 8.2 Parcours dans le navigateur : visiteur sur `/` → sélecteur « Italiano » → `/it` → liste des cartes → fiche → inscription en italien ; utilisateur connecté qui choisit l'allemand dans les paramètres → `/de/decks`, puis ouverture de `/cartes/x` → `/de/karten/x` ; aucun texte français résiduel sur les pages italiennes et allemandes (recherche des mots les plus fréquents du bloc français dans le HTML servi)
 - [x] 8.3 Mesurer la taille du HTML et du JavaScript de `/`, `/it/carte/<slug>` et `/de/comment-jouer` avant et après la refonte ; vérifier que les pages publiques ne transportent pas les blocs de règles
 
+## 9. Messages d'erreur et textes restants
+
+- [x] 9.1 Traduire les erreurs des routes API : bloc serveur `api.json` dans les cinq langues, refus métier et schémas Zod par clés (`fail`, `apiMessage`), réponses traduites selon la page d'origine ou le cookie de langue (`apiError`, `errorResponse`) ; erreurs OAuth transmises par code et affichées dans la langue de la page de connexion ; tests unitaires de la langue des réponses
+- [x] 9.2 Traduire les derniers textes en dur côté navigateur (erreurs de requête des fournisseurs de collection, decks et liste de souhaits, libellés d'accessibilité des tuiles de cartes) et les pages d'erreur et 404 globales (langue de l'URL) ; relancer typecheck, lint, tests unitaires et db
+
+## 10. Préfixe `/fr` pour le français
+
+- [x] 10.1 Passer le routage en `localePrefix: "always"` ; rediriger (308) toute ancienne adresse française sans préfixe vers `/fr/…` (query conservée) ; adresses générées (partage du classeur, QR de tournoi, agenda, retour OAuth, manifeste par langue, pages hors ligne du service worker) dans la langue de la page ; mettre à jour tests et specs
+
+- [x] 10.2 Lien sans langue : redirection permanente (308) vers la même page en anglais (segments anglais ou anciens segments français, query conservée) ; `x-default` des hreflang et du sitemap vers la version anglaise
+
 ## Workflow follow-up
 
 - Faire relire les traductions allemandes, espagnoles et italiennes (règles, cartes, pages légales) par des locuteurs natifs avant la mise en ligne.

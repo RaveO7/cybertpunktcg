@@ -19,7 +19,10 @@ export function templateFor(route: AppPathname, locale: Locale): string {
   return typeof config === "string" ? config : config[locale];
 }
 
-/** Langue d'une URL et reste du chemin : « /de/karten/x » → de, « /karten/x » ; « /cartes » → fr. */
+/**
+ * Langue d'une URL et reste du chemin : « /de/karten/x » → de, « /karten/x ». Une URL sans préfixe
+ * (ancienne adresse française, « /cartes ») est lue comme du français, avec `prefixed: false`.
+ */
 export function splitLocale(pathname: string): { locale: Locale; rest: string; prefixed: boolean } {
   const [, first = "", ...others] = pathname.split("/");
   if (isLocale(first)) return { locale: first, rest: `/${others.join("/")}`, prefixed: true };
@@ -87,13 +90,12 @@ export function internalPath(route: AppPathname, params: RouteParams = {}): stri
   return (route as string).replace(/\[(\w+)\]/g, (_, name: string) => encodeURIComponent(params[name] ?? ""));
 }
 
-/** URL d'une route dans une langue (préfixe hors français, paramètres encodés). */
+/** URL d'une route dans une langue (préfixe de langue, paramètres encodés). */
 export function formatRoute(route: AppPathname, locale: Locale, params: RouteParams = {}): string {
   const path = templateFor(route, locale).replace(/\[(\w+)\]/g, (_, name: string) => {
     const value = params[name];
     if (value === undefined) throw new Error(`Paramètre manquant : ${name}`);
     return encodeURIComponent(value);
   });
-  if (locale === DEFAULT_LOCALE) return path;
   return path === "/" ? `/${locale}` : `/${locale}${path}`;
 }

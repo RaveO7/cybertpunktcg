@@ -4,7 +4,7 @@
  * viennent de la configuration de routage next-intl (src/i18n/routing.ts).
  */
 
-import { LOCALES, type Locale } from "@/i18n/config";
+import { INTERNATIONAL_LOCALE, LOCALES, type Locale } from "@/i18n/config";
 import { matchRoute, type RouteParams } from "@/i18n/match";
 import { getPathname } from "@/i18n/navigation";
 import { landingSections, type AppPathname } from "@/i18n/routing";
@@ -50,10 +50,10 @@ export function alternatePath(pathname: string, search: string | URLSearchParams
   return match ? withSearch(routePath(match.route, target, match.params), search) : null;
 }
 
-/** Versions linguistiques d'une page (pour hreflang et le sitemap) ; x-default = français. */
+/** Versions linguistiques d'une page (pour hreflang et le sitemap) ; x-default = anglais (international). */
 export function languageAlternates(key: PublicRouteKey, params: RouteParams = {}): Record<Locale | "x-default", string> {
   const paths = Object.fromEntries(LOCALES.map((locale) => [locale, localizedPath(key, locale, params)])) as Record<Locale, string>;
-  return { ...paths, "x-default": paths.fr };
+  return { ...paths, "x-default": paths[INTERNATIONAL_LOCALE] };
 }
 
 export type LocalizedRoute = { key: PublicRouteKey; locale: Locale; params: RouteParams };

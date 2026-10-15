@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
+import { rejectsWith } from "../helpers/api-text";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
 type Repository = typeof import("../../src/lib/tournament/repository");
@@ -89,7 +90,7 @@ describe("écritures", () => {
   });
 
   it("tournoi introuvable : 404", async () => {
-    await assert.rejects(repo.writeTournament("inexistant", async () => undefined), /Tournoi introuvable/);
+    await rejectsWith(repo.writeTournament("inexistant", async () => undefined), /Tournoi introuvable/);
   });
 
   it("enregistre l'état d'un match avec sa version et son historique", async () => {

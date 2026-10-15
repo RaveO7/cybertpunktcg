@@ -15,6 +15,7 @@ import {
   tournamentCreateSchema,
   tournamentJoinSchema,
   validate,
+  validationError,
 } from "../../src/lib/api-schemas";
 
 type Schema = Parameters<typeof validate>[0];
@@ -22,7 +23,7 @@ type Schema = Parameters<typeof validate>[0];
 /** Valide et renvoie les données, ou échoue le test avec le message d'erreur. */
 async function ok(schema: Schema, value: unknown) {
   const result = validate(schema, value);
-  if (!result.ok) assert.fail(`refusé : ${JSON.stringify(await result.response.json())}`);
+  if (!result.ok) assert.fail(`refusé : ${JSON.stringify(result.failure)}`);
   return result.data as Record<string, unknown>;
 }
 
@@ -31,8 +32,10 @@ async function ko(schema: Schema, value: unknown, status?: number) {
   const result = validate(schema, value, status);
   assert.equal(result.ok, false, `accepté à tort : ${JSON.stringify(value)}`);
   if (result.ok) throw new Error("inatteignable");
-  const body = (await result.response.json()) as { error: string };
-  return { status: result.response.status, error: body.error };
+  // Requête sans page d'origine ni langue choisie : message en français.
+  const response = await validationError(new Request("http://localhost/api"), result.failure);
+  const body = (await response.json()) as { error: string };
+  return { status: response.status, error: body.error };
 }
 
 const line = (partial: Record<string, unknown>) => ({ printingId: "p1", quantity: 1, ...partial });

@@ -22,6 +22,6 @@ export async function joinResponse(request: Request, tournamentId: string, extra
     if (result.deviceToken) setPlayerCookie(response, request, tournamentId, result.deviceToken);
     return response;
   } catch (error) {
-    return errorResponse("tournament-join", error);
+    return errorResponse(request, "tournament-join", error);
   }
 }

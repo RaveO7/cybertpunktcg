@@ -1,8 +1,8 @@
 # Traductions du site
 
 Le site est servi en cinq langues (français, anglais, allemand, espagnol, italien) avec
-[`next-intl`](https://next-intl.dev). Le français est la langue par défaut (URL sans préfixe) et la
-**langue de référence** des textes : les types TypeScript et les tests en dérivent.
+[`next-intl`](https://next-intl.dev). Chaque langue a son préfixe d’URL, français compris (`/fr`,
+`/en`…). Le français est la langue par défaut et la **langue de référence** des textes : les types TypeScript et les tests en dérivent.
 
 | Fichier | Rôle |
 | --- | --- |
@@ -74,6 +74,20 @@ Les blocs d'un dossier (`messages/<langue>/rules/*.json`) forment un espace de n
 
 Aucune page ni route à créer : la langue apparaît dans le sélecteur, le sitemap, les balises
 `hreflang` et les images de partage.
+
+## Messages d'erreur des routes API
+
+Les erreurs renvoyées par l'API (`{ error }`) viennent du bloc `api` (côté serveur seulement). Le
+code ne contient que des clés :
+
+- refus métier : `fail("tournaments.notFound", 404)` (`src/lib/app-error.ts`), avec des valeurs si
+  besoin : `fail("shops.limitReached", 409, undefined, { max: 3 })` ;
+- schémas Zod : `apiMessage("decks.nameTooLong", { max: 60 })` en guise de message ;
+- réponses directes : `apiError(request, "common.sessionRequired", 401)`, ou
+  `errorResponse(request, source, error)` dans un `catch` (`src/lib/api-response.ts`).
+
+La langue est celle de la page qui appelle (Referer du même site), sinon le cookie de langue, sinon
+le français. Les erreurs côté navigateur (hors ligne, session expirée…) sont dans `errors.request`.
 
 ## Traduire le texte d'une carte
 

@@ -13,6 +13,7 @@ import { appOrigin, createOAuthState, loginWithOAuth, verifyOAuthState } from ".
 import { prisma } from "../../src/lib/prisma";
 import { clientKey, rateLimit } from "../../src/lib/rate-limit";
 import { cleanupCreatedRateLimits } from "../helpers/rate-limit";
+import { frenchText } from "../helpers/api-text";
 
 const stamp = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const cleanupIds: string[] = [];
@@ -174,7 +175,7 @@ describe("limites", () => {
     const huge = Array.from({ length: 401 }, (_, i) => ({ printingId: `fake-${i}`, quantity: 1 }));
     await assert.rejects(
       () => saveCollectionBatch(user.id, { conditionCode: "NM", lines: huge }),
-      (error: unknown) => error instanceof Error && /Trop de cartes/i.test(error.message),
+      (error: unknown) => /Trop de cartes/i.test(frenchText(error)),
     );
   });
 

@@ -8,6 +8,6 @@ export const dynamic = "force-dynamic";
 /** Boutiques gérées par le compte connecté (avec leur état de vérification). */
 export async function GET(request: Request) {
   const user = await requireUser(request);
-  if (!user) return sessionRequired();
+  if (!user) return sessionRequired(request);
   return NextResponse.json({ shops: await listOwnedShops(user.id), isAdmin: user.role === "admin" });
 }

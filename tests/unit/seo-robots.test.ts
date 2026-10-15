@@ -5,7 +5,7 @@ import { buildRobots } from "../../src/lib/seo/robots";
 describe("seo : robots.txt", () => {
   it("production : tout explorable sauf l'API et l'administration, sitemap absolu", () => {
     const robots = buildRobots({ VERCEL_ENV: "production", APP_URL: "https://tcgtracker.fr" });
-    assert.deepEqual(robots.rules, { userAgent: "*", allow: ["/", "/api/shops/*/logo"], disallow: ["/api/", "/admin"] });
+    assert.deepEqual(robots.rules, { userAgent: "*", allow: ["/", "/api/shops/*/logo"], disallow: ["/api/", "/*/admin"] });
     assert.equal(robots.sitemap, "https://tcgtracker.fr/sitemap.xml");
   });
 

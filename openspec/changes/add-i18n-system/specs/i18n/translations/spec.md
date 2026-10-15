@@ -46,6 +46,14 @@ L'application, les pages publiques, les messages d'erreur, les pages 404 et d'er
 - **WHEN** une action échoue sur une page italienne
 - **THEN** le message d'erreur est en italien
 
+#### Scenario: Refus du serveur en allemand
+- **WHEN** depuis une page allemande, un organisateur tente de démarrer une ronde avec moins de 4 joueurs
+- **THEN** l'API répond par un message en allemand, construit à partir d'une clé de traduction (le code ne contient aucun texte du message)
+
+#### Scenario: Page introuvable hors de toute route
+- **WHEN** un visiteur ouvre une adresse `/es/...` qui ne correspond à aucune route
+- **THEN** la page 404 est affichée en espagnol, avec un lien vers l'accueil espagnol
+
 ### Requirement: Règles et tutoriel traduits
 Les règles du jeu, le parcours « Apprendre à jouer », la partie guidée, l'anatomie d'une carte et les cartes d'exemple MUST être disponibles dans les cinq langues. Les mots-clés de jeu entre accolades (`{Call}`, `{Go Solo}`…) et les affiliations en majuscules (`ARASAKA`, `BRAINDANCE`…) MUST rester tels qu'imprimés sur les cartes.
 

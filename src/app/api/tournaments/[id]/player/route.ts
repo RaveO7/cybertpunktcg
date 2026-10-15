@@ -16,6 +16,6 @@ export async function POST(request: Request, context: Context) {
   try {
     return NextResponse.json(await runPlayerCommand(id, await viewerFromRequest(request, id), parsed.data));
   } catch (error) {
-    return errorResponse("tournament-player", error);
+    return errorResponse(request, "tournament-player", error);
   }
 }

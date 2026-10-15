@@ -7,5 +7,17 @@
   "notFoundEyebrow": "404",
   "notFoundTitle": "Page not found",
   "notFoundBody": "This page does not exist or has been moved.",
-  "reference": "Reference"
+  "reference": "Reference",
+  "request": {
+    "offline": "Offline: changes are not possible right now.",
+    "sessionExpired": "Session expired. Please sign in again.",
+    "sessionLost": "The session was not kept. Please try again.",
+    "saveFailed": "Could not save.",
+    "addFailed": "Could not add.",
+    "importFailed": "Import failed.",
+    "loginFailed": "Sign-in failed.",
+    "logoutFailed": "Sign-out failed.",
+    "loadCollection": "Could not load the collection.",
+    "loadDecks": "Could not load the decks."
+  }
 }

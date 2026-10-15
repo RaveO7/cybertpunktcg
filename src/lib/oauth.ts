@@ -1,6 +1,8 @@
 import { createHmac, createPrivateKey, randomBytes, sign, timingSafeEqual } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextResponse } from "next/server";
+import type { Locale } from "@/i18n/config";
+import { formatRoute } from "@/i18n/match";
 import { cookieSecure, normalizeDisplayName, normalizeEmail } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -386,9 +388,23 @@ export async function loginWithOAuth(profile: OAuthProfile, localUserId: string 
   }
 }
 
-/** Échec : retour à la page de connexion (l'accueil des visiteurs est la page de présentation). */
-export function oauthErrorRedirect(origin: string, message: string) {
-  const url = new URL("/connexion", origin);
-  url.searchParams.set("authError", message);
+/** Causes d'échec transmises à la page de connexion, qui affiche le message dans sa langue. */
+export const OAUTH_ERROR_CODES = [
+  "unknownProvider",
+  "notConfigured",
+  "cancelled",
+  "invalidResponse",
+  "expired",
+  "emailRequired",
+  "accountExists",
+  "failed",
+] as const;
+
+export type OAuthErrorCode = (typeof OAUTH_ERROR_CODES)[number];
+
+/** Échec : retour à la page de connexion dans la langue du visiteur (l'accueil des visiteurs est la page de présentation). */
+export function oauthErrorRedirect(origin: string, code: OAuthErrorCode, locale: Locale) {
+  const url = new URL(formatRoute("/connexion", locale), origin);
+  url.searchParams.set("authError", code);
   return url;
 }

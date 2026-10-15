@@ -21,22 +21,26 @@ export function walkoverGames(matchType: MatchType) {
   return maxGames(matchType);
 }
 
-/** Message d'erreur si le résultat n'est pas autorisé, sinon null. */
-export function resultError(result: MatchResult, matchType: MatchType, phase: Phase): string | null {
+/** Clé du message d'erreur (bloc `api`) d'un score impossible, ou null. */
+export function resultError(
+  result: MatchResult,
+  matchType: MatchType,
+  phase: Phase,
+): "tournaments.invalidScore" | "tournaments.winnerRequired" | null {
   const { kind, gamesA, gamesB } = result;
   if (!Number.isInteger(gamesA) || !Number.isInteger(gamesB) || gamesA < 0 || gamesB < 0) {
-    return "Score invalide.";
+    return "tournaments.invalidScore";
   }
   if (kind === "double_loss" || kind === "id") {
-    if (phase === "top_cut") return "Un vainqueur est requis en top cut.";
-    if (gamesA !== 0 || gamesB !== 0) return "Score invalide.";
+    if (phase === "top_cut") return "tournaments.winnerRequired";
+    if (gamesA !== 0 || gamesB !== 0) return "tournaments.invalidScore";
     return null;
   }
   const max = maxGames(matchType);
-  if (gamesA > max || gamesB > max) return "Score invalide.";
-  if (matchType === "bo3" && gamesA === 2 && gamesB === 2) return "Score invalide.";
-  if (matchType === "bo1" && gamesA + gamesB > 1) return "Score invalide.";
-  if (phase === "top_cut" && gamesA === gamesB) return "Un vainqueur est requis en top cut.";
+  if (gamesA > max || gamesB > max) return "tournaments.invalidScore";
+  if (matchType === "bo3" && gamesA === 2 && gamesB === 2) return "tournaments.invalidScore";
+  if (matchType === "bo1" && gamesA + gamesB > 1) return "tournaments.invalidScore";
+  if (phase === "top_cut" && gamesA === gamesB) return "tournaments.winnerRequired";
   return null;
 }
 

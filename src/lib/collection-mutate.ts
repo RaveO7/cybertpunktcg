@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import type { CollectionItemDTO } from "./types";
+import { fail } from "./app-error";
 
 type SaveInput = {
   printingId: string;
@@ -60,7 +61,7 @@ export async function saveCollectionLine(userId: string, input: SaveInput): Prom
   });
   const condition = await prisma.condition.findUnique({ where: { code: input.conditionCode } });
   if (!printing || !condition) {
-    throw new Error("Carte ou état introuvable.");
+    fail("collection.cardOrConditionNotFound");
   }
   const where = {
     userId_printingId_conditionId: {
@@ -129,12 +130,12 @@ export async function saveCollectionBatch(
   userId: string,
   input: { conditionCode: string; lines: { printingId: string; quantity: number }[] },
 ) {
-  if (input.lines.length > 400) throw new Error("Trop de cartes d'un coup.");
+  if (input.lines.length > 400) fail("collection.tooManyCards");
   const lines = input.lines.filter((line) => line.quantity > 0 && line.quantity <= 999);
   if (lines.length === 0) return [];
-  if (lines.length > 400) throw new Error("Trop de cartes d'un coup.");
+  if (lines.length > 400) fail("collection.tooManyCards");
   const condition = await prisma.condition.findUnique({ where: { code: input.conditionCode } });
-  if (!condition) throw new Error("État introuvable.");
+  if (!condition) fail("collection.conditionNotFound");
   const printingIds = [...new Set(lines.map((line) => line.printingId))];
   const printings = await prisma.printing.findMany({
     where: { id: { in: printingIds }, isActive: true },
@@ -142,7 +143,7 @@ export async function saveCollectionBatch(
   });
   const valid = new Set(printings.map((printing) => printing.id));
   const accepted = lines.filter((line) => valid.has(line.printingId));
-  if (accepted.length === 0) throw new Error("Aucune carte valide.");
+  if (accepted.length === 0) fail("collection.noValidCard");
 
   return prisma.$transaction(async (tx) => {
     const saved = [];
@@ -228,7 +229,7 @@ export async function importCollectionLines(userId: string, input: ImportInput) 
         : { ...line, conditionId },
     );
   }
-  if (merged.size === 0) throw new Error("Aucune carte valide.");
+  if (merged.size === 0) fail("collection.noValidCard");
 
   const existing = await prisma.collectionItem.findMany({
     where: { userId, printingId: { in: [...new Set([...merged.values()].map((line) => line.printingId))] } },
@@ -277,14 +278,14 @@ export async function patchCollectionLine(
       where: { id, userId },
       include,
     });
-    if (!current) throw new Error("Ligne introuvable.");
+    if (!current) fail("collection.lineNotFound");
     if (input.quantity != null && input.quantity <= 0) {
       await tx.collectionItem.delete({ where: { id: current.id } });
       return { item: null, deletedId: current.id };
     }
     const conditionCode = input.conditionCode ?? current.condition.code;
     const condition = await tx.condition.findUnique({ where: { code: conditionCode } });
-    if (!condition) throw new Error("État introuvable.");
+    if (!condition) fail("collection.conditionNotFound");
     const moved = condition.id !== current.conditionId;
     if (moved) {
       const target = await tx.collectionItem.findUnique({

@@ -9,12 +9,13 @@ import {
   viewOwnership,
 } from "@/lib/logic";
 import { ENGLISH_SET_ID, FRENCH_SET_ID } from "@/lib/reference-data";
+import { sessionRequired } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const user = await requireUser(request);
-  if (!user) return NextResponse.json({ error: "Session requise." }, { status: 401 });
+  if (!user) return sessionRequired(request);
   const [catalog, items] = await Promise.all([loadCatalogCached(), loadCollection(user.id)]);
   const agg = aggregateCollection(items);
   const english = releasedChecklist(catalog.printings, ENGLISH_SET_ID) ?? [];

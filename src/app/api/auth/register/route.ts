@@ -2,16 +2,16 @@ import { NextResponse } from "next/server";
 import { readJsonBody, registerSchema } from "@/lib/api-schemas";
 import { applySessionCookie, createSession, registerAccount, toPublicUser } from "@/lib/auth";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { apiError } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const limited = await rateLimit(clientKey(request, "register"), 10, 60_000);
   if (!limited.ok) {
-    return NextResponse.json(
-      { error: "Trop de créations de compte. Réessayez dans une minute." },
-      { status: 429, headers: { "retry-after": String(Math.ceil(limited.retryAfterMs / 1000) || 60) } },
-    );
+    return apiError(request, "auth.tooManyRegistrations", 429, {
+      headers: { "retry-after": String(Math.ceil(limited.retryAfterMs / 1000) || 60) },
+    });
   }
 
   const parsed = await readJsonBody(request, registerSchema);
@@ -27,8 +27,8 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     if (error instanceof Error && error.message === "EMAIL_TAKEN") {
-      return NextResponse.json({ error: "Un compte existe déjà avec cette adresse e-mail." }, { status: 409 });
+      return apiError(request, "auth.emailTaken", 409);
     }
-    return NextResponse.json({ error: "Création du compte impossible." }, { status: 400 });
+    return apiError(request, "auth.registerFailed", 400);
   }
 }

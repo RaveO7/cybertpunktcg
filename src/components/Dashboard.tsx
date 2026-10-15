@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
-import { Link, useRouter, type Href } from "@/i18n/navigation";
+import { Link, useRouter, type Href, getPathname } from "@/i18n/navigation";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
@@ -538,7 +538,7 @@ export function Dashboard() {
                 ))}
               </SegmentGroup>
             </div>
-            <form action="/cards" className="flex">
+            <form action={getPathname({ href: "/cards", locale })} className="flex">
               <input type="hidden" name="set" value={heroSet} />
               <input type="hidden" name="language" value={heroLanguage} />
               <label className="flex h-11 w-full items-center gap-2.5 border border-line bg-panel-2 px-3.5 text-muted focus-within:border-cyan">

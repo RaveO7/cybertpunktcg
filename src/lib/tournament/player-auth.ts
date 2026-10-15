@@ -80,20 +80,20 @@ export async function claimPlayer(claimToken: string, userId: string | null, now
     where: { claimTokenHash: hashToken(claimToken) },
     select: { id: true, tournamentId: true },
   });
-  if (!target) fail("QR code invalide ou déjà utilisé : demandez-en un nouveau à l'organisateur.", 404);
+  if (!target) fail("tournaments.invalidClaim", 404);
   return writeTournament(target.tournamentId, async (tx, t) => {
     const player = t.players.find((candidate) => candidate.id === target.id);
     if (!player || player.claimTokenHash !== hashToken(claimToken)) {
-      fail("QR code invalide ou déjà utilisé : demandez-en un nouveau à l'organisateur.", 404);
+      fail("tournaments.invalidClaim", 404);
     }
     if (!player.claimExpiresAt || player.claimExpiresAt <= now) {
-      fail("QR code expiré : demandez-en un nouveau à l'organisateur.", 410);
+      fail("tournaments.expiredClaim", 410);
     }
     let linkUser = player.userId;
     if (userId && !player.userId) {
       const other = t.players.find((candidate) => candidate.userId === userId && candidate.id !== player.id);
       if (other) {
-        fail(`Votre compte est déjà inscrit sous « ${other.name} » : demandez à l'organisateur de fusionner les deux profils.`, 409);
+        fail("tournaments.accountAlreadyRegistered", 409, undefined, { name: other.name });
       }
       linkUser = userId;
     }

@@ -1,6 +1,7 @@
 // Blocs de référence (français) : TypeScript en dérive le type des messages de toutes les langues.
 // Ajouter un bloc : un fichier JSON par langue, et une ligne ici.
 
+import api from "./api.json";
 import auth from "./auth.json";
 import card from "./card.json";
 import cards from "./cards.json";
@@ -35,6 +36,8 @@ import tournaments from "./tournaments.json";
 import wishlist from "./wishlist.json";
 
 const messages = {
+  // Messages d'erreur des routes API : traduits côté serveur, jamais transmis au navigateur.
+  api,
   auth,
   card,
   cards,

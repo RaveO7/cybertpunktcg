@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/catalog";
 import { loadPortfolioPriceHistory, loadPrintingPriceHistory, loadReferencePrices } from "@/lib/investment-history";
+import { sessionRequired } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const user = await requireUser(request);
-  if (!user) return NextResponse.json({ error: "Session requise." }, { status: 401 });
+  if (!user) return sessionRequired(request);
 
   const url = new URL(request.url);
   const printingId = url.searchParams.get("printingId");

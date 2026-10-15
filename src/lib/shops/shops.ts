@@ -165,7 +165,7 @@ async function freeSlug(base: string) {
     const candidate = n === 1 ? base : `${base}-${n}`;
     if (!(await slugTaken(candidate))) return candidate;
   }
-  return fail("Impossible de choisir une adresse de page, changez le nom.", 409);
+  return fail("shops.slugFromNameFailed", 409);
 }
 
 function isUniqueViolation(error: unknown) {
@@ -174,8 +174,8 @@ function isUniqueViolation(error: unknown) {
 
 export async function createShop(ownerId: string, input: ShopCreateInput): Promise<OwnedShop> {
   const count = await prisma.shop.count({ where: { ownerId } });
-  if (count >= MAX_SHOPS_PER_OWNER) fail(`Vous gérez déjà ${MAX_SHOPS_PER_OWNER} boutiques.`, 409);
-  if (input.slug && (await slugTaken(input.slug))) fail("Cette adresse de page est déjà prise.", 409);
+  if (count >= MAX_SHOPS_PER_OWNER) fail("shops.limitReached", 409, undefined, { max: MAX_SHOPS_PER_OWNER });
+  if (input.slug && (await slugTaken(input.slug))) fail("shops.slugTaken", 409);
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const slug = input.slug ?? (await freeSlug(slugify(input.name)));
     try {
@@ -199,18 +199,18 @@ export async function createShop(ownerId: string, input: ShopCreateInput): Promi
     } catch (error) {
       // Adresse prise entre la vérification et l'insertion.
       if (isUniqueViolation(error) && !input.slug) continue;
-      if (isUniqueViolation(error)) fail("Cette adresse de page est déjà prise.", 409);
+      if (isUniqueViolation(error)) fail("shops.slugTaken", 409);
       throw error;
     }
   }
-  return fail("Impossible de choisir une adresse de page, réessayez.", 409);
+  return fail("shops.slugRetry", 409);
 }
 
 /** Boutique que `user` peut modifier : la sienne, ou n'importe laquelle pour un administrateur. */
 async function editableShop(slug: string, user: { id: string; role: string }) {
   const shop = await prisma.shop.findUnique({ where: { slug }, select: shopSelect });
-  if (!shop) fail("Boutique introuvable.", 404);
-  if (shop.ownerId !== user.id && user.role !== "admin") fail("Vous ne gérez pas cette boutique.", 403);
+  if (!shop) fail("shops.notFound", 404);
+  if (shop.ownerId !== user.id && user.role !== "admin") fail("shops.notManager", 403);
   return shop;
 }
 
@@ -221,7 +221,7 @@ function samePlace(a: Place, b: Place) {
 export async function updateShop(slug: string, user: { id: string; role: string }, input: ShopUpdateInput): Promise<OwnedShop> {
   const shop = await editableShop(slug, user);
   if (input.slug && input.slug !== shop.slug && (await slugTaken(input.slug, shop.id))) {
-    fail("Cette adresse de page est déjà prise.", 409);
+    fail("shops.slugTaken", 409);
   }
   const current = placeFromRow(shop)!;
   const identityChanged =
@@ -248,7 +248,7 @@ export async function updateShop(slug: string, user: { id: string; role: string 
     });
     return toOwned(updated);
   } catch (error) {
-    if (isUniqueViolation(error)) fail("Cette adresse de page est déjà prise.", 409);
+    if (isUniqueViolation(error)) fail("shops.slugTaken", 409);
     throw error;
   }
 }
@@ -286,7 +286,7 @@ export async function detachTournament(slug: string, tournamentId: string, user:
     where: { id: tournamentId, shopId: shop.id },
     data: { shopId: null, revision: { increment: 1 } },
   });
-  if (count === 0) fail("Ce tournoi n'est pas rattaché à cette boutique.", 404);
+  if (count === 0) fail("shops.tournamentNotAttached", 404);
 }
 
 // --- Logo ------------------------------------------------------------------------------------
@@ -295,15 +295,15 @@ const LOGO_FORMATS = new Set(["png", "jpeg", "webp"]);
 
 /** Valide (format réel, poids) puis recadre en carré WebP avant stockage. */
 export async function processLogo(bytes: Uint8Array) {
-  if (bytes.byteLength > LOGO_MAX_BYTES) fail("Logo trop lourd (2 Mo maximum).", 413);
+  if (bytes.byteLength > LOGO_MAX_BYTES) fail("shops.logoTooLarge", 413);
   const sharp = (await import("sharp")).default;
   let format: string | undefined;
   try {
     format = (await sharp(bytes).metadata()).format;
   } catch {
-    fail("Image illisible : utilisez un PNG, JPEG ou WebP.", 415);
+    fail("shops.unreadableImage", 415);
   }
-  if (!format || !LOGO_FORMATS.has(format)) fail("Format non pris en charge : utilisez un PNG, JPEG ou WebP.", 415);
+  if (!format || !LOGO_FORMATS.has(format)) fail("shops.unsupportedFormat", 415);
   return sharp(bytes)
     .rotate()
     .resize(LOGO_SIZE, LOGO_SIZE, { fit: "cover", position: "centre" })
@@ -334,11 +334,11 @@ export type ReviewDecision = "verify" | "reject" | "revoke";
 
 export async function reviewShop(shopId: string, adminId: string, decision: ReviewDecision, note: string | undefined, now = new Date()) {
   const shop = await prisma.shop.findUnique({ where: { id: shopId }, select: { id: true, status: true } });
-  if (!shop) fail("Boutique introuvable.", 404);
-  if (decision !== "verify" && !note?.trim()) fail("Indiquez le motif du refus.", 400);
-  if (decision === "verify" && shop.status === "verified") fail("Cette boutique est déjà vérifiée.", 409);
-  if (decision === "reject" && shop.status !== "pending") fail("Seule une boutique en attente peut être refusée.", 409);
-  if (decision === "revoke" && shop.status !== "verified") fail("Cette boutique n'est pas vérifiée.", 409);
+  if (!shop) fail("shops.notFound", 404);
+  if (decision !== "verify" && !note?.trim()) fail("shops.noteRequired", 400);
+  if (decision === "verify" && shop.status === "verified") fail("shops.alreadyVerified", 409);
+  if (decision === "reject" && shop.status !== "pending") fail("shops.onlyPendingRejected", 409);
+  if (decision === "revoke" && shop.status !== "verified") fail("shops.notVerified", 409);
   const updated = await prisma.shop.update({
     where: { id: shop.id },
     data: {

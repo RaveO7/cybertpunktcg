@@ -14,6 +14,7 @@ import type { OwnedShop } from "../../src/lib/shops/shops";
 import type { DirectoryResult } from "../../src/lib/tournament/directory";
 import type { PublicTournamentDetail } from "../../src/lib/tournament/public-view";
 import type { TournamentView } from "../../src/lib/tournament/view";
+import { rejectsWith } from "../helpers/api-text";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
 type Commands = typeof import("../../src/lib/tournament/commands");
@@ -212,7 +213,7 @@ describe("publication d'un tournoi", () => {
       return true;
     });
     await run(id, { type: "updateSettings", settings: { startsAt: new Date(Date.now() - DAY), place: LYON } });
-    await assert.rejects(run(id, { type: "setVisibility", public: true }), /date de début/);
+    await rejectsWith(run(id, { type: "setVisibility", public: true }), /date de début/);
   });
 
   it("un co-organisateur peut publier ; un tournoi public garde sa date et son lieu", async () => {
@@ -221,7 +222,7 @@ describe("publication d'un tournoi", () => {
     await run(id, { type: "updateSettings", settings: { startsAt: new Date(Date.now() + DAY), place: LYON } }, other);
     await run(id, { type: "setVisibility", public: true }, other);
     assert.equal((await prisma.tournament.findUniqueOrThrow({ where: { id } })).visibility, "public");
-    await assert.rejects(run(id, { type: "updateSettings", settings: { place: null } }), /repassez-le en privé/);
+    await rejectsWith(run(id, { type: "updateSettings", settings: { place: null } }), /repassez-le en privé/);
   });
 
   it("au-delà de 10 publications par jour : refusé (429)", async () => {
@@ -544,7 +545,7 @@ describe("boutiques", () => {
 
     const otherShop = await prisma.shop.findFirstOrThrow({ where: { ownerId: other.id, status: "rejected" } });
     const { id: second } = await newTournament(other);
-    await assert.rejects(run(second, { type: "setShop", shopId: otherShop.id }, other), /refusée/);
+    await rejectsWith(run(second, { type: "setShop", shopId: otherShop.id }, other), /refusée/);
   });
 
   it("le gérant détache un tournoi ; supprimer la boutique conserve les tournois", async () => {

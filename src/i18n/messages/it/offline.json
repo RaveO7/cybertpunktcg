@@ -10,5 +10,10 @@
   "clear": "Elimina le immagini offline",
   "cleared": "Immagini eliminate da questo dispositivo.",
   "unsupported": "Questo browser non supporta la modalità offline.",
-  "hdNote": "Le immagini a grandezza piena vengono salvate quando le apri."
+  "hdNote": "Le immagini a grandezza piena vengono salvate quando le apri.",
+  "page": {
+    "title": "Offline",
+    "body": "Questa pagina non è ancora stata salvata su questo dispositivo.",
+    "home": "Torna alla home"
+  }
 }

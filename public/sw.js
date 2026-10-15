@@ -9,15 +9,27 @@
 // Les noms de caches sont partagés avec src/lib/offline.ts : les garder synchronisés.
 
 const VERSION = "v1";
-const SHELL_CACHE = `cptcg-shell-${VERSION}`;
+// Pages enregistrées sous leurs adresses préfixées par la langue (« /fr/decks ») depuis la v2 : les
+// anciennes copies sans préfixe sont effacées. Les images téléchargées (IMAGES_CACHE) sont gardées.
+const SHELL_CACHE = "cptcg-shell-v2";
 const STATIC_CACHE = `cptcg-static-${VERSION}`;
 const DATA_CACHE = `cptcg-data-${VERSION}`;
 const USER_CACHE = `cptcg-user-${VERSION}`;
 const IMAGES_CACHE = `cptcg-images-${VERSION}`;
 const KNOWN_CACHES = [SHELL_CACHE, STATIC_CACHE, DATA_CACHE, USER_CACHE, IMAGES_CACHE];
 
-const SHELL_PAGES = ["/", "/cards", "/investissement", "/decks", "/souhaits", "/comment-jouer", "/parametres"];
-const SHELL_ASSETS = ["/manifest.webmanifest", "/icons/icon-192.png?v=2", "/icons/icon-512.png?v=2"];
+// Langue, écrans à garder et textes de la page « hors ligne » : passés par l'URL du script
+// (src/components/OfflineSupport.tsx), dans la langue de la page qui l'enregistre.
+const SETTINGS = new URL(self.location.href).searchParams;
+const LANG = SETTINGS.get("lang") || "fr";
+const HOME = `/${LANG}`;
+const SHELL_PAGES = (SETTINGS.get("pages") || HOME).split(",").filter((path) => path.startsWith("/"));
+const SHELL_ASSETS = [`/${LANG}/manifest.webmanifest`, "/icons/icon-192.png?v=2", "/icons/icon-512.png?v=2"];
+const OFFLINE_TEXT = {
+  title: SETTINGS.get("title") || "Offline",
+  body: SETTINGS.get("body") || "",
+  home: SETTINGS.get("home") || HOME,
+};
 
 // Au-delà, on garde la copie en cache et la réponse réseau la mettra à jour en arrière-plan.
 const NETWORK_TIMEOUT_MS = 4000;
@@ -89,7 +101,7 @@ self.addEventListener("fetch", (event) => {
     }
     return;
   }
-  if (url.pathname.startsWith("/icons/") || url.pathname === "/manifest.webmanifest" || url.pathname === "/favicon.ico") {
+  if (url.pathname.startsWith("/icons/") || url.pathname.endsWith("/manifest.webmanifest") || url.pathname === "/favicon.ico") {
     event.respondWith(cacheFirst(request, SHELL_CACHE));
   }
 });
@@ -149,6 +161,11 @@ async function trimCache(cacheName, maxEntries) {
 }
 
 function offlinePage() {
-  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hors ligne</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#07080d;color:#e8eef6;font-family:system-ui,sans-serif;text-align:center;padding:24px}a{color:#3ee0ff}</style></head><body><main><h1>Hors ligne</h1><p>Cette page n'a pas encore été enregistrée sur cet appareil.</p><p><a href="/">Revenir à l'accueil</a></p></main></body></html>`;
+  const { title, body, home } = OFFLINE_TEXT;
+  const html = `<!doctype html><html lang="${escapeHtml(LANG)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#07080d;color:#e8eef6;font-family:system-ui,sans-serif;text-align:center;padding:24px}a{color:#3ee0ff}</style></head><body><main><h1>${escapeHtml(title)}</h1><p>${escapeHtml(body)}</p><p><a href="${escapeHtml(HOME)}">${escapeHtml(home)}</a></p></main></body></html>`;
   return new Response(html, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 }

@@ -10,7 +10,10 @@ import {
   oauthErrorRedirect,
   oauthStateMatchesBrowser,
   verifyOAuthState,
+  type OAuthErrorCode,
 } from "@/lib/oauth";
+import { requestLocale } from "@/lib/api-response";
+import { formatRoute } from "@/i18n/match";
 
 export const dynamic = "force-dynamic";
 
@@ -22,33 +25,31 @@ async function finish(
   params: { code: string | null; state: string | null; error: string | null; appleUser: string | null },
 ) {
   const origin = appOrigin(request);
-  const fail = (message: string) => NextResponse.redirect(oauthErrorRedirect(origin, message));
+  const fail = (code: OAuthErrorCode) => NextResponse.redirect(oauthErrorRedirect(origin, code, requestLocale(request)));
 
-  if (!isOAuthProvider(providerRaw)) return fail("Fournisseur de connexion inconnu.");
-  if (!oauthConfigured(providerRaw)) {
-    return fail(`Connexion ${providerRaw === "google" ? "Google" : "Apple"} non configurée.`);
-  }
-  if (params.error) return fail("Connexion annulée.");
-  if (!params.code || !params.state) return fail("Réponse OAuth invalide.");
+  if (!isOAuthProvider(providerRaw)) return fail("unknownProvider");
+  if (!oauthConfigured(providerRaw)) return fail("notConfigured");
+  if (params.error) return fail("cancelled");
+  if (!params.code || !params.state) return fail("invalidResponse");
 
   const stored = verifyOAuthState(params.state, providerRaw);
-  if (!stored || !oauthStateMatchesBrowser(request, params.state)) return fail("Session OAuth expirée. Réessayez.");
+  if (!stored || !oauthStateMatchesBrowser(request, params.state)) return fail("expired");
 
   try {
     const profile = await exchangeOAuthCode(providerRaw, params.code, request, params.appleUser);
     const user = await loginWithOAuth(profile, stored.localUserId);
     const session = await createSession(user.id);
-    const response = NextResponse.redirect(new URL("/", origin));
+    const response = NextResponse.redirect(new URL(formatRoute("/", requestLocale(request)), origin));
     applySessionCookie(response, request, session.token, session.expiresAt);
     return response;
   } catch (error) {
     if (error instanceof Error && error.message === "OAUTH_EMAIL_REQUIRED") {
-      return fail("L'adresse e-mail est requise pour créer un compte.");
+      return fail("emailRequired");
     }
     if (error instanceof Error && (error.message === "ACCOUNT_EXISTS" || error.message === "EMAIL_TAKEN")) {
-      return fail("Un compte existe déjà avec cet e-mail. Connectez-vous avec votre mot de passe.");
+      return fail("accountExists");
     }
-    return fail("Connexion impossible. Réessayez.");
+    return fail("failed");
   }
 }
 

@@ -37,7 +37,7 @@ export function chooseBye(players: readonly PairingPlayer[]): string {
 }
 
 export function pairFirstRound(playerIds: readonly string[], rng: Rng): PairedMatch[] {
-  if (playerIds.length < 2) fail("Il faut au moins 2 joueurs.");
+  if (playerIds.length < 2) fail("tournaments.needTwoPlayers");
   const order = shuffle(playerIds, rng);
   const matches: PairedMatch[] = [];
   for (let i = 0; i + 1 < order.length; i += 2) matches.push({ a: order[i], b: order[i + 1] });
@@ -50,7 +50,7 @@ function havePlayed(x: PairingPlayer, y: PairingPlayer) {
 }
 
 export function pairSwissRound(players: readonly PairingPlayer[]): PairedMatch[] {
-  if (players.length < 2) fail("Il faut au moins 2 joueurs.");
+  if (players.length < 2) fail("tournaments.needTwoPlayers");
   const byeId = players.length % 2 === 1 ? chooseBye(players) : null;
   const pool = players.filter((player) => player.id !== byeId);
 
@@ -74,7 +74,7 @@ export function pairSwissRound(players: readonly PairingPlayer[]): PairedMatch[]
   for (let i = 0; i < pool.length; i += 1) {
     if (seen.has(i)) continue;
     const j = mate[i];
-    if (j === undefined || j === -1) fail("Appariement impossible.", 500);
+    if (j === undefined || j === -1) fail("tournaments.pairingFailed", 500);
     seen.add(i);
     seen.add(j);
     matches.push({ a: pool[i].id, b: pool[j].id });
@@ -105,7 +105,7 @@ function locate(matches: readonly PairedMatch[], playerId: string) {
     if (matches[index].a === playerId) return { index, slot: "a" as const };
     if (matches[index].b === playerId) return { index, slot: "b" as const };
   }
-  return fail("Joueur absent de cette ronde.", 404);
+  return fail("tournaments.playerNotInRound", 404);
 }
 
 /**
@@ -126,7 +126,7 @@ export function swapPlayers(matches: readonly PairedMatch[], first: string, seco
 /** Donne le bye à `playerId` : il échange sa place avec le joueur qui avait le bye. */
 export function moveBye(matches: readonly PairedMatch[], playerId: string): PairedMatch[] {
   const bye = matches.find((match) => match.b === null);
-  if (!bye) fail("Cette ronde n'a pas de bye.");
+  if (!bye) fail("tournaments.noBye");
   return swapPlayers(matches, bye.a, playerId);
 }
 

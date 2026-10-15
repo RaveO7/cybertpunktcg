@@ -65,9 +65,9 @@ describe("les deux joueurs ont l'app", () => {
   });
 
   it("on ne confirme pas sa propre déclaration", () => {
-    rejects(() => confirmResult(declareResult(fresh, "A", score(2, 1), ctx), "A"), "Vous ne pouvez pas confirmer votre propre déclaration.");
-    rejects(() => confirmResult(fresh, "B"), "Aucun score à confirmer.");
-    rejects(() => refuseResult(fresh, "B"), "Aucun score à refuser.");
+    rejects(() => confirmResult(declareResult(fresh, "A", score(2, 1), ctx), "A"), "tournaments.cannotConfirmOwn");
+    rejects(() => confirmResult(fresh, "B"), "tournaments.nothingToConfirm");
+    rejects(() => refuseResult(fresh, "B"), "tournaments.nothingToRefuse");
   });
 });
 
@@ -87,9 +87,9 @@ describe("déclarations concurrentes", () => {
 
   it("un match contesté ou validé n'accepte plus de déclaration joueur", () => {
     const contested = declareResult(declareResult(fresh, "A", score(2, 1), ctx), "B", score(1, 2), ctx);
-    rejects(() => declareResult(contested, "A", score(2, 0), ctx), /l'organisateur doit trancher/, 409);
+    rejects(() => declareResult(contested, "A", score(2, 0), ctx), "tournaments.contested", 409);
     const done = confirmResult(declareResult(fresh, "A", score(2, 1), ctx), "B");
-    rejects(() => declareResult(done, "B", score(0, 2), ctx), "Ce match est déjà validé.", 409);
+    rejects(() => declareResult(done, "B", score(0, 2), ctx), "tournaments.alreadyValidated", 409);
   });
 });
 
@@ -110,7 +110,7 @@ describe("un seul joueur a l'app", () => {
   });
 
   it("refuse une confirmation sur place sans déclaration", () => {
-    rejects(() => confirmOnSite(fresh, "A", ctx), "Aucun score à confirmer.");
+    rejects(() => confirmOnSite(fresh, "A", ctx), "tournaments.nothingToConfirm");
   });
 });
 
@@ -122,12 +122,12 @@ describe("ID et résultats réservés", () => {
   });
 
   it("un joueur ne peut pas déclarer une double défaite", () => {
-    rejects(() => declareResult(fresh, "A", { kind: "double_loss", gamesA: 0, gamesB: 0 }, ctx), "Résultat réservé à l'organisateur.", 403);
+    rejects(() => declareResult(fresh, "A", { kind: "double_loss", gamesA: 0, gamesB: 0 }, ctx), "tournaments.organizerResultOnly", 403);
   });
 
   it("score impossible refusé", () => {
-    rejects(() => declareResult(fresh, "A", score(3, 0), ctx), "Score invalide.");
-    rejects(() => declareResult(fresh, "A", score(1, 1), { ...ctx, phase: "top_cut" }), "Un vainqueur est requis en top cut.");
+    rejects(() => declareResult(fresh, "A", score(3, 0), ctx), "tournaments.invalidScore");
+    rejects(() => declareResult(fresh, "A", score(1, 1), { ...ctx, phase: "top_cut" }), "tournaments.winnerRequired");
   });
 });
 
@@ -144,7 +144,7 @@ describe("pouvoirs de l'organisateur", () => {
   it("saisit une double défaite en suisse, pas en top cut", () => {
     const loss: MatchResult = { kind: "double_loss", gamesA: 0, gamesB: 0 };
     assert.equal(organizerSetResult(fresh, loss, ctx).status, "valide");
-    rejects(() => organizerSetResult(fresh, loss, { ...ctx, phase: "top_cut" }), "Un vainqueur est requis en top cut.");
+    rejects(() => organizerSetResult(fresh, loss, { ...ctx, phase: "top_cut" }), "tournaments.winnerRequired");
   });
 
   it("no-show : victoire 2-0 (1-0 en Bo1) pour l'adversaire", () => {
@@ -159,9 +159,9 @@ describe("pouvoirs de l'organisateur", () => {
 
   it("un bye ne se déclare ni ne se modifie", () => {
     const bye: MatchState = { ...fresh, isBye: true, status: "valide", kind: "bye", gamesA: 2, gamesB: 0 };
-    rejects(() => declareResult(bye, "A", score(2, 0), ctx), "Un bye n'a pas de résultat à déclarer.");
-    rejects(() => organizerSetResult(bye, score(0, 2), ctx), "Un bye ne se modifie pas.");
-    rejects(() => resetResult(bye), "Un bye ne se modifie pas.");
+    rejects(() => declareResult(bye, "A", score(2, 0), ctx), "tournaments.byeNoResult");
+    rejects(() => organizerSetResult(bye, score(0, 2), ctx), "tournaments.byeLocked");
+    rejects(() => resetResult(bye), "tournaments.byeLocked");
   });
 });
 

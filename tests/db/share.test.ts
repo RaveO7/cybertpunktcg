@@ -119,10 +119,10 @@ describe.sequential("partage du classeur", () => {
     assert.equal(created.active, true);
     assert.ok(created.token && created.token.length >= 32, "jeton suffisamment long");
     assert.match(created.token, /^[A-Za-z0-9_-]+$/, "jeton sûr pour une URL");
-    assert.equal(created.path, `/classeur/${created.token}`);
+    assert.equal(created.path, `/fr/classeur/${created.token}`);
     // APP_URL (si défini dans .env) prime sur l'origine de la requête.
     assert.equal(created.url, absoluteShareUrl(new Request("http://127.0.0.1/api/share"), created.token));
-    assert.ok(created.url?.endsWith(`/classeur/${created.token}`));
+    assert.ok(created.url?.endsWith(`/fr/classeur/${created.token}`));
     firstToken = created.token;
 
     const read = await json<ShareBody>(await readShareRoute(request("/api/share", owner.token)));
@@ -259,18 +259,19 @@ describe.sequential("partage du classeur", () => {
       process.env.APP_URL = "https://classeur.example.com/";
       assert.equal(
         absoluteShareUrl(new Request("http://127.0.0.1:3000/api/share"), "abc"),
-        "https://classeur.example.com/classeur/abc",
+        "https://classeur.example.com/fr/classeur/abc",
       );
       delete process.env.APP_URL;
       assert.equal(
         absoluteShareUrl(new Request("http://127.0.0.1:3000/api/share"), "abc"),
-        "http://127.0.0.1:3000/classeur/abc",
+        "http://127.0.0.1:3000/fr/classeur/abc",
       );
     } finally {
       if (previous === undefined) delete process.env.APP_URL;
       else process.env.APP_URL = previous;
     }
-    assert.equal(sharePath("abc"), "/classeur/abc");
+    assert.equal(sharePath("abc"), "/fr/classeur/abc");
+    assert.equal(sharePath("abc", "de"), "/de/classeur/abc");
   });
 
   it("jetons générés uniques et imprévisibles", () => {

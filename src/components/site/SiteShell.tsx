@@ -50,7 +50,7 @@ export const siteViewport: Viewport = {
 
 const themeBootScript = `(function(){try{var raw=localStorage.getItem(${JSON.stringify(PREFERENCES_STORAGE_KEY)});var theme="dark";if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.theme==="light")theme="light";}document.documentElement.setAttribute("data-theme",theme);document.documentElement.style.colorScheme=theme;}catch(e){}})();`;
 
-/** Document HTML de toutes les pages, dans la langue de l'URL (français sans préfixe, autres langues sous /<code>). */
+/** Document HTML de toutes les pages, dans la langue de l'URL (/fr, /en, /de…). */
 export async function SiteShell({ lang, children }: { lang: Locale; children: ReactNode }) {
   const messages = pickBlocks((await getMessages()) as Messages, CLIENT_BLOCKS);
   // Bandeau de suggestion de langue : affiché dans la langue proposée, d'où les textes de toutes les langues.
@@ -73,8 +73,8 @@ export async function SiteShell({ lang, children }: { lang: Locale; children: Re
               </WishlistProvider>
             </CollectionProvider>
           </PreferencesProvider>
+          <ServiceWorkerRegister />
         </IntlClientProvider>
-        <ServiceWorkerRegister />
         <Analytics />
         <SpeedInsights />
       </body>
