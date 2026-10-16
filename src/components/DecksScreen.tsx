@@ -9,6 +9,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { CardImage } from "@/components/CardImage";
 import { colorDotClass } from "@/components/CardTile";
 import { useCollection } from "@/components/CollectionProvider";
+import { useCachedJson } from "@/components/data-cache";
 import { sendJson, useRequestErrors } from "@/components/send-json";
 import { RulesText } from "@/components/RulesText";
 import {
@@ -43,45 +44,28 @@ import type { CardDTO, CatalogDTO, DeckDTO, PrintingDTO } from "@/lib/types";
 
 type DeckPatch = { name?: string; cards?: DeckEntry[] };
 
-/** Decks du compte : chargés une fois, mis à jour localement après chaque action. */
+const DECKS_URL = "/api/decks";
+const NO_DECKS: DeckDTO[] = [];
+
+/** Decks du compte : copie en cache affichée aussitôt, rechargés à chaque visite, mis à jour localement. */
 function useDecks() {
   const { user } = useCollection();
-  const userId = user?.id ?? null;
-  const [decks, setDecks] = useState<DeckDTO[]>([]);
-  const [loadedFor, setLoadedFor] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const errors = useRequestErrors();
+  const { data, error, mutate } = useCachedJson<{ decks: DeckDTO[] }>(user ? DECKS_URL : null);
+  const decks = data?.decks ?? NO_DECKS;
+  const setDecks = useCallback(
+    (update: (current: DeckDTO[]) => DeckDTO[]) => mutate((current) => ({ decks: update(current?.decks ?? []) })),
+    [mutate],
+  );
 
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await fetch("/api/decks", { cache: "no-store" });
-        if (!response.ok) throw new Error("decks");
-        const body = (await response.json()) as { decks: DeckDTO[] };
-        if (!cancelled) {
-          setDecks(body.decks);
-          setError(null);
-        }
-      } catch {
-        if (!cancelled) setError(errors("loadDecks"));
-      } finally {
-        if (!cancelled) setLoadedFor(userId);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, errors]);
-
-  const replace = useCallback((deck: DeckDTO) => {
-    setDecks((current) => [deck, ...current.filter((entry) => entry.id !== deck.id)]);
-  }, []);
+  const replace = useCallback(
+    (deck: DeckDTO) => setDecks((current) => [deck, ...current.filter((entry) => entry.id !== deck.id)]),
+    [setDecks],
+  );
 
   return {
-    ready: Boolean(userId) && loadedFor === userId,
-    error,
+    ready: Boolean(user) && data !== undefined,
+    error: error ? errors("loadDecks") : null,
     decks,
     replace,
     create: async (input: { name?: string; cards?: DeckEntry[] }) => {

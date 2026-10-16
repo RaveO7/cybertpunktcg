@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatRoute } from "@/i18n/match";
 import { useRouter } from "@/i18n/navigation";
 import { TOP_CUT_SETTINGS, type TopCutSetting } from "@/lib/tournament/top-cut";
 import type { TournamentView } from "@/lib/tournament/view";
@@ -17,6 +18,7 @@ function publicationKey(t: Draft) {
 
 export function SettingsTab({ view, run }: { view: TournamentView; run: RunCommand }) {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const [draft, setDraft] = useState<Draft>(view.tournament);
   const [invite, setInvite] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export function SettingsTab({ view, run }: { view: TournamentView; run: RunComma
 
   async function createInvite() {
     const outcome = await run({ type: "inviteOrganizer" });
-    if (outcome.status === "ok" && outcome.result.data?.token) setInvite(absoluteUrl(`/tournois/invitation/${outcome.result.data.token as string}`));
+    if (outcome.status === "ok" && outcome.result.data?.token) setInvite(absoluteUrl(formatRoute("/tournois/invitation/[token]", locale, { token: outcome.result.data.token as string })));
   }
 
   async function remove() {

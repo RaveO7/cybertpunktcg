@@ -71,13 +71,16 @@ export function RoundTab({ view, run, now, pending }: { view: TournamentView; ru
   }
 
   if (status === "termine" || status === "annule") {
+    // Sans top cut, le vainqueur est le premier du classement suisse (comme sur la page publique).
+    const championId =
+      view.tournament.championId ?? (status === "termine" && !view.finalStandings ? (view.standings[0]?.playerId ?? null) : null);
     return (
       <div className="flex flex-col gap-3">
         {status === "annule" ? <p className={`${panelClass} text-sm text-danger`}>{t("tournaments.statuses.annule")}</p> : null}
-        {view.tournament.championId ? (
+        {championId ? (
           <p className={`${panelClass} text-lg`}>
             <span className="hud-label mr-2">{t("tournaments.champion")}</span>
-            <span className="text-yellow">{name(view.tournament.championId)}</span>
+            <span className="text-yellow">{name(championId)}</span>
           </p>
         ) : null}
         <FinalStandings view={view} />

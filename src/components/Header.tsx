@@ -2,7 +2,7 @@
 
 import NextLink from "next/link";
 import { usePathname as useBrowserPathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
@@ -14,7 +14,10 @@ import { isInHorizontalScroller } from "@/lib/swipe";
 
 type NavIcon = "dashboard" | "cards" | "investment" | "decks" | "tournaments" | "wishlist" | "howto" | "binder";
 
-type NavLink = { href: Href; label: string; match: string; icon: NavIcon; badge?: number };
+// fullPrefetch : page rendue à la demande (tableau de bord), préchargée en entier pour s'ouvrir sans attente.
+// Les autres écrans sont statiques, donc déjà préchargés en entier ; les forcer ferait invalider le cache
+// du routeur à chaque changement de paramètres d'URL (« ?deck=… »).
+type NavLink = { href: Href; label: string; match: string; icon: NavIcon; badge?: number; fullPrefetch?: boolean };
 
 function useNavigation() {
   // Chemin interne (segments français, sans préfixe de langue) : repère l'onglet actif dans toutes les langues.
@@ -43,7 +46,7 @@ function useNavigation() {
         },
       ]
     : [
-        { href: "/", label: t("nav.dashboard"), match: "/", icon: "dashboard" },
+        { href: "/", label: t("nav.dashboard"), match: "/", icon: "dashboard", fullPrefetch: true },
         { href: cardsHref, label: t("nav.cards"), match: "/cards", icon: "cards" },
         { href: "/investissement", label: t("nav.investment"), match: "/investissement", icon: "investment" },
         { href: "/decks", label: t("nav.decks"), match: "/decks", icon: "decks" },
@@ -54,39 +57,170 @@ function useNavigation() {
         { href: "/comment-jouer", label: t("nav.howto"), match: "/comment-jouer", icon: "howto" },
       ];
 
-  return { pathname, user, t, isSharedView, shareToken, showNav, links };
+  // Onglet cliqué : affiché comme actif dès le clic, sans attendre l'arrivée de la page. Oublié dès que
+  // le chemin change (la page est arrivée).
+  const [pending, setPending] = useState<{ from: string; match: string } | null>(null);
+  const activeMatch = pending && pending.from === pathname ? pending.match : pathname;
+  const markPending = (match: string) => setPending({ from: pathname, match });
+
+  return { pathname, user, t, isSharedView, shareToken, showNav, links, activeMatch, markPending };
 }
 
 /**
  * Choix de la langue parmi toutes celles du site. Sur une page publique, mène à la même page dans la
- * langue choisie ; ailleurs, change la langue de l'application. Le `<select>` natif, transparent,
- * couvre le bouton affiché : clavier, lecteurs d'écran et sélecteur du téléphone fonctionnent tels quels.
+ * langue choisie ; ailleurs, change la langue de l'application. Liste déroulante maison (la liste native
+ * ne se laisse pas habiller) : flèches, Début/Fin, Entrée, Échap et première lettre au clavier.
  */
 function LanguageSelect() {
   const t = useTranslations();
-  const current = useLocale();
+  const current = useLocale() as Locale;
+  const listId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const currentIndex = Math.max(0, LANGUAGES.findIndex((entry) => entry.code === current));
+
+  const openList = (index = currentIndex) => {
+    setActive(index);
+    setOpen(true);
+  };
+  const close = (refocus: boolean) => {
+    setOpen(false);
+    if (refocus) buttonRef.current?.focus();
+  };
+  const choose = (index: number) => {
+    const next = LANGUAGES[index].code;
+    close(true);
+    if (next !== current) chooseLocale(next);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    listRef.current?.focus();
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (open) listRef.current?.children[active]?.scrollIntoView({ block: "nearest" });
+  }, [open, active]);
+
+  const onListKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
+    const last = LANGUAGES.length - 1;
+    switch (event.key) {
+      case "ArrowDown":
+        setActive((index) => Math.min(last, index + 1));
+        break;
+      case "ArrowUp":
+        setActive((index) => Math.max(0, index - 1));
+        break;
+      case "Home":
+        setActive(0);
+        break;
+      case "End":
+        setActive(last);
+        break;
+      case "Enter":
+      case " ":
+        choose(active);
+        break;
+      case "Escape":
+        close(true);
+        break;
+      case "Tab":
+        setOpen(false);
+        return;
+      default: {
+        if (event.key.length !== 1) return;
+        const letter = event.key.toLowerCase();
+        const order = [...LANGUAGES.keys()].map((offset) => (active + 1 + offset) % LANGUAGES.length);
+        const match = order.find((index) => LANGUAGES[index].label.toLowerCase().startsWith(letter));
+        if (match === undefined) return;
+        setActive(match);
+      }
+    }
+    event.preventDefault();
+  };
+
   return (
-    <label className="relative inline-flex h-9 shrink-0 items-center gap-1 border border-line px-2 font-mono text-xs uppercase text-muted focus-within:border-cyan hover:border-cyan hover:text-foreground">
-      <span aria-hidden="true">{current}</span>
-      <svg viewBox="0 0 10 6" className="h-1.5 w-2.5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M1 1l4 4 4-4" />
-      </svg>
-      <select
-        value={current}
-        onChange={(event) => {
-          const next = event.target.value as Locale;
-          if (next !== current) chooseLocale(next);
+    <div ref={rootRef} className="relative shrink-0">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => (open ? close(false) : openList())}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            openList();
+          }
         }}
-        aria-label={t("nav.language")}
-        className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        aria-label={`${t("nav.language")} : ${LANGUAGES[currentIndex].label}`}
+        className="cp-select"
       >
-        {LANGUAGES.map((entry) => (
-          <option key={entry.code} value={entry.code} lang={entry.code}>
-            {entry.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <svg viewBox="0 0 16 16" className="size-3.5 text-cyan" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.25">
+          <circle cx="8" cy="8" r="6.25" />
+          <path d="M1.75 8h12.5M8 1.75c-3.2 3.4-3.2 9.1 0 12.5M8 1.75c3.2 3.4 3.2 9.1 0 12.5" />
+        </svg>
+        <span aria-hidden="true">{current}</span>
+        <svg
+          viewBox="0 0 10 6"
+          className={`h-1.5 w-2.5 text-muted transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M1 1l4 4 4-4" />
+        </svg>
+      </button>
+      {open ? (
+        <ul
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          tabIndex={-1}
+          aria-label={t("nav.language")}
+          aria-activedescendant={`${listId}-${active}`}
+          onKeyDown={onListKeyDown}
+          className="absolute right-0 top-full z-40 mt-1.5 max-h-80 min-w-44 overflow-y-auto border border-cyan/60 bg-[var(--hud-panel)] py-1 shadow-[0_12px_32px_rgba(0,0,0,0.45)] outline-none"
+        >
+          {LANGUAGES.map((entry, index) => {
+            const selected = entry.code === current;
+            return (
+              <li
+                key={entry.code}
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={selected}
+                lang={entry.code}
+                onPointerMove={() => setActive(index)}
+                onClick={() => choose(index)}
+                className={`relative flex cursor-pointer items-center gap-3 py-2 pl-4 pr-3 text-sm ${
+                  index === active ? "bg-panel-2 text-foreground" : selected ? "text-yellow" : "text-muted"
+                }`}
+              >
+                {index === active ? <span className="absolute inset-y-1 left-0 w-0.5 bg-cyan" aria-hidden="true" /> : null}
+                <span className={`w-6 font-mono text-xs uppercase ${selected ? "text-yellow" : "text-cyan"}`}>{entry.code}</span>
+                <span className={`flex-1 ${selected ? "text-yellow" : ""}`}>{entry.label}</span>
+                {selected ? (
+                  <svg viewBox="0 0 12 10" className="h-2.5 w-3 text-yellow" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.75">
+                    <path d="M1 5l3.5 3.5L11 1" />
+                  </svg>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 
@@ -96,9 +230,9 @@ function VisitorNav() {
   // Retour après connexion : l'URL affichée, dans sa langue.
   const next = useBrowserPathname();
   return (
-    <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-1 gap-y-1">
+    <div className="ml-auto flex shrink-0 items-center gap-2">
       <LanguageSelect />
-      <Link href={{ pathname: "/connexion", query: { next } }} rel="nofollow" className="inline-flex h-9 items-center border border-cyan px-3 text-sm text-cyan hover:bg-cyan/10">
+      <Link href={{ pathname: "/connexion", query: { next } }} rel="nofollow" className="cp-btn cp-btn-sm">
         {t("nav.login")}
       </Link>
     </div>
@@ -106,7 +240,7 @@ function VisitorNav() {
 }
 
 export function Header() {
-  const { pathname, user, t, isSharedView, shareToken, showNav, links } = useNavigation();
+  const { pathname, user, t, isSharedView, shareToken, showNav, links, activeMatch, markPending } = useNavigation();
   // Visiteur sur une page publique (aussi au rendu serveur, pour les liens internes) : navigation publique.
   const showVisitorNav = !user && !isSharedView && !showNav && pathname !== "/connexion";
   // Page d'où l'on a ouvert les paramètres (URL complète, dans sa langue) : un second clic y ramène.
@@ -129,11 +263,13 @@ export function Header() {
           // Sur téléphone, la navigation passe dans la barre d'onglets du bas (BottomNav).
           <nav className="ml-auto hidden border border-line sm:flex" aria-label={t("common.sections")}>
             {links.map((link) => {
-              const active = pathname === link.match;
+              const active = activeMatch === link.match;
               return (
                 <Link
                   key={link.match}
                   href={link.href}
+                  prefetch={link.fullPrefetch}
+                  onClick={() => markPending(link.match)}
                   className={`px-3 py-2 text-sm ${active ? "bg-yellow text-black" : "text-muted hover:text-foreground"}`}
                   aria-current={active ? "page" : undefined}
                 >
@@ -179,7 +315,7 @@ export function Header() {
 
 /** Barre d'onglets façon application, affichée uniquement sur téléphone. */
 export function BottomNav() {
-  const { pathname, t, showNav, links } = useNavigation();
+  const { pathname, t, showNav, links, activeMatch, markPending } = useNavigation();
   const keyboardOpen = useKeyboardOpen();
   const visible = showNav && !keyboardOpen;
   usePageSwipe(links, pathname, visible);
@@ -201,11 +337,13 @@ export function BottomNav() {
     >
       <ul className="flex h-[3.75rem]">
         {links.map((link) => {
-          const active = pathname === link.match;
+          const active = activeMatch === link.match;
           return (
             <li key={link.match} className="min-w-0 flex-1">
               <Link
                 href={link.href}
+                prefetch={link.fullPrefetch}
+                onClick={() => markPending(link.match)}
                 className={`relative flex h-full flex-col items-center justify-center gap-1 px-1 ${
                   active ? "text-yellow" : "text-muted active:text-foreground"
                 }`}

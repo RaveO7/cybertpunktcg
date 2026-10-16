@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
   experimental: {
     // Mise en page racine sous [locale] : la 404 des URL sans route est rendue à part.
     globalNotFound: true,
+    // Navigation instantanée : une page dynamique déjà vue est réaffichée depuis le cache du routeur
+    // pendant 30 s (les pages statiques et les liens préchargés en entier : 5 min). Ce cache est vidé à
+    // chaque connexion/déconnexion (router.refresh dans CollectionProvider).
+    staleTimes: {
+      dynamic: 30,
+      static: 300,
+    },
   },
   async redirects() {
     // Anciennes pages publiques de liste : tout est désormais sur l'accueil (les fiches détail restent),

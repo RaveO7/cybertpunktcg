@@ -55,8 +55,9 @@ const WHEEL_COOLDOWN_MS = 450;
  * Modules de l'accueil, en carrousel : un menu à gauche (comme les menus du jeu vidéo) et, pour le
  * module affiché, une mini-interface qui montre ce que l'on fait dans l'application.
  * - Molette au-dessus du carrousel : passe au module suivant ou précédent, un module par geste ; au
- *   premier ou au dernier module, la molette fait de nouveau défiler la page. Ailleurs, la page défile
- *   normalement.
+ *   premier ou au dernier module, un module invisible de plus est franchi (même seuil, même délai,
+ *   l'affichage ne change pas) avant que la molette fasse de nouveau défiler la page. Ailleurs, la page
+ *   défile normalement.
  * - Le carrousel avance aussi seul, s'arrête au survol, au focus et hors écran, et ne défile pas seul
  *   si l'utilisateur préfère réduire les animations.
  * Les visuels sont des exemples (sauf les cartes, réelles) et sont signalés comme tels.
@@ -126,17 +127,26 @@ export function FeatureShowcase({
     if (!root) return;
     let accumulated = 0;
     let lockedUntil = 0;
+    // Position de la molette, de -1 à count : -1 et count sont des modules invisibles qui retiennent
+    // la page un pas de plus, comme un changement de module.
+    let slot = currentRef.current;
+    const resetSlot = () => {
+      slot = currentRef.current;
+    };
     const onWheel = (event: WheelEvent) => {
       if (event.ctrlKey || Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
       const direction = Math.sign(event.deltaY);
-      const index = currentRef.current;
-      // Au bout du carrousel, la molette fait défiler la page.
-      if ((direction > 0 && index >= count - 1) || (direction < 0 && index <= 0)) {
+      const now = performance.now();
+      // Module changé autrement (minuteur, clic), ou retour depuis un module invisible : repart du
+      // module affiché.
+      if (Math.min(Math.max(slot, 0), count - 1) !== currentRef.current || (slot >= count && direction < 0) || (slot <= -1 && direction > 0)) resetSlot();
+      const index = slot;
+      // Au-delà du module invisible, la molette fait défiler la page.
+      if ((direction > 0 && index >= count) || (direction < 0 && index <= -1)) {
         accumulated = 0;
         return;
       }
       event.preventDefault();
-      const now = performance.now();
       if (now < lockedUntil) return;
       // Pavé tactile : petits deltas cumulés ; molette : un cran suffit.
       const delta = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? event.deltaY : event.deltaY * 40;
@@ -144,12 +154,17 @@ export function FeatureShowcase({
       if (Math.abs(accumulated) < WHEEL_STEP) return;
       accumulated = 0;
       lockedUntil = now + WHEEL_COOLDOWN_MS;
+      slot = index + direction;
       elapsed.current = 0;
       setProgress(0);
-      setCurrent(index + direction);
+      setCurrent(Math.min(Math.max(slot, 0), count - 1));
     };
     root.addEventListener("wheel", onWheel, { passive: false });
-    return () => root.removeEventListener("wheel", onWheel);
+    root.addEventListener("pointerleave", resetSlot);
+    return () => {
+      root.removeEventListener("wheel", onWheel);
+      root.removeEventListener("pointerleave", resetSlot);
+    };
   }, [count]);
 
   function select(index: number, focus = false) {
@@ -163,11 +178,11 @@ export function FeatureShowcase({
   return (
     <div className="relative">
       <div>
-        <div className="mx-auto w-full max-w-[1100px] px-3 py-16 sm:px-4">
+        <div className="mx-auto w-full max-w-[1100px] px-3 py-20 sm:px-4">
           {header}
           <div
             ref={rootRef}
-            className="grid gap-6 lg:grid-cols-[minmax(0,300px)_1fr] lg:gap-10"
+            className="grid gap-8 lg:grid-cols-[minmax(0,300px)_1fr] lg:gap-12"
             aria-roledescription="carousel"
             onPointerEnter={(event) => event.pointerType === "mouse" && setHovered(true)}
             onPointerLeave={() => setHovered(false)}

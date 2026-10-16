@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useCachedJson } from "@/components/data-cache";
 import { Link, useRouter } from "@/i18n/navigation";
 import { intlLocale } from "@/i18n/config";
 import { normalizeTournamentCode } from "@/lib/tournament/code";
@@ -23,30 +24,16 @@ export function TournamentsScreen() {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
-  const [rows, setRows] = useState<TournamentRow[] | null>(null);
-  const [loadError, setLoadError] = useState(false);
+  // Dernière liste connue affichée aussitôt, rechargée à chaque visite.
+  const list = useCachedJson<{ tournaments: TournamentRow[] }>("/api/tournaments");
+  const rows = list.data?.tournaments ?? null;
+  const loadError = list.error;
   const [name, setName] = useState("");
   const [format, setFormat] = useState<"boutique" | "competitif">("boutique");
   const [matchType, setMatchType] = useState<"bo1" | "bo3">("bo3");
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/tournaments", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("list");
-        const body = (await response.json()) as { tournaments: TournamentRow[] };
-        if (!cancelled) setRows(body.tournaments);
-      })
-      .catch(() => {
-        if (!cancelled) setLoadError(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   async function create(event: React.FormEvent) {
     event.preventDefault();

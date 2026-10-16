@@ -130,8 +130,8 @@ export async function Landing({ locale }: { locale: Locale }) {
       <section className="relative overflow-hidden border-b border-line">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-60" style={gridStyle} />
         <EdgeBar side="left" color="var(--cp-red)" />
-        <div className="relative mx-auto grid w-full max-w-[1100px] items-center gap-10 px-3 py-12 sm:px-4 md:grid-cols-[1.05fr_1fr] md:py-20">
-          <div className="flex flex-col gap-6">
+        <div className="relative mx-auto grid w-full max-w-[1100px] items-center gap-12 px-3 py-16 sm:px-4 md:grid-cols-[1.05fr_1fr] md:py-24">
+          <div className="flex flex-col gap-8">
             <div {...intro(0, "left")} className="self-start">
               <p className="cp-index cp-glitch" data-text={`// ${t("eyebrow")}`} data-glitch="hero-eyebrow">
                 {`// ${t("eyebrow")}`}
@@ -173,7 +173,7 @@ export async function Landing({ locale }: { locale: Locale }) {
         {/* Titre passé au carrousel : il reste épinglé avec lui pendant le défilement des modules. */}
         <FeatureShowcase
           header={
-            <div className="mb-8 flex flex-col gap-2">
+            <div className="mb-12 flex flex-col gap-3">
               <p {...reveal(0, "left")} className="cp-index">
                 {"01 // "}
                 {t("modulesLabel")}
@@ -210,9 +210,9 @@ export async function Landing({ locale }: { locale: Locale }) {
         />
       </section>
 
-      <section id={sections.tournaments} className="relative scroll-mt-2 border-t border-line pt-16">
+      <section id={sections.tournaments} className="relative scroll-mt-2 border-t border-line py-20">
         <EdgeBar side="left" color="var(--cp-red)" />
-        <div className="mx-auto mb-8 flex w-full max-w-[1100px] flex-col gap-2 px-3 sm:px-4">
+        <div className="mx-auto mb-12 flex w-full max-w-[1100px] flex-col gap-3 px-3 sm:px-4">
           <p {...reveal(0, "left")} className="cp-index">
             {"02 // "}
             {t("findLabel")}
@@ -252,14 +252,14 @@ export async function Landing({ locale }: { locale: Locale }) {
 
       {/* Bandeau final jaune plein, la couleur d'interface du jeu vidéo ; il se déploie de gauche à droite. */}
       <section {...reveal(0, "wipe")} className="cp-on-yellow bg-yellow text-black">
-        <div className="mx-auto flex w-full max-w-[1100px] flex-col items-start gap-5 px-3 py-14 sm:px-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col gap-2">
+        <div className="mx-auto flex w-full max-w-[1100px] flex-col items-start gap-4 px-3 py-7 sm:px-4 md:flex-row md:items-center md:justify-between md:gap-8">
+          <div className="flex min-w-0 flex-col gap-2">
             <h2 className="cp-glitch self-start font-display text-3xl font-bold uppercase tracking-wide" data-text={t("finalTitle")} data-glitch="final-title">
               {t("finalTitle")}
             </h2>
             <p className="max-w-xl text-sm">{t("finalBody")}</p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 md:shrink-0 md:flex-nowrap">
             <LandingActions register={t("register")} login={t("login")} openApp={t("openApp")} />
           </div>
         </div>

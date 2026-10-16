@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { clearDataCache, prefetchCached } from "@/components/data-cache";
 import { mutationFetch, useRequestErrors } from "@/components/send-json";
 import type { ImportLine } from "@/lib/collection-csv";
 import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
@@ -8,6 +10,37 @@ import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
 export type ImportSummary = { created: number; updated: number; skipped: number };
 
 const LOCAL_USER_KEY = "cptcg-user-id";
+// Indice « session ouverte » : au démarrage, le catalogue se charge alors en même temps que la session.
+const SIGNED_IN_HINT_KEY = "cptcg-signed-in";
+
+function setSignedInHint(signedIn: boolean) {
+  try {
+    if (signedIn) window.localStorage.setItem(SIGNED_IN_HINT_KEY, "1");
+    else window.localStorage.removeItem(SIGNED_IN_HINT_KEY);
+  } catch {
+    // Stockage indisponible (navigation privée…) : chargement en série, comme sans indice.
+  }
+}
+
+function hasSignedInHint() {
+  try {
+    return window.localStorage.getItem(SIGNED_IN_HINT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Données des écrans les plus visités, chargées au repos pour qu'ils s'ouvrent sans attente. */
+const WARM_URLS = ["/api/decks", "/api/tournaments", "/api/share", "/api/investment/history?"];
+
+function whenIdle(task: () => void) {
+  if ("requestIdleCallback" in window) {
+    const id = window.requestIdleCallback(task, { timeout: 3000 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const id = setTimeout(task, 1500);
+  return () => clearTimeout(id);
+}
 
 type SaveInput = {
   printingId: string;
@@ -87,12 +120,13 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     });
   }
 
-  async function loadBoundData() {
+  async function loadBoundData(catalogRequest?: Promise<Response>) {
     const [catalogResponse, collectionResponse] = await Promise.all([
-      fetch("/api/catalog", { cache: "no-store" }),
+      catalogRequest ?? fetch("/api/catalog", { cache: "no-store" }),
       fetch("/api/collection", { cache: "no-store" }),
     ]);
     if (catalogResponse.status === 401 || collectionResponse.status === 401) {
+      setSignedInHint(false);
       setUser(null);
       setCatalog(null);
       setItems([]);
@@ -121,17 +155,42 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     const result = await readJson<{ user?: AuthUser; error?: string }>(response);
     if (!response.ok || !result.user) throw new Error(result.error || errors("loginFailed"));
     window.localStorage.removeItem(LOCAL_USER_KEY);
+    setSignedInHint(true);
     setUser(result.user);
     await loadBoundData();
   }
 
+  // Changement de compte (connexion, déconnexion, session expirée) : les données en cache et les pages
+  // gardées par le routeur appartenaient à la session précédente.
+  const router = useRouter();
+  const sessionKey = ready ? (user?.id ?? "") : null;
+  const previousSession = useRef<string | null>(null);
+  useEffect(() => {
+    if (sessionKey === null) return;
+    if (previousSession.current !== null && previousSession.current !== sessionKey) {
+      clearDataCache();
+      router.refresh();
+    }
+    previousSession.current = sessionKey;
+  }, [router, sessionKey]);
+
+  // Compte connecté : données des autres écrans préchargées au repos.
+  useEffect(() => {
+    if (!sessionKey) return;
+    return whenIdle(() => WARM_URLS.forEach(prefetchCached));
+  }, [sessionKey]);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      // Compte probablement connecté : le catalogue (public) part en même temps que la session.
+      const catalogRequest = hasSignedInHint() ? fetch("/api/catalog", { cache: "no-store" }) : undefined;
+      catalogRequest?.catch(() => undefined);
       try {
         const sessionResponse = await fetch("/api/auth/session", { cache: "no-store" });
         if (cancelled) return;
         if (sessionResponse.status === 401) {
+          setSignedInHint(false);
           setUser(null);
           setReady(true);
           return;
@@ -139,8 +198,9 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         const session = await readJson<{ user?: AuthUser }>(sessionResponse);
         if (!sessionResponse.ok || !session.user) throw new Error("session");
         window.localStorage.removeItem(LOCAL_USER_KEY);
+        setSignedInHint(true);
         setUser(session.user);
-        await loadBoundData();
+        await loadBoundData(catalogRequest);
       } catch {
         if (!cancelled) {
           setError(errors("loadCollection"));
@@ -195,6 +255,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       logout: async () => {
         const response = await fetch("/api/auth/logout", { method: "POST" });
         if (!response.ok) throw new Error(errors("logoutFailed"));
+        setSignedInHint(false);
         setUser(null);
         setItems([]);
         setCatalog(null);

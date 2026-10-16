@@ -9,6 +9,7 @@ import type { MessageKey, Translator } from "@/i18n/translator";
 import { PriceChart, type ChartPoint } from "@/components/PriceChart";
 import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
 import { useCollection } from "@/components/CollectionProvider";
+import { fetchCached, readCached } from "@/components/data-cache";
 import {
   applyInvestmentPeriod,
   buildInvestmentLines,
@@ -223,20 +224,25 @@ export function InvestmentScreen() {
     if (!ready || !catalog) return;
     let cancelled = false;
     async function loadHistory() {
-      setChartStatus("loading");
-      try {
-        const params = new URLSearchParams();
-        if (setFilter && setFilter !== "all") params.set("set", setFilter);
-        if (language) params.set("language", language);
-        const response = await fetch(`/api/investment/history?${params}`, { cache: "no-store" });
-        if (!response.ok) throw new Error("history");
-        const body = (await response.json()) as { points?: { day: string; marketTotal: number }[] };
-        if (cancelled) return;
+      const params = new URLSearchParams();
+      if (setFilter && setFilter !== "all") params.set("set", setFilter);
+      if (language) params.set("language", language);
+      const url = `/api/investment/history?${params}`;
+      type HistoryBody = { points?: { day: string; marketTotal: number }[] };
+      const show = (body: HistoryBody) => {
         setChartPoints((body.points ?? []).map((point) => ({ day: point.day, value: point.marketTotal })));
         setChartStatus("ready");
         setChartLoaded(true);
+      };
+      // Dernière courbe connue pour ces filtres affichée aussitôt, puis mise à jour.
+      const cached = readCached<HistoryBody>(url);
+      if (cached) show(cached);
+      else setChartStatus("loading");
+      try {
+        const body = await fetchCached<HistoryBody>(url);
+        if (!cancelled) show(body);
       } catch {
-        if (!cancelled) {
+        if (!cancelled && !cached) {
           setChartPoints([]);
           setChartStatus("error");
         }
@@ -252,14 +258,15 @@ export function InvestmentScreen() {
     if (!ready || !catalog || chartStatus !== "ready") return;
     let cancelled = false;
     async function loadReference() {
+      const url = `/api/investment/history?${new URLSearchParams({ referenceDay: periodStart ?? "" })}`;
+      type ReferenceBody = { prices?: Record<string, number> };
+      const cached = readCached<ReferenceBody>(url);
+      if (cached) setReference({ day: periodStart, prices: cached.prices ?? {} });
       try {
-        const params = new URLSearchParams({ referenceDay: periodStart ?? "" });
-        const response = await fetch(`/api/investment/history?${params}`, { cache: "no-store" });
-        if (!response.ok) throw new Error("reference");
-        const body = (await response.json()) as { prices?: Record<string, number> };
+        const body = await fetchCached<ReferenceBody>(url);
         if (!cancelled) setReference({ day: periodStart, prices: body.prices ?? {} });
       } catch {
-        if (!cancelled) setReference(null);
+        if (!cancelled && !cached) setReference(null);
       }
     }
     void loadReference();

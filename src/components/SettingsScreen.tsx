@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import type { Translator } from "@/i18n/translator";
 import { useCollection } from "@/components/CollectionProvider";
+import { useCachedJson } from "@/components/data-cache";
 import { OfflineSection } from "@/components/OfflineSection";
 import { usePreferences } from "@/components/PreferencesProvider";
 import {
@@ -26,6 +27,9 @@ type ShareState = {
   url?: string;
   createdAt?: string;
 };
+
+const SHARE_URL = "/api/share";
+const NO_SHARE: ShareState = { active: false };
 
 function sortOptions(t: Translator): { value: SortKey; label: string }[] {
   return [
@@ -54,7 +58,10 @@ export function SettingsScreen() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportNote, setExportNote] = useState<string | null>(null);
-  const [share, setShare] = useState<ShareState | null>(null);
+  // État du partage : copie en cache affichée aussitôt, rechargée à chaque visite.
+  const shareQuery = useCachedJson<ShareState>(user ? SHARE_URL : null);
+  const share = shareQuery.data ?? (shareQuery.error ? NO_SHARE : null);
+  const setShare = (next: ShareState) => shareQuery.mutate(() => next);
   const [shareBusy, setShareBusy] = useState(false);
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
@@ -76,24 +83,6 @@ export function SettingsScreen() {
     { value: "open", label: t("settings.filtersPanelOpen") },
     { value: "closed", label: t("settings.filtersPanelClosed") },
   ];
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadShare() {
-      try {
-        const response = await fetch("/api/share", { cache: "no-store" });
-        if (!response.ok || cancelled) return;
-        const body = (await response.json()) as ShareState;
-        if (!cancelled) setShare(body);
-      } catch {
-        if (!cancelled) setShare({ active: false });
-      }
-    }
-    if (user) void loadShare();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
 
   async function onLogout() {
     setPending(true);

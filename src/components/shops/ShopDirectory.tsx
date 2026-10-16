@@ -95,7 +95,7 @@ export function ShopDirectory({
   const page = result?.page ?? 1;
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-6">
+    <div className={`mx-auto flex w-full min-w-0 max-w-[1100px] flex-col px-3 sm:px-4 ${embedded ? "gap-6 py-8 sm:gap-8 sm:py-10" : "gap-4 py-4 sm:gap-5 sm:py-6"}`}>
       {/* Intégré à l'accueil : l'onglet tient lieu de titre. */}
       {embedded ? null : (
         <div className="flex flex-col gap-1">

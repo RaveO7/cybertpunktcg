@@ -191,28 +191,39 @@ select option:disabled {
   color: var(--selection-fg);
 }
 
-.scrollbar-hud {
-  scrollbar-width: thin;
+/* Barres de défilement HUD partout : page et zones défilantes. */
+html {
   scrollbar-color: var(--yellow) var(--scrollbar-track);
 }
 
-.scrollbar-hud::-webkit-scrollbar {
+/* En couche `base` pour qu'un utilitaire Tailwind (ex. [scrollbar-width:none]) puisse la surcharger. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+  }
+}
+
+::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.scrollbar-hud::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: var(--panel);
   border-left: 1px solid var(--line);
 }
 
-.scrollbar-hud::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
   background: var(--yellow);
   border: 2px solid var(--scrollbar-thumb-border);
 }
 
-.scrollbar-hud::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
   background: var(--cyan);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--panel);
 }
 
 /* Official Cyberpunk TCG card-database HUD (cyberpunktcg.com/cards) */
@@ -1186,7 +1197,8 @@ select option:disabled {
 }
 
 /* ───────────── Accueil : éventail de Légendes (HeroCardFan) ───────────── */
-.hero-fan-card {
+.hero-fan-card,
+.hero-fan-hit {
   position: absolute;
   left: 50%;
   top: 6%;
@@ -1194,9 +1206,27 @@ select option:disabled {
   aspect-ratio: 2.5 / 3.5;
   transform-origin: 50% 115%;
   transform: translate(calc(-50% + var(--fan-x, 0%)), var(--fan-y, 0%)) rotate(var(--fan-r, 0deg)) scale(var(--fan-s, 1));
+}
+
+/* La carte visible ne reçoit pas le pointeur : sa zone de survol (.hero-fan-hit) le fait pour elle. */
+.hero-fan-card {
+  pointer-events: none;
   transition:
     transform 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.15),
     opacity 0.3s ease;
+}
+
+/* Zone de survol invisible et fixe : la place de la carte au repos. */
+.hero-fan-hit a {
+  position: absolute;
+  inset: 0;
+}
+
+/* La carte active est soulevée et agrandie (cf. --fan-y et --fan-s de la carte) : sa zone monte d'autant. */
+.hero-fan-hit[data-active] a::before {
+  content: "";
+  position: absolute;
+  inset: -20% 0 100% 0;
 }
 
 /* Donne : chaque carte vole depuis le bas et se pose avec un léger rebond (délai par carte en JS). */
@@ -1339,6 +1369,53 @@ select option:disabled {
 }
 .cp-btn-ghost:hover {
   background: rgba(245, 230, 66, 0.12);
+}
+
+/* Variante compacte, pour la barre du haut. */
+.cp-btn-sm {
+  --cut: 8px;
+  gap: 0.45rem;
+  height: 2.25rem;
+  padding: 0 0.95rem;
+  font-size: 0.75rem;
+}
+.cp-btn-sm::after {
+  width: 0.4rem;
+  height: 0.4rem;
+}
+
+/* Bouton de liste (choix de la langue) : même coin coupé que .cp-btn, liseré qui suit la diagonale. */
+.cp-select {
+  --cut: 8px;
+  --edge: var(--line);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 2.25rem;
+  padding: 0 0.8rem 0 0.7rem;
+  color: var(--foreground);
+  font-family: var(--font-chakra-petch), sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background:
+    linear-gradient(to top left, transparent calc(50% - 0.75px), var(--edge) calc(50% - 0.75px), var(--edge) calc(50% + 0.75px), transparent calc(50% + 0.75px))
+      right bottom / var(--cut) var(--cut) no-repeat,
+    var(--hud-panel);
+  box-shadow: inset 0 0 0 1px var(--edge);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+/* Le clip-path rognerait un contour : le focus passe par le liseré, épaissi. */
+.cp-select:hover,
+.cp-select:focus-visible,
+.cp-select[aria-expanded="true"] {
+  --edge: var(--cyan);
+}
+.cp-select:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--edge);
 }
 
 /*
