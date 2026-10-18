@@ -67,7 +67,7 @@ test("import CSV de la collection", async ({ page, account }) => {
   await snap(page, "g-import-fait");
 });
 
-test("deck : import et export d'une liste texte", async ({ page, account }) => {
+test("deck : import et export d'une liste texte", async ({ page, account, isMobile }) => {
   await ready(page, "/fr/decks");
   await page.getByRole("button", { name: "Nouveau deck" }).click();
   await page.waitForURL(/deck=/);
@@ -75,14 +75,21 @@ test("deck : import et export d'une liste texte", async ({ page, account }) => {
   await page.getByRole("button", { name: "Importer" }).click();
   await page.getByRole("region", { name: "Importer une liste" }).getByRole("textbox").fill("1 V: Streetkid\n3 Japantown Jonin");
   await press(page, page.getByRole("button", { name: /^Remplacer le deck/ }));
-  await expect(page.getByRole("tab", { name: "Deck 4" })).toBeVisible();
+  // Téléphone : l'onglet « Deck N » compte les cartes ; ordinateur (lg:) : le deck est une colonne, sans onglets.
+  const expectImported = async () => {
+    if (isMobile) return expect(page.getByRole("tab", { name: "Deck 4" })).toBeVisible();
+    const deck = page.getByRole("complementary", { name: "Deck" });
+    await expect(deck.getByRole("heading", { name: "Legends · 1/3" })).toBeVisible();
+    await expect(deck.getByRole("button", { name: "Voir Japantown Jonin" })).toBeVisible();
+  };
+  await expectImported();
   // Enregistré côté serveur (envoi différé de 600 ms) : le compte est toujours de 4 cartes après rechargement.
   await expect
     .poll(() => prisma.deckCard.aggregate({ where: { deck: { userId: account.id } }, _sum: { quantity: true } }).then((r) => r._sum.quantity), { timeout: 15_000 })
     .toBe(4);
   await page.reload();
   await settle(page);
-  await expect(page.getByRole("tab", { name: "Deck 4" })).toBeVisible();
+  await expectImported();
   void account;
   await page.getByRole("button", { name: "Exporter" }).click();
   await expect(page.getByText(/Japantown Jonin/).first()).toBeVisible();
@@ -90,7 +97,7 @@ test("deck : import et export d'une liste texte", async ({ page, account }) => {
   await snap(page, "g-deck-export");
 });
 
-test("portefeuille avec des prix réels", async ({ page, account }) => {
+test("portefeuille avec des prix réels", async ({ page, account, isMobile }) => {
   // Impression qui a un historique de prix dans le catalogue local (lecture seule).
   const snapshot = await prisma.priceSnapshot.findFirst({ orderBy: { id: "desc" }, select: { printingId: true } }).catch(() => null);
   const printingId = (snapshot as { printingId?: string } | null)?.printingId;
@@ -106,11 +113,14 @@ test("portefeuille avec des prix réels", async ({ page, account }) => {
   }
   await expectNoHorizontalScroll(page);
   await snap(page, "g-portefeuille");
-  await page.getByRole("button", { name: "Filtres" }).click();
+  // Téléphone : filtres repliés derrière un bouton ; ordinateur (md:) : toujours affichés.
+  if (isMobile) await page.getByRole("button", { name: "Filtres", exact: true }).click();
+  else await expect(page.getByRole("button", { name: "Filtres", exact: true })).toBeHidden();
+  await expect(page.getByRole("combobox", { name: "Extension" })).toBeVisible();
   await snap(page, "g-portefeuille-filtres");
 });
 
-test("préférences : tri par défaut et filtres du catalogue", async ({ page, account }) => {
+test("préférences : tri par défaut et filtres du catalogue", async ({ page, account, isMobile }) => {
   void account;
   await ready(page, "/fr/parametres");
   await page.getByRole("combobox", { name: "Tri par défaut" }).selectOption({ label: "Nom Z–A" });
@@ -119,7 +129,17 @@ test("préférences : tri par défaut et filtres du catalogue", async ({ page, a
   const first = await page.locator("main article").first().innerText();
   console.log("première carte en Z–A :", first.split("\n")[0]);
   expect(first.split("\n")[0].localeCompare("M")).toBeGreaterThan(0);
-  await page.getByRole("button", { name: "Filtres" }).click();
+  const filtersTitle = page.getByRole("heading", { name: "Filtres", level: 2 });
+  if (isMobile) {
+    // Téléphone : les filtres sont dans un tiroir ouvert par le bouton.
+    await page.getByRole("button", { name: "Filtres", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Filtres" })).toBeVisible();
+  } else {
+    // Ordinateur : les filtres sont une colonne déjà affichée, sans bouton ni tiroir.
+    await expect(page.getByRole("button", { name: "Filtres", exact: true })).toBeHidden();
+    await expect(page.getByRole("dialog", { name: "Filtres" })).toHaveCount(0);
+  }
+  await expect(filtersTitle).toBeVisible();
   await snap(page, "g-filtres");
   await expectNoHorizontalScroll(page);
   await ready(page, "/fr/parametres");

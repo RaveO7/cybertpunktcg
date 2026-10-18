@@ -75,5 +75,13 @@
   "logout": "Cerrar sesión",
   "loggingOut": "Cerrando sesión…",
   "logoutFailed": "No se pudo cerrar sesión.",
+  "deleteTitle": "Eliminar la cuenta",
+  "deleteHint": "Elimina definitivamente tu cuenta y todos sus datos: colección, lista de deseos, mazos, enlaces para compartir y tiendas. Exporta tu colección antes si quieres conservarla.",
+  "deleteStart": "Eliminar mi cuenta",
+  "deleteConfirmText": "Esta acción es irreversible: ¿eliminar definitivamente la cuenta {email} y todos sus datos?",
+  "deleteConfirm": "Eliminar definitivamente",
+  "deleteCancel": "Cancelar",
+  "deleting": "Eliminando…",
+  "deleteFailed": "No se ha podido eliminar la cuenta.",
   "loading": "Cargando…"
 }

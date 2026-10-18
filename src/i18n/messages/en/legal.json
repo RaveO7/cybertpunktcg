@@ -129,8 +129,21 @@
         "blocks": ["Account data is kept as long as the account exists. Anti-abuse counters linked to IP addresses are purged automatically once they expire."]
       },
       {
+        "title": "Delete your account",
+        "blocks": [
+          "You can delete your {site} account yourself, from the website or the Android app:",
+          {
+            "list": [
+              "sign in, then open <strong>Settings</strong>;",
+              "at the bottom of the page, choose <strong>Delete my account</strong>, then confirm."
+            ]
+          },
+          "Deletion is immediate and permanent: account, collection, purchase prices and notes, wishlist, decks, share links and shops are erased. Your player name may remain in the standings of tournaments already played, with no link to an account. If you can no longer sign in, request deletion via <contact></contact>."
+        ]
+      },
+      {
         "title": "Your rights",
-        "blocks": ["You can access, correct or export your data (CSV export of the collection), or request the deletion of your account and all associated data by writing via <contact></contact>. You can also lodge a complaint with the CNIL, the French data protection authority (<cnil>cnil.fr</cnil>)."]
+        "blocks": ["You can access, correct or export your data (CSV export of the collection), and delete your account with all associated data (see above). You can also lodge a complaint with the CNIL, the French data protection authority (<cnil>cnil.fr</cnil>)."]
       }
     ]
   }

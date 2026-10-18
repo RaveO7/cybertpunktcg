@@ -8,7 +8,8 @@ const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;
 
 /**
- * Tests e2e sur téléphones émulés (iPhone en WebKit, Pixel en Chromium). Le serveur de test a son propre
+ * Tests e2e sur téléphones émulés (iPhone en WebKit, Pixel en Chromium) et sur ordinateurs émulés
+ * (Chrome et Safari desktop : souris, sans écran tactile, mise en page large). Le serveur de test a son propre
  * port et son propre dossier de build : il tourne à côté du `next dev` habituel (port 3000).
  */
 export default defineConfig({
@@ -36,6 +37,8 @@ export default defineConfig({
   projects: [
     { name: "iphone", use: { ...devices["iPhone 15"] } },
     { name: "pixel", use: { ...devices["Pixel 7"] } },
+    { name: "desktop-chrome", use: { ...devices["Desktop Chrome"] } },
+    { name: "desktop-safari", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
     command: `npx next dev --port ${PORT}`,

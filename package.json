@@ -26,6 +26,8 @@
     "db:export-postgres": "tsx scripts/export-local-to-postgres.ts",
     "db:sync-prod": "tsx scripts/sync-local-to-prod.ts",
     "test:e2e": "playwright test",
+    "test:e2e:desktop": "playwright test --project=desktop-chrome --project=desktop-safari",
+    "test:e2e:mobile": "playwright test --project=iphone --project=pixel",
     "test:e2e:install": "playwright install chromium webkit"
   },
   "dependencies": {

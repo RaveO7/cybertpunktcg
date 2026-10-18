@@ -64,6 +64,7 @@ type CollectionContextValue = {
   login: (email: string, password: string) => Promise<void>;
   register: (input: { email: string; password: string; displayName: string }) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   saveLine: (input: SaveInput) => Promise<void>;
   saveBatch: (input: {
     conditionCode: string;
@@ -266,6 +267,23 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       logout: async () => {
         const response = await fetch("/api/auth/logout", { method: "POST" });
         if (!response.ok) throw new Error(errors("logoutFailed"));
+        endSession();
+        setError(null);
+      },
+      deleteAccount: async () => {
+        const response = await mutationFetch(
+          "/api/auth/account",
+          { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: true }) },
+          errors,
+        );
+        if (response.status === 401) {
+          endSession();
+          throw new Error(errors("sessionExpired"));
+        }
+        if (!response.ok) {
+          const result = await readJson<{ error?: string }>(response).catch(() => ({ error: undefined }));
+          throw new Error(result.error || errors("deleteAccountFailed"));
+        }
         endSession();
         setError(null);
       },

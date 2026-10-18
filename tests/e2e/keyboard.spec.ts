@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { expect, settle, test } from "./fixtures";
 
 // Champ texte focalisé (clavier ouvert, barre du bas masquée) puis tap direct sur le bouton d'envoi.
-test("tap sur Créer juste après avoir saisi le nom du tournoi", async ({ page, account }) => {
+test("tap sur Créer juste après avoir saisi le nom du tournoi", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "clavier virtuel et tap : téléphone seulement");
   await page.goto("/fr/tournois");
   await settle(page);
   await expect(page.getByText("Chargement…")).toHaveCount(0);

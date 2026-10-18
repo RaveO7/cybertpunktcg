@@ -18,6 +18,7 @@
     "loginFailed": "Sign-in failed.",
     "logoutFailed": "Sign-out failed.",
     "loadCollection": "Could not load the collection.",
-    "loadDecks": "Could not load the decks."
+    "loadDecks": "Could not load the decks.",
+    "deleteAccountFailed": "Could not delete the account."
   }
 }

@@ -170,6 +170,14 @@ export async function revokeSession(request: Request) {
   await prisma.session.deleteMany({ where: { tokenHash: hashToken(token) } });
 }
 
+/**
+ * Suppression définitive d'un compte : sessions, identités OAuth, collection, souhaits, decks, partage,
+ * boutiques et rôles d'organisateur partent en cascade ; les inscriptions aux tournois restent, sans compte.
+ */
+export async function deleteAccount(userId: string) {
+  await prisma.user.deleteMany({ where: { id: userId } });
+}
+
 export async function registerAccount(input: {
   email: string;
   password: string;

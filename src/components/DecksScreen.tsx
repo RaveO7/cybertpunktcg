@@ -2,7 +2,8 @@
 
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -144,6 +145,69 @@ const buttonClass =
   "inline-flex h-10 items-center justify-center gap-1.5 border border-line px-3 text-sm text-muted transition hover:border-cyan hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70 disabled:opacity-50";
 const primaryClass =
   "inline-flex h-10 items-center justify-center bg-yellow px-4 text-sm font-semibold text-black hover:brightness-110 disabled:opacity-50";
+
+/** Pop-up de confirmation avant de supprimer un deck. */
+function DeleteDeckDialog({
+  name,
+  pending,
+  onConfirm,
+  onCancel,
+}: {
+  name: string;
+  pending?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const t = useTranslations();
+  const titleId = useId();
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  // Focus sur « Annuler » à l'ouverture, retour à l'élément d'origine à la fermeture.
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    cancelRef.current?.focus();
+    return () => previous?.focus?.();
+  }, []);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onCancel();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[60] grid place-items-center bg-black/80 p-4" onClick={onCancel}>
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="flex w-full max-w-md flex-col gap-4 border border-line bg-panel p-5 shadow-[0_30px_90px_rgba(0,0,0,0.6)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h2 id={titleId} className="text-lg font-bold text-yellow">
+          {t("decks.deleteTitle")}
+        </h2>
+        <p className="text-sm text-muted">{t("decks.deleteMessage", { name })}</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button ref={cancelRef} type="button" className={buttonClass} onClick={onCancel}>
+            {t("decks.cancel")}
+          </button>
+          <button
+            type="button"
+            className={`${buttonClass} border-danger text-danger hover:border-danger hover:text-danger`}
+            disabled={pending}
+            onClick={onConfirm}
+          >
+            {t("decks.confirmDelete")}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 /* ------------------------------------------------------------------ Liste des decks */
 
@@ -344,22 +408,20 @@ function DeckSummaryCard({
           <button type="button" className={secondary} disabled={pending} onClick={onDuplicate}>
             {t("decks.duplicate")}
           </button>
+          <button type="button" className={secondary} disabled={pending} onClick={() => setConfirming(true)}>
+            {t("decks.delete")}
+          </button>
           {confirming ? (
-            <button
-              type="button"
-              className={`${secondary} border-danger text-danger hover:border-danger hover:text-danger`}
-              disabled={pending}
-              onClick={onDelete}
-              onBlur={() => setConfirming(false)}
-              autoFocus
-            >
-              {t("decks.confirmDelete")}
-            </button>
-          ) : (
-            <button type="button" className={secondary} disabled={pending} onClick={() => setConfirming(true)}>
-              {t("decks.delete")}
-            </button>
-          )}
+            <DeleteDeckDialog
+              name={deck.name}
+              pending={pending}
+              onConfirm={() => {
+                setConfirming(false);
+                onDelete();
+              }}
+              onCancel={() => setConfirming(false)}
+            />
+          ) : null}
         </div>
       </div>
     </li>
@@ -689,21 +751,19 @@ function DeckEditor({
             >
               {t("decks.export")}
             </button>
+            <button type="button" className={buttonClass} onClick={() => setConfirmDelete(true)}>
+              {t("decks.delete")}
+            </button>
             {confirmDelete ? (
-              <button
-                type="button"
-                className={`${buttonClass} border-danger text-danger hover:border-danger hover:text-danger`}
-                onClick={() => void remove()}
-                onBlur={() => setConfirmDelete(false)}
-                autoFocus
-              >
-                {t("decks.confirmDelete")}
-              </button>
-            ) : (
-              <button type="button" className={buttonClass} onClick={() => setConfirmDelete(true)}>
-                {t("decks.delete")}
-              </button>
-            )}
+              <DeleteDeckDialog
+                name={name}
+                onConfirm={() => {
+                  setConfirmDelete(false);
+                  void remove();
+                }}
+                onCancel={() => setConfirmDelete(false)}
+              />
+            ) : null}
           </span>
         </div>
         <label className="flex max-w-2xl flex-col gap-1.5">

@@ -129,8 +129,21 @@
         "blocks": ["Kontodaten werden aufbewahrt, solange das Konto besteht. Missbrauchszähler, die mit der IP-Adresse verknüpft sind, werden nach Ablauf automatisch gelöscht."]
       },
       {
+        "title": "Dein Konto löschen",
+        "blocks": [
+          "Du kannst dein {site}-Konto selbst löschen, auf der Website wie in der Android-App:",
+          {
+            "list": [
+              "melde dich an und öffne <strong>Einstellungen</strong>;",
+              "wähle unten auf der Seite <strong>Mein Konto löschen</strong> und bestätige."
+            ]
+          },
+          "Die Löschung erfolgt sofort und endgültig: Konto, Sammlung, Kaufpreise und Notizen, Wunschliste, Decks, Freigabelinks und Läden werden gelöscht. Dein Spielername kann in den Ranglisten bereits gespielter Turniere bleiben, ohne Verbindung zu einem Konto. Wenn du dich nicht mehr anmelden kannst, beantrage die Löschung über <contact></contact>."
+        ]
+      },
+      {
         "title": "Deine Rechte",
-        "blocks": ["Du kannst auf deine Daten zugreifen, sie berichtigen, exportieren (CSV-Export der Sammlung) oder die Löschung deines Kontos und aller zugehörigen Daten verlangen, indem du über <contact></contact> schreibst. Du kannst außerdem eine Beschwerde bei der französischen Datenschutzbehörde CNIL einreichen (<cnil>cnil.fr</cnil>)."]
+        "blocks": ["Du kannst auf deine Daten zugreifen, sie berichtigen, exportieren (CSV-Export der Sammlung) und dein Konto mit allen zugehörigen Daten löschen (siehe oben). Du kannst außerdem eine Beschwerde bei der französischen Datenschutzbehörde CNIL einreichen (<cnil>cnil.fr</cnil>)."]
       }
     ]
   }

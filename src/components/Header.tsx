@@ -251,11 +251,7 @@ export function Header() {
     "inline-flex size-10 shrink-0 items-center justify-center border border-line text-muted hover:border-cyan hover:text-foreground";
 
   return (
-    <>
-    {/* Téléphone connecté : pas d'en-tête, la barre du bas porte la navigation et les paramètres.
-        Seule la marge de l'encoche reste. */}
-    {showNav ? <div className="pt-safe shrink-0 bg-background sm:hidden" aria-hidden="true" /> : null}
-    <header className={`pt-safe px-safe relative z-30 shrink-0 border-b border-line bg-background ${showNav ? "max-sm:hidden" : ""}`}>
+    <header className="pt-safe px-safe relative z-30 shrink-0 border-b border-line bg-background">
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-2">
         <Link
           href={isSharedView && shareToken ? { pathname: "/classeur/[token]", params: { token: shareToken } } : "/"}
@@ -314,7 +310,6 @@ export function Header() {
         ) : null}
       </div>
     </header>
-    </>
   );
 }
 

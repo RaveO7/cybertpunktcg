@@ -75,5 +75,13 @@
   "logout": "Abmelden",
   "loggingOut": "Abmelden…",
   "logoutFailed": "Abmelden nicht möglich.",
+  "deleteTitle": "Konto löschen",
+  "deleteHint": "Löscht dein Konto und alle zugehörigen Daten endgültig: Sammlung, Wunschliste, Decks, Freigabelinks und Läden. Exportiere deine Sammlung vorher, wenn du sie behalten möchtest.",
+  "deleteStart": "Mein Konto löschen",
+  "deleteConfirmText": "Das kann nicht rückgängig gemacht werden: Konto {email} und alle zugehörigen Daten endgültig löschen?",
+  "deleteConfirm": "Endgültig löschen",
+  "deleteCancel": "Abbrechen",
+  "deleting": "Wird gelöscht…",
+  "deleteFailed": "Löschen nicht möglich.",
   "loading": "Laden…"
 }

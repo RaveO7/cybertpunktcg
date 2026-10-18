@@ -75,5 +75,13 @@
   "logout": "Se déconnecter",
   "loggingOut": "Déconnexion…",
   "logoutFailed": "Déconnexion impossible.",
+  "deleteTitle": "Supprimer le compte",
+  "deleteHint": "Supprime définitivement votre compte et toutes ses données : collection, liste de souhaits, decks, liens de partage et boutiques. Exportez votre collection avant si vous voulez la garder.",
+  "deleteStart": "Supprimer mon compte",
+  "deleteConfirmText": "Action irréversible : supprimer définitivement le compte {email} et toutes ses données ?",
+  "deleteConfirm": "Supprimer définitivement",
+  "deleteCancel": "Annuler",
+  "deleting": "Suppression…",
+  "deleteFailed": "Suppression impossible.",
   "loading": "Chargement…"
 }

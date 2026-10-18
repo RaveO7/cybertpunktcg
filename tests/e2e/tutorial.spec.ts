@@ -1,17 +1,18 @@
+import type { Page } from "@playwright/test";
 import { expect, snap, test } from "./fixtures";
 
 const touch = { pointerType: "touch", isPrimary: true, pointerId: 1, bubbles: true };
 
-test("appui long sur une carte de la main : carte soulevée entière à l'écran", async ({ page, account }) => {
-  void account;
+async function openTutorialHand(page: Page) {
   await page.goto("/fr/comment-jouer");
   await page.getByRole("button", { name: "Parcours débutant" }).click();
   const card = page.locator('button[data-coach-id^="coach-hand-"]').first();
   await expect(card).toBeVisible();
+  return card;
+}
 
-  // Pas d'API d'appui long dans Playwright : doigt posé 500 ms (seuil de l'app : 400 ms).
-  await card.dispatchEvent("pointerdown", touch);
-  await page.waitForTimeout(500);
+/** La carte soulevée est affichée, entière à l'écran, et aucun ancêtre ne la rogne. */
+async function expectLiftedCardUnclipped(page: Page) {
   const lift = page.locator(".dm-lift");
   await expect(lift).toBeVisible();
   await lift.evaluate((el) => Promise.all(el.getAnimations().map((animation) => animation.finished)));
@@ -33,8 +34,33 @@ test("appui long sur une carte de la main : carte soulevée entière à l'écran
     return null;
   });
   expect(clippedBy).toBeNull();
+  return lift;
+}
+
+test("appui long sur une carte de la main : carte soulevée entière à l'écran", async ({ page, account, isMobile }) => {
+  void account;
+  test.skip(!isMobile, "appui long au doigt : téléphone seulement");
+  const card = await openTutorialHand(page);
+
+  // Pas d'API d'appui long dans Playwright : doigt posé 500 ms (seuil de l'app : 400 ms).
+  await card.dispatchEvent("pointerdown", touch);
+  await page.waitForTimeout(500);
+  const lift = await expectLiftedCardUnclipped(page);
   await snap(page, "tutoriel-carte-soulevee");
 
   await card.dispatchEvent("pointerup", touch);
+  await expect(lift).toHaveCount(0);
+});
+
+test("survol à la souris d'une carte de la main : carte soulevée entière à l'écran", async ({ page, account, isMobile }) => {
+  void account;
+  test.skip(isMobile, "survol à la souris : ordinateur seulement");
+  const card = await openTutorialHand(page);
+
+  await card.hover();
+  const lift = await expectLiftedCardUnclipped(page);
+  await snap(page, "tutoriel-carte-survolee");
+
+  await page.mouse.move(0, 0);
   await expect(lift).toHaveCount(0);
 });

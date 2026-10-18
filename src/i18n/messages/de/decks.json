@@ -13,6 +13,8 @@
   "copyName": "{name} (Kopie)",
   "delete": "Löschen",
   "confirmDelete": "Löschen bestätigen",
+  "deleteTitle": "Deck löschen?",
+  "deleteMessage": "„{name}“ wird endgültig gelöscht.",
   "saving": "Speichern…",
   "saved": "Gespeichert",
   "saveFailed": "Speichern fehlgeschlagen.",

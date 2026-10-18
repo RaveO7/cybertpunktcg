@@ -75,5 +75,13 @@
   "logout": "Sign out",
   "loggingOut": "Signing out…",
   "logoutFailed": "Unable to sign out.",
+  "deleteTitle": "Delete account",
+  "deleteHint": "Permanently deletes your account and all its data: collection, wishlist, decks, share links and shops. Export your collection first if you want to keep it.",
+  "deleteStart": "Delete my account",
+  "deleteConfirmText": "This cannot be undone: permanently delete the account {email} and all its data?",
+  "deleteConfirm": "Delete permanently",
+  "deleteCancel": "Cancel",
+  "deleting": "Deleting…",
+  "deleteFailed": "Could not delete the account.",
   "loading": "Loading…"
 }

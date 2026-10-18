@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { expect, settle, snap, test } from "./fixtures";
 
 /**
- * Balayage de toutes les pages sur téléphone : erreurs JS, requêtes en échec, débordement horizontal.
+ * Balayage de toutes les pages sur téléphone et sur ordinateur : erreurs JS, requêtes en échec, débordement horizontal.
  * Les pages dynamiques sans données (boutique, tournoi, classeur) sont visitées avec un identifiant
  * inconnu : elles doivent afficher un « introuvable » propre, pas planter.
  */
@@ -13,7 +13,7 @@ type Problem = string;
 function watch(page: Page) {
   const problems: Problem[] = [];
   page.on("pageerror", (err) => {
-    // WebKit signale ainsi les préchargements annulés par la navigation suivante (déjà gérés par l'app).
+    // WebKit (Safari iOS et desktop) signale ainsi les préchargements annulés par la navigation suivante (déjà gérés par l'app).
     if (/due to access control checks/.test(err.message)) return;
     problems.push(`pageerror: ${err.message}`);
   });

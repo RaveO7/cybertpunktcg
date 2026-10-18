@@ -4,7 +4,7 @@ import { requireRunId, runClientIp } from "./setup/paths";
 import { expect, expectNoHorizontalScroll, settle, snap, test } from "./fixtures";
 
 /**
- * Parcours fonctionnels sur téléphone. Tout ce qui est créé appartient au compte de test (supprimé
+ * Parcours fonctionnels sur téléphone et sur ordinateur. Tout ce qui est créé appartient au compte de test (supprimé
  * avec lui) ; les tournois et boutiques créés sont supprimés explicitement en fin de test.
  */
 
@@ -21,7 +21,7 @@ async function ready(page: Page, path: string) {
   await expect(page.getByText("Chargement…")).toHaveCount(0, { timeout: 30_000 });
 }
 
-test("collection : ajout depuis la fiche, puis par sélection multiple", async ({ page, account }) => {
+test("collection : ajout depuis la fiche, puis par sélection multiple", async ({ page, account, isMobile }) => {
   await ready(page, "/fr/cards");
   await page.getByRole("button", { name: /^Adam Smasher/ }).click();
   const dialog = page.getByRole("dialog");
@@ -29,7 +29,8 @@ test("collection : ajout depuis la fiche, puis par sélection multiple", async (
   await expectNoHorizontalScroll(page);
   await dialog.getByRole("button", { name: "Augmenter la quantité" }).click();
   await expect(dialog.getByRole("textbox", { name: "Quantité" })).toHaveValue("2");
-  await dialog.getByRole("button", { name: "Ajouter à ma collection" }).click();
+  // Ordinateur : formulaire compact de la fiche, bouton icône « Ajouter ».
+  await dialog.getByRole("button", { name: isMobile ? "Ajouter à ma collection" : "Ajouter", exact: true }).click();
   await expect.poll(() => prisma.collectionItem.aggregate({ where: { userId: account.id }, _sum: { quantity: true } }).then((r) => r._sum.quantity)).toBe(2);
   await snap(page, "f-collection-fiche");
   await dialog.getByRole("button", { name: "Carte suivante" }).click();
@@ -57,7 +58,7 @@ test("collection : ajout depuis la fiche, puis par sélection multiple", async (
   await snap(page, "f-investissement");
 });
 
-test("decks : créer, renommer, ajouter des cartes, supprimer", async ({ page, account }) => {
+test("decks : créer, renommer, ajouter des cartes, supprimer", async ({ page, account, isMobile }) => {
   page.on("dialog", (d) => void d.accept());
   await ready(page, "/fr/decks");
   await page.getByRole("button", { name: "Nouveau deck" }).click();
@@ -68,9 +69,11 @@ test("decks : créer, renommer, ajouter des cartes, supprimer", async ({ page, a
   await press(page, page.getByRole("button", { name: "Ajouter un exemplaire de V: Streetkid" }));
   // Les légendes sont limitées à un exemplaire : on ajoute les deux premiers boutons encore actifs.
   for (let i = 0; i < 2; i++) await page.locator("button[aria-label^='Ajouter un exemplaire de']:not([disabled])").first().click();
-  await expect(page.getByRole("tab", { name: /^Deck [1-9]/ })).toBeVisible();
+  // Téléphone : onglet « Deck N » à ouvrir ; ordinateur (lg:) : le deck est une colonne toujours affichée.
+  if (isMobile) await expect(page.getByRole("tab", { name: /^Deck [1-9]/ })).toBeVisible();
+  else await expect(page.getByRole("complementary", { name: "Deck" }).getByRole("heading", { name: "Legends · 3/3" })).toBeVisible();
   await expect.poll(async () => (await prisma.deck.findFirst({ where: { userId: account.id } }))?.name, { timeout: 10_000 }).toBe("Deck E2E");
-  await page.getByRole("tab", { name: /^Deck/ }).click();
+  if (isMobile) await page.getByRole("tab", { name: /^Deck/ }).click();
   await expectNoHorizontalScroll(page);
   await snap(page, "f-deck-contenu");
   await page.getByRole("button", { name: "Exporter" }).click();
@@ -216,13 +219,16 @@ test("boutique : création avec adresse", async ({ page, account }) => {
   }
 });
 
-test("barre de navigation du bas : chaque onglet ouvre son écran", async ({ page, account }) => {
+test("barre de navigation : chaque onglet ouvre son écran", async ({ page, account, isMobile }) => {
   void account;
   await ready(page, "/fr");
   // Le badge « N » de next dev (absent en production) recouvre le premier onglet.
   await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
   const nav = page.getByRole("navigation", { name: "Sections" });
   await expect(nav).toBeVisible();
+  // Téléphone : barre d'onglets du bas ; ordinateur : barre de l'en-tête (l'autre est masquée).
+  const inHeader = await nav.evaluate((el) => el.closest("header") !== null);
+  expect(inHeader, isMobile ? "barre du bas attendue" : "barre de l'en-tête attendue").toBe(!isMobile);
   const links = await nav.getByRole("link").all();
   expect(links.length).toBeGreaterThanOrEqual(6);
   for (let i = 0; i < links.length; i++) {

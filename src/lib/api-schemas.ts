@@ -195,6 +195,9 @@ export const shareSchema =z.object({ rotate: z.boolean().optional() }).nullable(
 
 export const shareTokenSchema = z.string().min(16).max(128);
 
+/** Suppression du compte : confirmation explicite exigée dans le corps, jamais sur un simple appel. */
+export const deleteAccountSchema = z.object({ confirm: z.literal(true) });
+
 // --- Tournois -------------------------------------------------------------------------------
 
 const intIn = (min: number, max: number, message: string) =>

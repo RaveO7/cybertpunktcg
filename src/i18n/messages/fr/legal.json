@@ -129,8 +129,21 @@
         "blocks": ["Les données de compte sont conservées tant que le compte existe. Les compteurs anti-abus liés à l’adresse IP sont purgés automatiquement après expiration."]
       },
       {
+        "title": "Supprimer votre compte",
+        "blocks": [
+          "Vous pouvez supprimer votre compte {site} vous-même, depuis le site comme depuis l’application Android :",
+          {
+            "list": [
+              "connectez-vous, puis ouvrez <strong>Paramètres</strong> ;",
+              "en bas de la page, choisissez <strong>Supprimer mon compte</strong>, puis confirmez."
+            ]
+          },
+          "La suppression est immédiate et définitive : compte, collection, prix d’achat et notes, liste de souhaits, decks, liens de partage et boutiques sont effacés. Votre nom de joueur peut rester dans les classements des tournois déjà joués, sans lien avec un compte. Si vous ne pouvez plus vous connecter, demandez la suppression via <contact></contact>."
+        ]
+      },
+      {
         "title": "Vos droits",
-        "blocks": ["Vous pouvez accéder à vos données, les rectifier, les exporter (export CSV de la collection) ou demander la suppression de votre compte et de toutes les données associées en écrivant via <contact></contact>. Vous pouvez aussi introduire une réclamation auprès de la CNIL (<cnil>cnil.fr</cnil>)."]
+        "blocks": ["Vous pouvez accéder à vos données, les rectifier, les exporter (export CSV de la collection) et supprimer votre compte avec toutes les données associées (voir ci-dessus). Vous pouvez aussi introduire une réclamation auprès de la CNIL (<cnil>cnil.fr</cnil>)."]
       }
     ]
   }

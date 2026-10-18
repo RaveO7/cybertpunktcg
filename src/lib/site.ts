@@ -25,7 +25,7 @@ export const SITE = {
     url: "https://vercel.com",
   },
   /** Date de dernière mise à jour des pages légales (AAAA-MM-JJ, affichée au format de la langue). */
-  legalUpdatedAt: "2026-10-11",
+  legalUpdatedAt: "2026-10-18",
 };
 
 /**

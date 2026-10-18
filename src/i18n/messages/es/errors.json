@@ -18,6 +18,7 @@
     "loginFailed": "No se pudo iniciar sesión.",
     "logoutFailed": "No se pudo cerrar la sesión.",
     "loadCollection": "No se pudo cargar la colección.",
-    "loadDecks": "No se pudieron cargar los mazos."
+    "loadDecks": "No se pudieron cargar los mazos.",
+    "deleteAccountFailed": "No se ha podido eliminar la cuenta."
   }
 }

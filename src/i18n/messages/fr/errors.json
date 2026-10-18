@@ -18,6 +18,7 @@
     "loginFailed": "Connexion impossible.",
     "logoutFailed": "Déconnexion impossible.",
     "loadCollection": "Impossible de charger la collection.",
-    "loadDecks": "Impossible de charger les decks."
+    "loadDecks": "Impossible de charger les decks.",
+    "deleteAccountFailed": "Suppression du compte impossible."
   }
 }

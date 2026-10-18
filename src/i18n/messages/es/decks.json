@@ -13,6 +13,8 @@
   "copyName": "{name} (copia)",
   "delete": "Eliminar",
   "confirmDelete": "Confirmar eliminación",
+  "deleteTitle": "¿Eliminar el deck?",
+  "deleteMessage": "«{name}» se eliminará definitivamente.",
   "saving": "Guardando…",
   "saved": "Guardado",
   "saveFailed": "Error al guardar.",

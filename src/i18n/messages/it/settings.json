@@ -75,5 +75,13 @@
   "logout": "Esci",
   "loggingOut": "Uscita…",
   "logoutFailed": "Impossibile uscire.",
+  "deleteTitle": "Elimina account",
+  "deleteHint": "Elimina definitivamente il tuo account e tutti i suoi dati: collezione, lista dei desideri, mazzi, link di condivisione e negozi. Esporta prima la collezione se vuoi conservarla.",
+  "deleteStart": "Elimina il mio account",
+  "deleteConfirmText": "Operazione irreversibile: eliminare definitivamente l’account {email} e tutti i suoi dati?",
+  "deleteConfirm": "Elimina definitivamente",
+  "deleteCancel": "Annulla",
+  "deleting": "Eliminazione…",
+  "deleteFailed": "Impossibile eliminare l’account.",
   "loading": "Caricamento…"
 }

@@ -18,6 +18,7 @@
     "loginFailed": "Accesso non riuscito.",
     "logoutFailed": "Disconnessione non riuscita.",
     "loadCollection": "Impossibile caricare la collezione.",
-    "loadDecks": "Impossibile caricare i mazzi."
+    "loadDecks": "Impossibile caricare i mazzi.",
+    "deleteAccountFailed": "Impossibile eliminare l’account."
   }
 }

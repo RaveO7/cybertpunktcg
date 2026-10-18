@@ -129,8 +129,21 @@
         "blocks": ["Los datos de la cuenta se conservan mientras la cuenta exista. Los contadores antiabuso vinculados a la dirección IP se eliminan automáticamente al caducar."]
       },
       {
+        "title": "Eliminar tu cuenta",
+        "blocks": [
+          "Puedes eliminar tu cuenta de {site} tú mismo, desde la web o desde la aplicación Android:",
+          {
+            "list": [
+              "inicia sesión y abre <strong>Ajustes</strong>;",
+              "al final de la página, elige <strong>Eliminar mi cuenta</strong> y confirma."
+            ]
+          },
+          "La eliminación es inmediata y definitiva: se borran la cuenta, la colección, los precios de compra y notas, la lista de deseos, los mazos, los enlaces para compartir y las tiendas. Tu nombre de jugador puede permanecer en las clasificaciones de torneos ya jugados, sin vínculo con ninguna cuenta. Si ya no puedes iniciar sesión, solicita la eliminación a través de <contact></contact>."
+        ]
+      },
+      {
         "title": "Tus derechos",
-        "blocks": ["Puedes acceder a tus datos, rectificarlos, exportarlos (exportación CSV de la colección) o solicitar la eliminación de tu cuenta y de todos los datos asociados escribiendo a través de <contact></contact>. También puedes presentar una reclamación ante la autoridad francesa de protección de datos, la CNIL (<cnil>cnil.fr</cnil>)."]
+        "blocks": ["Puedes acceder a tus datos, rectificarlos, exportarlos (exportación CSV de la colección) y eliminar tu cuenta con todos los datos asociados (ver más arriba). También puedes presentar una reclamación ante la autoridad francesa de protección de datos, la CNIL (<cnil>cnil.fr</cnil>)."]
       }
     ]
   }

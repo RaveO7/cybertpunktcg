@@ -18,6 +18,7 @@
     "loginFailed": "Anmeldung fehlgeschlagen.",
     "logoutFailed": "Abmeldung fehlgeschlagen.",
     "loadCollection": "Die Sammlung konnte nicht geladen werden.",
-    "loadDecks": "Die Decks konnten nicht geladen werden."
+    "loadDecks": "Die Decks konnten nicht geladen werden.",
+    "deleteAccountFailed": "Konto konnte nicht gelöscht werden."
   }
 }
