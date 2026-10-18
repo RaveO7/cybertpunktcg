@@ -12,6 +12,7 @@ import { ServiceWorkerRegister } from "@/components/OfflineSupport";
 import { PreferencesProvider } from "@/components/PreferencesProvider";
 import { WishlistProvider } from "@/components/WishlistProvider";
 import { REVEAL_BOOT_SCRIPT } from "@/components/public-site/reveal-boot";
+import { BOOT_REQUESTS_SCRIPT } from "@/lib/boot-requests";
 import { CLIENT_BLOCKS, pickBlocks } from "@/i18n/client-messages";
 import { IntlClientProvider } from "@/i18n/IntlClientProvider";
 import { type Messages } from "@/i18n/load";
@@ -58,7 +59,7 @@ export async function SiteShell({ lang, children }: { lang: Locale; children: Re
       {/* Mise en page racine (App Router) : <head> est attendu ici, la règle vise le routeur Pages. */}
       {/* eslint-disable-next-line @next/next/no-head-element */}
       <head>
-        <BootScript html={themeBootScript + REVEAL_BOOT_SCRIPT} />
+        <BootScript html={BOOT_REQUESTS_SCRIPT + themeBootScript + REVEAL_BOOT_SCRIPT} />
       </head>
       <body className="h-dvh overflow-clip">
         <IntlClientProvider locale={lang} messages={messages} timeZone={await getTimeZone()}>

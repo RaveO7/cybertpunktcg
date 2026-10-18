@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import { randomBytes, scryptSync } from "node:crypto";
 import { afterAll, beforeAll, describe, it, vi } from "vitest";
-import { authenticate, createSession, refreshSession, registerAccount, SESSION_COOKIE } from "../../src/lib/auth";
+import {
+  authenticate,
+  createSession,
+  refreshSession,
+  registerAccount,
+  SESSION_COOKIE,
+  SESSION_MAX_AGE_SECONDS,
+} from "../../src/lib/auth";
 import { hashPassword, verifyPassword } from "../../src/lib/password";
 import { prisma } from "../../src/lib/prisma";
 
@@ -82,6 +89,11 @@ describe("prolongation de session", () => {
     const user = await registerAccount({ email: `auth-race-${stamp}@example.com`, password, displayName: null });
     createdUserIds.push(user.id);
     const { token } = await createSession(user.id);
+    // Session ouverte il y a plus d'un jour : sa prolongation est due.
+    await prisma.session.updateMany({
+      where: { userId: user.id },
+      data: { expiresAt: new Date(Date.now() + (SESSION_MAX_AGE_SECONDS - 2 * 24 * 60 * 60) * 1000) },
+    });
     const request = new Request("http://localhost/api/auth/session", {
       headers: { cookie: `${SESSION_COOKIE}=${token}` },
     });
@@ -99,5 +111,24 @@ describe("prolongation de session", () => {
       spy.mockRestore();
     }
     assert.equal(await prisma.session.count({ where: { userId: user.id } }), 0);
+  });
+
+  it("prolonge une session ancienne d'un jour, pas une session récente", async () => {
+    const user = await registerAccount({ email: `auth-refresh-${stamp}@example.com`, password, displayName: null });
+    createdUserIds.push(user.id);
+    const { token, expiresAt } = await createSession(user.id);
+    const request = new Request("http://localhost/api/auth/session", {
+      headers: { cookie: `${SESSION_COOKIE}=${token}` },
+    });
+
+    const fresh = await refreshSession(request);
+    assert.equal(fresh?.expiresAt.getTime(), expiresAt.getTime(), "recent session rewritten");
+
+    const old = new Date(Date.now() + (SESSION_MAX_AGE_SECONDS - 2 * 24 * 60 * 60) * 1000);
+    await prisma.session.updateMany({ where: { userId: user.id }, data: { expiresAt: old } });
+    const refreshed = await refreshSession(request);
+    assert.ok(refreshed && refreshed.expiresAt.getTime() > old.getTime(), "old session not extended");
+    const stored = await prisma.session.findFirst({ where: { userId: user.id } });
+    assert.equal(stored?.expiresAt.getTime(), refreshed.expiresAt.getTime());
   });
 });

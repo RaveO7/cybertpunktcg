@@ -5,6 +5,8 @@ import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef,
 import { clearDataCache, prefetchCached } from "@/components/data-cache";
 import { mutationFetch, useRequestErrors } from "@/components/send-json";
 import type { ImportLine } from "@/lib/collection-csv";
+import { type BootRequests, requestCatalog, requestCollection, takeBootRequests } from "@/lib/boot-requests";
+import { readSavedCollection } from "@/lib/offline";
 import { browserStorage, clearSessionUser, readSessionUser, writeSessionUser } from "@/lib/session-hint";
 import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
 
@@ -21,7 +23,8 @@ export type SessionStatus = "unknown" | "signed-in" | "signed-out";
 /** Données des écrans les plus visités, chargées au repos pour qu'ils s'ouvrent sans attente. */
 const WARM_URLS = ["/api/decks", "/api/tournaments", "/api/share", "/api/investment/history?"];
 
-function whenIdle(task: () => void) {
+/** Lance `task` quand le navigateur est au repos ; renvoie de quoi l'annuler. */
+export function whenIdle(task: () => void) {
   if ("requestIdleCallback" in window) {
     const id = window.requestIdleCallback(task, { timeout: 3000 });
     return () => window.cancelIdleCallback(id);
@@ -99,9 +102,16 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const errors = useRequestErrors();
+  // Modifications locales de la collection : une réponse partie avant l'une d'elles est périmée.
+  const edits = useRef(0);
+
+  function editItems(update: (current: CollectionItemDTO[]) => CollectionItemDTO[]) {
+    edits.current += 1;
+    setItems(update);
+  }
 
   function applyResult(result: MutationResult) {
-    setItems((current) => {
+    editItems((current) => {
       let next = current;
       if (result.deletedId) next = next.filter((item) => item.id !== result.deletedId);
       if (result.item) {
@@ -129,24 +139,19 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     setReady(true);
   }
 
-  async function loadBoundData(catalogRequest?: Promise<Response>) {
-    const [catalogResponse, collectionResponse] = await Promise.all([
-      catalogRequest ?? fetch("/api/catalog", { cache: "no-store" }),
-      fetch("/api/collection", { cache: "no-store" }),
-    ]);
-    if (catalogResponse.status === 401 || collectionResponse.status === 401) {
+  async function loadBoundData() {
+    const [freshCatalog, collection] = await Promise.all([requestCatalog(), requestCollection()]);
+    if (collection.status === 401) {
       endSession();
       throw new Error(errors("sessionLost"));
     }
-    if (!catalogResponse.ok || !collectionResponse.ok) {
+    if (!freshCatalog || !collection.body?.items) {
       setError(errors("loadCollection"));
       setReady(true);
       return;
     }
-    const catalogJson = await readJson<CatalogDTO>(catalogResponse);
-    const collectionJson = await readJson<{ items: CollectionItemDTO[] }>(collectionResponse);
-    setCatalog(catalogJson);
-    setItems(collectionJson.items);
+    setCatalog(freshCatalog);
+    setItems(collection.body.items);
     setError(null);
     setReady(true);
   }
@@ -187,36 +192,83 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   // Session mémorisée reprise avant le premier affichage : navigation et cadre du compte tout de suite.
   // Lue après le montage seulement, pour que l'hydratation parte du même état que le rendu serveur.
   const rememberedUser = useRef<AuthUser | null>(null);
+  // Requêtes lancées depuis le <head> (boot-requests) ; appliquées dès ce premier rendu si déjà arrivées.
+  const bootRequests = useRef<BootRequests | null>(null);
+  const bootApplied = useRef(false);
   useLayoutEffect(() => {
     const remembered = readSessionUser(browserStorage());
     rememberedUser.current = remembered;
+    bootRequests.current ??= takeBootRequests();
     if (!remembered) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // Session vérifiée et données déjà là : tableau de bord affiché directement, sans écran intermédiaire.
+    const { collection, catalog: bootCatalog } = bootRequests.current?.done ?? {};
+    if (collection?.status === 200 && collection.body?.user && collection.body.items && bootCatalog) {
+      bootApplied.current = true;
+      rememberSession(collection.body.user);
+      setCatalog(bootCatalog);
+      setItems(collection.body.items);
+      setReady(true);
+      return;
+    }
     setUser(remembered);
     setSession("signed-in");
   }, []);
 
   useEffect(() => {
     let cancelled = false;
+    // Données du serveur arrivées (ou session refusée) : la copie gardée sur l'appareil ne s'affiche plus.
+    let settled = false;
+    let savedShown = false;
     async function load() {
-      // Compte probablement connecté : le catalogue (public) part en même temps que la session.
-      const catalogRequest = rememberedUser.current ? fetch("/api/catalog", { cache: "no-store" }) : undefined;
+      if (bootApplied.current) return;
+      const remembered = rememberedUser.current;
+      // Compte probablement connecté : le catalogue (public) part en même temps que la collection, et la
+      // dernière copie gardée par le service worker s'affiche aussitôt, remplacée dès la réponse du serveur.
+      // Les deux requêtes sont en général déjà parties depuis le <head> (boot-requests).
+      const boot = bootRequests.current;
+      const catalogRequest = boot?.catalog ?? (remembered ? requestCatalog() : undefined);
       catalogRequest?.catch(() => undefined);
+      if (remembered) {
+        void readSavedCollection(remembered.id).then((saved) => {
+          if (!saved || settled || cancelled) return;
+          savedShown = true;
+          setCatalog(saved.catalog);
+          setItems(saved.items);
+          setReady(true);
+        });
+      }
       try {
-        const sessionResponse = await fetch("/api/auth/session", { cache: "no-store" });
+        // Une seule requête vérifie la session et apporte la collection (401 : session absente ou expirée).
+        let editsAtStart = edits.current;
+        let collection = await (boot?.collection ?? requestCollection());
         if (cancelled) return;
-        if (sessionResponse.status === 401) {
+        if (collection.status === 401) {
+          settled = true;
           endSession();
           return;
         }
-        const verified = await readJson<{ user?: AuthUser }>(sessionResponse);
-        if (!sessionResponse.ok || !verified.user) throw new Error("session");
-        rememberSession(verified.user);
-        await loadBoundData(catalogRequest);
+        if (!collection.body?.user || !collection.body.items) throw new Error("collection");
+        rememberSession(collection.body.user);
+        const freshCatalog = await (catalogRequest ?? requestCatalog());
+        if (!freshCatalog) throw new Error("catalog");
+        // Collection modifiée sur la copie gardée pendant le chargement : relue pour inclure ces modifications.
+        if (edits.current !== editsAtStart) {
+          editsAtStart = edits.current;
+          collection = await requestCollection();
+          if (!collection.body?.items) throw new Error("collection");
+        }
+        if (cancelled) return;
+        settled = true;
+        setCatalog(freshCatalog);
+        if (collection.body?.items && edits.current === editsAtStart) setItems(collection.body.items);
+        setError(null);
+        setReady(true);
       } catch {
-        // Erreur réseau ou serveur : le statut de session ne change pas, seul le message d'erreur s'affiche.
+        // Erreur réseau ou serveur : le statut de session ne change pas. La copie gardée reste affichée ;
+        // sans elle, seul le message d'erreur s'affiche.
         if (!cancelled) {
-          setError(errors("loadCollection"));
+          settled = true;
+          if (!savedShown) setError(errors("loadCollection"));
           setReady(true);
         }
       }
@@ -301,7 +353,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
           throw new Error(errors("sessionExpired"));
         }
         if (!response.ok || !result.items) throw new Error(result.error || errors("addFailed"));
-        setItems((current) => {
+        editItems((current) => {
           const incoming = new Map(result.items?.map((item) => [item.id, item]) ?? []);
           return [...current.filter((item) => !incoming.has(item.id)), ...incoming.values()];
         });
@@ -319,7 +371,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
           throw new Error(errors("sessionExpired"));
         }
         if (!response.ok || !result.items) throw new Error(result.error || errors("importFailed"));
-        setItems(result.items);
+        editItems(() => result.items ?? []);
         return { created: result.created, updated: result.updated, skipped: result.skipped };
       },
       patchLine: async (id, input) => {
@@ -328,7 +380,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         const previous = itemsRef.current.find((item) => item.id === id);
         const optimistic = previous && input.conditionCode === undefined;
         if (optimistic) {
-          setItems((current) =>
+          editItems((current) =>
             input.quantity != null && input.quantity <= 0
               ? current.filter((item) => item.id !== id)
               : current.map((item) => (item.id === id ? { ...item, ...input } : item)),
@@ -338,7 +390,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
           await request(`/api/collection/${id}`, { method: "PATCH", body: JSON.stringify(input) });
         } catch (error) {
           if (optimistic) {
-            setItems((current) => [...current.filter((item) => item.id !== id), previous]);
+            editItems((current) => [...current.filter((item) => item.id !== id), previous]);
           }
           throw error;
         }

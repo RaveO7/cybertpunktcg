@@ -29,6 +29,9 @@ import type {
 } from "./types";
 
 const collator = new Intl.Collator("fr", { numeric: true, sensitivity: "base" });
+// Mêmes ordres que localeCompare(…, "fr"[, { numeric: true }]), sans recréer un comparateur à chaque appel.
+const frenchOrder = new Intl.Collator("fr");
+const frenchNumericOrder = new Intl.Collator("fr", { numeric: true });
 
 export function baseCollectorNumber(value: string) {
   return value.replace(/^β/iu, "");
@@ -865,9 +868,9 @@ export function buildInvestmentLines(
   }
   return lines.sort(
     (left, right) =>
-      left.setName.localeCompare(right.setName, "fr") ||
-      left.collectorNumber.localeCompare(right.collectorNumber, "fr", { numeric: true }) ||
-      left.title.localeCompare(right.title, "fr"),
+      frenchOrder.compare(left.setName, right.setName) ||
+      frenchNumericOrder.compare(left.collectorNumber, right.collectorNumber) ||
+      frenchOrder.compare(left.title, right.title),
   );
 }
 

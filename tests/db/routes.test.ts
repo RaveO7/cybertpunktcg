@@ -87,14 +87,27 @@ describe("catalogue", () => {
   });
 
   it("GET /api/catalog : cache CDN public et même contenu que loadCatalog", async () => {
-    const response = await catalogRoute();
+    const response = await catalogRoute(request("/api/catalog", null));
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "public, s-maxage=300, stale-while-revalidate=3600");
+    assert.equal(response.headers.get("content-type"), "application/json");
     assert.equal(response.headers.getSetCookie().length, 0, "une réponse mise en cache ne pose aucun cookie");
     const body = await json<Awaited<ReturnType<typeof loadCatalog>>>(response);
     const direct = await loadCatalog();
     assert.equal(body.printings.length, direct.printings.length);
     assert.equal(body.cards.length, direct.cards.length);
+  });
+
+  it("GET /api/catalog : 304 vide quand l'app a déjà la même version (ETag)", async () => {
+    const first = await catalogRoute(request("/api/catalog", null));
+    const etag = first.headers.get("etag");
+    assert.ok(etag, "ETag absent");
+    const again = await catalogRoute(request("/api/catalog", null, { headers: { "if-none-match": etag } }));
+    assert.equal(again.status, 304);
+    assert.equal(await again.text(), "");
+    assert.equal(again.headers.get("etag"), etag);
+    const stale = await catalogRoute(request("/api/catalog", null, { headers: { "if-none-match": '"ancienne"' } }));
+    assert.equal(stale.status, 200);
   });
 });
 

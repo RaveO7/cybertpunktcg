@@ -461,4 +461,17 @@ describe.sequential("PATCH et DELETE /api/collection/[id]", () => {
     const others = (await json<{ items: Line[] }>(await readRoute(request("/api/collection", {}, otherToken)))).items;
     assert.equal(others.length, 0);
   });
+
+  it("GET apporte le compte de la session et prolonge son cookie ; sans session, 401 et cookie effacé", async () => {
+    const response = await readRoute(request("/api/collection"));
+    assert.equal(response.status, 200);
+    const body = await json<{ user: { id: string; email: string; displayName: string }; items: Line[] }>(response);
+    assert.equal(body.user.id, userId);
+    assert.deepEqual(Object.keys(body.user).sort(), ["displayName", "email", "id"], "aucune donnée privée du compte");
+    assert.ok(response.headers.getSetCookie().some((cookie) => cookie.startsWith(`${SESSION_COOKIE}=${token}`)));
+
+    const refused = await readRoute(request("/api/collection", {}, "jeton-invente"));
+    assert.equal(refused.status, 401);
+    assert.ok(refused.headers.getSetCookie().some((cookie) => cookie.startsWith(`${SESSION_COOKIE}=;`)));
+  });
 });

@@ -31,6 +31,13 @@
 .DS_Store
 *.pem
 
+# vidéos (enregistrements d'écran…) : jamais dans le dépôt
+*.mp4
+*.mov
+*.webm
+*.mkv
+*.avi
+
 # debug
 npm-debug.log*
 yarn-debug.log*

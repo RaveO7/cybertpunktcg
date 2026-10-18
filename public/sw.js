@@ -1,7 +1,9 @@
 // Service worker : mode hors-ligne de la PWA (boutique, tournoi…).
 //
 // - Pages principales et assets Next (/_next/static, hachés donc immuables) : disponibles sans réseau.
-// - Catalogue public : réseau d'abord, copie en cache si le réseau échoue ou traîne.
+//   Navigation preload : la page part au réseau pendant le démarrage du service worker.
+// - Catalogue public : réseau d'abord, copie en cache si le réseau échoue ou traîne. L'app lit aussi
+//   ces copies (et celle de la collection) pour s'afficher aussitôt au démarrage (src/lib/offline.ts).
 // - Données du compte (session, collection, stats…) : idem, cache vidé à la connexion/déconnexion
 //   ou dès que le serveur répond 401.
 // - Images de cartes : cache d'abord (le téléchargement complet se lance depuis Paramètres).
@@ -59,6 +61,9 @@ self.addEventListener("activate", (event) => {
         names.filter((name) => name.startsWith("cptcg-") && !KNOWN_CACHES.includes(name)).map((name) => caches.delete(name)),
       );
       await trimCache(STATIC_CACHE, STATIC_MAX_ENTRIES);
+      // Navigation preload : la page est demandée au réseau pendant que le service worker démarre (lancement
+      // de l'app installée), au lieu d'attendre qu'il soit prêt.
+      await self.registration.navigationPreload?.enable().catch(() => undefined);
       await self.clients.claim();
     })(),
   );
@@ -82,7 +87,11 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     // Une seule copie par page : /cards?set=… réutilise celle de /cards.
-    event.respondWith(networkFirst(request, SHELL_CACHE, { key: url.origin + url.pathname, fallback: offlinePage }));
+    const preload = event.preloadResponse ?? Promise.resolve(undefined);
+    event.waitUntil(preload.catch(() => undefined));
+    event.respondWith(
+      networkFirst(request, SHELL_CACHE, { key: url.origin + url.pathname, fallback: offlinePage, preload }),
+    );
     return;
   }
   if (url.pathname.startsWith("/_next/static/")) {
@@ -118,16 +127,20 @@ async function cacheFirst(request, cacheName) {
 async function networkFirst(request, cacheName, options = {}) {
   const cache = await caches.open(cacheName);
   const key = options.key ?? request;
-  const network = fetch(request).then(async (response) => {
-    // Une réponse redirigée ne peut pas resservir une navigation : on ne la garde pas.
-    if (response.ok && response.type === "basic" && !response.redirected) {
-      await cache.put(key, response.clone()).catch(() => undefined);
-    } else if (response.status === 401 && cacheName === USER_CACHE) {
-      // Session expirée ou révoquée : ne plus servir les données de ce compte.
-      await caches.delete(USER_CACHE);
-    }
-    return response;
-  });
+  // Réponse déjà demandée par le navigateur (navigation preload), sinon requête réseau.
+  const network = (options.preload ?? Promise.resolve(undefined))
+    .catch(() => undefined)
+    .then((preloaded) => preloaded ?? fetch(request))
+    .then(async (response) => {
+      // Une réponse redirigée ne peut pas resservir une navigation : on ne la garde pas.
+      if (response.ok && response.type === "basic" && !response.redirected) {
+        await cache.put(key, response.clone()).catch(() => undefined);
+      } else if (response.status === 401 && cacheName === USER_CACHE) {
+        // Session expirée ou révoquée : ne plus servir les données de ce compte.
+        await caches.delete(USER_CACHE);
+      }
+      return response;
+    });
 
   const cached = await cache.match(key);
   if (!cached) {

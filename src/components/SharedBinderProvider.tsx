@@ -37,7 +37,7 @@ export function SharedBinderProvider({ token, children }: { token: string; child
       try {
         const [shareResponse, catalogResponse] = await Promise.all([
           fetch(`/api/share/${encodeURIComponent(token)}`, { cache: "no-store" }),
-          fetch("/api/catalog", { cache: "no-store" }),
+          fetch("/api/catalog", { cache: "no-cache" }),
         ]);
         if (cancelled) return;
         if (shareResponse.status === 404) {

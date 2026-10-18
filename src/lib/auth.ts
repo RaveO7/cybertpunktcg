@@ -9,8 +9,10 @@ import { SESSION_COOKIE } from "@/lib/session-cookie";
 
 export { SESSION_COOKIE };
 
-/** 400 jours : plafond courant des navigateurs. Prolongé à chaque ouverture. */
+/** 400 jours : plafond courant des navigateurs. Prolongé à l'ouverture (au plus une fois par jour). */
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
+/** Intervalle minimal entre deux prolongations d'une même session. */
+export const SESSION_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
 type AccountUser = {
   id: string;
   email: string | null;
@@ -146,7 +148,11 @@ export async function refreshSession(request: Request) {
   if (!token) return null;
   const session = await findAccount(token);
   if (!session) return null;
+  // Prolongée au plus une fois par jour : les autres ouvertures de l'app s'épargnent une écriture en base.
   const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000);
+  if (expiresAt.getTime() - session.expiresAt.getTime() < SESSION_REFRESH_INTERVAL_MS) {
+    return { user: session.user, token, expiresAt: session.expiresAt };
+  }
   // Session révoquée entre la lecture et la prolongation (déconnexion dans un autre onglet…) :
   // refusée comme une session absente, sans erreur.
   const { count } = await prisma.session.updateMany({ where: { id: session.id }, data: { expiresAt } });

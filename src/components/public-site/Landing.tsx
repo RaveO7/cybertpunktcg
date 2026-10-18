@@ -2,7 +2,6 @@
 // publique de premier niveau : elle intègre les annuaires des tournois et des boutiques. Style inspiré
 // des interfaces de Cyberpunk 2077 (classes .cp-* dans globals.css).
 
-import type { Metadata } from "next";
 import { getFormatter, getTranslations } from "next-intl/server";
 import type { CSSProperties } from "react";
 import { PublicDirectory } from "@/components/public/PublicDirectory";
@@ -18,16 +17,11 @@ import { ShopDirectory } from "@/components/shops/ShopDirectory";
 import { JsonLd } from "@/components/site/JsonLd";
 import { loadPublicCards } from "@/lib/seo/catalog-data";
 import { cardLabels } from "@/lib/seo/card-labels";
-import { homeCopy, pageMetadata } from "@/lib/seo/metadata";
+import { homeCopy } from "@/lib/seo/metadata";
 import { itemListLd, organizationLd, tournamentListLd, webApplicationLd, websiteLd } from "@/lib/seo/structured-data";
 import type { Locale } from "@/i18n/config";
 import { localizedPath, routePath } from "@/i18n/paths";
 import { landingSections } from "@/i18n/routing";
-
-export async function landingMetadata(locale: Locale): Promise<Metadata> {
-  const home = await homeCopy(locale);
-  return pageMetadata({ locale, page: { key: "home" }, title: home.title, absoluteTitle: true, description: home.description });
-}
 
 /** Destination de chaque module : liste des cartes, section de cette page, ou inscription pour l'application. */
 const FEATURE_TARGET: Record<string, "cards" | "tournaments" | "shops" | "register"> = {

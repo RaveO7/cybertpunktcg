@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useCollection } from "@/components/CollectionProvider";
+import { useCollection, whenIdle } from "@/components/CollectionProvider";
 import { sendJson, useRequestErrors } from "@/components/send-json";
 import type { WishlistItemDTO } from "@/lib/types";
 
@@ -44,7 +44,8 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
-    (async () => {
+    // Liste secondaire : chargée au repos, pour ne pas ralentir le premier affichage de l'app.
+    const load = async () => {
       try {
         const response = await fetch("/api/wishlist", { cache: "no-store" });
         if (!response.ok) throw new Error("wishlist");
@@ -55,9 +56,11 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       } finally {
         if (!cancelled) setLoadedFor(userId);
       }
-    })();
+    };
+    const cancelIdle = whenIdle(() => void load());
     return () => {
       cancelled = true;
+      cancelIdle();
     };
   }, [userId]);
 

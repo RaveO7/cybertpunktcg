@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { startTransition, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { Link, useRouter, type Href, getPathname } from "@/i18n/navigation";
 import { useBrowseSelection } from "@/components/BrowseSelection";
-import { useCollection } from "@/components/CollectionProvider";
+import { useCollection, whenIdle } from "@/components/CollectionProvider";
+import { AppSplash } from "@/components/site/AppSplash";
 import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
 import {
   aggregateCollection,
@@ -274,6 +275,40 @@ function matchesSet(extension: Extension, set: string) {
   return extension.key === set || extension.browseSet === set || extension.codes.includes(set);
 }
 
+/** Point de rupture `md` de Tailwind : tableau sur ordinateur, liste sur téléphone. */
+const DESKTOP_QUERY = "(min-width: 48rem)";
+
+function subscribeDesktop(onChange: () => void) {
+  const query = window.matchMedia(DESKTOP_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+/** Largeur ordinateur : une seule des deux mises en page est rendue (l'autre serait masquée en CSS). */
+function useIsDesktop() {
+  return useSyncExternalStore(subscribeDesktop, () => window.matchMedia(DESKTOP_QUERY).matches, () => false);
+}
+
+/**
+ * Vrai une fois le tableau de bord affiché (`active`) : les sections sous la ligne de flottaison sont
+ * rendues juste après, sans retarder le premier affichage.
+ */
+function useAfterFirstPaint(active: boolean) {
+  const [painted, setPainted] = useState(false);
+  useEffect(() => {
+    if (!active || painted) return;
+    let timer = 0;
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => startTransition(() => setPainted(true)));
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  }, [active, painted]);
+  return painted;
+}
+
 export function Dashboard() {
   const fmt = useNumberFormat();
   const { ready, error, catalog, items } = useCollection();
@@ -291,6 +326,18 @@ export function Dashboard() {
     sealed: "",
   });
   const [pick, setPick] = useState<BlockPick | null>(null);
+  const isDesktop = useIsDesktop();
+  const showValues = useAfterFirstPaint(ready && Boolean(catalog));
+
+  // En attendant les données : formats de nombres préparés au repos (coûteux au premier usage).
+  useEffect(() => {
+    if (ready) return;
+    return whenIdle(() => {
+      fmt.money(0);
+      fmt.int(0);
+      fmt.percent(0);
+    });
+  }, [ready, fmt]);
 
   const view = useMemo(() => {
     if (!catalog) return null;
@@ -418,16 +465,8 @@ export function Dashboard() {
   }, [scopeSet, scopeLanguage, setSelection]);
 
   if (error) return <p className="mx-auto max-w-[1600px] p-6 text-danger">{error}</p>;
-  if (!ready || !view || !catalog) {
-    return (
-      <div className="mx-auto max-w-[1600px] px-4 py-10">
-        <div className="hud-panel flex items-center justify-center gap-3 px-6 py-12 text-muted">
-          <span className="inline-block size-4 animate-pulse rounded-full bg-cyan/80" aria-hidden />
-          {t("dashboard.loading")}
-        </div>
-      </div>
-    );
-  }
+  // Premier chargement : l'écran de démarrage reste affiché jusqu'au tableau de bord complet.
+  if (!ready || !view || !catalog) return <AppSplash />;
   if (catalog.printings.length === 0) return <EmptyCatalog />;
 
   const globalValue = isSealed ? view.sealedValue : view.cardValue;
@@ -789,23 +828,23 @@ export function Dashboard() {
         </Section>
       ) : null}
 
-      {/* 4. Valeur par extension */}
-      <Section
-        title={isSealed ? t("dashboard.valueBySealed") : t("dashboard.valueBySet")}
-        hint={isSealed ? t("dashboard.valueBySealedHint") : t("dashboard.valueBySetHint")}
-        action={
-          <Link
-            href="/investissement"
-            className="border border-cyan px-3.5 py-2.5 text-sm text-cyan hover:text-foreground"
-          >
-            {t("dashboard.viewInvestment")} →
-          </Link>
-        }
-      >
-        {valueRows.length === 0 ? (
-          <EmptyPanel>{isSealed ? t("dashboard.emptySealedInvestment") : t("dashboard.emptyInvestment")}</EmptyPanel>
-        ) : (
-          <>
+      {/* 4. Valeur par extension (en bas de page : rendue après le premier affichage) */}
+      {showValues ? (
+        <Section
+          title={isSealed ? t("dashboard.valueBySealed") : t("dashboard.valueBySet")}
+          hint={isSealed ? t("dashboard.valueBySealedHint") : t("dashboard.valueBySetHint")}
+          action={
+            <Link
+              href="/investissement"
+              className="border border-cyan px-3.5 py-2.5 text-sm text-cyan hover:text-foreground"
+            >
+              {t("dashboard.viewInvestment")} →
+            </Link>
+          }
+        >
+          {valueRows.length === 0 ? (
+            <EmptyPanel>{isSealed ? t("dashboard.emptySealedInvestment") : t("dashboard.emptyInvestment")}</EmptyPanel>
+          ) : !isDesktop ? (
             <ul className="hud-panel md:hidden">
               {valueRows.map(({ key, name, language: rowLanguage, set, value: row }) => (
                 <ValueItem
@@ -835,6 +874,7 @@ export function Dashboard() {
                 />
               ) : null}
             </ul>
+          ) : (
             <DataTable minWidth="720px" className="hidden md:block">
               <thead>
                 <tr>
@@ -903,9 +943,9 @@ export function Dashboard() {
                 </tfoot>
               ) : null}
             </DataTable>
-          </>
-        )}
-      </Section>
+          )}
+        </Section>
+      ) : null}
     </div>
   );
 }
