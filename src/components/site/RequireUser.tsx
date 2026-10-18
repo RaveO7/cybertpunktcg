@@ -1,8 +1,14 @@
 "use client";
 
-import { AuthScreen } from "@/components/AuthScreen";
+import dynamic from "next/dynamic";
 import { useCollection } from "@/components/CollectionProvider";
 import { AppSplash } from "@/components/site/AppSplash";
+
+// Écran de connexion chargé seulement quand il s'affiche (session refusée) : pas au démarrage d'un compte
+// connecté.
+const AuthScreen = dynamic(() => import("@/components/AuthScreen").then((module) => module.AuthScreen), {
+  loading: () => <AppSplash />,
+});
 
 /**
  * Page réservée aux comptes : affichée dès que la session est connue (mémorisée ou vérifiée), l'écran

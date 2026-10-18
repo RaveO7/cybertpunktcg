@@ -1,9 +1,11 @@
 // Service worker : mode hors-ligne de la PWA (boutique, tournoi…).
 //
 // - Pages principales et assets Next (/_next/static, hachés donc immuables) : disponibles sans réseau.
-//   Navigation preload : la page part au réseau pendant le démarrage du service worker. Écran d'un compte
-//   connecté déjà en cache : le serveur n'est attendu qu'un instant (fonction à froid au lancement de
-//   l'app), sinon la copie s'affiche et la réponse réseau la remplace pour le lancement suivant.
+//   Navigation preload : la page part au réseau pendant le démarrage du service worker. Écran principal
+//   d'un compte connecté (SHELL_PAGES) déjà en cache : la copie s'affiche aussitôt et la réponse réseau la
+//   remplace pour le lancement suivant. Ces pages ne contiennent aucune donnée (collection, catalogue et
+//   prix sont toujours redemandés) : seule une nouvelle version de l'app arrive avec un lancement de
+//   retard. Autre écran d'un compte connecté : le serveur n'est attendu qu'un instant.
 // - Catalogue public : réseau d'abord, copie en cache si le réseau échoue ou traîne. L'app lit aussi
 //   ces copies (et celle de la collection) pour s'afficher aussitôt au démarrage (src/lib/offline.ts).
 // - Données du compte (session, collection, stats…) : idem, cache vidé à la connexion/déconnexion
@@ -100,8 +102,9 @@ self.addEventListener("fetch", (event) => {
     // Une seule copie par page : /cards?set=… réutilise celle de /cards.
     const preload = event.preloadResponse ?? Promise.resolve(undefined);
     event.waitUntil(preload.catch(() => undefined));
+    const immediate = SHELL_PAGES.includes(url.pathname);
     event.respondWith(
-      networkFirst(request, SHELL_CACHE, { key: url.origin + url.pathname, fallback: offlinePage, preload, event }),
+      networkFirst(request, SHELL_CACHE, { key: url.origin + url.pathname, fallback: offlinePage, preload, event, immediate }),
     );
     return;
   }
@@ -167,6 +170,7 @@ async function networkFirst(request, cacheName, options = {}) {
   // tardive, met la copie à jour : le service worker reste actif jusqu'à son arrivée.
   options.event?.waitUntil(network.catch(() => undefined));
   const appPage = cached.headers.get(SESSION_PAGE_HEADER) === "1";
+  if (appPage && options.immediate) return cached;
   const delay = appPage ? APP_PAGE_TIMEOUT_MS : NETWORK_TIMEOUT_MS;
   const timeout = new Promise((resolve) => setTimeout(() => resolve(null), delay));
   const winner = await Promise.race([network.catch(() => null), timeout]);

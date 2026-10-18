@@ -20,6 +20,13 @@ const GUEST_TARGETS: Partial<Record<AppPathname, (locale: Locale) => string>> = 
   "/comment-jouer": (locale) => formatRoute("/", locale),
 };
 
+/**
+ * Accueil d'un compte connecté : le tableau de bord, page interne à part (src/app/[locale]/tableau-de-bord)
+ * servie sous la même adresse que la présentation des visiteurs. Chacune n'embarque ainsi que son propre JS,
+ * et le tableau de bord, qui ne dépend plus des cookies, est une page statique servie sans réveiller le serveur.
+ */
+export const DASHBOARD_PATH = "/tableau-de-bord";
+
 function redirect(request: NextRequest, path: string, status: 307 | 308) {
   return NextResponse.redirect(new URL(path, request.url), status);
 }
@@ -27,7 +34,7 @@ function redirect(request: NextRequest, path: string, status: 307 | 308) {
 /** URL interne (dossier de src/app/[locale]) d'une page : « /de/karten/x » → « /de/cartes/x ». */
 function internalUrl(request: NextRequest, match: MatchedRoute) {
   const path = internalPath(match.route, match.params);
-  const url = request.nextUrl.clone();
+  const url = request.nextUrl.clone();  
   url.pathname = path === "/" ? `/${match.locale}` : `/${match.locale}${path}`;
   return url;
 }
@@ -61,7 +68,9 @@ function route(request: NextRequest): NextResponse {
 
     const headers = new Headers(request.headers);
     headers.set("X-NEXT-INTL-LOCALE", match.locale);
-    return NextResponse.rewrite(internalUrl(request, match), { request: { headers } });
+    const url = internalUrl(request, match);
+    if (match.route === "/" && hasSession) url.pathname = `/${match.locale}${DASHBOARD_PATH}`;
+    return NextResponse.rewrite(url, { request: { headers } });
   }
 
   // Chemin d'une autre langue (« /de/cards/x » → « /de/karten/x »), URL sans langue ou URL inconnue

@@ -1,11 +1,10 @@
 import type { Viewport } from "next";
 import type { ReactNode } from "react";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Chakra_Petch, Geist, Geist_Mono } from "next/font/google";
 import { getMessages, getTimeZone } from "next-intl/server";
 import { AppFrame } from "@/components/AppFrame";
 import { BootScript } from "@/components/site/BootScript";
+import { DeferredAnalytics } from "@/components/site/DeferredAnalytics";
 import { BrowseSelectionProvider } from "@/components/BrowseSelection";
 import { CollectionProvider } from "@/components/CollectionProvider";
 import { ServiceWorkerRegister } from "@/components/OfflineSupport";
@@ -74,8 +73,7 @@ export async function SiteShell({ lang, children }: { lang: Locale; children: Re
           </PreferencesProvider>
           <ServiceWorkerRegister />
         </IntlClientProvider>
-        <Analytics />
-        <SpeedInsights />
+        <DeferredAnalytics />
       </body>
     </html>
   );

@@ -95,6 +95,12 @@ describe("proxy : langue de l'URL", () => {
     assert.equal(rewrite(proxy(request("/de/boutiques", SESSION))), "/de/boutiques");
   });
 
+  it("accueil : tableau de bord pour un compte connecté, présentation pour un visiteur", () => {
+    assert.equal(rewrite(proxy(request("/fr", SESSION))), "/fr/tableau-de-bord");
+    assert.equal(rewrite(proxy(request("/de?ref=a", SESSION))), "/de/tableau-de-bord?ref=a");
+    assert.equal(rewrite(proxy(request("/fr"))), "/fr");
+  });
+
   it("page marquée selon la session, pour le service worker", () => {
     assert.equal(proxy(request("/fr", SESSION)).headers.get("x-cptcg-session"), "1");
     assert.equal(proxy(request("/fr")).headers.get("x-cptcg-session"), "0");
