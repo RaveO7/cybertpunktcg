@@ -27,10 +27,12 @@ function useLinkAction() {
  * QR personnel scanné : il faut un geste explicite (un aperçu de lien ne doit pas consommer
  * le QR à usage unique).
  */
-export function ClaimScreen({ token }: { token: string }) {
+export function ClaimScreen({ token, error }: { token: string; error: string | null }) {
   const t = useTranslations();
   const router = useRouter();
   const { pending, message, run } = useLinkAction();
+  // QR déjà reconnu invalide côté serveur : pas de bouton qui échouerait.
+  if (error) return <LinkPanel title={t("tournaments.claimTitle")} hint={t("tournaments.claimHint")} message={error} />;
   return (
     <LinkPanel title={t("tournaments.claimTitle")} hint={t("tournaments.claimHint")} message={message}>
       <button
@@ -51,10 +53,12 @@ export function ClaimScreen({ token }: { token: string }) {
 }
 
 /** Invitation de co-organisateur (compte requis : la page est protégée). */
-export function InviteScreen({ token }: { token: string }) {
+export function InviteScreen({ token, error }: { token: string; error: string | null }) {
   const t = useTranslations();
   const router = useRouter();
   const { pending, message, run } = useLinkAction();
+  // Invitation déjà reconnue invalide côté serveur : pas de bouton qui échouerait.
+  if (error) return <LinkPanel title={t("tournaments.inviteTitle")} hint={t("tournaments.inviteAcceptHint")} message={error} />;
   return (
     <LinkPanel title={t("tournaments.inviteTitle")} hint={t("tournaments.inviteAcceptHint")} message={message}>
       <button
@@ -74,7 +78,7 @@ export function InviteScreen({ token }: { token: string }) {
   );
 }
 
-function LinkPanel({ title, hint, message, children }: { title: string; hint: string; message: string | null; children: React.ReactNode }) {
+function LinkPanel({ title, hint, message, children }: { title: string; hint: string; message: string | null; children?: React.ReactNode }) {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-3 px-3 py-6">
       <section className={`${panelClass} flex flex-col gap-3`}>

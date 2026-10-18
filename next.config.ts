@@ -4,6 +4,9 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Tests e2e : un dossier de build à part (NEXT_DIST_DIR=.next-e2e) permet de lancer leur serveur
+  // pendant que le `next dev` habituel tourne (le verrou de next dev est rangé dans ce dossier).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   experimental: {
     // Mise en page racine sous [locale] : la 404 des URL sans route est rendue à part.
     globalNotFound: true,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomBytes, scryptSync } from "node:crypto";
-import { afterAll, beforeAll, describe, it } from "vitest";
-import { authenticate, registerAccount } from "../../src/lib/auth";
+import { afterAll, beforeAll, describe, it, vi } from "vitest";
+import { authenticate, createSession, refreshSession, registerAccount, SESSION_COOKIE } from "../../src/lib/auth";
 import { hashPassword, verifyPassword } from "../../src/lib/password";
 import { prisma } from "../../src/lib/prisma";
 
@@ -74,5 +74,30 @@ describe("inscription et connexion", () => {
     assert.equal((await authenticate(email, password))?.id, accountId, "legacy login");
     const upgraded = await prisma.user.findUnique({ where: { id: accountId } });
     assert.equal(upgraded?.passwordHash, password, "legacy hash not replaced by clear password");
+  });
+});
+
+describe("prolongation de session", () => {
+  it("refuse sans erreur une session révoquée pendant sa prolongation", async () => {
+    const user = await registerAccount({ email: `auth-race-${stamp}@example.com`, password, displayName: null });
+    createdUserIds.push(user.id);
+    const { token } = await createSession(user.id);
+    const request = new Request("http://localhost/api/auth/session", {
+      headers: { cookie: `${SESSION_COOKIE}=${token}` },
+    });
+
+    // Révocation (déconnexion dans un autre onglet) juste après la lecture de la session.
+    const findUnique = prisma.session.findUnique.bind(prisma.session);
+    const spy = vi.spyOn(prisma.session, "findUnique").mockImplementationOnce((async (args: Parameters<typeof findUnique>[0]) => {
+      const found = await findUnique(args);
+      await prisma.session.deleteMany({ where: { userId: user.id } });
+      return found;
+    }) as unknown as typeof prisma.session.findUnique);
+    try {
+      assert.equal(await refreshSession(request), null, "revoked session must be refused");
+    } finally {
+      spy.mockRestore();
+    }
+    assert.equal(await prisma.session.count({ where: { userId: user.id } }), 0);
   });
 });

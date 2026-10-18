@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BootScript } from "@/components/site/BootScript";
 import { GlobalFallback } from "@/components/site/GlobalFallback";
 import { fontVariables } from "@/components/site/SiteShell";
 import { PREFERENCES_STORAGE_KEY } from "@/lib/preferences";
@@ -16,7 +17,7 @@ export default function GlobalNotFound() {
   return (
     <html lang="fr" className={`${fontVariables} antialiased`} data-theme="dark" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <BootScript html={themeBootScript} />
       </head>
       <body className="min-h-dvh">
         <GlobalFallback kind="notFound" />

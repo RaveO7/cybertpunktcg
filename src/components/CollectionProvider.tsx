@@ -1,34 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { clearDataCache, prefetchCached } from "@/components/data-cache";
 import { mutationFetch, useRequestErrors } from "@/components/send-json";
 import type { ImportLine } from "@/lib/collection-csv";
+import { browserStorage, clearSessionUser, readSessionUser, writeSessionUser } from "@/lib/session-hint";
 import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
 
 export type ImportSummary = { created: number; updated: number; skipped: number };
 
 const LOCAL_USER_KEY = "cptcg-user-id";
-// Indice « session ouverte » : au démarrage, le catalogue se charge alors en même temps que la session.
-const SIGNED_IN_HINT_KEY = "cptcg-signed-in";
 
-function setSignedInHint(signedIn: boolean) {
-  try {
-    if (signedIn) window.localStorage.setItem(SIGNED_IN_HINT_KEY, "1");
-    else window.localStorage.removeItem(SIGNED_IN_HINT_KEY);
-  } catch {
-    // Stockage indisponible (navigation privée…) : chargement en série, comme sans indice.
-  }
-}
-
-function hasSignedInHint() {
-  try {
-    return window.localStorage.getItem(SIGNED_IN_HINT_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
+/**
+ * Statut de la session, indépendant du chargement des données (`ready`) : « unknown » tant que rien
+ * n'est mémorisé ni vérifié, « signed-out » seulement après un refus du serveur (401) ou la déconnexion.
+ */
+export type SessionStatus = "unknown" | "signed-in" | "signed-out";
 
 /** Données des écrans les plus visités, chargées au repos pour qu'ils s'ouvrent sans attente. */
 const WARM_URLS = ["/api/decks", "/api/tournaments", "/api/share", "/api/investment/history?"];
@@ -67,6 +55,7 @@ type MutationResult = {
 };
 
 type CollectionContextValue = {
+  session: SessionStatus;
   ready: boolean;
   error: string | null;
   user: AuthUser | null;
@@ -99,6 +88,7 @@ async function readJson<T>(response: Response): Promise<T> {
 
 export function CollectionProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<SessionStatus>("unknown");
   const [catalog, setCatalog] = useState<CatalogDTO | null>(null);
   const [items, setItems] = useState<CollectionItemDTO[]>([]);
   const itemsRef = useRef(items);
@@ -120,17 +110,31 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     });
   }
 
+  /** Session ouverte (connexion, inscription, vérification réussie) : mémorisée sur l'appareil. */
+  function rememberSession(nextUser: AuthUser) {
+    window.localStorage.removeItem(LOCAL_USER_KEY);
+    writeSessionUser(browserStorage(), nextUser);
+    setUser(nextUser);
+    setSession("signed-in");
+  }
+
+  /** Session refusée par le serveur ou déconnexion : mémoire, utilisateur et données effacés. */
+  function endSession() {
+    clearSessionUser(browserStorage());
+    setUser(null);
+    setCatalog(null);
+    setItems([]);
+    setSession("signed-out");
+    setReady(true);
+  }
+
   async function loadBoundData(catalogRequest?: Promise<Response>) {
     const [catalogResponse, collectionResponse] = await Promise.all([
       catalogRequest ?? fetch("/api/catalog", { cache: "no-store" }),
       fetch("/api/collection", { cache: "no-store" }),
     ]);
     if (catalogResponse.status === 401 || collectionResponse.status === 401) {
-      setSignedInHint(false);
-      setUser(null);
-      setCatalog(null);
-      setItems([]);
-      setReady(true);
+      endSession();
       throw new Error(errors("sessionLost"));
     }
     if (!catalogResponse.ok || !collectionResponse.ok) {
@@ -154,16 +158,15 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     });
     const result = await readJson<{ user?: AuthUser; error?: string }>(response);
     if (!response.ok || !result.user) throw new Error(result.error || errors("loginFailed"));
-    window.localStorage.removeItem(LOCAL_USER_KEY);
-    setSignedInHint(true);
-    setUser(result.user);
+    rememberSession(result.user);
     await loadBoundData();
   }
 
   // Changement de compte (connexion, déconnexion, session expirée) : les données en cache et les pages
   // gardées par le routeur appartenaient à la session précédente.
   const router = useRouter();
-  const sessionKey = ready ? (user?.id ?? "") : null;
+  // L'utilisateur mémorisé donne déjà la clé : sa vérification réussie (même id) ne la change pas.
+  const sessionKey = session === "unknown" ? null : session === "signed-in" ? (user?.id ?? "") : "";
   const previousSession = useRef<string | null>(null);
   useEffect(() => {
     if (sessionKey === null) return;
@@ -180,28 +183,37 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     return whenIdle(() => WARM_URLS.forEach(prefetchCached));
   }, [sessionKey]);
 
+  // Session mémorisée reprise avant le premier affichage : navigation et cadre du compte tout de suite.
+  // Lue après le montage seulement, pour que l'hydratation parte du même état que le rendu serveur.
+  const rememberedUser = useRef<AuthUser | null>(null);
+  useLayoutEffect(() => {
+    const remembered = readSessionUser(browserStorage());
+    rememberedUser.current = remembered;
+    if (!remembered) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUser(remembered);
+    setSession("signed-in");
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
       // Compte probablement connecté : le catalogue (public) part en même temps que la session.
-      const catalogRequest = hasSignedInHint() ? fetch("/api/catalog", { cache: "no-store" }) : undefined;
+      const catalogRequest = rememberedUser.current ? fetch("/api/catalog", { cache: "no-store" }) : undefined;
       catalogRequest?.catch(() => undefined);
       try {
         const sessionResponse = await fetch("/api/auth/session", { cache: "no-store" });
         if (cancelled) return;
         if (sessionResponse.status === 401) {
-          setSignedInHint(false);
-          setUser(null);
-          setReady(true);
+          endSession();
           return;
         }
-        const session = await readJson<{ user?: AuthUser }>(sessionResponse);
-        if (!sessionResponse.ok || !session.user) throw new Error("session");
-        window.localStorage.removeItem(LOCAL_USER_KEY);
-        setSignedInHint(true);
-        setUser(session.user);
+        const verified = await readJson<{ user?: AuthUser }>(sessionResponse);
+        if (!sessionResponse.ok || !verified.user) throw new Error("session");
+        rememberSession(verified.user);
         await loadBoundData(catalogRequest);
       } catch {
+        // Erreur réseau ou serveur : le statut de session ne change pas, seul le message d'erreur s'affiche.
         if (!cancelled) {
           setError(errors("loadCollection"));
           setReady(true);
@@ -225,9 +237,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     }, errors);
     const result = await readJson<MutationResult>(response);
     if (response.status === 401) {
-      setUser(null);
-      setItems([]);
-      setCatalog(null);
+      endSession();
       throw new Error(errors("sessionExpired"));
     }
     if (!response.ok) throw new Error(result.error || errors("saveFailed"));
@@ -236,6 +246,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
 
   const value = useMemo<CollectionContextValue>(
     () => ({
+      session,
       ready,
       error,
       user,
@@ -255,12 +266,8 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       logout: async () => {
         const response = await fetch("/api/auth/logout", { method: "POST" });
         if (!response.ok) throw new Error(errors("logoutFailed"));
-        setSignedInHint(false);
-        setUser(null);
-        setItems([]);
-        setCatalog(null);
+        endSession();
         setError(null);
-        setReady(true);
       },
       saveLine: (input) => request("/api/collection", { method: "POST", body: JSON.stringify(input) }),
       saveBatch: async (input) => {
@@ -272,9 +279,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         );
         const result = await readJson<{ items?: CollectionItemDTO[]; error?: string }>(response);
         if (response.status === 401) {
-          setUser(null);
-          setItems([]);
-          setCatalog(null);
+          endSession();
           throw new Error(errors("sessionExpired"));
         }
         if (!response.ok || !result.items) throw new Error(result.error || errors("addFailed"));
@@ -292,9 +297,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         );
         const result = await readJson<ImportSummary & { items?: CollectionItemDTO[]; error?: string }>(response);
         if (response.status === 401) {
-          setUser(null);
-          setItems([]);
-          setCatalog(null);
+          endSession();
           throw new Error(errors("sessionExpired"));
         }
         if (!response.ok || !result.items) throw new Error(result.error || errors("importFailed"));
@@ -324,9 +327,9 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       },
       deleteLine: (id) => request(`/api/collection/${id}`, { method: "DELETE" }),
     }),
-    // Les fonctions ferment sur user ; ready, catalog et items sont l'état public.
+    // Les fonctions ferment sur user ; session, ready, catalog et items sont l'état public.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ready, error, user, catalog, items, errors],
+    [session, ready, error, user, catalog, items, errors],
   );
 
   return <CollectionContext.Provider value={value}>{children}</CollectionContext.Provider>;

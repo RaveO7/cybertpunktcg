@@ -694,6 +694,15 @@ async function inviteOrganizer(tx: Tx, t: FullTournament, ctx: Ctx): Promise<Com
 }
 
 /** Accepte une invitation de co-organisateur (usage unique). */
+/** Invitation encore utilisable, sans la consommer : la page l'affiche avant le geste explicite. */
+export async function organizerInviteUsable(token: string, now = new Date()) {
+  const invite = await prisma.tournamentInvite.findUnique({
+    where: { tokenHash: hashToken(token) },
+    select: { usedAt: true, expiresAt: true },
+  });
+  return Boolean(invite && !invite.usedAt && invite.expiresAt > now);
+}
+
 export async function acceptOrganizerInvite(token: string, userId: string, now = new Date()) {
   const invite = await prisma.tournamentInvite.findUnique({ where: { tokenHash: hashToken(token) } });
   if (!invite || invite.usedAt || invite.expiresAt <= now) fail("tournaments.invalidInvite", 404);

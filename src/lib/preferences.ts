@@ -49,10 +49,30 @@ function isCurrency(value: unknown): value is CurrencyCode {
   return typeof value === "string" && (CURRENCIES as readonly string[]).includes(value);
 }
 
+/** Couleur des barres du navigateur et du système (`theme-color`), égale à `--background` de chaque thème. */
+export const THEME_CHROME_COLORS: Record<ThemeMode, string> = {
+  dark: "#07080d",
+  light: "#e8eef6",
+};
+
+/** Garde une seule `<meta name="theme-color">`, sans `media`, à la couleur du thème. */
+export function syncThemeColorMeta(doc: Document, theme: ThemeMode) {
+  const existing = Array.from(doc.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'));
+  let meta = existing.find((el) => !el.hasAttribute("media"));
+  for (const el of existing) if (el !== meta) el.remove();
+  if (!meta) {
+    meta = doc.createElement("meta");
+    meta.setAttribute("name", "theme-color");
+    doc.head.appendChild(meta);
+  }
+  meta.setAttribute("content", THEME_CHROME_COLORS[theme]);
+}
+
 export function applyTheme(theme: ThemeMode) {
   const root = document.documentElement;
   root.setAttribute("data-theme", theme);
   root.style.colorScheme = theme;
+  syncThemeColorMeta(document, theme);
 }
 
 export function normalizePreferences(raw: unknown): UserPreferences {

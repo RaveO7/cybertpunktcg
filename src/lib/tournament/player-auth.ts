@@ -71,6 +71,16 @@ export function newDeviceToken() {
   return { token, hash: hashToken(token) };
 }
 
+/** État d'un QR personnel, sans le consommer : la page l'affiche avant le geste explicite. */
+export async function claimTokenStatus(claimToken: string, now = new Date()): Promise<"valid" | "invalid" | "expired"> {
+  const player = await prisma.tournamentPlayer.findUnique({
+    where: { claimTokenHash: hashToken(claimToken) },
+    select: { claimExpiresAt: true },
+  });
+  if (!player) return "invalid";
+  return player.claimExpiresAt && player.claimExpiresAt > now ? "valid" : "expired";
+}
+
 /**
  * Récupération d'un profil par QR personnel : lie cet appareil (et le compte connecté s'il
  * n'est pas déjà inscrit sous un autre pseudo) au joueur. Le QR ne sert qu'une fois.

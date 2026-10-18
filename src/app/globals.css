@@ -685,6 +685,39 @@ html {
   display: none;
 }
 
+/* Carte soulevée (survol, appui long) : la copie affichée au-dessus du plateau remplace la carte en place. */
+[data-lifted] {
+  opacity: 0;
+}
+
+/* Copiée pendant le soulèvement (clic sur la carte survolée), la carte doit rester visible en vol. */
+.dm-ghost__face [data-lifted] {
+  opacity: 1 !important;
+}
+
+/* Se soulève depuis la pose de la carte en place (inclinaison, taille) et y redescend en fin de survol. */
+.dm-lift {
+  animation: dm-lift-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.dm-lift--out {
+  animation: dm-lift-out 180ms cubic-bezier(0.4, 0, 0.6, 1) both;
+}
+
+@keyframes dm-lift-in {
+  from {
+    transform: rotate(var(--dm-lift-rotate, 0deg)) scale(var(--dm-lift-scale, 0.91));
+  }
+}
+
+@keyframes dm-lift-out {
+  to {
+    transform: rotate(var(--dm-lift-rotate, 0deg)) scale(var(--dm-lift-scale, 0.91));
+  }
+}
+
 /* Carte choisie en main, posée sur le Field le temps de la payer. */
 .dm-pending {
   position: relative;
@@ -1128,7 +1161,8 @@ html {
   .dm-nope,
   .dm-ring,
   .dm-pending__tag,
-  .dm-banner__text {
+  .dm-banner__text,
+  .dm-lift {
     animation: none;
   }
 
@@ -1430,6 +1464,8 @@ html {
 .cp-glitch::before,
 .cp-glitch::after {
   content: attr(data-text);
+  /* Calques décoratifs : texte alternatif vide, sinon le titre est lu trois fois (repli ci-dessus). */
+  content: attr(data-text) / "";
   position: absolute;
   inset: 0;
   pointer-events: none;

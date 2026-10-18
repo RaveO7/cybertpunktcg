@@ -12,7 +12,7 @@ import { Link, useRouter, type Href } from "@/i18n/navigation";
 import { useInternalPathname } from "@/i18n/useInternalPathname";
 import { isInHorizontalScroller } from "@/lib/swipe";
 
-type NavIcon = "dashboard" | "cards" | "investment" | "decks" | "tournaments" | "wishlist" | "howto" | "binder";
+type NavIcon = "dashboard" | "cards" | "investment" | "decks" | "tournaments" | "wishlist" | "howto" | "binder" | "settings";
 
 // fullPrefetch : page rendue à la demande (tableau de bord), préchargée en entier pour s'ouvrir sans attente.
 // Les autres écrans sont statiques, donc déjà préchargés en entier ; les forcer ferait invalider le cache
@@ -23,12 +23,12 @@ function useNavigation() {
   // Chemin interne (segments français, sans préfixe de langue) : repère l'onglet actif dans toutes les langues.
   const pathname = useInternalPathname();
   const { cardsHref } = useBrowseSelection();
-  const { user, ready } = useCollection();
+  const { user, session } = useCollection();
   const t = useTranslations();
   const sharedMatch = pathname.match(/^\/classeur\/([^/]+)/);
   const isSharedView = Boolean(sharedMatch);
   const shareToken = sharedMatch?.[1] ?? null;
-  const showNav = isSharedView || (ready && Boolean(user));
+  const showNav = isSharedView || session === "signed-in";
 
   const links: NavLink[] = isSharedView && shareToken
     ? [
@@ -251,7 +251,11 @@ export function Header() {
     "inline-flex size-10 shrink-0 items-center justify-center border border-line text-muted hover:border-cyan hover:text-foreground";
 
   return (
-    <header className="pt-safe px-safe relative z-30 shrink-0 border-b border-line bg-background">
+    <>
+    {/* Téléphone connecté : pas d'en-tête, la barre du bas porte la navigation et les paramètres.
+        Seule la marge de l'encoche reste. */}
+    {showNav ? <div className="pt-safe shrink-0 bg-background sm:hidden" aria-hidden="true" /> : null}
+    <header className={`pt-safe px-safe relative z-30 shrink-0 border-b border-line bg-background ${showNav ? "max-sm:hidden" : ""}`}>
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-2">
         <Link
           href={isSharedView && shareToken ? { pathname: "/classeur/[token]", params: { token: shareToken } } : "/"}
@@ -310,13 +314,18 @@ export function Header() {
         ) : null}
       </div>
     </header>
+    </>
   );
 }
 
 /** Barre d'onglets façon application, affichée uniquement sur téléphone. */
 export function BottomNav() {
-  const { pathname, t, showNav, links, activeMatch, markPending } = useNavigation();
+  const { pathname, user, t, isSharedView, showNav, links, activeMatch, markPending } = useNavigation();
   const keyboardOpen = useKeyboardOpen();
+  // Page d'où l'on a ouvert les paramètres (URL complète, dans sa langue) : un second clic y ramène.
+  const [settingsReturn, setSettingsReturn] = useState<string | null>(null);
+  const inSettings = pathname === "/parametres";
+  const showSettings = Boolean(user) && !isSharedView;
   const visible = showNav && !keyboardOpen;
   usePageSwipe(links, pathname, visible);
 
@@ -359,6 +368,36 @@ export function BottomNav() {
             </li>
           );
         })}
+        {showSettings ? (
+          <li className="min-w-0 flex-1">
+            {inSettings && settingsReturn ? (
+              <NextLink
+                href={settingsReturn}
+                className="relative flex h-full flex-col items-center justify-center gap-1 px-1 text-yellow"
+                aria-current="page"
+              >
+                <span className="absolute inset-x-4 top-0 h-0.5 bg-yellow" aria-hidden="true" />
+                <NavGlyph icon="settings" />
+                <span className="max-w-full truncate text-[11px] leading-none">{t("common.settings")}</span>
+              </NextLink>
+            ) : (
+              <Link
+                href={inSettings ? "/" : "/parametres"}
+                onClick={() => {
+                  if (!inSettings) setSettingsReturn(window.location.pathname + window.location.search);
+                }}
+                className={`relative flex h-full flex-col items-center justify-center gap-1 px-1 ${
+                  inSettings ? "text-yellow" : "text-muted active:text-foreground"
+                }`}
+                aria-current={inSettings ? "page" : undefined}
+              >
+                {inSettings ? <span className="absolute inset-x-4 top-0 h-0.5 bg-yellow" aria-hidden="true" /> : null}
+                <NavGlyph icon="settings" />
+                <span className="max-w-full truncate text-[11px] leading-none">{t("common.settings")}</span>
+              </Link>
+            )}
+          </li>
+        ) : null}
       </ul>
     </nav>
   );
@@ -432,13 +471,24 @@ function useKeyboardOpen() {
       const type = (target as HTMLInputElement).type;
       return !["checkbox", "radio", "range", "button", "submit", "reset", "file", "color"].includes(type);
     };
-    const onFocusIn = (event: FocusEvent) => setOpen(isField(event.target));
+    // Barre réaffichée avec un léger délai : un appui sur un bouton retire le focus du champ avant le
+    // clic, et une barre revenue tout de suite sous le doigt recevrait ce clic à la place du bouton.
+    let closeTimer: number | undefined;
+    // Focus sur un bouton (donné dès l'appui sur Chrome) : la fermeture reste au minuteur du focusout.
+    const onFocusIn = (event: FocusEvent) => {
+      if (!isField(event.target)) return;
+      window.clearTimeout(closeTimer);
+      setOpen(true);
+    };
     const onFocusOut = (event: FocusEvent) => {
-      if (!isField(event.relatedTarget)) setOpen(false);
+      if (isField(event.relatedTarget)) return;
+      window.clearTimeout(closeTimer);
+      closeTimer = window.setTimeout(() => setOpen(false), 300);
     };
     window.addEventListener("focusin", onFocusIn);
     window.addEventListener("focusout", onFocusOut);
     return () => {
+      window.clearTimeout(closeTimer);
       window.removeEventListener("focusin", onFocusIn);
       window.removeEventListener("focusout", onFocusOut);
     };
@@ -528,12 +578,14 @@ function NavGlyph({ icon }: { icon: NavIcon }) {
           <path d="M8.5 3.5v17M11.5 8h4M11.5 11.5h4" />
         </svg>
       );
+    case "settings":
+      return <SettingsIcon size={22} />;
   }
 }
 
-function SettingsIcon() {
+function SettingsIcon({ size = 18 }: { size?: number }) {
   return (
-    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
       <circle cx="12" cy="12" r="3" />
     </svg>

@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { OfflineBanner } from "@/components/OfflineSupport";
 import { LegacyLocalePreference, PreferredLanguageRedirect } from "@/components/site/PreferredLanguageRedirect";
 import { RequireUser } from "@/components/site/RequireUser";
-import { LEGAL_PATHS } from "@/lib/site";
+import { LEGAL_PATHS, WISHLIST_ENABLED } from "@/lib/site";
 import { publicRouteOfPath } from "@/i18n/paths";
 import { useInternalPathname } from "@/i18n/useInternalPathname";
 
@@ -21,7 +21,9 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/t/") ||
     publicRouteOfPath(pathname) !== null ||
     pathname === "/connexion" ||
-    LEGAL_PATHS.includes(pathname);
+    LEGAL_PATHS.includes(pathname) ||
+    // Fonctionnalité pas encore publiée : la page répond 404, inutile de passer par la connexion.
+    (pathname === "/souhaits" && !WISHLIST_ENABLED);
   // Le didacticiel occupe toute la hauteur : pas de pied de page.
   const showFooter = !pathname.startsWith("/comment-jouer");
   const content = isPublicPage ? children : <RequireUser>{children}</RequireUser>;

@@ -182,7 +182,7 @@ export function FeatureShowcase({
           {header}
           <div
             ref={rootRef}
-            className="grid gap-8 lg:grid-cols-[minmax(0,300px)_1fr] lg:gap-12"
+            className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-12"
             aria-roledescription="carousel"
             onPointerEnter={(event) => event.pointerType === "mouse" && setHovered(true)}
             onPointerLeave={() => setHovered(false)}
@@ -191,13 +191,13 @@ export function FeatureShowcase({
               if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
             }}
           >
-            <div className="flex flex-col gap-4" data-reveal="left">
+            <div className="flex min-w-0 flex-col gap-4" data-reveal="left">
               <div
                 ref={listRef}
                 role="tablist"
                 aria-orientation="vertical"
                 aria-label={labels.preview}
-                className="scrollbar-hud -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0"
+                className="scrollbar-hud -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:-mx-4 sm:px-4 lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0"
               >
                 {features.map((item, index) => {
                   const selected = index === current;
@@ -240,7 +240,7 @@ export function FeatureShowcase({
             </div>
 
             {/* Enveloppe d'apparition : le cadre a déjà son propre clip-path (coins coupés). */}
-            <div data-reveal="right" style={{ "--reveal-delay": "150ms" } as CSSProperties}>
+            <div className="min-w-0" data-reveal="right" style={{ "--reveal-delay": "150ms" } as CSSProperties}>
               <div className="cp-frame cp-cut">
                 {/* Tous les modules sont rendus (texte indexable) ; seul l'actif est affiché. Son animation
                     d'entrée rejoue à chaque affichage (display none → visible). Le visuel, décoratif,
@@ -256,13 +256,13 @@ export function FeatureShowcase({
                       hidden={!selected}
                       className="cp-frame-inner cp-cut"
                     >
-                      <div className="cp-module-in grid gap-6 p-5 sm:p-7 xl:grid-cols-[1fr_1.1fr]">
+                      <div className="cp-module-in grid grid-cols-1 gap-6 p-4 sm:p-7 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
                         <div className="flex flex-col gap-4">
                           <p className="cp-index">
                             {`${String(index + 1).padStart(2, "0")} // ${labels.preview}`}
                           </p>
                           <h3
-                            className="cp-glitch self-start font-display text-2xl font-bold uppercase leading-tight tracking-wide text-yellow sm:text-3xl"
+                            className="cp-glitch self-start font-display text-2xl font-bold uppercase leading-tight tracking-wide break-words text-yellow sm:text-3xl"
                             data-text={item.title}
                             data-glitch={selected ? "module-title" : undefined}
                           >

@@ -187,13 +187,19 @@ function DeckList({
     });
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-5 px-3 py-4 sm:gap-6 sm:px-4 sm:py-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-5 px-3 pt-4 pb-24 sm:gap-6 sm:px-4 sm:py-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl text-yellow sm:text-4xl">{t("decks.title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted">{t("decks.subtitle")}</p>
         </div>
-        <button type="button" className={primaryClass} disabled={pending} onClick={() => void create()}>
+        {/* Mobile : flottant au centre, juste au-dessus de la barre d'onglets, pour le pouce. */}
+        <button
+          type="button"
+          className="fixed bottom-[calc(var(--app-bottom-nav)+1rem)] left-1/2 z-30 inline-flex h-12 -translate-x-1/2 items-center justify-center bg-yellow px-6 text-sm font-semibold text-black shadow-lg shadow-black/50 hover:brightness-110 disabled:opacity-50 sm:static sm:h-10 sm:translate-x-0 sm:px-4 sm:shadow-none"
+          disabled={pending}
+          onClick={() => void create()}
+        >
           {t("decks.newDeck")}
         </button>
       </div>
@@ -459,6 +465,52 @@ function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
     },
     [deckId],
   );
+
+  // Onglet fermé, rechargé ou appli mise en arrière-plan (mobile) : le délai de 600 ms n'aurait
+  // pas le temps d'expirer, la modification en attente part tout de suite (keepalive : la requête
+  // survit à la fermeture de la page).
+  useEffect(() => {
+    const sendNow = () => {
+      if (!pending.current || inFlight.current) return;
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      const body: DeckPatch = pending.current;
+      pending.current = null;
+      inFlight.current = true;
+      fetch(`/api/decks/${deckId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+        keepalive: true,
+      })
+        .then(async (response) => {
+          if (!response.ok) throw new Error();
+          const { deck } = (await response.json()) as { deck: DeckDTO };
+          onSavedRef.current(deck);
+          setError(null);
+          setStatus("saved");
+          inFlight.current = false;
+          // Modifications faites entre-temps (retour sur l'appli) : enregistrement normal.
+          if (pending.current) void flush();
+        })
+        .catch(() => {
+          // La page est restée ouverte (simple passage en arrière-plan) : on garde la modification
+          // et la file normale la renvoie (bouton « Réessayer » si le serveur la refuse encore).
+          inFlight.current = false;
+          pending.current = { ...body, ...(pending.current ?? {}) };
+          void flush();
+        });
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") sendNow();
+    };
+    window.addEventListener("pagehide", sendNow);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", sendNow);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [deckId, flush]);
 
   return { status, error, queue, retry: flush };
 }

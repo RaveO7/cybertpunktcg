@@ -13,6 +13,13 @@
 # testing
 /coverage
 
+# tests e2e (Playwright) : build du serveur de test, traces, rapport et captures
+/.next-e2e
+/.next-e2e-prod
+/test-results
+/playwright-report
+/tests/e2e/screenshots
+
 # next.js
 /.next/
 /out/

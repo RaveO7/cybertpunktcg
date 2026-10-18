@@ -147,7 +147,10 @@ export async function refreshSession(request: Request) {
   const session = await findAccount(token);
   if (!session) return null;
   const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000);
-  await prisma.session.update({ where: { id: session.id }, data: { expiresAt } });
+  // Session révoquée entre la lecture et la prolongation (déconnexion dans un autre onglet…) :
+  // refusée comme une session absente, sans erreur.
+  const { count } = await prisma.session.updateMany({ where: { id: session.id }, data: { expiresAt } });
+  if (count === 0) return null;
   return { user: session.user, token, expiresAt };
 }
 

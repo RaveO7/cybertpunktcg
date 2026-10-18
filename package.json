@@ -24,7 +24,9 @@
     "import:sealed-images": "tsx scripts/import-sealed-images.ts",
     "thumbnails": "tsx scripts/generate-thumbnails.ts",
     "db:export-postgres": "tsx scripts/export-local-to-postgres.ts",
-    "db:sync-prod": "tsx scripts/sync-local-to-prod.ts"
+    "db:sync-prod": "tsx scripts/sync-local-to-prod.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium webkit"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -43,6 +45,7 @@
   },
   "devDependencies": {
     "@formatjs/icu-messageformat-parser": "^3.5.21",
+    "@playwright/test": "1.64.1",
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "1.9.20",
     "@types/node": "^20",
