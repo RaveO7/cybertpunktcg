@@ -20,7 +20,9 @@ export function toInternalPathname(pathname: string): string {
  */
 export function useInternalPathname(): string {
   const segments = useSelectedLayoutSegments().filter((segment) => !segment.startsWith("(") && !segment.startsWith("__"));
-  return segments.length ? `/${segments.map(decodeSegment).join("/")}` : "/";
+  const path = segments.length ? `/${segments.map(decodeSegment).join("/")}` : "/";
+  // Tableau de bord : servi par le proxy à l'adresse de l'accueil (DASHBOARD_PATH de src/proxy.ts).
+  return path === "/tableau-de-bord" ? "/" : path;
 }
 
 function decodeSegment(segment: string) {

@@ -712,6 +712,8 @@ export function DemoMatch({
   if (compact) {
     return createPortal(
       <div
+        // Portail hors de la page : ses balayages ne doivent pas changer d'onglet (voir HowToPlayScreen).
+        data-swipe-zone=""
         className="demo-match demo-match--compact pt-safe px-safe pb-safe fixed inset-0 z-[60] grid bg-background portrait:grid-rows-[minmax(0,1fr)_auto] landscape:grid-cols-[minmax(0,1fr)_clamp(11.5rem,32vw,18rem)]"
         style={densityStyle}
       >

@@ -110,8 +110,9 @@ export function HowToPlayScreen() {
   return (
     <div
       className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
-      // Ses propres balayages (règles ↔ parcours) priment sur le changement de page.
-      data-swipe-zone=""
+      // Règles : balayer vers la gauche ouvre le parcours, vers la droite change encore de page.
+      // Parcours : les deux sens lui reviennent (vers la droite, retour aux règles).
+      data-swipe-zone={mode === "rules" ? "next" : ""}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
