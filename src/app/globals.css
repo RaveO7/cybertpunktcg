@@ -169,6 +169,19 @@ select:disabled {
   cursor: not-allowed;
 }
 
+/* Mode ajout : Ctrl+clic / Ctrl+glisser possible partout dans <main>, les contrôles gardent leur curseur. */
+main[data-add-mode] {
+  cursor: crosshair;
+}
+
+main[data-add-mode] :is(input, textarea, [contenteditable]) {
+  cursor: text;
+}
+
+main[data-add-mode] :is(input[type="checkbox"], input[type="radio"], input[type="range"]) {
+  cursor: pointer;
+}
+
 /* Les selects ont souvent un fond transparent : sans ça, la liste déroulante native
    s'affiche en blanc avec le texte clair du thème sombre. */
 select option,
@@ -300,9 +313,22 @@ html {
   }
 }
 
-/* Bottom spill sits above cards below; sides stay on the -z-10 layer */
-.card-ambilight-bottom {
-  clip-path: inset(88% 6% -32% 6%);
+/* Halo qui déborde devant, sous la tuile : fondu par masque (pas de bords nets). */
+.card-ambilight-spill {
+  --spill: 48px;
+  position: absolute;
+  top: 0;
+  bottom: calc(-1 * var(--spill));
+  left: -12%;
+  right: -12%;
+  padding: 0 12% var(--spill);
+  pointer-events: none;
+  --spill-v: linear-gradient(to top, transparent 0, #000 calc(var(--spill) * 0.6), #000 var(--spill), transparent var(--spill));
+  --spill-h: linear-gradient(to right, transparent 4%, #000 24%, #000 76%, transparent 96%);
+  -webkit-mask-image: var(--spill-v), var(--spill-h);
+  -webkit-mask-composite: source-in;
+  mask-image: var(--spill-v), var(--spill-h);
+  mask-composite: intersect;
 }
 
 /* Scan FX only on hover — avoids N continuous paints in the grid */

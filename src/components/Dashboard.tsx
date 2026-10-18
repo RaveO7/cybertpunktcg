@@ -1147,9 +1147,9 @@ function PickRow({
       </span>
       <span
         aria-hidden
-        className={`w-4 shrink-0 text-right text-xs text-cyan transition-opacity sm:w-14 ${active ? "opacity-100" : "opacity-0"}`}
+        className={`w-4 shrink-0 text-right text-xs text-cyan transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
       >
-        <span className="hidden sm:inline">{openLabel} </span>→
+        →
       </span>
     </button>
   );

@@ -3,8 +3,8 @@
   "searchPlaceholder": "Name, number, text, set",
   "sort": "Sort",
   "addMode": "Add mode",
-  "addModeHelp": "Click: +1. Right-click: remove the card. Ctrl+drag on already selected cards deselects them, otherwise selects them. The page scrolls at the screen edge. Ctrl+A: select all. Alt+click one card, then click or Alt+click another: selects every number between them, e.g. #001 to #005a without taking #005b.",
-  "addModeHelpTouch": "Tap a card: +1. Use − and + on the card to adjust the quantity, or “Select all” to take every card shown.",
+  "addModeHelp": "Click: choose quantity, condition, language and version, then add. Card + button: +1 to the selection. Right-click: remove the card. Ctrl+drag toggles the cards it covers: unselected ones are selected, selected ones are removed. The page scrolls at the screen edge. Ctrl+A: select all. Alt+click one card, then click or Alt+click another: selects every number between them, e.g. #001 to #005a without taking #005b.",
+  "addModeHelpTouch": "Tap a card to choose the quantity, condition, language and version. The card’s + button adds one copy to the selection; “Select all” takes every card shown.",
   "selectAll": "Select all",
   "rangeStart": "Range start: #{number}. Click the end card.",
   "cancelSelection": "Clear selection",
@@ -46,5 +46,10 @@
   "sortToggleDirection": "Reverse order",
   "loading": "Loading cards…",
   "queueCopy": "Add a copy of {title}",
-  "unqueueCopy": "Remove a copy of {title}"
+  "unqueueCopy": "Remove a copy of {title}",
+  "addFavorite": "Add {title} to favorites",
+  "removeFavorite": "Remove {title} from favorites",
+  "favoriteFailed": "Couldn't update favorites.",
+  "quickAddVersion": "Version",
+  "quickAddCancel": "Cancel"
 }

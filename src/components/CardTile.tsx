@@ -35,7 +35,7 @@ export function colorDotClass(color: string | null | undefined) {
   }
 }
 
-function nameParts(card: CardDTO | undefined, printing: PrintingDTO) {
+export function nameParts(card: CardDTO | undefined, printing: PrintingDTO) {
   const localized = printing.localizedName?.trim();
   if (localized) {
     const split = localized.split(/\s*[—–]\s*/, 2);
@@ -60,6 +60,10 @@ export function CardTile({
   onContextMenu,
   onQueue,
   onUnqueue,
+  addMode = false,
+  favorite = false,
+  favoriteReady = false,
+  onToggleFavorite,
 }: {
   printing: PrintingDTO;
   card: CardDTO | undefined;
@@ -70,6 +74,10 @@ export function CardTile({
   onContextMenu: (event: MouseEvent) => void;
   onQueue: () => void;
   onUnqueue: () => void;
+  addMode?: boolean;
+  favorite?: boolean;
+  favoriteReady?: boolean;
+  onToggleFavorite?: () => void;
 }) {
   const t = useTranslations();
   const { name, subname } = nameParts(card, printing);
@@ -81,20 +89,13 @@ export function CardTile({
     <div className="group relative h-full">
       {printing.imagePath ? (
         <>
-          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 aspect-card" aria-hidden>
+          <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
             <CardImage src={printing.imagePath} alt="" role="presentation" draggable={false} className="card-ambilight" />
           </div>
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] aspect-card overflow-visible"
-            aria-hidden
-          >
-            <CardImage
-              src={printing.imagePath}
-              alt=""
-              role="presentation"
-              draggable={false}
-              className="card-ambilight card-ambilight-bottom"
-            />
+          <div className="card-ambilight-spill z-[1]" aria-hidden>
+            <div className="relative h-full">
+              <CardImage src={printing.imagePath} alt="" role="presentation" draggable={false} className="card-ambilight" />
+            </div>
           </div>
         </>
       ) : null}
@@ -157,6 +158,47 @@ export function CardTile({
             </div>
           </div>
         </button>
+        {addMode ? (
+          <div className="absolute bottom-2 right-2 z-20 flex gap-2 sm:bottom-2.5 sm:right-2.5 md:bottom-3 md:right-3 md:gap-2.5">
+            {onToggleFavorite ? (
+              <button
+                type="button"
+                disabled={!favoriteReady}
+                aria-pressed={favorite}
+                className={`grid h-11 w-11 place-items-center sm:h-12 sm:w-12 md:h-14 md:w-14 border bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/70 disabled:opacity-50 ${
+                  favorite ? "border-danger text-danger" : "border-line text-muted hover:border-danger hover:text-danger"
+                }`}
+                aria-label={t(favorite ? "cards.removeFavorite" : "cards.addFavorite", { title })}
+                title={t(favorite ? "cards.removeFavorite" : "cards.addFavorite", { title })}
+                onClick={onToggleFavorite}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-6 w-6 md:h-8 md:w-8"
+                  fill={favorite ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+                </svg>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="grid h-11 w-11 place-items-center sm:h-12 sm:w-12 md:h-14 md:w-14 border border-line bg-background/80 text-muted transition hover:border-yellow hover:text-yellow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80"
+              aria-label={t("cards.queueCopy", { title })}
+              title={t("cards.queueCopy", { title })}
+              onClick={onQueue}
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6 md:h-8 md:w-8" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <rect x="5" y="3" width="12" height="17" rx="1" />
+                <path d="M11 8.5v6M8 11.5h6" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
         {queued > 0 ? (
           <div className="absolute right-2 top-2 z-20 flex items-center border border-yellow/80 bg-yellow text-black shadow-[0_0_18px_rgba(252,238,10,0.35)]">
             <button

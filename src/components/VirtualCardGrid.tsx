@@ -130,6 +130,9 @@ export function VirtualCardGrid({
   onCardContextMenu,
   onQueue,
   onUnqueue,
+  isFavorite,
+  favoritesReady = false,
+  onToggleFavorite,
 }: {
   items: PrintingDTO[];
   cardsById: Map<string, CardDTO>;
@@ -143,6 +146,9 @@ export function VirtualCardGrid({
   onCardContextMenu: (event: MouseEvent, printingId: string) => void;
   onQueue: (printingId: string) => void;
   onUnqueue: (printingId: string) => void;
+  isFavorite?: (printingId: string) => boolean;
+  favoritesReady?: boolean;
+  onToggleFavorite?: (printingId: string) => void;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -215,6 +221,11 @@ export function VirtualCardGrid({
 
   useEffect(() => {
     virtualizer.measure();
+    // measure() vide le cache : les lignes déjà montées doivent être re-mesurées,
+    // sinon elles retombent sur l'estimation et se chevauchent.
+    virtualizer.elementsCache.forEach((node) => {
+      if (node.isConnected) virtualizer.measureElement(node);
+    });
   }, [rowHeight, cols, virtualizer]);
 
   let gridClass = "grid grid-cols-2";
@@ -258,6 +269,10 @@ export function VirtualCardGrid({
                 onContextMenu={(event) => onCardContextMenu(event, printing.id)}
                 onQueue={() => onQueue(printing.id)}
                 onUnqueue={() => onUnqueue(printing.id)}
+                addMode={addMode}
+                favorite={isFavorite?.(printing.id) ?? false}
+                favoriteReady={favoritesReady}
+                onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(printing.id) : undefined}
               />
             ))}
             {rowItems.length < cols

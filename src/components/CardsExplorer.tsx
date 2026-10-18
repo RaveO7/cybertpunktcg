@@ -6,7 +6,9 @@ import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { CardModal } from "@/components/CardModal";
+import { QuickAddSheet } from "@/components/QuickAddSheet";
 import { useCollection } from "@/components/CollectionProvider";
+import { useWishlist } from "@/components/WishlistProvider";
 import { FilterPanel } from "@/components/FilterPanel";
 import { cardIdsInBox, VirtualCardGrid, type CardGridLayout } from "@/components/VirtualCardGrid";
 import {
@@ -161,6 +163,8 @@ export function CardsExplorer({
   const [marquee, setMarquee] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [adding, setAdding] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(false);
+  // Carte touchée en mode ajout : feuille pour choisir quantité, état, langue et version.
+  const [quickAddId, setQuickAddId] = useState<string | null>(null);
   const ctrlHandled = useRef(false);
   const ctrlDown = useRef(false);
   const draftRef = useRef(draft);
@@ -186,6 +190,11 @@ export function CardsExplorer({
     setFilters(parseFilters(new URLSearchParams(key), true, filterDefaults));
   }, [searchParams, filterDefaults]);
   const [addError, setAddError] = useState<string | null>(null);
+  const wishlist = useWishlist();
+  const favoriteIds = useMemo(
+    () => new Map(wishlist.items.map((item) => [item.printingId, item.id])),
+    [wishlist.items],
+  );
 
   const cardsById = useMemo(() => new Map(catalog?.cards.map((card) => [card.id, card]) ?? []), [catalog]);
   const setsByCode = useMemo(() => new Map(catalog?.sets.map((set) => [set.code, set]) ?? []), [catalog]);
@@ -288,7 +297,8 @@ export function CardsExplorer({
       pointerX: 0,
       pointerY: 0,
       moved: false,
-      deselect: false,
+      // Défilement au début du glisser : le point de départ reste accroché aux cartes.
+      scrollStart: 0,
       base: {} as Record<string, number>,
     };
     let active = false;
@@ -309,19 +319,32 @@ export function CardsExplorer({
       return null;
     };
 
+    const scrollOffset = () => {
+      const scroller = scrollParent();
+      return scroller ? scroller.scrollTop : window.scrollY;
+    };
+
     // Viewport coordinates — AppFrame scrolls <main>, not the window.
+    // Le départ suit le contenu : après défilement il peut sortir de l'écran.
     const pageBox = () => {
       const x = drag.pointerX;
       const y = drag.pointerY;
+      const startY = drag.startY - (scrollOffset() - drag.scrollStart);
       const left = Math.min(drag.startX, x);
-      const top = Math.min(drag.startY, y);
+      const top = Math.min(startY, y);
       const right = Math.max(drag.startX, x);
-      const bottom = Math.max(drag.startY, y);
+      const bottom = Math.max(startY, y);
       return { left, top, right, bottom };
     };
 
     const cardsInside = (box: { left: number; top: number; right: number; bottom: number }) => {
       const layout = gridLayoutRef.current;
+      const grid = document.querySelector("[data-card-grid]");
+      if (layout && grid) {
+        // Origine relue ici : l'écouteur de scroll qui la met à jour peut passer après nous.
+        const rect = grid.getBoundingClientRect();
+        return cardIdsInBox(filteredRef.current, { ...layout, originX: rect.left, originY: rect.top }, box);
+      }
       if (layout) return cardIdsInBox(filteredRef.current, layout, box);
       const ids: string[] = [];
       document.querySelectorAll("[data-card-id]").forEach((node) => {
@@ -347,11 +370,12 @@ export function CardsExplorer({
         height: box.bottom - box.top,
       });
       const inside = cardsInside(box);
+      // Inverse chaque carte couverte par rapport à l'état au début du glisser.
       setDraft(() => {
         const next = { ...drag.base };
         for (const id of inside) {
-          if (drag.deselect) delete next[id];
-          else if (!next[id]) next[id] = 1;
+          if (drag.base[id]) delete next[id];
+          else next[id] = 1;
         }
         return next;
       });
@@ -382,7 +406,13 @@ export function CardsExplorer({
       if (event.button !== 0 || !isCtrl(event)) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
-      if (!target.closest("[data-card-grid]") && !target.closest("[data-card-id]")) return;
+      if (!target.closest("[data-card-grid]") && !target.closest("[data-card-id]")) {
+        // Espaces autour des cartes : compteur, marges latérales, gouttière avec les filtres.
+        // N'importe où dans <main> (pied de page compris), hors contrôles interactifs.
+        const main = document.querySelector("[data-card-zone]")?.closest("main");
+        if (!main || !main.contains(target)) return;
+        if (target.closest("a, button, input, select, textarea, label, summary, [role='button'], [contenteditable]")) return;
+      }
       event.preventDefault();
       event.stopPropagation();
       active = true;
@@ -391,10 +421,8 @@ export function CardsExplorer({
       drag.pointerX = event.clientX;
       drag.pointerY = event.clientY;
       drag.moved = false;
+      drag.scrollStart = scrollOffset();
       drag.base = { ...draftRef.current };
-      const origin = target.closest("[data-card-id]");
-      const originId = origin?.getAttribute("data-card-id");
-      drag.deselect = Boolean(originId && drag.base[originId]);
       ctrlHandled.current = true;
       const tick = () => {
         if (!active) return;
@@ -433,6 +461,10 @@ export function CardsExplorer({
       }
       ctrlHandled.current = true;
     };
+    // Molette ou défilement tactile pendant le glisser : le rectangle s'étend avec la page.
+    const onScroll = () => {
+      if (active && drag.moved) applySelection();
+    };
     const onClick = (event: MouseEvent) => {
       if (!ctrlHandled.current && !isCtrl(event)) return;
       event.preventDefault();
@@ -446,7 +478,9 @@ export function CardsExplorer({
     window.addEventListener("pointermove", onPointerMove, true);
     window.addEventListener("pointerup", onPointerUp, true);
     window.addEventListener("click", onClick, true);
+    window.addEventListener("scroll", onScroll, true);
     return () => {
+      window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
@@ -455,6 +489,31 @@ export function CardsExplorer({
       window.removeEventListener("pointerup", onPointerUp, true);
       window.removeEventListener("click", onClick, true);
       window.cancelAnimationFrame(scrollFrame);
+    };
+  }, [effectiveAddMode]);
+
+  // Curseur en croix dans <main> sous le bas de l'encart d'aide : voir main[data-add-mode] dans globals.css.
+  useEffect(() => {
+    if (!effectiveAddMode) return;
+    const main = document.querySelector("main");
+    if (!main) return;
+    let pointerY: number | null = null;
+    const refresh = () => {
+      if (pointerY === null) return;
+      const help = document.querySelector("[data-add-help]");
+      const below = !help || pointerY > help.getBoundingClientRect().bottom;
+      main.toggleAttribute("data-add-mode", below);
+    };
+    const onMove = (event: PointerEvent) => {
+      pointerY = event.clientY;
+      refresh();
+    };
+    main.addEventListener("pointermove", onMove);
+    main.addEventListener("scroll", refresh, { passive: true });
+    return () => {
+      main.removeEventListener("pointermove", onMove);
+      main.removeEventListener("scroll", refresh);
+      main.removeAttribute("data-add-mode");
     };
   }, [effectiveAddMode]);
 
@@ -633,7 +692,15 @@ export function CardsExplorer({
       selectCards([printingId]);
       return;
     }
-    queueCard(printingId);
+    setQuickAddId(printingId);
+  }
+
+  function toggleFavorite(printingId: string) {
+    const wishId = favoriteIds.get(printingId);
+    const action = wishId ? wishlist.remove(wishId) : wishlist.save(printingId);
+    action.catch((favoriteError: unknown) => {
+      setAddError(favoriteError instanceof Error ? favoriteError.message : t("cards.favoriteFailed"));
+    });
   }
 
   function unqueueCard(id: string) {
@@ -652,6 +719,10 @@ export function CardsExplorer({
     setAddError(null);
   }
 
+  function closeQuickAdd() {
+    setQuickAddId(null);
+  }
+
   function exitAddMode() {
     setAddMode(false);
     setLeaveConfirm(false);
@@ -659,6 +730,7 @@ export function CardsExplorer({
     setRangeAnchor(null);
     setDraft({});
     setMarquee(null);
+    setQuickAddId(null);
   }
 
   function requestExitAddMode() {
@@ -686,6 +758,8 @@ export function CardsExplorer({
       setAdding(false);
     }
   }
+
+  const quickAddPrinting = effectiveAddMode ? resolveOpenedPrinting(catalog?.printings ?? [], quickAddId) : null;
 
   if (error) return <p className="p-6 text-danger">{error}</p>;
   if (!ready || !catalog || !facets) return <p className="p-6 text-muted">{t("common.loading")}</p>;
@@ -836,7 +910,7 @@ export function CardsExplorer({
           ) : null}
         </div>
         {effectiveAddMode ? (
-          <div className="mb-3 flex flex-col gap-3 border border-yellow/50 bg-panel p-3">
+          <div data-add-help="" className="mb-3 flex flex-col gap-3 border border-yellow/50 bg-panel p-3">
             <p className="text-sm text-muted pointer-coarse:hidden">{t("cards.addModeHelp")}</p>
             <p className="hidden text-sm text-muted pointer-coarse:block">{t("cards.addModeHelpTouch")}</p>
             {rangeAnchor ? (
@@ -873,6 +947,7 @@ export function CardsExplorer({
             </div>
           </div>
         ) : null}
+        <div data-card-zone="" className={effectiveAddMode ? "select-none" : undefined}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm text-muted">
           <p>
             {filtered.length === 0
@@ -907,8 +982,12 @@ export function CardsExplorer({
             }}
             onQueue={queueCard}
             onUnqueue={unqueueCard}
+            isFavorite={(printingId) => favoriteIds.has(printingId)}
+            favoritesReady={wishlist.ready}
+            onToggleFavorite={readOnly ? undefined : toggleFavorite}
           />
         )}
+        </div>
       </div>
       {selected && selectedCard ? (
         <CardModal
@@ -938,6 +1017,20 @@ export function CardsExplorer({
           onSave={readOnly ? undefined : (input) => saveLine({ ...input, printingId: selected.id, mode: "add" })}
           onPatch={readOnly ? undefined : patchLine}
           onDelete={readOnly ? undefined : deleteLine}
+        />
+      ) : null}
+      {quickAddPrinting && catalog ? (
+        <QuickAddSheet
+          key={quickAddPrinting.id}
+          printing={quickAddPrinting}
+          card={cardsById.get(quickAddPrinting.cardId)}
+          printings={catalog.printings.filter(
+            (printing) => printing.cardId === quickAddPrinting.cardId && !isSealedSetCode(printing.setCode),
+          )}
+          conditions={catalog.conditions}
+          defaultCondition={addCondition}
+          onSave={(input) => saveLine({ ...input, mode: "add" })}
+          onClose={closeQuickAdd}
         />
       ) : null}
       {leaveConfirm && !readOnly ? (

@@ -69,13 +69,15 @@ function CardTile({ card, locale, alt, eager = false }: { card: PublicCard; loca
     <li className="group relative">
       {card.thumb ? (
         <>
-          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 aspect-card" aria-hidden="true">
+          <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
             <img src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight" />
           </div>
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] aspect-card overflow-visible" aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
-            <img src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight card-ambilight-bottom" />
+          <div className="card-ambilight-spill z-[1]" aria-hidden="true">
+            <div className="relative h-full">
+              {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
+              <img src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight" />
+            </div>
           </div>
         </>
       ) : null}

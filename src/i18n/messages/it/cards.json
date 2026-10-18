@@ -3,8 +3,8 @@
   "searchPlaceholder": "Nome, numero, testo, espansione",
   "sort": "Ordina",
   "addMode": "Modalità aggiunta",
-  "addModeHelp": "Clic: +1. Clic destro: rimuovi la carta. Ctrl+trascina su carte già selezionate le deseleziona, altrimenti le seleziona. La pagina scorre ai bordi dello schermo. Ctrl+A: seleziona tutto. Alt+clic su una carta, poi clic o Alt+clic su un’altra: seleziona tutti i numeri tra le due, es. da #001 a #005a senza #005b.",
-  "addModeHelpTouch": "Tocca una carta: +1. Usa − e + sulla carta per regolare la quantità, oppure «Seleziona tutto» per prendere tutte le carte mostrate.",
+  "addModeHelp": "Clic: scegli quantità, condizione, lingua e versione, poi aggiungi. Pulsante + della carta: +1 alla selezione. Clic destro: rimuovi la carta. Ctrl+trascina inverte le carte coperte: seleziona quelle non selezionate e rimuove quelle selezionate. La pagina scorre ai bordi dello schermo. Ctrl+A: seleziona tutto. Alt+clic su una carta, poi clic o Alt+clic su un’altra: seleziona tutti i numeri tra le due, es. da #001 a #005a senza #005b.",
+  "addModeHelpTouch": "Tocca una carta per scegliere quantità, condizione, lingua e versione. Il pulsante + della carta aggiunge una copia alla selezione; «Seleziona tutto» prende tutte le carte mostrate.",
   "selectAll": "Seleziona tutto",
   "rangeStart": "Inizio intervallo: #{number}. Clicca la carta finale.",
   "cancelSelection": "Annulla selezione",
@@ -46,5 +46,10 @@
   "sortToggleDirection": "Inverti ordine",
   "loading": "Caricamento delle carte…",
   "queueCopy": "Aggiungi una copia di {title}",
-  "unqueueCopy": "Rimuovi una copia di {title}"
+  "unqueueCopy": "Rimuovi una copia di {title}",
+  "addFavorite": "Aggiungi {title} ai preferiti",
+  "removeFavorite": "Rimuovi {title} dai preferiti",
+  "favoriteFailed": "Impossibile aggiornare i preferiti.",
+  "quickAddVersion": "Versione",
+  "quickAddCancel": "Annulla"
 }
