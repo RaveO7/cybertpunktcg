@@ -72,8 +72,15 @@ function route(request: NextRequest): NextResponse {
   return response;
 }
 
+/**
+ * Indique au service worker (public/sw.js) si la page a été rendue pour un compte connecté : seule une
+ * telle copie peut être resservie sans attendre le serveur au lancement de l'app installée.
+ */
+export const SESSION_PAGE_HEADER = "x-cptcg-session";
+
 export function proxy(request: NextRequest) {
   const response = route(request);
+  response.headers.set(SESSION_PAGE_HEADER, request.cookies.has(SESSION_COOKIE) ? "1" : "0");
 
   // Pays de connexion (fourni par Vercel) transmis au navigateur, qui propose dès le chargement la
   // version de la page dans la langue du visiteur.

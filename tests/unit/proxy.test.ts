@@ -95,6 +95,11 @@ describe("proxy : langue de l'URL", () => {
     assert.equal(rewrite(proxy(request("/de/boutiques", SESSION))), "/de/boutiques");
   });
 
+  it("page marquée selon la session, pour le service worker", () => {
+    assert.equal(proxy(request("/fr", SESSION)).headers.get("x-cptcg-session"), "1");
+    assert.equal(proxy(request("/fr")).headers.get("x-cptcg-session"), "0");
+  });
+
   it("pays de connexion transmis dans un cookie", () => {
     const response = proxy(request("/", {}, { "x-vercel-ip-country": "es" }));
     assert.equal(response.cookies.get("cptcg-country")?.value, "ES");

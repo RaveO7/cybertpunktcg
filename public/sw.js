@@ -1,7 +1,9 @@
 // Service worker : mode hors-ligne de la PWA (boutique, tournoi…).
 //
 // - Pages principales et assets Next (/_next/static, hachés donc immuables) : disponibles sans réseau.
-//   Navigation preload : la page part au réseau pendant le démarrage du service worker.
+//   Navigation preload : la page part au réseau pendant le démarrage du service worker. Écran d'un compte
+//   connecté déjà en cache : le serveur n'est attendu qu'un instant (fonction à froid au lancement de
+//   l'app), sinon la copie s'affiche et la réponse réseau la remplace pour le lancement suivant.
 // - Catalogue public : réseau d'abord, copie en cache si le réseau échoue ou traîne. L'app lit aussi
 //   ces copies (et celle de la collection) pour s'afficher aussitôt au démarrage (src/lib/offline.ts).
 // - Données du compte (session, collection, stats…) : idem, cache vidé à la connexion/déconnexion
@@ -35,12 +37,18 @@ const OFFLINE_TEXT = {
 
 // Au-delà, on garde la copie en cache et la réponse réseau la mettra à jour en arrière-plan.
 const NETWORK_TIMEOUT_MS = 4000;
+// Idem pour une page rendue pour un compte connecté : une fonction chaude répond bien plus vite, une
+// fonction à froid (premier lancement depuis un moment) met jusqu'à 2 s.
+const APP_PAGE_TIMEOUT_MS = 400;
+// Posé par src/proxy.ts : « 1 » si la page a été rendue avec un cookie de session.
+const SESSION_PAGE_HEADER = "x-cptcg-session";
 // Les assets de chaque déploiement s'accumulent : on ne garde que les plus récents.
 const STATIC_MAX_ENTRIES = 400;
 
 const USER_API = ["/api/auth/session", "/api/collection", "/api/stats", "/api/investment/history", "/api/share", "/api/wishlist", "/api/decks"];
 const PUBLIC_API = ["/api/catalog", "/api/share/"];
 const SESSION_CHANGES = ["/api/auth/login", "/api/auth/logout", "/api/auth/register"];
+const ACCOUNT_DELETE = "/api/auth/account";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -75,7 +83,10 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.method !== "GET") {
-    if (request.method === "POST" && SESSION_CHANGES.includes(url.pathname)) {
+    if (
+      (request.method === "POST" && SESSION_CHANGES.includes(url.pathname)) ||
+      (request.method === "DELETE" && url.pathname === ACCOUNT_DELETE)
+    ) {
       event.respondWith(clearUserCacheAfter(request));
     }
     return;
@@ -90,7 +101,7 @@ self.addEventListener("fetch", (event) => {
     const preload = event.preloadResponse ?? Promise.resolve(undefined);
     event.waitUntil(preload.catch(() => undefined));
     event.respondWith(
-      networkFirst(request, SHELL_CACHE, { key: url.origin + url.pathname, fallback: offlinePage, preload }),
+      networkFirst(request, SHELL_CACHE, { key: url.origin + url.pathname, fallback: offlinePage, preload, event }),
     );
     return;
   }
@@ -104,9 +115,9 @@ self.addEventListener("fetch", (event) => {
   }
   if (url.pathname.startsWith("/api/")) {
     if (PUBLIC_API.some((path) => url.pathname === path || (path.endsWith("/") && url.pathname.startsWith(path)))) {
-      event.respondWith(networkFirst(request, DATA_CACHE));
+      event.respondWith(networkFirst(request, DATA_CACHE, { event }));
     } else if (USER_API.includes(url.pathname)) {
-      event.respondWith(networkFirst(request, USER_CACHE));
+      event.respondWith(networkFirst(request, USER_CACHE, { event }));
     }
     return;
   }
@@ -136,8 +147,8 @@ async function networkFirst(request, cacheName, options = {}) {
       if (response.ok && response.type === "basic" && !response.redirected) {
         await cache.put(key, response.clone()).catch(() => undefined);
       } else if (response.status === 401 && cacheName === USER_CACHE) {
-        // Session expirée ou révoquée : ne plus servir les données de ce compte.
-        await caches.delete(USER_CACHE);
+        // Session expirée ou révoquée : ne plus servir les données ni les écrans de ce compte.
+        await forgetSession();
       }
       return response;
     });
@@ -152,8 +163,12 @@ async function networkFirst(request, cacheName, options = {}) {
     }
   }
 
-  // Une copie existe : on la sert si le réseau échoue ou met trop de temps.
-  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), NETWORK_TIMEOUT_MS));
+  // Une copie existe : on la sert si le réseau échoue ou met trop de temps. La réponse réseau, même
+  // tardive, met la copie à jour : le service worker reste actif jusqu'à son arrivée.
+  options.event?.waitUntil(network.catch(() => undefined));
+  const appPage = cached.headers.get(SESSION_PAGE_HEADER) === "1";
+  const delay = appPage ? APP_PAGE_TIMEOUT_MS : NETWORK_TIMEOUT_MS;
+  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), delay));
   const winner = await Promise.race([network.catch(() => null), timeout]);
   if (winner) return winner;
   network.catch(() => undefined);
@@ -162,8 +177,24 @@ async function networkFirst(request, cacheName, options = {}) {
 
 async function clearUserCacheAfter(request) {
   const response = await fetch(request);
-  if (response.ok) await caches.delete(USER_CACHE);
+  if (response.ok) await forgetSession();
   return response;
+}
+
+/**
+ * Changement ou fin de session : données du compte effacées, et copies des écrans rendus pour lui
+ * (servies sans attendre le serveur) oubliées. Icônes et manifeste restent.
+ */
+async function forgetSession() {
+  await caches.delete(USER_CACHE);
+  const cache = await caches.open(SHELL_CACHE);
+  const keys = await cache.keys();
+  await Promise.all(
+    keys.map(async (key) => {
+      const cached = await cache.match(key);
+      if (cached?.headers.get(SESSION_PAGE_HEADER) === "1") await cache.delete(key);
+    }),
+  );
 }
 
 async function trimCache(cacheName, maxEntries) {
