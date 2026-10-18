@@ -315,12 +315,8 @@ export function Header() {
 
 /** Barre d'onglets façon application, affichée uniquement sur téléphone. */
 export function BottomNav() {
-  const { pathname, user, t, isSharedView, showNav, links, activeMatch, markPending } = useNavigation();
+  const { pathname, t, showNav, links, activeMatch, markPending } = useNavigation();
   const keyboardOpen = useKeyboardOpen();
-  // Page d'où l'on a ouvert les paramètres (URL complète, dans sa langue) : un second clic y ramène.
-  const [settingsReturn, setSettingsReturn] = useState<string | null>(null);
-  const inSettings = pathname === "/parametres";
-  const showSettings = Boolean(user) && !isSharedView;
   const visible = showNav && !keyboardOpen;
   usePageSwipe(links, pathname, visible);
 
@@ -363,36 +359,6 @@ export function BottomNav() {
             </li>
           );
         })}
-        {showSettings ? (
-          <li className="min-w-0 flex-1">
-            {inSettings && settingsReturn ? (
-              <NextLink
-                href={settingsReturn}
-                className="relative flex h-full flex-col items-center justify-center gap-1 px-1 text-yellow"
-                aria-current="page"
-              >
-                <span className="absolute inset-x-4 top-0 h-0.5 bg-yellow" aria-hidden="true" />
-                <NavGlyph icon="settings" />
-                <span className="max-w-full truncate text-[11px] leading-none">{t("common.settings")}</span>
-              </NextLink>
-            ) : (
-              <Link
-                href={inSettings ? "/" : "/parametres"}
-                onClick={() => {
-                  if (!inSettings) setSettingsReturn(window.location.pathname + window.location.search);
-                }}
-                className={`relative flex h-full flex-col items-center justify-center gap-1 px-1 ${
-                  inSettings ? "text-yellow" : "text-muted active:text-foreground"
-                }`}
-                aria-current={inSettings ? "page" : undefined}
-              >
-                {inSettings ? <span className="absolute inset-x-4 top-0 h-0.5 bg-yellow" aria-hidden="true" /> : null}
-                <NavGlyph icon="settings" />
-                <span className="max-w-full truncate text-[11px] leading-none">{t("common.settings")}</span>
-              </Link>
-            )}
-          </li>
-        ) : null}
       </ul>
     </nav>
   );
