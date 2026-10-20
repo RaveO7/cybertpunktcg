@@ -3,6 +3,7 @@
   "title": "Si è verificato un errore",
   "body": "Impossibile caricare questa pagina. Riprova tra un momento.",
   "retry": "Riprova",
+  "offlineLoad": "Offline: connettiti a Internet per caricare questi dati.",
   "home": "Torna alla home",
   "notFoundEyebrow": "404",
   "notFoundTitle": "Pagina non trovata",
@@ -19,6 +20,8 @@
     "logoutFailed": "Disconnessione non riuscita.",
     "loadCollection": "Impossibile caricare la collezione.",
     "loadDecks": "Impossibile caricare i mazzi.",
-    "deleteAccountFailed": "Impossibile eliminare l’account."
+    "loadWishlist": "Impossibile caricare la lista dei desideri.",
+    "deleteAccountFailed": "Impossibile eliminare l’account.",
+    "syncCorrupted": "Una modifica salvata offline era illeggibile ed è stata scartata."
   }
 }

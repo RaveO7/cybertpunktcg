@@ -83,5 +83,16 @@
   "deleteCancel": "Abbrechen",
   "deleting": "Wird gelöscht…",
   "deleteFailed": "Löschen nicht möglich.",
-  "loading": "Laden…"
+  "loading": "Laden…",
+  "pushTitle": "Benachrichtigungen bei Preisalarmen",
+  "pushHint": "Erhalte auf diesem Gerät eine Benachrichtigung, wenn eine Karte deiner Wunschliste deinen Zielpreis erreicht – auch wenn die App geschlossen ist.",
+  "pushEnable": "Auf diesem Gerät aktivieren",
+  "pushDisable": "Auf diesem Gerät deaktivieren",
+  "pushEnabled": "Benachrichtigungen sind auf diesem Gerät aktiviert.",
+  "pushDisabled": "Benachrichtigungen sind auf diesem Gerät deaktiviert.",
+  "pushBusy": "Einen Moment…",
+  "pushDenied": "Benachrichtigungen sind für diese Website blockiert. Erlaube sie in den Browsereinstellungen (Symbol links neben der Adresse) und versuche es erneut.",
+  "pushUnsupported": "Dieser Browser unterstützt keine Push-Benachrichtigungen.",
+  "pushInstallIos": "Füge die App auf iPhone und iPad zuerst zum Home-Bildschirm hinzu (Teilen → Zum Home-Bildschirm) und öffne sie dann über ihr Symbol, um Benachrichtigungen zu aktivieren.",
+  "pushFailed": "Benachrichtigungen konnten nicht geändert werden. Bitte versuche es erneut."
 }

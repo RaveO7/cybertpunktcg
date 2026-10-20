@@ -5,7 +5,7 @@ Chaque fenêtre modale ou feuille de l'application et du site (fiche carte, ajou
 - être exposée comme boîte de dialogue modale avec un nom accessible ;
 - placer le focus sur un élément à l'intérieur à l'ouverture ;
 - garder le focus à l'intérieur tant qu'elle est ouverte (Tab et Maj+Tab bouclent) ;
-- rendre le contenu en arrière-plan inerte ;
+- rendre le contenu en arrière-plan inerte, sauf la barre de navigation du bas ;
 - empêcher le défilement de la page en arrière-plan.
 
 #### Scenario: Tabulation bouclée
@@ -15,6 +15,10 @@ Chaque fenêtre modale ou feuille de l'application et du site (fiche carte, ajou
 #### Scenario: Arrière-plan inerte
 - **WHEN** la feuille d'ajout rapide est ouverte
 - **THEN** les éléments de la page derrière ne peuvent recevoir ni le focus ni un clic
+
+#### Scenario: Barre du bas sous une fenêtre
+- **WHEN** la fiche d'une carte est ouverte sur téléphone et que l'utilisateur touche « Decks » dans la barre du bas
+- **THEN** l'écran des decks s'ouvre directement et la fiche est fermée
 
 ### Requirement: Fermeture et retour du focus
 Chaque fenêtre modale MUST se fermer avec la touche Échap, sauf pendant un enregistrement en cours. À la fermeture, le focus MUST revenir à l'élément qui l'a ouverte, s'il existe encore. Quand des fenêtres sont empilées, Échap MUST fermer seulement la plus haute.

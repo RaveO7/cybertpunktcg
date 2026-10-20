@@ -4,6 +4,10 @@ import { requireLocalDatabase } from "./tests/e2e/setup/local-db";
 // Avant tout démarrage du serveur : jamais de test contre une autre base que le SQLite local.
 const databaseUrl = requireLocalDatabase();
 
+// Liste de souhaits affichée (non publiée en production) pour tester ses écrans et les notifications.
+// Posée ici pour que les tests (workers) sachent aussi qu'elle est affichée.
+process.env.NEXT_PUBLIC_WISHLIST_ENABLED ??= "1";
+
 const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;
 
@@ -51,6 +55,9 @@ export default defineConfig({
       // Compteurs du limiteur rangés par IP (x-forwarded-for propre au run), jamais sous « local ».
       TRUST_PROXY: "1",
       APP_URL: baseURL,
+      // Clé publique VAPID de test (sans clé privée : rien n'est envoyé) pour afficher l'option des notifications.
+      NEXT_PUBLIC_WISHLIST_ENABLED: process.env.NEXT_PUBLIC_WISHLIST_ENABLED,
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: "BPheSkC2TmA5sZbC_36IlVcYng93DYf4XST-8X2a_tS4WtSNR46Sx0IcKBZDiaxF2y_SiDX8rSwNDv1wVReJ5NA",
     },
   },
 });

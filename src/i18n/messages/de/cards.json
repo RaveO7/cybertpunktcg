@@ -3,6 +3,8 @@
   "searchPlaceholder": "Name, Nummer, Text, Set",
   "sort": "Sortierung",
   "addMode": "Hinzufügen-Modus",
+  "select": "Auswählen",
+  "selectedCount": "{n, plural, =0 {Keine Karte ausgewählt} one {# Karte ausgewählt} other {# Karten ausgewählt}}",
   "addModeHelp": "Klick: Anzahl, Zustand, Sprache und Version wählen, dann hinzufügen. +-Taste der Karte: +1 zur Auswahl. Rechtsklick: Karte entfernen. Strg+Ziehen kehrt die überstrichenen Karten um: nicht gewählte werden gewählt, gewählte entfernt. Die Seite scrollt am Bildschirmrand. Strg+A: alles auswählen. Alt+Klick auf eine Karte, dann Klick oder Alt+Klick auf eine andere: wählt alle Nummern dazwischen, z. B. #001 bis #005a ohne #005b.",
   "addModeHelpTouch": "Karte antippen, um Anzahl, Zustand, Sprache und Version zu wählen. Die +-Taste der Karte fügt der Auswahl ein Exemplar hinzu; „Alle auswählen“ nimmt alle angezeigten Karten.",
   "selectAll": "Alle auswählen",

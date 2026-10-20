@@ -1,14 +1,11 @@
-import { randomBytes } from "node:crypto";
 import { DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { formatRoute } from "@/i18n/match";
 import { requestLocale } from "@/lib/api-response";
-import { shareTokenSchema } from "@/lib/api-schemas";
 import { prisma } from "@/lib/prisma";
+import { createShareToken, isShareTokenFormat } from "@/lib/share-token";
 import type { CollectionItemDTO } from "@/lib/types";
 
-export function createShareToken() {
-  return randomBytes(24).toString("base64url");
-}
+export { createShareToken };
 
 /** Adresse du classeur partagé, dans la langue de celui qui partage. */
 export function sharePath(token: string, locale: Locale = DEFAULT_LOCALE) {
@@ -30,7 +27,7 @@ export async function createOrRotateShare(userId: string) {
 
 /** Lien valide et actif ? (pour répondre 404 dès le rendu serveur). */
 export async function shareExists(token: string) {
-  if (!shareTokenSchema.safeParse(token).success) return false;
+  if (!isShareTokenFormat(token)) return false;
   const share = await prisma.collectionShare.findUnique({ where: { token }, select: { id: true } });
   return share !== null;
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CardImage } from "@/components/CardImage";
 import { nameParts } from "@/components/CardTile";
 import { usePreferences } from "@/components/PreferencesProvider";
+import { useModal } from "@/components/use-modal";
 import { conditionOptionLabel } from "@/lib/condition-label";
 import { CURRENCIES } from "@/lib/parse";
 import type { CardDTO, ConditionDTO, PrintingDTO } from "@/lib/types";
@@ -91,18 +92,10 @@ export function QuickAddSheet({
     if (match) setPrintingId(match.id);
   }
 
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  // Focus sur la feuille elle-même : un champ focalisé ouvrirait le clavier du téléphone.
+  useModal(overlayRef, { onClose, initialFocus: formRef, closeOnEscape: !saving });
 
   const parsedQuantity = Number(quantity);
   const validQuantity = Number.isInteger(parsedQuantity) && parsedQuantity >= 1 && parsedQuantity <= 999;
@@ -133,17 +126,20 @@ export function QuickAddSheet({
 
   return (
     <div
+      ref={overlayRef}
       className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 sm:items-center sm:p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
       <form
+        ref={formRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="quick-add-title"
         onSubmit={(event) => void submit(event)}
-        className="pb-safe scrollbar-hud max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain border-t border-yellow/60 bg-panel px-4 pt-2 shadow-[0_-12px_40px_rgba(0,0,0,0.6)] sm:border sm:pb-4"
+        className="pb-safe scrollbar-hud max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain border-t outline-none border-yellow/60 bg-panel px-4 pt-2 shadow-[0_-12px_40px_rgba(0,0,0,0.6)] sm:border sm:pb-4"
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line sm:hidden" aria-hidden />
         <div className="flex items-center gap-3">

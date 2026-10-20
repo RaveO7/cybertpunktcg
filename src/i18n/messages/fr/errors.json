@@ -3,6 +3,7 @@
   "title": "Une erreur est survenue",
   "body": "Le chargement de cette page a échoué. Réessayez dans un instant.",
   "retry": "Réessayer",
+  "offlineLoad": "Hors ligne : connectez-vous à Internet pour charger ces données.",
   "home": "Retour à l’accueil",
   "notFoundEyebrow": "404",
   "notFoundTitle": "Page introuvable",
@@ -19,6 +20,8 @@
     "logoutFailed": "Déconnexion impossible.",
     "loadCollection": "Impossible de charger la collection.",
     "loadDecks": "Impossible de charger les decks.",
-    "deleteAccountFailed": "Suppression du compte impossible."
+    "loadWishlist": "Impossible de charger la liste de souhaits.",
+    "deleteAccountFailed": "Suppression du compte impossible.",
+    "syncCorrupted": "Une modification enregistrée hors ligne était illisible et a été abandonnée."
   }
 }

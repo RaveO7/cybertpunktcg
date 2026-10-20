@@ -7,6 +7,7 @@ import { HowToPlayRules } from "@/components/HowToPlayRules";
 import { HowToPlayTutorial } from "@/components/HowToPlayTutorial";
 import { useTutorialCopy } from "@/lib/rules/use-rules";
 import { isInHorizontalScroller } from "@/lib/swipe";
+import { useModal } from "@/components/use-modal";
 
 type Mode = "learn" | "rules";
 
@@ -20,6 +21,9 @@ export function HowToPlayScreen() {
   const backToTopLabel = screen.backToTop;
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   const leaveCopy = screen.leave;
+  const leaveRef = useRef<HTMLDivElement>(null);
+  const stayRef = useRef<HTMLButtonElement>(null);
+  useModal(leaveRef, { open: leaveConfirm, onClose: () => setLeaveConfirm(false), initialFocus: stayRef });
 
   const onProgress = useCallback((step: number, total: number) => {
     setProgress({ step, total });
@@ -158,6 +162,7 @@ export function HowToPlayScreen() {
       {leaveConfirm
         ? createPortal(
             <div
+              ref={leaveRef}
               className="fixed inset-0 z-[80] flex items-center justify-center bg-background/90 p-4 backdrop-blur-sm"
               role="dialog"
               aria-modal="true"
@@ -171,6 +176,7 @@ export function HowToPlayScreen() {
                 <p className="mt-2 text-sm leading-6 text-muted">{leaveCopy.body}</p>
                 <div className="mt-5 flex justify-end gap-2">
                   <button
+                    ref={stayRef}
                     type="button"
                     className="h-10 border border-line px-4 text-sm"
                     onClick={() => setLeaveConfirm(false)}

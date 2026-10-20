@@ -1,5 +1,5 @@
 {
-  "banner": "Sin conexión: solo consulta. Podrás hacer cambios cuando vuelva la red.",
+  "banner": "Sin conexión: los cambios de la colección se guardan en este dispositivo y se envían al recuperar la conexión. El resto es solo de consulta.",
   "title": "Modo sin conexión",
   "hint": "El catálogo y tu colección siguen disponibles sin red (tienda, torneo). Descarga las imágenes de las cartas para verlas también sin conexión.",
   "download": "Descargar imágenes ({n})",
@@ -15,5 +15,14 @@
     "title": "Sin conexión",
     "body": "Esta página aún no se ha guardado en este dispositivo.",
     "home": "Volver al inicio"
+  },
+  "sync": {
+    "pending": "{n, plural, one {# cambio pendiente} other {# cambios pendientes}}",
+    "syncing": "Sincronizando…",
+    "pendingLine": "Pendiente",
+    "rejected": "«{card}»: cambio cancelado. {reason}",
+    "rejectedUnknown": "Cambio cancelado. {reason}",
+    "dismiss": "Cerrar",
+    "logoutConfirm": "{n, plural, one {# cambio aún no se ha enviado y se perderá.} other {# cambios aún no se han enviado y se perderán.}} ¿Cerrar sesión de todos modos?"
   }
 }

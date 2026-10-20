@@ -128,7 +128,7 @@ Voir `proposal.md` pour la motivation, et les specs pour les exigences. Ce que l
 - **Hook.** `src/components/use-modal.ts`, appelé `useModal(ref, { open, onClose, initialFocus, closeOnEscape })`. À l'ouverture, il :
   - mémorise `document.activeElement` ;
   - place le focus ;
-  - pose `inert` sur les frères du portail (ou sur `#app-root`) ;
+  - pose `inert` sur tout ce qui n'est ni la fenêtre ni l'un de ses ancêtres, sauf les éléments `data-modal-keep` (barre de navigation du bas : changer de section ferme la fenêtre sans passer par la croix) ;
   - bloque le défilement (`overflow: hidden` sur `html`, avec compensation de la barre de défilement) ;
   - piège Tab et Maj+Tab ;
   - empile les fenêtres dans une pile de module, pour qu'Échap ne ferme que la plus haute.
@@ -150,7 +150,7 @@ Voir `proposal.md` pour la motivation, et les specs pour les exigences. Ce que l
   - `CardModal` → `src/components/card-modal/` : en-tête, onglets prix, impressions, règles.
   - `InvestmentScreen` → `src/components/investment/` : `PriceChart` reste, et la table et les filtres sont extraits.
   - `CardsExplorer` → extraction de la sélection (`use-marquee-selection.ts`, `use-keyboard-selection.ts`) et de la barre d'actions.
-- **Chargement à la demande.** Avec `next/dynamic`, pour les panneaux secondaires : `ExportPanel`, `ImportPanel`, `ShareDeckPanel`, le graphique de `InvestmentScreen` et l'onglet prix de `CardModal`.
+- **Chargement à la demande.** Avec `next/dynamic`, seulement pour les panneaux qui tirent une dépendance lourde et dont le gain est mesuré : le graphique de `InvestmentScreen` et l'onglet prix de `CardModal` (`PriceChart`). Les petits panneaux (`ExportPanel`, `ImportPanel`) restent en import statique : le chargeur dynamique coûte autant qu'il fait gagner. `ShareDeckPanel` suivra la même règle, après mesure.
 - **Ordre.** Le découpage de `DecksScreen` et de `CardsExplorer` passe avant les volets qui les modifient (partage, ajout des manquantes, recherche, sélection clavier), pour éviter de grossir encore ces fichiers.
 - **Travail non commité.** Le travail en cours (`QuickAddSheet.tsx` et les modifications de `CardsExplorer`, `CardTile`, `VirtualCardGrid`) doit être commité avant de commencer.
 
@@ -170,7 +170,7 @@ Voir `proposal.md` pour la motivation, et les specs pour les exigences. Ce que l
 
 1. **Base.** Ajouter `DeckShare` et `PushSubscription` à `prisma/schema.prisma` et `schema.sqlite.prisma`, puis lancer `node scripts/prisma.mjs db push` en local. En production, `scripts/vercel-db-push.mjs` applique le schéma au build. Les changements sont purement additifs.
 2. **Secrets.** Générer les clés VAPID (`npx web-push generate-vapid-keys`) et les ajouter à Vercel : `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_SUBJECT=mailto:…`.
-3. **Service worker.** Incrémenter la `VERSION` de `public/sw.js`, pour que les clients prennent les nouveaux gestionnaires `push`.
+3. **Service worker.** Ne pas incrémenter la `VERSION` de `public/sw.js` : elle nomme les caches (partagés avec `src/lib/offline.ts`) et l'incrémenter effacerait les images téléchargées pour le hors ligne. Toute modification de `sw.js` suffit pour que les clients prennent les nouveaux gestionnaires `push` (`skipWaiting` et `clients.claim` déjà en place). La `VERSION` ne change que si le contenu d'un cache change.
 4. **Retour arrière.**
    - Chaque volet est indépendant.
    - Retirer les clés VAPID désactive les envois sans casser l'interface.

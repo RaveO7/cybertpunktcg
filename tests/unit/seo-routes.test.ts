@@ -70,9 +70,16 @@ describe("seo : routes localisées", () => {
     assert.equal(alternatePath("/fr/decks", null, "de"), "/de/decks");
     assert.equal(alternatePath("/de/decks", null, "fr"), "/fr/decks");
     assert.equal(alternatePath("/fr/tournois/abc", null, "it"), "/it/tournois/abc");
-    for (const path of ["/fr/cards", "/fr/decks", "/fr/tournois", "/fr/tournois/abc", "/fr/classeur/x", "/fr/tournois/publics", "/fr/boutiques", "/fr/comment-jouer"]) {
+    for (const path of ["/fr/cards", "/fr/decks", "/fr/tournois", "/fr/tournois/abc", "/fr/classeur/x", "/fr/deck/x", "/de/deck/x", "/fr/tournois/publics", "/fr/boutiques", "/fr/comment-jouer"]) {
       assert.equal(publicRouteOfPath(path), null, path);
     }
+  });
+
+  it("deck partagé : même chemin dans toutes les langues, distinct de la liste des decks", () => {
+    assert.equal(matchRoute("/de/deck/abc")?.route, "/deck/[token]");
+    assert.equal(matchRoute("/fr/decks")?.route, "/decks");
+    assert.equal(formatRoute("/deck/[token]", "it", { token: "abc" }), "/it/deck/abc");
+    assert.equal(alternatePath("/fr/deck/abc", null, "en"), "/en/deck/abc");
   });
 
   it("explorateur : /fr/cards en français, /<langue>/explorer ailleurs ; /en/cards reste la liste publique", () => {

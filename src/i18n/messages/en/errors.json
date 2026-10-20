@@ -3,6 +3,7 @@
   "title": "Something went wrong",
   "body": "This page failed to load. Please try again in a moment.",
   "retry": "Try again",
+  "offlineLoad": "Offline: connect to the internet to load this data.",
   "home": "Back to home",
   "notFoundEyebrow": "404",
   "notFoundTitle": "Page not found",
@@ -19,6 +20,8 @@
     "logoutFailed": "Sign-out failed.",
     "loadCollection": "Could not load the collection.",
     "loadDecks": "Could not load the decks.",
-    "deleteAccountFailed": "Could not delete the account."
+    "loadWishlist": "Could not load the wishlist.",
+    "deleteAccountFailed": "Could not delete the account.",
+    "syncCorrupted": "A change saved offline could not be read and was discarded."
   }
 }

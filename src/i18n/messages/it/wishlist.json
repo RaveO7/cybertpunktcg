@@ -22,5 +22,13 @@
   "removeCard": "Rimuovi {name} dalla lista dei desideri",
   "inWishlist": "Vedi la mia lista",
   "openCard": "Apri {name}",
-  "failed": "Azione non riuscita."
+  "failed": "Azione non riuscita.",
+  "pushPrompt": "Ricevere una notifica su questo dispositivo quando un prezzo obiettivo viene raggiunto?",
+  "pushPromptEnable": "Attiva le notifiche",
+  "pushPromptDismiss": "Più tardi",
+  "push": {
+    "title": "Prezzo obiettivo raggiunto",
+    "one": "{name} costa {price}.",
+    "many": "{count, plural, one {# carta ha raggiunto} other {# carte hanno raggiunto}} il tuo prezzo obiettivo."
+  }
 }

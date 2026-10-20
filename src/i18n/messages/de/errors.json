@@ -3,6 +3,7 @@
   "title": "Ein Fehler ist aufgetreten",
   "body": "Diese Seite konnte nicht geladen werden. Bitte versuche es gleich erneut.",
   "retry": "Erneut versuchen",
+  "offlineLoad": "Offline: Verbinde dich mit dem Internet, um diese Daten zu laden.",
   "home": "Zur Startseite",
   "notFoundEyebrow": "404",
   "notFoundTitle": "Seite nicht gefunden",
@@ -19,6 +20,8 @@
     "logoutFailed": "Abmeldung fehlgeschlagen.",
     "loadCollection": "Die Sammlung konnte nicht geladen werden.",
     "loadDecks": "Die Decks konnten nicht geladen werden.",
-    "deleteAccountFailed": "Konto konnte nicht gelöscht werden."
+    "loadWishlist": "Die Wunschliste konnte nicht geladen werden.",
+    "deleteAccountFailed": "Konto konnte nicht gelöscht werden.",
+    "syncCorrupted": "Eine offline gespeicherte Änderung war unlesbar und wurde verworfen."
   }
 }

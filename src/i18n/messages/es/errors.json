@@ -3,6 +3,7 @@
   "title": "Se produjo un error",
   "body": "No se pudo cargar esta página. Inténtalo de nuevo en un momento.",
   "retry": "Reintentar",
+  "offlineLoad": "Sin conexión: conéctate a Internet para cargar estos datos.",
   "home": "Volver al inicio",
   "notFoundEyebrow": "404",
   "notFoundTitle": "Página no encontrada",
@@ -19,6 +20,8 @@
     "logoutFailed": "No se pudo cerrar la sesión.",
     "loadCollection": "No se pudo cargar la colección.",
     "loadDecks": "No se pudieron cargar los mazos.",
-    "deleteAccountFailed": "No se ha podido eliminar la cuenta."
+    "loadWishlist": "No se pudo cargar la lista de deseos.",
+    "deleteAccountFailed": "No se ha podido eliminar la cuenta.",
+    "syncCorrupted": "Un cambio guardado sin conexión no se podía leer y se ha descartado."
   }
 }

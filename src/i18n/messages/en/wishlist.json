@@ -22,5 +22,13 @@
   "removeCard": "Remove {name} from the wishlist",
   "inWishlist": "View my wishlist",
   "openCard": "Open {name}",
-  "failed": "Action failed."
+  "failed": "Action failed.",
+  "pushPrompt": "Get a notification on this device when a target price is reached?",
+  "pushPromptEnable": "Turn on notifications",
+  "pushPromptDismiss": "Not now",
+  "push": {
+    "title": "Target price reached",
+    "one": "{name} is at {price}.",
+    "many": "{count, plural, one {# card has reached} other {# cards have reached}} your target price."
+  }
 }

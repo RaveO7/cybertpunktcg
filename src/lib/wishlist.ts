@@ -81,6 +81,28 @@ export async function saveWishlistItem(userId: string, input: SaveInput) {
   return toDTO(row);
 }
 
+/**
+ * Ajoute plusieurs tirages d'un coup (cartes manquantes d'un deck), en une transaction :
+ * tout ou rien. Un tirage déjà dans la liste est conservé tel quel (cible, notes, alerte).
+ */
+export async function addWishlistItems(userId: string, printingIds: string[]) {
+  const ids = [...new Set(printingIds)];
+  return prisma.$transaction(async (tx) => {
+    const printings = await tx.printing.count({ where: { id: { in: ids }, isActive: true } });
+    if (printings !== ids.length) fail("common.cardNotFound");
+    const existing = await tx.wishlistItem.findMany({ where: { userId, printingId: { in: ids } }, select: { printingId: true } });
+    const present = new Set(existing.map((row) => row.printingId));
+    const missing = ids.filter((printingId) => !present.has(printingId));
+    if (missing.length && (await tx.wishlistItem.count({ where: { userId } })) + missing.length > MAX_WISHLIST_ITEMS) {
+      fail("wishlist.full", 400, undefined, { max: MAX_WISHLIST_ITEMS });
+    }
+    // Sans cible, pas d'alerte : les valeurs par défaut du modèle suffisent.
+    if (missing.length) await tx.wishlistItem.createMany({ data: missing.map((printingId) => ({ userId, printingId })) });
+    const rows = await tx.wishlistItem.findMany({ where: { userId, printingId: { in: ids } }, orderBy: { createdAt: "asc" } });
+    return { added: missing.length, alreadyPresent: present.size, items: rows.map(toDTO) };
+  });
+}
+
 export async function patchWishlistItem(userId: string, id: string, input: PatchInput) {
   const existing = await prisma.wishlistItem.findFirst({ where: { id, userId } });
   if (!existing) fail("wishlist.notInList", 404);
@@ -104,7 +126,16 @@ export async function acknowledgeWishlistAlerts(userId: string) {
   await prisma.wishlistItem.updateMany({ where: { userId, alertSeen: false }, data: { alertSeen: true } });
 }
 
-export type WishlistAlertReport = { checked: number; triggered: number; cleared: number };
+/** Alerte déclenchée par l'évaluation (prix passé sous la cible), à notifier. */
+export type TriggeredWishlistAlert = { userId: string; printingId: string; price: number };
+
+export type WishlistAlertReport = {
+  checked: number;
+  triggered: number;
+  cleared: number;
+  /** Nouvelles alertes seulement : ni les alertes qui suivent le prix, ni celles qui s'effacent. */
+  triggeredItems: TriggeredWishlistAlert[];
+};
 
 /**
  * Compare chaque cible au prix tendance actuel (appelé après l'import des prix) :
@@ -116,6 +147,8 @@ export async function evaluateWishlistAlerts(client: PrismaClient): Promise<Wish
     where: { targetPrice: { not: null } },
     select: {
       id: true,
+      userId: true,
+      printingId: true,
       targetPrice: true,
       alertAt: true,
       alertPrice: true,
@@ -128,13 +161,13 @@ export async function evaluateWishlistAlerts(client: PrismaClient): Promise<Wish
   });
   const now = new Date();
   const updates: ReturnType<typeof client.wishlistItem.update>[] = [];
-  let triggered = 0;
+  const triggeredItems: TriggeredWishlistAlert[] = [];
   let cleared = 0;
   for (const item of items) {
     const price = amount(item.printing.prices[0]?.amount);
     const reached = wishlistTargetReached(amount(item.targetPrice), price);
     if (reached && !item.alertAt) {
-      triggered += 1;
+      triggeredItems.push({ userId: item.userId, printingId: item.printingId, price: price! });
       updates.push(
         client.wishlistItem.update({
           where: { id: item.id },
@@ -159,5 +192,5 @@ export async function evaluateWishlistAlerts(client: PrismaClient): Promise<Wish
   for (let index = 0; index < updates.length; index += 200) {
     await client.$transaction(updates.slice(index, index + 200));
   }
-  return { checked: items.length, triggered, cleared };
+  return { checked: items.length, triggered: triggeredItems.length, cleared, triggeredItems };
 }

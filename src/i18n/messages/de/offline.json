@@ -1,5 +1,5 @@
 {
-  "banner": "Offline: nur Ansicht. Änderungen sind wieder möglich, sobald du online bist.",
+  "banner": "Offline: Änderungen an der Sammlung werden auf diesem Gerät gespeichert und gesendet, sobald du wieder online bist. Alles andere ist schreibgeschützt.",
   "title": "Offline-Modus",
   "hint": "Katalog und Sammlung bleiben ohne Verbindung verfügbar (Laden, Turnier). Lade die Kartenbilder herunter, um sie auch offline zu sehen.",
   "download": "Bilder herunterladen ({n})",
@@ -15,5 +15,14 @@
     "title": "Offline",
     "body": "Diese Seite wurde auf diesem Gerät noch nicht gespeichert.",
     "home": "Zurück zur Startseite"
+  },
+  "sync": {
+    "pending": "{n, plural, one {# ausstehende Änderung} other {# ausstehende Änderungen}}",
+    "syncing": "Synchronisierung…",
+    "pendingLine": "Ausstehend",
+    "rejected": "„{card}“: Änderung verworfen. {reason}",
+    "rejectedUnknown": "Änderung verworfen. {reason}",
+    "dismiss": "Schließen",
+    "logoutConfirm": "{n, plural, one {# Änderung wurde noch nicht gesendet und geht verloren.} other {# Änderungen wurden noch nicht gesendet und gehen verloren.}} Trotzdem abmelden?"
   }
 }

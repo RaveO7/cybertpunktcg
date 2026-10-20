@@ -64,6 +64,8 @@ export function CardTile({
   favorite = false,
   favoriteReady = false,
   onToggleFavorite,
+  tabIndex,
+  pressed,
 }: {
   printing: PrintingDTO;
   card: CardDTO | undefined;
@@ -78,6 +80,10 @@ export function CardTile({
   favorite?: boolean;
   favoriteReady?: boolean;
   onToggleFavorite?: () => void;
+  /** Tabindex mobile de la grille : une seule carte atteinte par Tab. */
+  tabIndex?: number;
+  /** Mode sélection : la carte est un bouton à bascule (cochée ou non). */
+  pressed?: boolean;
 }) {
   const t = useTranslations();
   const { name, subname } = nameParts(card, printing);
@@ -104,7 +110,7 @@ export function CardTile({
         onContextMenu={onContextMenu}
         className={`no-touch-callout relative z-0 flex h-full flex-col overflow-hidden hud-panel ${accent}`}
       >
-        <button type="button" onClick={onClick} className="flex flex-1 flex-col text-left">
+        <button type="button" onClick={onClick} tabIndex={tabIndex} aria-pressed={pressed} className="flex flex-1 flex-col text-left">
           <div
             className={`relative aspect-card overflow-hidden bg-overlay scanlines scanbeam ${
               ownedQty > 0 || queued > 0 ? "" : "opacity-80"

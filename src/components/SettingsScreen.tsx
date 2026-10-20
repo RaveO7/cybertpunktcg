@@ -8,6 +8,8 @@ import { useCollection } from "@/components/CollectionProvider";
 import { useCachedJson } from "@/components/data-cache";
 import { OfflineSection } from "@/components/OfflineSection";
 import { usePreferences } from "@/components/PreferencesProvider";
+import { PushSettingsSection } from "@/components/PushNotifications";
+import { ScreenSkeleton, SkeletonBlock } from "@/components/site/ScreenSkeleton";
 import { useRouter } from "@/i18n/navigation";
 import {
   CollectionCsvError,
@@ -52,7 +54,7 @@ function sortOptions(t: Translator): { value: SortKey; label: string }[] {
 
 export function SettingsScreen() {
   const fmt = useNumberFormat();
-  const { user, ready, logout, deleteAccount, items, catalog, importLines } = useCollection();
+  const { user, ready, logout, deleteAccount, items, catalog, importLines, pendingCount } = useCollection();
   const router = useRouter();
   const t = useTranslations();
   const locale = useLocale();
@@ -89,6 +91,8 @@ export function SettingsScreen() {
   ];
 
   async function onLogout() {
+    // Modifications faites hors ligne pas encore envoyées : perdues à la déconnexion.
+    if (pendingCount > 0 && !window.confirm(t("offline.sync.logoutConfirm", { n: pendingCount }))) return;
     setPending(true);
     setError(null);
     try {
@@ -241,9 +245,7 @@ export function SettingsScreen() {
     setPrefs({ [key]: value } as Partial<UserPreferences>);
   }
 
-  if (!ready) {
-    return <p className="p-6 text-muted">{t("settings.loading")}</p>;
-  }
+  if (!ready) return <SettingsSkeleton />;
 
   if (!user) return null;
 
@@ -425,6 +427,8 @@ export function SettingsScreen() {
           {t("settings.resetDefaults")}
         </button>
       </section>
+
+      <PushSettingsSection />
 
       <OfflineSection catalog={catalog} />
 
@@ -692,5 +696,25 @@ function Field({
         ))}
       </select>
     </label>
+  );
+}
+
+/** Squelette des réglages : titre, compte, puis les sections. */
+function SettingsSkeleton() {
+  const t = useTranslations();
+  return (
+    <ScreenSkeleton label={t("settings.loading")} className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
+      <div className="flex flex-col gap-2">
+        <SkeletonBlock className="h-3 w-24" />
+        <SkeletonBlock className="h-9 w-48" />
+        <SkeletonBlock className="h-4 w-full" />
+      </div>
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="flex flex-col gap-3 border-t border-line pt-6">
+          <SkeletonBlock className="h-3 w-28" />
+          <SkeletonBlock className="h-12 w-full" />
+        </div>
+      ))}
+    </ScreenSkeleton>
   );
 }

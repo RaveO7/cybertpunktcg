@@ -5,6 +5,8 @@ import {
   useEffect,
   useRef,
   useState,
+  type FocusEvent,
+  type KeyboardEvent,
   type MouseEvent,
   type MutableRefObject,
 } from "react";
@@ -133,6 +135,12 @@ export function VirtualCardGrid({
   isFavorite,
   favoritesReady = false,
   onToggleFavorite,
+  focusIndex = 0,
+  focusRequest = 0,
+  selecting = false,
+  onTileFocus,
+  onGridKeyDown,
+  onGridKeyUp,
 }: {
   items: PrintingDTO[];
   cardsById: Map<string, CardDTO>;
@@ -149,6 +157,14 @@ export function VirtualCardGrid({
   isFavorite?: (printingId: string) => boolean;
   favoritesReady?: boolean;
   onToggleFavorite?: (printingId: string) => void;
+  /** Seule carte atteinte par Tab (tabindex mobile). */
+  focusIndex?: number;
+  /** Change quand le clavier déplace le focus : la carte est amenée à l'écran et focalisée. */
+  focusRequest?: number;
+  selecting?: boolean;
+  onTileFocus?: (event: FocusEvent<HTMLElement>) => void;
+  onGridKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
+  onGridKeyUp?: (event: KeyboardEvent<HTMLElement>) => void;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -228,6 +244,32 @@ export function VirtualCardGrid({
     });
   }, [rowHeight, cols, virtualizer]);
 
+  // Carte demandée au clavier : on fait défiler jusqu'à sa ligne, puis on la focalise une fois rendue.
+  useEffect(() => {
+    if (focusRequest === 0) return;
+    const index = focusIndex;
+    const id = items[index]?.id;
+    if (!id) return;
+    virtualizer.scrollToIndex(Math.floor(index / cols), { align: "auto" });
+    let frame = 0;
+    let tries = 0;
+    const focus = () => {
+      const button = listRef.current?.querySelector<HTMLElement>(`[data-card-id="${CSS.escape(id)}"] > button`);
+      if (button) button.focus({ preventScroll: true });
+      else if (tries++ < 10) frame = requestAnimationFrame(focus);
+    };
+    frame = requestAnimationFrame(focus);
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seulement à chaque demande
+  }, [focusRequest]);
+
+  // Carte du tabindex mobile hors des lignes rendues : la première carte rendue la remplace, pour
+  // que Tab entre toujours dans la grille.
+  const virtualRows = virtualizer.getVirtualItems();
+  const firstRendered = virtualRows.length > 0 ? virtualRows[0].index * cols : 0;
+  const lastRendered = virtualRows.length > 0 ? (virtualRows[virtualRows.length - 1].index + 1) * cols - 1 : -1;
+  const tabbable = focusIndex >= firstRendered && focusIndex <= lastRendered ? focusIndex : firstRendered;
+
   let gridClass = "grid grid-cols-2";
   if (cols === 3) gridClass = "grid grid-cols-3";
   if (cols === 4) gridClass = "grid grid-cols-4";
@@ -238,8 +280,11 @@ export function VirtualCardGrid({
       data-card-grid=""
       className={addMode ? "relative cursor-crosshair pb-28 select-none" : "relative"}
       style={{ height: `${virtualizer.getTotalSize()}px` }}
+      onFocus={onTileFocus}
+      onKeyDown={onGridKeyDown}
+      onKeyUp={onGridKeyUp}
     >
-      {virtualizer.getVirtualItems().map((virtualRow) => {
+      {virtualRows.map((virtualRow) => {
         const start = virtualRow.index * cols;
         const rowItems = items.slice(start, start + cols);
         return (
@@ -257,7 +302,7 @@ export function VirtualCardGrid({
               paddingBottom: gapY,
             }}
           >
-            {rowItems.map((printing) => (
+            {rowItems.map((printing, column) => (
               <CardTile
                 key={printing.id}
                 printing={printing}
@@ -273,6 +318,8 @@ export function VirtualCardGrid({
                 favorite={isFavorite?.(printing.id) ?? false}
                 favoriteReady={favoritesReady}
                 onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(printing.id) : undefined}
+                tabIndex={start + column === tabbable ? 0 : -1}
+                pressed={selecting ? (draft[printing.id] ?? 0) > 0 : undefined}
               />
             ))}
             {rowItems.length < cols

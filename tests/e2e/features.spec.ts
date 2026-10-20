@@ -19,6 +19,8 @@ async function ready(page: Page, path: string) {
   await page.goto(path);
   await settle(page);
   await expect(page.getByText("Chargement…")).toHaveCount(0, { timeout: 30_000 });
+  // Écrans du compte : squelette jusqu'à l'arrivée des données.
+  await expect(page.locator("main [aria-busy=true]")).toHaveCount(0, { timeout: 30_000 });
 }
 
 test("collection : ajout depuis la fiche, puis par sélection multiple", async ({ page, account, isMobile }) => {
@@ -39,8 +41,9 @@ test("collection : ajout depuis la fiche, puis par sélection multiple", async (
   await expect(dialog).toHaveCount(0);
 
   await page.getByRole("button", { name: "Mode ajout" }).click();
-  await page.getByRole("button", { name: /^Dexter DeShawn/ }).click();
-  await page.getByRole("button", { name: /^Royce/ }).click();
+  // Mode ajout : le clic sur la carte ouvre l'ajout rapide ; le bouton + de la carte la met dans la sélection.
+  await page.getByRole("button", { name: /^Ajouter un exemplaire de Dexter DeShawn/ }).click();
+  await page.getByRole("button", { name: /^Ajouter un exemplaire de Royce/ }).first().click();
   await snap(page, "f-collection-selection");
   await page.getByRole("button", { name: "Ajouter la sélection" }).click();
   await expect.poll(() => prisma.collectionItem.aggregate({ where: { userId: account.id }, _sum: { quantity: true } }).then((r) => r._sum.quantity)).toBe(4);
@@ -113,6 +116,7 @@ test("paramètres : partage du classeur, export, langue, déconnexion", async ({
     await expectNoHorizontalScroll(g);
     await snap(g, "f-classeur-partage");
     await g.getByRole("link", { name: /Cartes/ }).last().click();
+    await expect(g).toHaveURL(/\/cartes$/);
     await settle(g);
     await expectNoHorizontalScroll(g);
     await snap(g, "f-classeur-cartes");

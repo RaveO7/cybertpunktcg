@@ -18,6 +18,8 @@ import {
 import {
   aggregateCollection,
   alignReleasedFilters,
+  boundedEditDistance,
+  cardSearchEntry,
   browseChecklist,
   buildInvestmentLines,
   extensionValue,
@@ -31,7 +33,12 @@ import {
   ownershipOf,
   parseFilters,
   priceMovement,
+  printingSearchEntry,
+  rankBySearch,
+  SEARCH_SCORE,
+  searchScore,
   setForLanguage,
+  sortPrintings,
   summarizeInvestment,
   viewOwnership,
 } from "../../src/lib/logic";
@@ -153,6 +160,96 @@ describe("filtres et progression", () => {
     assert.deepEqual(search.map((printing) => printing.id), ["p1"]);
   });
 
+});
+
+describe("recherche tolérante", () => {
+  const search = new Map<string, CardDTO>([
+    ["v", card({ id: "v", name: "V", subname: "Streetkid", canonicalName: "V — Streetkid", cost: 5 })],
+    ["jack", card({ id: "jack", name: "Jackie Welles", canonicalName: "Jackie Welles", cost: 2, rulesText: "Draw a card." })],
+    [
+      "rules",
+      card({ id: "rules", name: "Back Alley", canonicalName: "Back Alley", cost: 1, rulesText: "Search for a Streetkid. Pay 012 eddies." }),
+    ],
+    ["john", card({ id: "john", name: "John", canonicalName: "John", cost: 3 })],
+    ["kid", card({ id: "kid", name: "Streetkid Gang", canonicalName: "Streetkid Gang", cost: 4 })],
+  ]);
+  const searchPrintings = [
+    printing({ id: "s-v", cardId: "v", collectorNumber: "005a" }),
+    printing({ id: "s-jack", cardId: "jack", collectorNumber: "012" }),
+    printing({ id: "s-rules", cardId: "rules", collectorNumber: "030" }),
+    printing({ id: "s-john", cardId: "john", collectorNumber: "040" }),
+    printing({ id: "s-kid", cardId: "kid", collectorNumber: "050" }),
+  ];
+  const score = (id: string, query: string) => {
+    const found = searchPrintings.find((entry) => entry.id === id)!;
+    return searchScore(printingSearchEntry(search.get(found.cardId)!, found), query);
+  };
+  const searchIds = (q: string, sort: Filters["sort"] = "default") => {
+    const matched = filterPrintings(searchPrintings, search, new Map(), filters({ q }));
+    return sortPrintings(matched, search, new Map(), new Map(), sort, { q, defaultSort: "default" }).map((entry) => entry.id);
+  };
+
+  it("borne la distance de Damerau-Levenshtein", () => {
+    assert.equal(boundedEditDistance("strretkid", "streetkid", 2), 1);
+    assert.equal(boundedEditDistance("jakcie", "jackie", 1), 1);
+    assert.equal(boundedEditDistance("netrunner", "netrunner", 1), 0);
+    assert.equal(boundedEditDistance("abcdef", "uvwxyz", 1), 2);
+    assert.equal(boundedEditDistance("abc", "abcdef", 2), 3);
+  });
+
+  it("tolère une faute sur un nom", () => {
+    assert.ok(searchIds("strretkid").includes("s-v"));
+    assert.equal(score("s-v", "strretkid"), SEARCH_SCORE.approximate);
+    assert.equal(score("s-jack", "jakcie"), SEARCH_SCORE.approximate);
+  });
+
+  it("n'approche pas les mots de moins de 5 caractères", () => {
+    assert.equal(score("s-john", "jhon"), null);
+    assert.equal(score("s-john", "john"), SEARCH_SCORE.exactName);
+  });
+
+  it("compare un numéro au numéro du tirage, pas au texte", () => {
+    assert.deepEqual(searchIds("012"), ["s-jack"]);
+  });
+
+  it("n'applique pas de faute sur le texte de règles", () => {
+    assert.equal(score("s-rules", "eddies"), SEARCH_SCORE.rules);
+    assert.equal(score("s-rules", "edddies"), null);
+  });
+
+  it("ignore accents, casse et ponctuation", () => {
+    assert.equal(score("s-v", "STREETKID"), SEARCH_SCORE.inName);
+    assert.equal(score("s-v", "v: streetkid"), SEARCH_SCORE.exactName);
+    assert.equal(score("s-jack", "jàckie"), SEARCH_SCORE.namePrefix);
+  });
+
+  it("classe le nom avant le texte de règles", () => {
+    assert.deepEqual(searchIds("streetkid"), ["s-kid", "s-v", "s-rules"]);
+    assert.deepEqual(searchIds("streetkid gang"), ["s-kid"]);
+  });
+
+  it("respecte le tri choisi", () => {
+    const priced = searchPrintings.map((entry, index) => ({ ...entry, marketPrice: String(10 - index) }));
+    const matched = filterPrintings(priced, search, new Map(), filters({ q: "streetkid" }));
+    const sorted = sortPrintings(matched, search, new Map(), new Map(), "cost-asc", { q: "streetkid", defaultSort: "default" });
+    assert.deepEqual(sorted.map((entry) => entry.id), ["s-kid", "s-rules", "s-v"]);
+  });
+
+  it("garde l'ordre sans saisie", () => {
+    const sorted = sortPrintings(searchPrintings, search, new Map(), new Map(), "default", { q: "", defaultSort: "default" });
+    const plain = sortPrintings(searchPrintings, search, new Map(), new Map(), "default");
+    assert.deepEqual(sorted.map((entry) => entry.id), plain.map((entry) => entry.id));
+  });
+
+  it("classe les cartes du navigateur des decks", () => {
+    const pool = [...search.values()];
+    const ranked = rankBySearch(
+      pool.filter((entry) => searchScore(cardSearchEntry(entry), "streetkid") !== null),
+      "streetkid",
+      cardSearchEntry,
+    );
+    assert.deepEqual(ranked.map((entry) => entry.id), ["kid", "v", "rules"]);
+  });
 });
 
 const mergedCards = new Map([

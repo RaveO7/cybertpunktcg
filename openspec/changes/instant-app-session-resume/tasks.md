@@ -14,7 +14,7 @@
 ## 3. Consommateurs
 
 - [ ] 3.1 `Header` : afficher la navigation selon `session === "signed-in"` ; `RequireUser` : `"signed-out"` → `AuthScreen`, `"unknown"` → chargement, `"signed-in"` → enfants ; vérifier en `npm run dev` qu'au rechargement de `/fr` connecté la navigation est visible dès le premier affichage (enregistrement Performance ou capture lente)
-- [ ] 3.2 Vérifier que `Dashboard`, `InvestmentScreen`, `DecksScreen`, `WishlistScreen` et `SettingsScreen` affichent leur propre état de chargement tant que `ready`/`catalog` ne sont pas prêts (pas de tableau vide ni de crash sur `catalog` nul) ; corriger ceux qui en manquent ; vérifier avec le réseau ralenti (« Slow 4G ») en ouvrant chaque écran directement
+- [x] 3.2 Vérifier que `Dashboard`, `InvestmentScreen`, `DecksScreen`, `WishlistScreen` et `SettingsScreen` affichent leur propre état de chargement tant que `ready`/`catalog` ne sont pas prêts (pas de tableau vide ni de crash sur `catalog` nul) ; corriger ceux qui en manquent ; vérifier avec le réseau ralenti (« Slow 4G ») en ouvrant chaque écran directement — fait par `improve-site-and-app` (groupe 4) : squelette par écran (`ScreenSkeleton`), état d'erreur avec « Réessayer », vérifiés par `tests/e2e/loading-states.spec.ts` (catalogue retardé puis en échec)
 
 ## 4. Vérification d'ensemble
 

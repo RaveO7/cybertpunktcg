@@ -22,5 +22,13 @@
   "removeCard": "{name} von der Wunschliste entfernen",
   "inWishlist": "Meine Liste ansehen",
   "openCard": "{name} öffnen",
-  "failed": "Aktion fehlgeschlagen."
+  "failed": "Aktion fehlgeschlagen.",
+  "pushPrompt": "Auf diesem Gerät benachrichtigt werden, wenn ein Zielpreis erreicht ist?",
+  "pushPromptEnable": "Benachrichtigungen aktivieren",
+  "pushPromptDismiss": "Später",
+  "push": {
+    "title": "Zielpreis erreicht",
+    "one": "{name} kostet {price}.",
+    "many": "{count, plural, one {# Karte hat} other {# Karten haben}} deinen Zielpreis erreicht."
+  }
 }

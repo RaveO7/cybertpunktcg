@@ -86,6 +86,8 @@ export function useCachedJson<T>(url: string | null) {
     () => undefined,
   );
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  // Incrémenté par `retry` : relance la requête après un échec.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!url) return;
@@ -100,7 +102,12 @@ export function useCachedJson<T>(url: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [url, attempt]);
+
+  const retry = useCallback(() => {
+    setFailedUrl(null);
+    setAttempt((current) => current + 1);
+  }, []);
 
   const mutate = useCallback(
     (update: (current: T | undefined) => T) => {
@@ -109,5 +116,5 @@ export function useCachedJson<T>(url: string | null) {
     [url],
   );
 
-  return { data, error: data === undefined && failedUrl !== null && failedUrl === url, mutate };
+  return { data, error: data === undefined && failedUrl !== null && failedUrl === url, mutate, retry };
 }

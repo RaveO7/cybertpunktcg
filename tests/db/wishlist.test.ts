@@ -244,7 +244,36 @@ describe.sequential("liste de souhaits et alertes de prix (copie)", () => {
     assert.equal(item.targetPrice, null);
     assert.equal(item.alertAt, null);
     assert.equal(item.alertSeen, true);
-    assert.deepEqual(await evaluateWishlistAlerts(prisma), { checked: 1, triggered: 0, cleared: 0 });
+    assert.deepEqual(await evaluateWishlistAlerts(prisma), { checked: 1, triggered: 0, cleared: 0, triggeredItems: [] });
+  });
+
+  it("renvoie les alertes déclenchées à notifier, sans celles qui suivent le prix ou s'effacent", async () => {
+    const [ownerId, otherId] = userIds;
+    const alpha = (await list(owner.token)).find((item) => item.printingId === P[0])!;
+    await setPrice(P[0], 30);
+    assert.equal((await add(other.token, { printingId: P[0], targetPrice: 20 })).body.item?.alertAt, null);
+    await routes.item.PATCH(
+      request(`/api/wishlist/${alpha.id}`, owner.token, { method: "PATCH", body: JSON.stringify({ targetPrice: 25 }) }),
+      params(alpha.id),
+    );
+
+    // Bravo (P[1]) a déjà une alerte en cours : il n'est pas renvoyé.
+    await setPrice(P[0], 18.4);
+    const report = await evaluateWishlistAlerts(prisma);
+    assert.deepEqual([report.checked, report.triggered, report.cleared], [3, 2, 0]);
+    const sorted = [...report.triggeredItems].sort((a, b) => (a.userId === ownerId ? -1 : b.userId === ownerId ? 1 : 0));
+    assert.deepEqual(sorted, [
+      { userId: ownerId, printingId: P[0], price: 18.4 },
+      { userId: otherId, printingId: P[0], price: 18.4 },
+    ]);
+
+    await setPrice(P[0], 17);
+    const following = await evaluateWishlistAlerts(prisma);
+    assert.deepEqual([following.triggered, following.triggeredItems], [0, []]);
+
+    await setPrice(P[0], 40);
+    const cleared = await evaluateWishlistAlerts(prisma);
+    assert.deepEqual([cleared.cleared, cleared.triggeredItems], [2, []]);
   });
 
   it("suppression, puis cascade à la suppression du tirage", async () => {

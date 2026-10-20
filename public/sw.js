@@ -11,6 +11,7 @@
 // - Données du compte (session, collection, stats…) : idem, cache vidé à la connexion/déconnexion
 //   ou dès que le serveur répond 401.
 // - Images de cartes : cache d'abord (le téléchargement complet se lance depuis Paramètres).
+// - Notifications Web Push des alertes de prix : affichage et ouverture de la liste de souhaits.
 //
 // Les noms de caches sont partagés avec src/lib/offline.ts : les garder synchronisés.
 
@@ -127,6 +128,46 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/icons/") || url.pathname.endsWith("/manifest.webmanifest") || url.pathname === "/favicon.ico") {
     event.respondWith(cacheFirst(request, SHELL_CACHE));
   }
+});
+
+// Notifications d'alerte de prix (src/lib/push.ts) : { title, body, url, tag }, déjà dans la langue de
+// l'abonnement. Le tag remplace la notification précédente au lieu d'en empiler une nouvelle.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data?.json() ?? {};
+  } catch {
+    data = { body: event.data?.text() ?? "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Cyberpunk TCG", {
+      body: data.body || "",
+      tag: data.tag || "price-alerts",
+      renotify: true,
+      icon: "/icons/icon-192.png?v=2",
+      data: { url: data.url || HOME },
+    }),
+  );
+});
+
+// Toucher la notification : liste de souhaits dans une fenêtre déjà ouverte de l'app, sinon une nouvelle.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || HOME, self.location.origin);
+  if (target.origin !== self.location.origin) return;
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const open = windows.find((client) => new URL(client.url).pathname === target.pathname) ?? windows[0];
+      if (open) {
+        const focused = await open.focus().catch(() => open);
+        if (new URL(focused.url).pathname === target.pathname) return;
+        const moved = await focused.navigate?.(target.href).catch(() => null);
+        if (moved) return;
+      }
+      await self.clients.openWindow(target.href);
+    })(),
+  );
 });
 
 async function cacheFirst(request, cacheName) {

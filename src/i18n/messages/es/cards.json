@@ -3,6 +3,8 @@
   "searchPlaceholder": "Nombre, número, texto, expansión",
   "sort": "Orden",
   "addMode": "Modo añadir",
+  "select": "Seleccionar",
+  "selectedCount": "{n, plural, =0 {Ninguna carta seleccionada} one {# carta seleccionada} other {# cartas seleccionadas}}",
   "addModeHelp": "Clic: elige cantidad, estado, idioma y versión, y añade. Botón + de la carta: +1 a la selección. Clic derecho: quitar la carta. Ctrl+arrastrar invierte las cartas cubiertas: selecciona las que no lo están y quita las seleccionadas. La página se desplaza al borde de la pantalla. Ctrl+A: seleccionar todo. Alt+clic en una carta y luego clic o Alt+clic en otra: selecciona todos los números entre ambas, p. ej. de #001 a #005a sin #005b.",
   "addModeHelpTouch": "Toca una carta para elegir la cantidad, el estado, el idioma y la versión. El botón + de la carta añade un ejemplar a la selección; «Seleccionar todo» toma todas las cartas mostradas.",
   "selectAll": "Seleccionar todo",

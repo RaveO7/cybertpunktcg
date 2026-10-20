@@ -30,9 +30,10 @@ export const SITE = {
 
 /**
  * Liste de souhaits et alertes de prix : pas encore publiée. À false, le bloc de la fenêtre d'une
- * carte est masqué et /souhaits répond 404 (l'API et les données restent en place).
+ * carte est masqué, /souhaits répond 404 et l'option des notifications d'alerte est masquée (l'API et
+ * les données restent en place). `NEXT_PUBLIC_WISHLIST_ENABLED=1` l'affiche (tests E2E).
  */
-export const WISHLIST_ENABLED = false;
+export const WISHLIST_ENABLED = process.env.NEXT_PUBLIC_WISHLIST_ENABLED === "1";
 
 export const LEGAL_LINKS = [
   { href: "/mentions-legales", key: "legal" },

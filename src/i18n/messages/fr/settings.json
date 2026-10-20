@@ -83,5 +83,16 @@
   "deleteCancel": "Annuler",
   "deleting": "Suppression…",
   "deleteFailed": "Suppression impossible.",
-  "loading": "Chargement…"
+  "loading": "Chargement…",
+  "pushTitle": "Notifications d’alerte de prix",
+  "pushHint": "Recevez une notification sur cet appareil quand une carte de votre liste de souhaits atteint votre prix cible, même application fermée.",
+  "pushEnable": "Activer sur cet appareil",
+  "pushDisable": "Désactiver sur cet appareil",
+  "pushEnabled": "Notifications activées sur cet appareil.",
+  "pushDisabled": "Notifications désactivées sur cet appareil.",
+  "pushBusy": "Un instant…",
+  "pushDenied": "Les notifications sont bloquées pour ce site. Autorisez-les dans les réglages du navigateur (icône à gauche de l’adresse), puis réessayez.",
+  "pushUnsupported": "Ce navigateur ne gère pas les notifications push.",
+  "pushInstallIos": "Sur iPhone et iPad, ajoutez d’abord l’application à l’écran d’accueil (Partager → Sur l’écran d’accueil), puis ouvrez-la depuis son icône pour activer les notifications.",
+  "pushFailed": "Impossible de modifier les notifications. Réessayez."
 }

@@ -6,8 +6,10 @@ import { useNumberFormat } from "@/i18n/number-format";
 import { Link } from "@/i18n/navigation";
 import { CardImage } from "@/components/CardImage";
 import { useCollection } from "@/components/CollectionProvider";
+import { WishlistPushPrompt } from "@/components/PushNotifications";
 import { TrendBadge } from "@/components/TrendBadge";
 import { useWishlist } from "@/components/WishlistProvider";
+import { ScreenError, ScreenSkeleton, SkeletonBlock, SkeletonRows } from "@/components/site/ScreenSkeleton";
 import { intlLocale } from "@/i18n/config";
 import { priceMovement, printingTitle, wishlistTargetReached } from "@/lib/logic";
 import type { CardDTO, PrintingDTO, WishlistItemDTO } from "@/lib/types";
@@ -41,7 +43,7 @@ export function WishlistScreen() {
   const fmt = useNumberFormat();
   const t = useTranslations();
   const locale = useLocale();
-  const { catalog, items: collection, ready: collectionReady, error } = useCollection();
+  const { catalog, items: collection, ready: collectionReady, error, retry } = useCollection();
   const wishlist = useWishlist();
   const { acknowledge } = wishlist;
   // Alertes nouvelles à l'ouverture : restent signalées le temps de la visite, puis sont marquées vues.
@@ -83,8 +85,19 @@ export function WishlistScreen() {
     return result.sort(compareRows);
   }, [catalog, collection, wishlist.items]);
 
-  if (error) return <p className="p-6 text-danger">{error}</p>;
-  if (!collectionReady || !catalog || !wishlist.ready) return <p className="p-6 text-muted">{t("common.loading")}</p>;
+  const failure = error
+    ? { message: error, retry }
+    : wishlist.error
+      ? { message: t("errors.request.loadWishlist"), retry: wishlist.retry }
+      : null;
+  if (failure) {
+    return (
+      <div className="mx-auto w-full max-w-[1100px] px-3 py-4 sm:px-4 sm:py-6">
+        <ScreenError message={failure.message} onRetry={failure.retry} />
+      </div>
+    );
+  }
+  if (!collectionReady || !catalog || !wishlist.ready) return <WishlistSkeleton />;
 
   const reachedCount = rows.filter((row) => row.reached).length;
   const total = rows.reduce((sum, row) => sum + (row.market ?? 0), 0);
@@ -96,6 +109,8 @@ export function WishlistScreen() {
         <h1 className="text-2xl text-yellow sm:text-4xl">{t("wishlist.title")}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted">{t("wishlist.subtitle")}</p>
       </div>
+
+      <WishlistPushPrompt hasTarget={rows.some((row) => row.target != null)} />
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-3 border border-line bg-panel p-5">
@@ -259,5 +274,23 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
         </p>
       ) : null}
     </li>
+  );
+}
+
+/** Squelette de la liste de souhaits : titre, trois chiffres et les lignes. */
+function WishlistSkeleton() {
+  return (
+    <ScreenSkeleton className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-5 px-3 py-4 sm:gap-6 sm:px-4 sm:py-6">
+      <div className="flex flex-col gap-2">
+        <SkeletonBlock className="h-8 w-56 sm:h-10" />
+        <SkeletonBlock className="h-4 w-full max-w-2xl" />
+      </div>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        {Array.from({ length: 3 }, (_, index) => (
+          <SkeletonBlock key={index} className="h-16" />
+        ))}
+      </div>
+      <SkeletonRows rows={5} />
+    </ScreenSkeleton>
   );
 }

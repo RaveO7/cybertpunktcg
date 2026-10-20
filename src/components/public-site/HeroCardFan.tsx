@@ -14,6 +14,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { TrackCardLink } from "@/components/public-site/TrackCardLink";
+import { useModal } from "@/components/use-modal";
 
 export type FanCard = {
   slug: string;
@@ -373,17 +374,9 @@ function CardDialog({
     window.setTimeout(finish, CLOSE_FALLBACK_MS);
   }, [onClosed, originOf]);
 
-  useEffect(() => {
-    closeRef.current?.focus({ preventScroll: true });
-    // Pas de blocage du défilement de la page : il ferait disparaître sa barre de défilement et
-    // décalerait l'éventail. La fiche couvre l'écran et retient son propre défilement
-    // (overscroll-contain).
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [close]);
+  // Voile compris (à côté de la fiche, dans le portail) : il doit rester cliquable pour fermer.
+  // Le défilement de la page est bloqué avec une marge à la place de la barre : l'éventail ne bouge pas.
+  useModal(rootRef, { onClose: close, initialFocus: closeRef });
 
   const stats = [
     { label: "COST", value: card.cost },
