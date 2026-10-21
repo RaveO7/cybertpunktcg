@@ -22,6 +22,8 @@
   "removeCard": "{name} von der Wunschliste entfernen",
   "inWishlist": "Meine Liste ansehen",
   "openCard": "{name} öffnen",
+  "buy": "Kaufen",
+  "buyOn": "{name} online kaufen",
   "failed": "Aktion fehlgeschlagen.",
   "pushPrompt": "Auf diesem Gerät benachrichtigt werden, wenn ein Zielpreis erreicht ist?",
   "pushPromptEnable": "Benachrichtigungen aktivieren",

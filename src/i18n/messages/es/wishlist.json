@@ -22,6 +22,8 @@
   "removeCard": "Quitar {name} de la lista de deseos",
   "inWishlist": "Ver mi lista",
   "openCard": "Abrir {name}",
+  "buy": "Comprar",
+  "buyOn": "Comprar {name} en línea",
   "failed": "Acción imposible.",
   "pushPrompt": "¿Recibir una notificación en este dispositivo cuando se alcance un precio objetivo?",
   "pushPromptEnable": "Activar notificaciones",

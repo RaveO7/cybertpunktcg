@@ -12,6 +12,7 @@ import { useWishlist } from "@/components/WishlistProvider";
 import { ScreenError, ScreenSkeleton, SkeletonBlock, SkeletonRows } from "@/components/site/ScreenSkeleton";
 import { intlLocale } from "@/i18n/config";
 import { priceMovement, printingTitle, wishlistTargetReached } from "@/lib/logic";
+import { marketplaceLinks } from "@/lib/marketplace-links";
 import type { CardDTO, PrintingDTO, WishlistItemDTO } from "@/lib/types";
 
 type Row = {
@@ -162,6 +163,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "ga
 function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: string | null }) {
   const fmt = useNumberFormat();
   const t = useTranslations();
+  const locale = useLocale();
   const { patch, remove } = useWishlist();
   const [target, setTarget] = useState(row.item.targetPrice ?? "");
   const [pending, setPending] = useState(false);
@@ -268,6 +270,20 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
           </svg>
         </button>
       </div>
+      <nav aria-label={t("wishlist.buyOn", { name: row.title })} className="flex flex-wrap items-center gap-1.5 sm:basis-full">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t("wishlist.buy")}</span>
+        {marketplaceLinks(row.card, row.printing, locale).map((link) => (
+          <a
+            key={link.id}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-8 items-center border border-line px-2.5 text-xs text-muted transition hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
+          >
+            {link.label}
+          </a>
+        ))}
+      </nav>
       {message ? (
         <p role="alert" className="text-sm text-danger sm:basis-full">
           {message}
