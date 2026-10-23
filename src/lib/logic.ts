@@ -9,8 +9,11 @@ import {
   FRENCH_SET_NAME,
   FRENCH_SOURCE_SET_CODE,
   isSealedSetCode,
+  isSetList,
+  joinSetList,
   MAIN_SET_CODE,
   matchesSetFilter,
+  parseSetList,
   RARITY_ORDER,
   RELEASED_SET_ID,
   TYPE_ORDER,
@@ -164,6 +167,10 @@ export function setForLanguage(
   printings: Pick<PrintingDTO, "setCode">[],
 ) {
   if (!language || set === ALL_SETS_ID) return null;
+  if (isSetList(set)) {
+    const mapped = joinSetList(parseSetList(set).map((code) => setForLanguage(code, language, printings) ?? code));
+    return mapped === set ? null : mapped;
+  }
   const codes = new Set(printings.map((printing) => printing.setCode));
   if (language === "fr") {
     if (isEnglishWelcome(set)) return codes.has(FRENCH_SOURCE_SET_CODE) ? FRENCH_SOURCE_SET_CODE : null;
@@ -184,7 +191,11 @@ export function languageOptions(
   set: string,
   printings: Pick<PrintingDTO, "setCode" | "language">[],
   facetLanguages: string[],
-) {
+): string[] {
+  if (isSetList(set)) {
+    const merged = parseSetList(set).flatMap((code) => languageOptions(code, printings, facetLanguages));
+    return [...new Set(merged)];
+  }
   const codes = new Set(printings.map((printing) => printing.setCode));
   const options = new Set(facetLanguages);
   if (isEnglishWelcome(set) || set === FRENCH_SOURCE_SET_CODE || set === FRENCH_SET_ID) {
@@ -206,7 +217,16 @@ export function languageOptions(
 }
 
 export function alignReleasedFilters(filters: Filters, partial?: Partial<Filters>): Filters {
-  const rawSet = filters.set;
+  const list = parseSetList(filters.set).filter((code) => !isSealedSetCode(code));
+  if (list.length > 1) {
+    // Codes bruts du catalogue : la langue suit les extensions cochées (toutes FR, toutes EN, ou les deux).
+    const set = joinSetList(list);
+    if (!partial?.set) return { ...filters, set };
+    const french = list.filter((code) => code.endsWith("-fr")).length;
+    const language = french === list.length ? "fr" : french === 0 ? "en" : "";
+    return { ...filters, set, language };
+  }
+  const rawSet = list.length === 1 ? list[0] : filters.set;
   let set = normalizeSetCode(rawSet);
   let language = filters.language;
   if ((rawSet === RELEASED_SET_ID || rawSet === BOTH_LANGUAGES_SET_ID) && language === "fr") {
@@ -659,6 +679,7 @@ export function filterPrintings(
   checklist = releasedChecklist(printings, filters.set),
 ) {
   const allowed = checklist ? new Set(checklist.map((printing) => printing.id)) : null;
+  const setList = isSetList(filters.set) ? new Set(parseSetList(filters.set)) : null;
   const source = checklist ?? printings;
   return source.filter((printing) => {
     const card = cards.get(printing.cardId);
@@ -668,6 +689,8 @@ export function filterPrintings(
       if (filters.language && printing.language !== filters.language) return false;
     } else if (filters.set === ALL_SETS_ID) {
       if (isSealedSetCode(printing.setCode)) return false;
+    } else if (setList) {
+      if (!setList.has(printing.setCode)) return false;
     } else if (filters.set && printing.setCode !== filters.set) {
       return false;
     }
@@ -863,6 +886,20 @@ export function printingsPriceTotal(printings: PrintingDTO[]) {
     const amount = marketAmount(printing);
     if (amount == null || amount <= 0) unpriced += 1;
     else total += amount;
+  }
+  return { total, unpriced };
+}
+
+/** Prix d'une sélection { printingId: copies } ; `unpriced` compte les exemplaires sans prix. */
+export function selectionPriceTotal(printings: PrintingDTO[], selection: Record<string, number>) {
+  let total = 0;
+  let unpriced = 0;
+  for (const printing of printings) {
+    const quantity = selection[printing.id] ?? 0;
+    if (quantity <= 0) continue;
+    const amount = marketAmount(printing);
+    if (amount == null || amount <= 0) unpriced += quantity;
+    else total += amount * quantity;
   }
   return { total, unpriced };
 }

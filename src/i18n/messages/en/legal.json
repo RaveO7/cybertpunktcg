@@ -24,6 +24,10 @@
       {
         "title": "Prices",
         "blocks": ["Displayed prices come from Cardmarket’s public price guide. They are provided for information only, with no guarantee of accuracy or timeliness, and do not constitute investment advice."]
+      },
+      {
+        "title": "Affiliate links",
+        "blocks": ["Some “Buy” links (eBay, CardNexus) are affiliate links: if you buy after clicking, this site may earn a commission at no extra cost to you. This does not affect the prices shown or the order of cards."]
       }
     ]
   },

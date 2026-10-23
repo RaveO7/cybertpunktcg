@@ -27,6 +27,7 @@ import {
   filterPrintings,
   ownershipOf,
   printingsPriceTotal,
+  selectionPriceTotal,
   parseFilters,
   sealedBrowseFilters,
   serializeFilters,
@@ -38,6 +39,7 @@ import {
   FRENCH_SOURCE_SET_CODE,
   isSealedSetCode,
   MAIN_SET_CODE,
+  parseSetList,
 } from "@/lib/reference-data";
 import type { CatalogDTO, CollectionItemDTO, Filters, PrintingDTO } from "@/lib/types";
 import { usePreferences } from "@/components/PreferencesProvider";
@@ -236,7 +238,8 @@ export function CardsExplorer({
     }
     const checklist = browseChecklist(catalog.printings, activeFilters.set);
     if (checklist) return checklist;
-    return catalog.printings.filter((printing) => printing.setCode === activeFilters.set);
+    const codes = new Set(parseSetList(activeFilters.set));
+    return catalog.printings.filter((printing) => codes.has(printing.setCode));
   }, [activeFilters.set, catalog]);
   const facets = useMemo(() => {
     if (!catalog) return null;
@@ -280,9 +283,11 @@ export function CardsExplorer({
     });
   }, [catalog, cardsById, agg, activeFilters, deferredQuery, setsByCode, filterDefaults.sort]);
 
-  const missingPrice = useMemo(
-    () => (activeFilters.collection === "missing" && catalog?.hasPrices ? printingsPriceTotal(filtered) : null),
-    [activeFilters.collection, catalog?.hasPrices, filtered],
+  // Prix de la liste filtrée : toujours en mode normal, et pour les cartes manquantes même en mode ajout.
+  const missingList = activeFilters.collection === "missing";
+  const listPrice = useMemo(
+    () => ((missingList || !effectiveAddMode) && catalog?.hasPrices ? printingsPriceTotal(filtered) : null),
+    [missingList, effectiveAddMode, catalog?.hasPrices, filtered],
   );
 
   const { marquee, setMarquee, ctrlHandledRef, ctrlDownRef, gridLayoutRef } = useMarqueeSelection(
@@ -538,6 +543,10 @@ export function CardsExplorer({
 
   const draftCards = Object.keys(draft).length;
   const draftCopies = Object.values(draft).reduce((sum, quantity) => sum + quantity, 0);
+  const selectionPrice = useMemo(
+    () => (draftCopies > 0 && catalog?.hasPrices ? selectionPriceTotal(catalog.printings, draft) : null),
+    [catalog, draft, draftCopies],
+  );
 
   async function commitDraft() {
     const lines = Object.entries(draft).map(([printingId, quantity]) => ({ printingId, quantity }));
@@ -764,11 +773,18 @@ export function CardsExplorer({
               ? t("cards.noCards")
               : t("cards.cardCount", { count: fmt.int(filtered.length), noun: t("common.cards", { n: filtered.length }) })}
           </p>
-          {missingPrice && filtered.length > 0 ? (
+          {listPrice && filtered.length > 0 ? (
             <p className="font-mono text-yellow">
-              {missingPrice.unpriced > 0
-                ? t("cards.missingTotalPartial", { total: fmt.money(missingPrice.total), unpriced: fmt.int(missingPrice.unpriced) })
-                : t("cards.missingTotal", { total: fmt.money(missingPrice.total) })}
+              {listPrice.unpriced > 0
+                ? t(missingList ? "cards.missingTotalPartial" : "cards.listTotalPartial", { total: fmt.money(listPrice.total), unpriced: fmt.int(listPrice.unpriced) })
+                : t(missingList ? "cards.missingTotal" : "cards.listTotal", { total: fmt.money(listPrice.total) })}
+            </p>
+          ) : null}
+          {selectionPrice ? (
+            <p className="font-mono text-cyan" aria-live="polite">
+              {selectionPrice.unpriced > 0
+                ? t("cards.selectionTotalPartial", { total: fmt.money(selectionPrice.total), unpriced: fmt.int(selectionPrice.unpriced) })
+                : t("cards.selectionTotal", { total: fmt.money(selectionPrice.total) })}
             </p>
           ) : null}
         </div>

@@ -277,7 +277,7 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
             key={link.id}
             href={link.href}
             target="_blank"
-            rel="noopener noreferrer"
+            rel={link.sponsored ? "sponsored noopener noreferrer" : "noopener noreferrer"}
             className="inline-flex h-8 items-center border border-line px-2.5 text-xs text-muted transition hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
           >
             {link.label}

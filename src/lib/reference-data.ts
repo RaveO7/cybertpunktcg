@@ -57,6 +57,24 @@ export function isSealedSetCode(code: string) {
   return code.startsWith(SEALED_SET_PREFIX);
 }
 
+/**
+ * Plusieurs extensions de cartes peuvent être choisies à la fois : le filtre `set` les liste alors
+ * séparées par des virgules (« beta,retail »). Une seule extension garde son code tel quel.
+ */
+export function parseSetList(set: string) {
+  return [...new Set(set.split(",").map((code) => code.trim()).filter(Boolean))];
+}
+
+export function isSetList(set: string) {
+  return parseSetList(set).length > 1;
+}
+
+/** Aucune extension cochée revient à « toutes les extensions ». */
+export function joinSetList(codes: string[]) {
+  const unique = [...new Set(codes)];
+  return unique.length ? unique.join(",") : ALL_SETS_ID;
+}
+
 /** Filtres « groupe » de l'écran investissement : toutes les cartes ou tout le scellé. */
 export const CARDS_GROUP_FILTER = "group:cards";
 export const SEALED_GROUP_FILTER = "group:sealed";

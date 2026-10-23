@@ -844,3 +844,49 @@ describe("historique de prix", () => {
     }
   });
 });
+
+describe("plusieurs extensions à la fois", () => {
+  const multi = [
+    printing({ id: "m1", cardId: "a", collectorNumber: "001", setCode: "welcometonightcitybeta" }),
+    printing({ id: "m2", cardId: "a", collectorNumber: "001", setCode: "welcometonightcityretail" }),
+    printing({ id: "m3", cardId: "b", collectorNumber: "001", setCode: "prereleasebeta" }),
+    printing({ id: "m4", cardId: "b", collectorNumber: "002", setCode: "sealed-booster" }),
+  ];
+
+  it("garde les cartes de chaque extension cochée", () => {
+    const result = filterPrintings(
+      multi,
+      cards,
+      new Map(),
+      filters({ set: "welcometonightcitybeta,prereleasebeta", language: "" }),
+    );
+    assert.deepEqual(result.map((entry) => entry.id), ["m1", "m3"]);
+  });
+
+  it("aligne la langue sur les extensions cochées", () => {
+    const english = alignReleasedFilters(filters({ set: "welcometonightcitybeta,prereleasebeta" }), {
+      set: "welcometonightcitybeta,prereleasebeta",
+    });
+    assert.equal(english.language, "en");
+    const mixed = alignReleasedFilters(filters({ set: "welcometonightcitybeta,welcometonightcityretail-fr" }), {
+      set: "welcometonightcitybeta,welcometonightcityretail-fr",
+    });
+    assert.equal(mixed.language, "");
+    const single = alignReleasedFilters(filters({ set: "prereleasebeta" }), { set: "prereleasebeta" });
+    assert.equal(single.set, "prereleasebeta");
+    assert.equal(single.language, "en");
+  });
+
+  it("passe chaque extension cochée dans la langue choisie", () => {
+    const codes = [
+      { setCode: "welcometonightcitybeta" },
+      { setCode: "prereleasebeta" },
+      { setCode: "prereleasebeta-fr" },
+      { setCode: "welcometonightcityretail-fr" },
+    ];
+    assert.equal(
+      setForLanguage("welcometonightcitybeta,prereleasebeta", "fr", codes),
+      "welcometonightcityretail-fr,prereleasebeta-fr",
+    );
+  });
+});
