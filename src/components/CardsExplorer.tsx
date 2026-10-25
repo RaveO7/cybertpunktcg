@@ -713,17 +713,6 @@ export function CardsExplorer({
               {t("cards.addMode")}
             </button>
           ) : null}
-          {!readOnly ? (
-            <button
-              type="button"
-              aria-pressed={keyboard.selecting}
-              aria-keyshortcuts="S"
-              className={`h-10 shrink-0 px-3 text-sm ${keyboard.selecting ? "bg-cyan font-semibold text-black" : "border border-cyan text-cyan"}`}
-              onClick={() => (keyboard.selecting ? keyboard.stop() : keyboard.start())}
-            >
-              {t("cards.select")}
-            </button>
-          ) : null}
         </div>
         <p className="sr-only" aria-live="polite">
           {keyboard.selecting ? t("cards.selectedCount", { n: draftCards }) : ""}

@@ -3,7 +3,6 @@
   "searchPlaceholder": "Nom, numéro, texte, extension",
   "sort": "Tri",
   "addMode": "Mode ajout",
-  "select": "Sélectionner",
   "selectedCount": "{n, plural, =0 {Aucune carte sélectionnée} one {# carte sélectionnée} other {# cartes sélectionnées}}",
   "addModeHelp": "Clic : choisir la quantité, l’état, la langue et la version, puis ajouter. Bouton + de la carte : +1 à la sélection. Clic droit : retirer la carte. Ctrl+glisser inverse les cartes survolées : les non sélectionnées sont prises, les sélectionnées retirées. La page défile au bord de l’écran. Ctrl+A : tout sélectionner. Alt+clic sur une carte, puis clic ou Alt+clic sur une autre : sélectionne tous les numéros entre les deux, par exemple de #001 à #005a sans prendre #005b.",
   "addModeHelpTouch": "Touchez une carte pour choisir la quantité, l’état, la langue et la version. Le bouton + de la carte ajoute un exemplaire à la sélection ; « Tout sélectionner » prend toutes les cartes affichées.",

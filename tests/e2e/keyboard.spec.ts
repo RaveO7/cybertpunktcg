@@ -101,11 +101,12 @@ test("sélection au clavier : Espace puis Maj+Flèche droite sélectionnent 3 ca
   await settle(page);
   await expect(page.locator("[data-card-id]").first()).toBeVisible();
 
-  const select = page.getByRole("button", { name: "Sélectionner", exact: true });
-  await select.click();
-  await expect(select).toHaveAttribute("aria-pressed", "true");
-  // Le focus est amené sur la première carte de la grille.
+  // La touche S, depuis une carte, active le mode sélection (et le mode ajout qui la porte).
   const first = page.locator("[data-card-id] > button").first();
+  await first.focus();
+  await page.keyboard.press("s");
+  const addMode = page.getByRole("button", { name: "Mode ajout", exact: true });
+  await expect(addMode).toHaveAttribute("aria-pressed", "true");
   await expect(first).toBeFocused();
 
   await page.keyboard.press("Space");
@@ -116,6 +117,4 @@ test("sélection au clavier : Espace puis Maj+Flèche droite sélectionnent 3 ca
   // Aucune fiche ni feuille d'ajout ouverte par Espace.
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
-  await page.keyboard.press("Escape");
-  await expect(select).toHaveAttribute("aria-pressed", "false");
 });

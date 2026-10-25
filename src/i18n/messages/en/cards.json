@@ -3,7 +3,6 @@
   "searchPlaceholder": "Name, number, text, set",
   "sort": "Sort",
   "addMode": "Add mode",
-  "select": "Select",
   "selectedCount": "{n, plural, =0 {No cards selected} one {# card selected} other {# cards selected}}",
   "addModeHelp": "Click: choose quantity, condition, language and version, then add. Card + button: +1 to the selection. Right-click: remove the card. Ctrl+drag toggles the cards it covers: unselected ones are selected, selected ones are removed. The page scrolls at the screen edge. Ctrl+A: select all. Alt+click one card, then click or Alt+click another: selects every number between them, e.g. #001 to #005a without taking #005b.",
   "addModeHelpTouch": "Tap a card to choose the quantity, condition, language and version. The card’s + button adds one copy to the selection; “Select all” takes every card shown.",
