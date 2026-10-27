@@ -44,7 +44,9 @@ async function buildSql() {
     lines.push(...insertStatements(table, scalarColumns(table), rows));
   }
 
-  // Collection : rattachée par e-mail, n'ajoute que ce qui manque (même tirage + même état).
+  // Collection : rattachée par e-mail, n'ajoute que ce qui manque. Une ligne est identifiée par
+  // tirage × état × prix unitaire (et devise) × date d'achat × notes (src/lib/collection-line.ts) :
+  // aucune contrainte unique ne l'assure en base, d'où le NOT EXISTS.
   const itemColumns = scalarColumns("CollectionItem");
   const items = await prisma.collectionItem.findMany({ include: { user: { select: { email: true } } } });
   const withEmail = items
@@ -57,6 +59,14 @@ async function buildSql() {
   lines.push(
     `INSERT INTO "CollectionItem" (${itemColumns.map((column) => `"${column}"`).join(", ")})\n` +
       `SELECT ${selected.join(", ")} FROM "_LocalItem" i JOIN "User" u ON u."email" = i."email"\n` +
+      `WHERE NOT EXISTS (\n` +
+      `  SELECT 1 FROM "CollectionItem" p\n` +
+      `  WHERE p."userId" = u."id" AND p."printingId" = i."printingId" AND p."conditionId" = i."conditionId"\n` +
+      `    AND p."purchasePrice" IS NOT DISTINCT FROM i."purchasePrice"\n` +
+      `    AND (p."purchasePrice" IS NULL OR COALESCE(p."purchaseCurrency", 'EUR') = COALESCE(i."purchaseCurrency", 'EUR'))\n` +
+      `    AND p."purchasedAt" IS NOT DISTINCT FROM i."purchasedAt"\n` +
+      `    AND NULLIF(btrim(p."notes"), '') IS NOT DISTINCT FROM NULLIF(btrim(i."notes"), '')\n` +
+      `)\n` +
       `ON CONFLICT DO NOTHING;`,
   );
 

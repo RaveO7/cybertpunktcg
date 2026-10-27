@@ -4,6 +4,7 @@
 // Une ligne créée hors ligne porte un id « tmp_… » : ses modifications et sa suppression se replient sur
 // son ajout tant qu'il n'est pas parti, puis l'id du serveur le remplace.
 
+import { lineDate, lineKey, lineNotes, linePrice, matchLine, newLineFields } from "@/lib/collection-line";
 import type { CollectionItemDTO, ConditionDTO } from "@/lib/types";
 
 /** Version du format d'une opération : une opération d'une autre version est abandonnée. */
@@ -22,6 +23,7 @@ export type SavePayload = {
   notes?: string | null;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;
+  purchasedAt?: string | null;
 };
 
 export type PatchPayload = {
@@ -30,6 +32,7 @@ export type PatchPayload = {
   notes?: string | null;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;
+  purchasedAt?: string | null;
 };
 
 type OpBase = { v: number; seq: number; userId: string; lineId: string; createdAt: string };
@@ -170,7 +173,7 @@ const capped = (quantity: number) => Math.min(quantity, MAX_LINE_QUANTITY);
 
 /**
  * Collection affichée : celle du serveur (ou du cache) avec les opérations en attente, appliquées comme le
- * ferait le serveur (fusion des lignes de même carte × état, quantité 0 = suppression).
+ * ferait le serveur (fusion des lignes de même carte × état × prix × date × notes, quantité 0 = suppression).
  */
 export function applyOps(items: CollectionItemDTO[], ops: QueuedOp[], conditions: ConditionDTO[] = []): CollectionItemDTO[] {
   if (ops.length === 0) return items;
@@ -184,21 +187,18 @@ export function applyOps(items: CollectionItemDTO[], ops: QueuedOp[], conditions
     if (op.kind === "save") {
       const { payload } = op;
       const existing =
-        next.find((item) => item.printingId === payload.printingId && item.conditionCode === payload.conditionCode) ??
-        null;
+        matchLine(
+          next.filter((item) => item.printingId === payload.printingId),
+          payload,
+        ) ?? null;
       if (payload.mode === "add" && payload.quantity <= 0) continue;
       if (payload.quantity <= 0) {
         if (existing) next = next.filter((item) => item.id !== existing.id);
         continue;
       }
-      const fields = defined({
-        notes: payload.notes,
-        purchasePrice: payload.purchasePrice,
-        purchaseCurrency: payload.purchaseCurrency,
-      });
       if (existing) {
         const quantity = capped(payload.mode === "add" ? existing.quantity + payload.quantity : payload.quantity);
-        next = next.map((item) => (item.id === existing.id ? { ...item, ...fields, quantity } : item));
+        next = next.map((item) => (item.id === existing.id ? { ...item, quantity } : item));
       } else {
         next = [
           ...next,
@@ -208,9 +208,8 @@ export function applyOps(items: CollectionItemDTO[], ops: QueuedOp[], conditions
             conditionCode: payload.conditionCode,
             conditionName: conditionName(payload.conditionCode),
             quantity: capped(payload.quantity),
-            notes: payload.notes ?? null,
-            purchasePrice: payload.purchasePrice ?? null,
-            purchaseCurrency: payload.purchaseCurrency ?? null,
+            ...newLineFields(payload),
+            purchasedAt: lineDate(payload.purchasedAt),
             addedAt: op.createdAt,
           },
         ];
@@ -224,14 +223,21 @@ export function applyOps(items: CollectionItemDTO[], ops: QueuedOp[], conditions
       next = next.filter((item) => item.id !== current.id);
       continue;
     }
-    const fields = defined(rest);
     const code = conditionCode ?? current.conditionCode;
-    const target =
-      code !== current.conditionCode
-        ? next.find((item) => item.printingId === current.printingId && item.conditionCode === code)
-        : undefined;
+    const price = linePrice(rest.purchasePrice === undefined ? current.purchasePrice : rest.purchasePrice);
+    const fields = {
+      notes: lineNotes(rest.notes === undefined ? current.notes : rest.notes),
+      purchasePrice: price,
+      purchaseCurrency:
+        price == null ? null : (rest.purchaseCurrency === undefined ? current.purchaseCurrency : rest.purchaseCurrency) || "EUR",
+      purchasedAt: lineDate(rest.purchasedAt === undefined ? current.purchasedAt : rest.purchasedAt),
+    };
+    const key = lineKey({ ...fields, conditionCode: code });
+    const target = next.find(
+      (item) => item.id !== current.id && item.printingId === current.printingId && lineKey(item) === key,
+    );
     if (target) {
-      const merged = { ...target, ...fields, quantity: capped((quantity ?? current.quantity) + target.quantity) };
+      const merged = { ...target, quantity: capped((quantity ?? current.quantity) + target.quantity) };
       next = next.filter((item) => item.id !== current.id).map((item) => (item.id === target.id ? merged : item));
     } else {
       const updated = {

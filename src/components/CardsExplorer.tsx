@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
@@ -81,6 +81,19 @@ function collectorRangeIds(list: PrintingDTO[], anchorId: string, endId: string)
       return compareCollector(rank, low) >= 0 && compareCollector(rank, high) <= 0;
     })
     .map((printing) => printing.id);
+}
+
+/** Mêmes critères de liste : seule la fiche ouverte (`printingId`) peut différer. */
+function sameListFilters(a: Filters, b: Filters) {
+  return (Object.keys(a) as (keyof Filters)[]).every((key) => {
+    if (key === "printingId") return true;
+    const left = a[key];
+    const right = b[key];
+    if (Array.isArray(left) && Array.isArray(right)) {
+      return left.length === right.length && left.every((value, index) => value === right[index]);
+    }
+    return left === right;
+  });
 }
 
 function resolveOpenedPrinting(printings: PrintingDTO[], printingId: string | null) {
@@ -173,6 +186,8 @@ export function CardsExplorer({
   // Carte touchée en mode ajout : feuille pour choisir quantité, état, langue et version.
   const [quickAddId, setQuickAddId] = useState<string | null>(null);
   const urlSyncRef = useRef(searchParams.toString());
+  // Dernière recherche envoyée à l'onglet Cartes.
+  const cardsLocationRef = useRef<string | null>(null);
   // Ouvrir une carte ajoute une entrée d'historique : le bouton retour (Android, geste iOS) la ferme.
   const pushUrlRef = useRef(false);
   const openedWithPushRef = useRef(false);
@@ -198,6 +213,12 @@ export function CardsExplorer({
   const cardsById = useMemo(() => new Map(catalog?.cards.map((card) => [card.id, card]) ?? []), [catalog]);
   const setsByCode = useMemo(() => new Map(catalog?.sets.map((set) => [set.code, set]) ?? []), [catalog]);
   const activeFilters = useMemo(() => alignReleasedFilters(filters), [filters]);
+  // Critères de la liste, inchangés quand on passe d'une fiche à l'autre : la grille et le filtrage
+  // du catalogue ne sont pas recalculés à chaque carte (navigation au clavier touche maintenue).
+  const [listFilters, setListFilters] = useState(activeFilters);
+  if (listFilters !== activeFilters && !sameListFilters(listFilters, activeFilters)) {
+    setListFilters(activeFilters);
+  }
   // Each printing keeps its own ownership: a beta copy must not mark the retail card as owned.
   const agg = useMemo(() => aggregateCollection(items), [items]);
 
@@ -209,7 +230,16 @@ export function CardsExplorer({
     const nextUrl = query ? `${base}?${query}` : base;
     urlSyncRef.current = query;
     if (syncBrowseSelection) {
-      setCardsLocation({ set: activeFilters.set, language: activeFilters.language }, query);
+      // L'onglet Cartes reprend la recherche, pas la fiche ouverte : parcourir les fiches (flèches)
+      // ne met pas à jour le contexte à chaque carte (setState en cascade depuis cet effet).
+      const location = new URLSearchParams(params);
+      location.delete("printing");
+      const locationQuery = location.toString();
+      const key = `${activeFilters.set}|${activeFilters.language}|${locationQuery}`;
+      if (cardsLocationRef.current !== key) {
+        cardsLocationRef.current = key;
+        setCardsLocation({ set: activeFilters.set, language: activeFilters.language }, locationQuery);
+      }
     }
     const currentUrl = `${window.location.pathname}${window.location.search}`;
     const push = pushUrlRef.current;
@@ -266,10 +296,10 @@ export function CardsExplorer({
   }, [catalog]);
 
   // La saisie s'affiche tout de suite ; le filtrage du catalogue suit sans bloquer la frappe.
-  const deferredQuery = useDeferredValue(activeFilters.q);
+  const deferredQuery = useDeferredValue(listFilters.q);
   const filtered = useMemo(() => {
     if (!catalog) return [];
-    const searchFilters = deferredQuery === activeFilters.q ? activeFilters : { ...activeFilters, q: deferredQuery };
+    const searchFilters = deferredQuery === listFilters.q ? listFilters : { ...listFilters, q: deferredQuery };
     const matched = filterPrintings(
       catalog.printings,
       cardsById,
@@ -281,7 +311,7 @@ export function CardsExplorer({
       q: searchFilters.q,
       defaultSort: filterDefaults.sort,
     });
-  }, [catalog, cardsById, agg, activeFilters, deferredQuery, setsByCode, filterDefaults.sort]);
+  }, [catalog, cardsById, agg, listFilters, deferredQuery, setsByCode, filterDefaults.sort]);
 
   // Prix de la liste filtrée : toujours en mode normal, et pour les cartes manquantes même en mode ajout.
   const missingList = activeFilters.collection === "missing";
@@ -341,6 +371,97 @@ export function CardsExplorer({
     selectedIndex >= 0 && selectedIndex < filtered.length - 1
       ? filtered[selectedIndex + 1]?.id ?? null
       : null;
+  // Images des cartes voisines, préchargées pour que la navigation affiche l'illustration sans attendre.
+  // Triées par distance : les plus proches d'abord (clics rapides sur « suivante »).
+  const neighborImages = Array.from({ length: 16 }, (_, index) => (index % 2 ? 1 : -1) * (Math.floor(index / 2) + 1))
+    .map((offset) => (selectedIndex >= 0 ? filtered[selectedIndex + offset]?.imagePath : null))
+    .filter((src): src is string => Boolean(src));
+  // Grille mémorisée : passer d'une fiche à l'autre ne la redessine pas (elle est sous la fiche).
+  // Les gestionnaires passent par une ref pour rester à jour sans invalider la mémoïsation.
+  const gridHandlers = {
+    onCardClick: handleCardClick,
+    onCardContextMenu: (event: React.MouseEvent, printingId: string) => {
+      if (!effectiveAddMode) return;
+      event.preventDefault();
+      removeFromSelection(printingId);
+    },
+    onQueue: queueCard,
+    onUnqueue: unqueueCard,
+    onToggleFavorite: toggleFavorite,
+    onTileFocus: keyboard.onTileFocus,
+    onGridKeyDown: keyboard.onKeyDown,
+    onGridKeyUp: keyboard.onKeyUp,
+    onFiltersChange: update,
+    onFiltersReset: () => update(defaultFilters(true, filterDefaults)),
+    onFiltersClose: closeFilters,
+  };
+  const gridHandlersRef = useRef(gridHandlers);
+  useLayoutEffect(() => {
+    gridHandlersRef.current = gridHandlers;
+  });
+  const filtersCollapsed = filtersVisibility === "closed";
+  const grid = useMemo(
+    () => (
+      <VirtualCardGrid
+        items={filtered}
+        cardsById={cardsById}
+        ownership={(printingId) => ownershipOf(printingId, agg).qty}
+        draft={draft}
+        rangeAnchor={rangeAnchor}
+        addMode={effectiveAddMode}
+        filtersCollapsed={filtersCollapsed}
+        layoutRef={gridLayoutRef}
+        onCardClick={(event, printingId) => gridHandlersRef.current.onCardClick(event, printingId)}
+        onCardContextMenu={(event, printingId) => gridHandlersRef.current.onCardContextMenu(event, printingId)}
+        onQueue={(printingId) => gridHandlersRef.current.onQueue(printingId)}
+        onUnqueue={(printingId) => gridHandlersRef.current.onUnqueue(printingId)}
+        isFavorite={(printingId) => favoriteIds.has(printingId)}
+        favoritesReady={wishlist.ready}
+        onToggleFavorite={readOnly ? undefined : (printingId) => gridHandlersRef.current.onToggleFavorite(printingId)}
+        focusIndex={keyboard.focusIndex}
+        focusRequest={keyboard.focusRequest}
+        selecting={keyboard.selecting}
+        onTileFocus={(event) => gridHandlersRef.current.onTileFocus(event)}
+        onGridKeyDown={(event) => gridHandlersRef.current.onGridKeyDown(event)}
+        onGridKeyUp={(event) => gridHandlersRef.current.onGridKeyUp(event)}
+      />
+    ),
+    [
+      filtered,
+      cardsById,
+      agg,
+      draft,
+      rangeAnchor,
+      effectiveAddMode,
+      filtersCollapsed,
+      gridLayoutRef,
+      favoriteIds,
+      wishlist.ready,
+      readOnly,
+      keyboard.focusIndex,
+      keyboard.focusRequest,
+      keyboard.selecting,
+    ],
+  );
+
+  // Colonne de filtres : même principe, elle ne dépend pas de la fiche ouverte.
+  const conditions = catalog?.conditions;
+  const filterPanel = useMemo(
+    () =>
+      facets && conditions ? (
+        <FilterPanel
+          filters={listFilters}
+          facets={facets}
+          sets={setChoices}
+          conditions={conditions}
+          onChange={(partial) => gridHandlersRef.current.onFiltersChange(partial)}
+          onReset={() => gridHandlersRef.current.onFiltersReset()}
+          onClose={() => gridHandlersRef.current.onFiltersClose()}
+        />
+      ) : null,
+    [listFilters, facets, setChoices, conditions],
+  );
+
   // The modal lists each printing separately, beta and retail included.
   const ownedIds = useMemo(
     () => new Set(items.filter((item) => item.quantity > 0).map((item) => item.printingId)),
@@ -601,15 +722,7 @@ export function CardsExplorer({
           aria-label={filtersDrawer ? t("cards.filters") : undefined}
         >
           <div className="scrollbar-hud min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 lg:overflow-visible lg:p-0">
-            <FilterPanel
-              filters={activeFilters}
-              facets={facets}
-              sets={setChoices}
-              conditions={catalog.conditions}
-              onChange={update}
-              onReset={() => update(defaultFilters(true, filterDefaults))}
-              onClose={closeFilters}
-            />
+            {filterPanel}
           </div>
           <div className="pb-safe shrink-0 border-t border-line bg-panel lg:hidden">
             <div className="p-3">
@@ -780,33 +893,7 @@ export function CardsExplorer({
         {filtered.length === 0 ? (
           <p className="border border-line px-4 py-10 text-center text-sm text-muted">{t("cards.noMatch")}</p>
         ) : (
-          <VirtualCardGrid
-            items={filtered}
-            cardsById={cardsById}
-            ownership={(printingId) => ownershipOf(printingId, agg).qty}
-            draft={draft}
-            rangeAnchor={rangeAnchor}
-            addMode={effectiveAddMode}
-            filtersCollapsed={filtersVisibility === "closed"}
-            layoutRef={gridLayoutRef}
-            onCardClick={handleCardClick}
-            onCardContextMenu={(event, printingId) => {
-              if (!effectiveAddMode) return;
-              event.preventDefault();
-              removeFromSelection(printingId);
-            }}
-            onQueue={queueCard}
-            onUnqueue={unqueueCard}
-            isFavorite={(printingId) => favoriteIds.has(printingId)}
-            favoritesReady={wishlist.ready}
-            onToggleFavorite={readOnly ? undefined : toggleFavorite}
-            focusIndex={keyboard.focusIndex}
-            focusRequest={keyboard.focusRequest}
-            selecting={keyboard.selecting}
-            onTileFocus={keyboard.onTileFocus}
-            onGridKeyDown={keyboard.onKeyDown}
-            onGridKeyUp={keyboard.onKeyUp}
-          />
+          grid
         )}
         </div>
       </div>
@@ -828,6 +915,7 @@ export function CardsExplorer({
           onClose={closePrinting}
           prevId={prevId}
           nextId={nextId}
+          preloadImages={neighborImages}
           onFilterArtist={(artist) =>
             update({ artists: [artist], set: ALL_SETS_ID, printingId: null, page: 1 })
           }

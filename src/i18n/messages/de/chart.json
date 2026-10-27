@@ -2,5 +2,12 @@
   "label": "Trend",
   "empty": "Noch keine Historie. Preisimport über mehrere Tage ausführen.",
   "period": "Über den angezeigten Zeitraum",
-  "days": "{n, plural, one {# Tag} other {# Tage}}"
+  "days": "{n, plural, one {# Tag} other {# Tage}}",
+  "value": "Marktwert",
+  "invested": "Investiert",
+  "profit": "Gewinn / Verlust",
+  "purchase": "Kauf",
+  "purchases": "{n, plural, one {# Kauf} other {# Käufe}}",
+  "morePurchases": "+{n} weitere",
+  "periodProfit": "GuV im Zeitraum"
 }

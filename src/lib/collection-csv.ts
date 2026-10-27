@@ -21,6 +21,7 @@ export const CSV_HEADERS = [
   "quantity",
   "purchase_price",
   "purchase_currency",
+  "purchase_date",
   "notes",
   "printing_id",
 ] as const;
@@ -32,6 +33,8 @@ export type ImportLine = {
   notes?: string;
   purchasePrice?: string;
   purchaseCurrency?: string;
+  /** « AAAA-MM-JJ ». */
+  purchasedAt?: string;
 };
 
 export type ImportIssueReason = "unknown-card" | "bad-quantity" | "no-identity";
@@ -95,6 +98,7 @@ export function collectionToCsv(items: CollectionItemDTO[], catalog: CatalogDTO)
         item.quantity,
         item.purchasePrice,
         item.purchasePrice ? item.purchaseCurrency : null,
+        item.purchasedAt,
         item.notes,
         item.printingId,
       ]
@@ -120,6 +124,7 @@ type Field =
   | "purchasePrice"
   | "price"
   | "currency"
+  | "purchaseDate"
   | "notes"
   | "playset";
 
@@ -150,6 +155,7 @@ const ALIASES: Record<Field, string[]> = {
   purchasePrice: ["purchaseprice", "prixdachat", "prixachat", "buyprice", "paid", "prixpaye"],
   price: ["price", "prix", "preis", "precio", "prezzo"],
   currency: ["purchasecurrency", "currency", "currencycode", "devise"],
+  purchaseDate: ["purchasedate", "purchasedat", "datedachat", "dateachat", "boughton"],
   notes: ["notes", "note", "comments", "comment", "commentaire", "commentaires"],
   playset: ["isplayset", "playset"],
 };
@@ -275,6 +281,23 @@ function parsePrice(value: string) {
 function parseCurrency(value: string) {
   const code = value.trim().toUpperCase();
   return (CURRENCIES as readonly string[]).includes(code) ? code : undefined;
+}
+
+/** Date d'achat « AAAA-MM-JJ », « JJ/MM/AAAA » ou « JJ.MM.AAAA » → « AAAA-MM-JJ » ; date invalide ou future ignorée. */
+function parseDate(value: string) {
+  const text = value.trim();
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(text);
+  const european = /^(\d{1,2})[/.](\d{1,2})[/.](\d{4})$/.exec(text);
+  const [year, month, day] = iso
+    ? [iso[1], iso[2], iso[3]]
+    : european
+      ? [european[3], european[2], european[1]]
+      : [];
+  if (!year) return undefined;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (date.getUTCMonth() !== Number(month) - 1 || date.getUTCDate() !== Number(day)) return undefined;
+  if (date.getTime() > Date.now()) return undefined;
+  return date.toISOString().slice(0, 10);
 }
 
 // ---------------------------------------------------------------- Import : correspondance des cartes
@@ -455,13 +478,17 @@ export function parseCollectionCsv(
     // Le « Price » Cardmarket est un prix de vente, pas un prix d'achat : ignoré.
     const purchasePrice = parsePrice(read(row, "purchasePrice")) ?? (format === "cardmarket" ? undefined : parsePrice(read(row, "price")));
     const notes = read(row, "notes").slice(0, 2000) || undefined;
-    const key = `${match.printing.id}|${conditionCode}`;
+    const purchasedAt = parseDate(read(row, "purchaseDate"));
+    // Une ligne par carte × état × prix × date × notes : une valeur différente fait une autre ligne.
+    const purchaseCurrency = purchasePrice ? (parseCurrency(read(row, "currency")) ?? options.defaultCurrency) : undefined;
+    const key = JSON.stringify([match.printing.id, conditionCode, purchasePrice ?? null, purchaseCurrency ?? null, purchasedAt ?? null, notes ?? null]);
     const line = merged.get(key) ?? { printingId: match.printing.id, conditionCode, quantity: 0 };
     line.quantity += copies;
     if (notes) line.notes = notes;
+    if (purchasedAt) line.purchasedAt = purchasedAt;
     if (purchasePrice) {
       line.purchasePrice = purchasePrice;
-      line.purchaseCurrency = parseCurrency(read(row, "currency")) ?? options.defaultCurrency;
+      line.purchaseCurrency = purchaseCurrency;
     }
     merged.set(key, line);
   });

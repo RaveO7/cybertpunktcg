@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePreferences } from "@/components/PreferencesProvider";
-import { conditionDot, fieldClass, iconBtnClass } from "@/components/card-modal/shared";
+import { conditionDot, fieldClass, iconBtnClass, toAmount, todayInputValue } from "@/components/card-modal/shared";
+import { useNumberFormat } from "@/i18n/number-format";
 import { conditionOptionLabel } from "@/lib/condition-label";
 import { CURRENCIES } from "@/lib/parse";
 import type { CollectionItemDTO, ConditionDTO } from "@/lib/types";
@@ -14,6 +15,7 @@ export type AddCopyInput = {
   notes?: string | null;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;
+  purchasedAt?: string | null;
 };
 
 /** État du formulaire d'ajout, partagé entre la version bureau et la barre du bas sur téléphone. */
@@ -26,6 +28,8 @@ export function useAddCopyForm(printingId: string, onSave: ((input: AddCopyInput
   const [notes, setNotes] = useState("");
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState<string>(prefs.currency);
+  // Date d'achat pré-remplie à aujourd'hui : le cas le plus courant, sans clic.
+  const [date, setDate] = useState(todayInputValue);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [showMoreFields, setShowMoreFields] = useState(false);
@@ -47,12 +51,15 @@ export function useAddCopyForm(printingId: string, onSave: ((input: AddCopyInput
       await onSave({
         conditionCode,
         quantity,
-        notes: notes.trim() ? notes.trim() : undefined,
-        purchasePrice: price.trim() ? price.trim() : undefined,
-        purchaseCurrency: price.trim() ? currency : undefined,
+        // null (et non undefined) : un ajout sans prix ni notes ne rejoint pas une ligne qui en a.
+        notes: notes.trim() ? notes.trim() : null,
+        purchasePrice: price.trim() ? price.trim() : null,
+        purchaseCurrency: price.trim() ? currency : null,
+        purchasedAt: date || null,
       });
       setNotes("");
       setPrice("");
+      setDate(todayInputValue());
       setQuantity(1);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t("modal.addFailed"));
@@ -72,6 +79,8 @@ export function useAddCopyForm(printingId: string, onSave: ((input: AddCopyInput
     setPrice,
     currency,
     setCurrency,
+    date,
+    setDate,
     message,
     pending,
     showMoreFields,
@@ -81,6 +90,19 @@ export function useAddCopyForm(printingId: string, onSave: ((input: AddCopyInput
 }
 
 export type AddCopyFormState = ReturnType<typeof useAddCopyForm>;
+
+/** « = 12,00 € au total » quand plusieurs exemplaires ont un prix unitaire. */
+function PriceTotal({ form, className }: { form: AddCopyFormState; className: string }) {
+  const t = useTranslations();
+  const fmt = useNumberFormat();
+  const unit = toAmount(form.price.trim().replace(",", "."));
+  if (unit == null || form.quantity < 2) return null;
+  return (
+    <p className={className} aria-live="polite">
+      {t("modal.priceTotal", { total: fmt.money(unit * form.quantity, form.currency) })}
+    </p>
+  );
+}
 
 /** Formulaire d'ajout sur ordinateur, sous les exemplaires de la collection. */
 export function DesktopAddForm({
@@ -97,8 +119,23 @@ export function DesktopAddForm({
   formErrorId: string;
 }) {
   const t = useTranslations();
-  const { conditionCode, setConditionCode, quantity, setQuantity, notes, setNotes, price, setPrice, currency, setCurrency, message, pending, add } =
-    form;
+  const {
+    conditionCode,
+    setConditionCode,
+    quantity,
+    setQuantity,
+    notes,
+    setNotes,
+    price,
+    setPrice,
+    currency,
+    setCurrency,
+    date,
+    setDate,
+    message,
+    pending,
+    add,
+  } = form;
   return (
     <form
       className="hidden px-4 pb-3 pt-2 sm:px-5 md:block"
@@ -114,17 +151,18 @@ export function DesktopAddForm({
       </h3>
       {items.length === 0 ? (
         <div
-          className="grid grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_minmax(0,1fr)_2.75rem] gap-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted"
+          className="grid grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_9rem_minmax(0,1fr)_2.75rem] gap-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted"
           aria-hidden="true"
         >
           <span>{t("modal.condition")}</span>
           <span>{t("modal.quantity")}</span>
           <span>{t("modal.unitPurchasePrice")}</span>
+          <span>{t("modal.purchaseDate")}</span>
           <span>{t("modal.notes")}</span>
           <span />
         </div>
       ) : null}
-      <div className="grid grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_minmax(0,1fr)_2.75rem] items-center gap-3 border-t border-line/50 py-2.5">
+      <div className="grid grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_9rem_minmax(0,1fr)_2.75rem] items-center gap-3 border-t border-line/50 py-2.5">
         <span className="relative flex h-10 items-center">
           <span className={`pointer-events-none absolute left-2 top-1/2 z-10 h-2 w-2 -translate-y-1/2 ${conditionDot(conditionCode)}`} aria-hidden="true" />
           <select
@@ -188,6 +226,14 @@ export function DesktopAddForm({
           </select>
         </div>
         <input
+          type="date"
+          className={`${fieldClass} font-mono`}
+          max={todayInputValue()}
+          aria-label={t("modal.purchaseDate")}
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+        />
+        <input
           className={fieldClass}
           placeholder={t("modal.notesPlaceholder")}
           aria-label={t("modal.notes")}
@@ -206,6 +252,8 @@ export function DesktopAddForm({
           </svg>
         </button>
       </div>
+      <PriceTotal form={form} className="font-mono text-xs text-muted" />
+      {items.length > 0 ? <p className="mt-1 text-xs text-muted">{t("modal.lineSplitHint")}</p> : null}
       {message ? (
         <p id={formErrorId} role="alert" className="text-sm text-danger">
           {message}
@@ -237,6 +285,8 @@ export function MobileAddForm({
     setPrice,
     currency,
     setCurrency,
+    date,
+    setDate,
     message,
     pending,
     showMoreFields,
@@ -302,12 +352,22 @@ export function MobileAddForm({
             </select>
           </div>
           <input
-            className={`${fieldClass} h-11`}
+            type="date"
+            className={`${fieldClass} h-11 font-mono`}
+            max={todayInputValue()}
+            aria-label={t("modal.purchaseDate")}
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+          />
+          <input
+            className={`${fieldClass} col-span-2 h-11`}
             placeholder={t("modal.notesPlaceholder")}
             aria-label={t("modal.notes")}
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
           />
+          <PriceTotal form={form} className="col-span-2 font-mono text-xs text-muted" />
+          <p className="col-span-2 text-xs text-muted">{t("modal.lineSplitHint")}</p>
         </div>
       ) : null}
       <div className="flex gap-2.5">

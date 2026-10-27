@@ -92,6 +92,7 @@ function item(id: string, printingId: string, conditionCode: string, quantity: n
     notes: null,
     purchasePrice: null,
     purchaseCurrency: null,
+    purchasedAt: null,
     addedAt: "2026-01-01T00:00:00.000Z",
     ...extra,
   } satisfies CollectionItemDTO;
@@ -129,7 +130,7 @@ describe("collection CSV : export", () => {
 });
 
 describe("collection CSV : import", () => {
-  it("tableur français : en-têtes libres, virgule décimale, doublons fusionnés", () => {
+  it("tableur français : en-têtes libres, virgule décimale, doublons fusionnés, prix différent = autre ligne", () => {
     const csv = [
       "Nom;Numéro;Langue;État;Quantité;Prix d'achat",
       "Judy Alvarez - Braindance Tech;40;Anglais;Near Mint;2;3,20",
@@ -142,7 +143,8 @@ describe("collection CSV : import", () => {
     assert.equal(preview.format, "generic");
     assert.equal(preview.rows, 5);
     assert.deepEqual(preview.lines, [
-      { printingId: "p-jud", conditionCode: "NM", quantity: 3, purchasePrice: "3.20", purchaseCurrency: "EUR" },
+      { printingId: "p-jud", conditionCode: "NM", quantity: 2, purchasePrice: "3.20", purchaseCurrency: "EUR" },
+      { printingId: "p-jud", conditionCode: "NM", quantity: 1 },
       { printingId: "p-reb-fr", conditionCode: "LP", quantity: 1 },
     ]);
     assert.equal(preview.copies, 4);

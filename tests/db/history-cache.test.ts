@@ -339,8 +339,45 @@ describe.sequential("cache de la courbe de portefeuille", () => {
 
   it("collection vide", async () => {
     const U5 = await makeUser("u5", []);
-    assert.deepEqual(await load(U5), { points: [], days: 0 });
+    assert.deepEqual(await load(U5), { points: [], days: 0, purchases: [] });
     assert.equal(await cacheRow(U5), null);
+  });
+
+  it("date et prix d'achat : exemplaires comptés à partir de l'achat, investi, P&L et achats listés", async () => {
+    const U8 = await makeUser("u8-achats", []);
+    // P1 sans date (possédé depuis toujours) à 1 € ; P2 ×2 acheté à J-5 à 10 € pièce.
+    await prisma.collectionItem.create({
+      data: { userId: U8, printingId: P1, conditionId: nmId, quantity: 1, purchasePrice: "1", purchaseCurrency: "EUR" },
+    });
+    const bought = await prisma.collectionItem.create({
+      data: {
+        userId: U8,
+        printingId: P2,
+        conditionId: nmId,
+        quantity: 2,
+        purchasePrice: "10",
+        purchaseCurrency: "EUR",
+        purchasedAt: priceHistory.utcDay(day(5)),
+      },
+    });
+    const first = await load(U8);
+    const at = (points: typeof first.points, ago: number) => points.find((point) => point.day === day(ago));
+    // J-9 : seul P1 (1 €) est possédé.
+    assert.deepEqual(at(first.points, 9), { day: day(9), marketTotal: 1, pricedCopies: 1, invested: 1, profit: 0 });
+    // J-5 : P1 à 2 € (J-6) + 2 × P2 à 12 €.
+    assert.deepEqual(at(first.points, 5), { day: day(5), marketTotal: 26, pricedCopies: 3, invested: 21, profit: 5 });
+    assert.deepEqual(first.purchases, [
+      { day: day(5), printingId: P2, quantity: 2, unitPrice: 10, currency: "EUR" },
+    ]);
+    // Le cache rend la même courbe.
+    assert.deepEqual((await load(U8)).points, first.points);
+
+    // Changer la date d'achat invalide le cache.
+    await prisma.collectionItem.update({ where: { id: bought.id }, data: { purchasedAt: priceHistory.utcDay(day(2)) } });
+    const moved = await load(U8);
+    assert.equal(at(moved.points, 5)?.pricedCopies, 1);
+    assert.equal(at(moved.points, 2)?.invested, 21);
+    assert.equal(moved.purchases[0].day, day(2));
   });
 
   it("caches supprimés avec le compte", async () => {

@@ -255,6 +255,8 @@ model Condition {
   prices    Price[]
 }
 
+/// Une ligne regroupe des exemplaires identiques : même carte, état, prix d'achat unitaire, date d'achat et notes
+/// (voir src/lib/collection-line.ts). Une même carte × état peut donc avoir plusieurs lignes.
 model CollectionItem {
   id               String    @id @default(cuid())
   userId           String
@@ -264,14 +266,16 @@ model CollectionItem {
   notes            String?
   purchasePrice    Decimal?
   purchaseCurrency String?
+  /// Date d'achat (jour UTC à minuit), null = inconnue. Sert au P&L et à la courbe d'investissement.
+  purchasedAt      DateTime?
   addedAt          DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   printing         Printing  @relation(fields: [printingId], references: [id], onDelete: Restrict)
   condition        Condition @relation(fields: [conditionId], references: [id], onDelete: Restrict)
 
-  @@unique([userId, printingId, conditionId])
   @@index([userId])
+  @@index([userId, printingId])
   @@index([printingId])
 }
 

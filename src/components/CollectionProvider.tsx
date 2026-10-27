@@ -8,6 +8,7 @@ import { matchRoute } from "@/i18n/match";
 import type { ImportLine } from "@/lib/collection-csv";
 import { type BootRequests, requestCatalog, requestCollection, takeBootRequests } from "@/lib/boot-requests";
 import { readSavedCollection } from "@/lib/offline";
+import { matchLine, sameLine } from "@/lib/collection-line";
 import {
   type NewOp,
   type QueuedOp,
@@ -66,6 +67,7 @@ type SaveInput = {
   notes?: string | null;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;
+  purchasedAt?: string | null;
 };
 
 type PatchInput = {
@@ -74,6 +76,7 @@ type PatchInput = {
   notes?: string | null;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;
+  purchasedAt?: string | null;
 };
 
 type MutationResult = {
@@ -120,8 +123,14 @@ export function useCollection() {
   return value;
 }
 
+/** Corps JSON de la réponse ; vide ou illisible (500 sans corps, page HTML…) → objet vide, le statut tranche. */
 async function readJson<T>(response: Response): Promise<T> {
-  return (await response.json()) as T;
+  const text = await response.text().catch(() => "");
+  try {
+    return (text ? JSON.parse(text) : {}) as T;
+  } catch {
+    return {} as T;
+  }
 }
 
 export function CollectionProvider({ children }: { children: React.ReactNode }) {
@@ -564,9 +573,11 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         setError(null);
       },
       saveLine: async (input) => {
-        // Ligne déjà affichée pour cette carte × état (comme la fusion faite par le serveur), sinon id temporaire.
-        const existing = itemsRef.current.find(
-          (item) => item.printingId === input.printingId && item.conditionCode === input.conditionCode,
+        // Ligne identique déjà affichée (carte × état × prix × date × notes, comme la fusion faite par le serveur),
+        // sinon id temporaire.
+        const existing = matchLine(
+          itemsRef.current.filter((item) => item.printingId === input.printingId),
+          input,
         );
         await request(
           "/api/collection",
@@ -610,10 +621,15 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       },
       patchLine: async (id, input) => {
         // Mise à jour optimiste : l'interface reflète la modification sans attendre le serveur.
-        // Un changement d'état peut fusionner deux lignes, on laisse alors le serveur trancher.
+        // Une ligne devenue identique à une autre (état, prix, date, notes) fusionne : on laisse alors le serveur trancher.
         // Copie du serveur seulement : une ligne créée hors ligne n'existe que dans la file.
         const previous = serverItemsRef.current.find((item) => item.id === id);
-        const optimistic = previous && input.conditionCode === undefined;
+        const merges =
+          previous != null &&
+          serverItemsRef.current.some(
+            (item) => item.id !== id && item.printingId === previous.printingId && sameLine(item, { ...previous, ...input }),
+          );
+        const optimistic = previous && input.conditionCode === undefined && !merges;
         if (optimistic) {
           editItems((current) =>
             input.quantity != null && input.quantity <= 0

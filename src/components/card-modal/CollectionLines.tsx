@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { intlLocale, type Locale } from "@/i18n/config";
 import { useNumberFormat } from "@/i18n/number-format";
 import {
   conditionDot,
@@ -10,6 +11,7 @@ import {
   fieldLabelClass,
   iconBtnClass,
   toAmount,
+  todayInputValue,
 } from "@/components/card-modal/shared";
 import { conditionOptionLabel } from "@/lib/condition-label";
 import { CURRENCIES } from "@/lib/parse";
@@ -48,6 +50,7 @@ export function LineEditor({
 }) {
   const fmt = useNumberFormat();
   const t = useTranslations();
+  const locale = useLocale() as Locale;
   // Quantité saisie mais pas encore envoyée : affichée tout de suite, envoyée en un seul PATCH
   // une fois les clics terminés. null = on affiche la valeur de la collection.
   const [pendingQty, setPendingQty] = useState<number | null>(null);
@@ -84,12 +87,19 @@ export function LineEditor({
 
   const [notes, setNotes] = useState(item.notes ?? "");
   const [price, setPrice] = useState(item.purchasePrice ?? "");
+  const [date, setDate] = useState(item.purchasedAt ?? "");
   const [editing, setEditing] = useState(false);
 
   const conditionName = conditions.find((entry) => entry.code === item.conditionCode)?.name;
   const labelClass = `${fieldLabelClass} mb-1 md:sr-only`;
   const unit = toAmount(item.purchasePrice);
   const unitLabel = unit == null ? null : fmt.money(unit, item.purchaseCurrency || "EUR");
+  // Le prix saisi est unitaire : le total de la ligne vaut quantité × prix.
+  const totalAmount = unit == null || quantity < 2 ? null : fmt.money(unit * quantity, item.purchaseCurrency || "EUR");
+  const totalLabel = totalAmount ? t("modal.priceTotal", { total: totalAmount }) : null;
+  const dateLabel = item.purchasedAt
+    ? new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "medium", timeZone: "UTC" }).format(new Date(item.purchasedAt))
+    : null;
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -98,8 +108,10 @@ export function LineEditor({
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-sm">
             ×{quantity}
-            {unitLabel ? ` · ${unitLabel}` : ""}
+            {unitLabel ? ` · ${t("modal.perUnit", { price: unitLabel })}` : ""}
+            {dateLabel ? ` · ${dateLabel}` : ""}
           </span>
+          {totalLabel ? <span className="font-mono text-xs text-muted">{totalLabel}</span> : null}
           {item.notes ? <span className="truncate text-xs text-muted">{item.notes}</span> : null}
         </div>
         <button
@@ -123,7 +135,7 @@ export function LineEditor({
         </button>
       </div>
     <div
-      className={`${editing ? "grid" : "hidden"} grid-cols-2 gap-x-3 gap-y-2.5 md:grid md:grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_minmax(0,1fr)_2.75rem] md:items-center`}
+      className={`${editing ? "grid" : "hidden"} grid-cols-2 gap-x-3 gap-y-2.5 md:grid md:grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_9rem_minmax(0,1fr)_2.75rem] md:items-center`}
     >
       <label className="block">
         <span className={labelClass}>{t("modal.condition")}</span>
@@ -215,6 +227,20 @@ export function LineEditor({
           </select>
         </div>
       </div>
+
+      <label className="col-span-2 block md:col-span-1">
+        <span className={labelClass}>{t("modal.purchaseDate")}</span>
+        <input
+          type="date"
+          className={`${fieldClass} font-mono`}
+          max={todayInputValue()}
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+          onBlur={() => {
+            if ((item.purchasedAt ?? "") !== date) void onPatch(item.id, { purchasedAt: date || null });
+          }}
+        />
+      </label>
 
       <label className="col-span-2 block md:col-span-1">
         <span className={labelClass}>{t("modal.notes")}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useNumberFormat, type NumberFormat } from "@/i18n/number-format";
 import { PriceChart, type ChartPoint } from "@/components/PriceChart";
@@ -33,7 +33,11 @@ export function PricePanel({
 }) {
   const fmt = useNumberFormat();
   const t = useTranslations();
-  const [priceHistory, setPriceHistory] = useState<ChartPoint[]>([]);
+  // Historique de la carte `id` ; tant qu'il ne correspond pas à la fiche, l'ancien reste affiché, estompé.
+  const [history, setHistory] = useState<{ id: string | null; points: ChartPoint[] }>({ id: null, points: [] });
+  const priceHistory = history.points;
+  const historyStale = history.id !== printing.id;
+  const loadedOnceRef = useRef(false);
   const [costHintOpen, setCostHintOpen] = useState(false);
   const total = items.reduce((sum, item) => sum + item.quantity, 0);
   const previous = toAmount(printing.previousMarketPrice);
@@ -63,16 +67,32 @@ export function PricePanel({
         if (!response.ok) throw new Error("history");
         const body = (await response.json()) as { points?: { day: string; amount: number }[] };
         if (cancelled) return;
-        setPriceHistory((body.points ?? []).map((point) => ({ day: point.day, value: point.amount })));
+        setHistory({ id: printing.id, points: (body.points ?? []).map((point) => ({ day: point.day, value: point.amount })) });
       } catch {
-        if (!cancelled) setPriceHistory([]);
+        if (!cancelled) setHistory({ id: printing.id, points: [] });
       }
     }
-    void loadHistory();
+    // Navigation rapide (touche maintenue) : on attend que la fiche se stabilise avant de charger.
+    const timer = window.setTimeout(() => void loadHistory(), loadedOnceRef.current ? 120 : 0);
+    loadedOnceRef.current = true;
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
   }, [printing.id]);
+
+  const chart = useMemo(
+    () => (
+      <PriceChart
+        points={priceHistory}
+        label={t("modal.chartLabel")}
+        height={80}
+        compact
+        emptyHint={t("modal.chartEmpty")}
+      />
+    ),
+    [priceHistory, t],
+  );
 
   // Sans prix ni historique Cardmarket, le bloc n'a rien à montrer.
   if (market == null && priceHistory.length === 0) return null;
@@ -100,13 +120,7 @@ export function PricePanel({
             </p>
           ) : null}
         </div>
-        <PriceChart
-          points={priceHistory}
-          label={t("modal.chartLabel")}
-          height={80}
-          compact
-          emptyHint={t("modal.chartEmpty")}
-        />
+        <div className={`transition-opacity ${historyStale ? "opacity-40" : ""}`}>{chart}</div>
       </div>
 
       {/* Seul le gain/perte est ajouté : la valeur et le coût d'achat figurent déjà ailleurs.

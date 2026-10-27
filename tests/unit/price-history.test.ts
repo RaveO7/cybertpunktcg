@@ -9,6 +9,37 @@ import {
   utcDayKey,
 } from "../../src/lib/price-history";
 
+describe("extendPortfolioHistory : date et prix d'achat", () => {
+  it("compte les exemplaires à partir de leur date d'achat, avec l'investi et le P&L du jour", () => {
+    const owned = [
+      { printingId: "a", quantity: 2, fromDay: null, cost: 1 },
+      { printingId: "b", quantity: 1, fromDay: "2026-03-02", cost: 5 },
+      { printingId: "c", quantity: 1, fromDay: "2026-03-02", cost: null },
+    ];
+    const snapshots = [
+      { printingId: "a", day: "2026-03-01", amount: 2 },
+      { printingId: "b", day: "2026-03-01", amount: 4 },
+      { printingId: "c", day: "2026-03-01", amount: 3 },
+      { printingId: "b", day: "2026-03-03", amount: 6 },
+    ];
+    const { points } = extendPortfolioHistory(owned, new Map(), snapshots);
+    assert.deepEqual(points, [
+      // b et c pas encore achetés.
+      { day: "2026-03-01", marketTotal: 4, pricedCopies: 2, invested: 2, profit: 2 },
+      { day: "2026-03-03", marketTotal: 13, pricedCopies: 4, invested: 7, profit: 3 },
+    ]);
+  });
+
+  it("sans aucun prix d'achat : ni investi ni P&L dans les points", () => {
+    const { points } = extendPortfolioHistory(
+      [{ printingId: "a", quantity: 1 }],
+      new Map(),
+      [{ printingId: "a", day: "2026-03-01", amount: 2 }],
+    );
+    assert.deepEqual(points, [{ day: "2026-03-01", marketTotal: 2, pricedCopies: 1 }]);
+  });
+});
+
 describe("utcDay / utcDayKey", () => {
   const originalTz = process.env.TZ;
   afterEach(() => {

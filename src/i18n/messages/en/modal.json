@@ -23,6 +23,10 @@
   "decreaseQty": "Decrease quantity",
   "increaseQty": "Increase quantity",
   "unitPurchasePrice": "Unit purchase price",
+  "purchaseDate": "Purchase date",
+  "perUnit": "{price} each",
+  "priceTotal": "= {total} in total",
+  "lineSplitHint": "Same condition, price, date and notes: copies are added to the existing line. Any different value creates a new line.",
   "otherPrintings": "Other printings",
   "artist": "Artist",
   "viewArtist": "View all cards by {artist}",
@@ -57,7 +61,7 @@
   "set": "Set",
   "number": "Number",
   "keyboardHint": "← → browse · Esc close",
-  "moreFields": "Purchase price and notes",
+  "moreFields": "Purchase price, date and notes",
   "editLine": "Edit the {code} line",
   "doneEditing": "Done editing"
 }

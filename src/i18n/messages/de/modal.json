@@ -23,6 +23,10 @@
   "decreaseQty": "Menge verringern",
   "increaseQty": "Menge erhöhen",
   "unitPurchasePrice": "Kaufpreis pro Stück",
+  "purchaseDate": "Kaufdatum",
+  "perUnit": "{price} / Stk.",
+  "priceTotal": "= {total} insgesamt",
+  "lineSplitHint": "Gleicher Zustand, Preis, Datum und Notizen: Die Exemplare werden der bestehenden Zeile hinzugefügt. Ein abweichender Wert erzeugt eine neue Zeile.",
   "otherPrintings": "Andere Drucke",
   "artist": "Künstler",
   "viewArtist": "Alle Karten von {artist} anzeigen",
@@ -57,7 +61,7 @@
   "set": "Edition",
   "number": "Nummer",
   "keyboardHint": "← → blättern · Esc schließen",
-  "moreFields": "Einkaufspreis und Notizen",
+  "moreFields": "Einkaufspreis, Datum und Notizen",
   "editLine": "Zeile {code} bearbeiten",
   "doneEditing": "Bearbeitung beenden"
 }

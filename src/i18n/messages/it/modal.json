@@ -23,6 +23,10 @@
   "decreaseQty": "Diminuisci quantità",
   "increaseQty": "Aumenta quantità",
   "unitPurchasePrice": "Prezzo d’acquisto unitario",
+  "purchaseDate": "Data d’acquisto",
+  "perUnit": "{price} cad.",
+  "priceTotal": "= {total} in totale",
+  "lineSplitHint": "Stesse condizioni, prezzo, data e note: le copie si aggiungono alla riga esistente. Un valore diverso crea una nuova riga.",
   "otherPrintings": "Altre stampe",
   "artist": "Artista",
   "viewArtist": "Vedi tutte le carte di {artist}",
@@ -57,7 +61,7 @@
   "set": "Espansione",
   "number": "Numero",
   "keyboardHint": "← → sfoglia · Esc chiudi",
-  "moreFields": "Prezzo d’acquisto e note",
+  "moreFields": "Prezzo, data d’acquisto e note",
   "editLine": "Modifica la riga {code}",
   "doneEditing": "Fine modifica"
 }

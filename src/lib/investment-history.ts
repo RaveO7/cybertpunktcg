@@ -19,11 +19,23 @@ function setCodeWhere(setCode: string) {
   return { code: setCode };
 }
 
+/** Achat daté d'une ligne de la collection, pour le placer sur la courbe. */
+export type PortfolioPurchase = {
+  day: string;
+  printingId: string;
+  quantity: number;
+  /** Prix d'achat unitaire (dans `currency`), null = inconnu. */
+  unitPrice: number | null;
+  currency: string | null;
+};
+
+type PortfolioHistory = { points: PortfolioHistoryPoint[]; days: number };
+
 export async function loadPortfolioPriceHistory(input: {
   userId: string;
   setCode?: string;
   language?: string;
-}): Promise<{ points: PortfolioHistoryPoint[]; days: number }> {
+}): Promise<PortfolioHistory & { purchases: PortfolioPurchase[] }> {
   const items = await prisma.collectionItem.findMany({
     where: {
       userId: input.userId,
@@ -37,34 +49,53 @@ export async function loadPortfolioPriceHistory(input: {
           }
         : {}),
     },
-    select: { printingId: true, quantity: true },
+    select: { printingId: true, quantity: true, purchasePrice: true, purchaseCurrency: true, purchasedAt: true },
+    orderBy: { addedAt: "asc" },
   });
-  const owned = new Map<string, number>();
-  for (const item of items) {
-    owned.set(item.printingId, (owned.get(item.printingId) ?? 0) + item.quantity);
-  }
-  const printingIds = [...owned.keys()];
-  if (printingIds.length === 0) return { points: [], days: 0 };
-  const ownedList = [...owned.entries()].map(([printingId, quantity]) => ({ printingId, quantity }));
+  const ownedList: OwnedQuantity[] = items.map((item) => {
+    const price = item.purchasePrice == null ? null : Number(item.purchasePrice.toString());
+    const eur = price != null && Number.isFinite(price) && (item.purchaseCurrency || "EUR") === "EUR";
+    return {
+      printingId: item.printingId,
+      quantity: item.quantity,
+      fromDay: item.purchasedAt ? utcDayKey(item.purchasedAt) : null,
+      cost: eur ? price : null,
+    };
+  });
+  const purchases: PortfolioPurchase[] = items
+    .filter((item) => item.purchasedAt != null)
+    .map((item) => {
+      const price = item.purchasePrice == null ? null : Number(item.purchasePrice.toString());
+      const unitPrice = price != null && Number.isFinite(price) ? price : null;
+      return {
+        day: utcDayKey(item.purchasedAt as Date),
+        printingId: item.printingId,
+        quantity: item.quantity,
+        unitPrice,
+        currency: unitPrice == null ? null : item.purchaseCurrency || "EUR",
+      };
+    })
+    .sort((left, right) => left.day.localeCompare(right.day));
+  const printingIds = [...new Set(items.map((item) => item.printingId))];
+  if (printingIds.length === 0) return { points: [], days: 0, purchases: [] };
 
   const scope = `${input.setCode ?? "*"}|${input.language ?? "*"}`;
   try {
-    return await loadWithCache(input.userId, scope, owned, printingIds, ownedList);
+    return { ...(await loadWithCache(input.userId, scope, printingIds, ownedList)), purchases };
   } catch (error) {
     // Le cache n'est qu'une optimisation (ex. table absente en production) : la courbe reste disponible.
     console.warn("[investment-history] cache indisponible, calcul complet :", error);
-    return computeFullHistory(printingIds, ownedList, await loadSnapshotRows(printingIds, null));
+    return { ...(await computeFullHistory(printingIds, ownedList, await loadSnapshotRows(printingIds, null))), purchases };
   }
 }
 
 async function loadWithCache(
   userId: string,
   scope: string,
-  owned: Map<string, number>,
   printingIds: string[],
   ownedList: OwnedQuantity[],
-): Promise<{ points: PortfolioHistoryPoint[]; days: number }> {
-  const fingerprint = collectionFingerprint(owned);
+): Promise<PortfolioHistory> {
+  const fingerprint = collectionFingerprint(ownedList);
   const cache = await prisma.portfolioHistoryCache.findUnique({
     where: { userId_scope: { userId, scope } },
   });
@@ -141,13 +172,16 @@ async function computeFullHistory(printingIds: string[], ownedList: OwnedQuantit
 }
 
 /** Changer cette valeur invalide tous les caches (ex. si le calcul de la courbe évolue). */
-const CACHE_VERSION = "1";
+const CACHE_VERSION = "2";
 const SETTLE_DELAY_DAYS = 2;
 
-function collectionFingerprint(owned: Map<string, number>) {
-  const entries = [...owned.entries()].sort(([left], [right]) => left.localeCompare(right));
+/** Empreinte des exemplaires (quantité, date et prix d'achat) : toute modification invalide le cache. */
+function collectionFingerprint(owned: OwnedQuantity[]) {
+  const entries = owned
+    .map((row) => `${row.printingId}:${row.quantity}:${row.fromDay ?? ""}:${row.cost ?? ""}`)
+    .sort();
   const hash = createHash("sha256").update(CACHE_VERSION);
-  for (const [printingId, quantity] of entries) hash.update(`|${printingId}:${quantity}`);
+  for (const entry of entries) hash.update(`|${entry}`);
   return hash.digest("hex");
 }
 

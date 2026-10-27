@@ -2,5 +2,12 @@
   "label": "Évolution",
   "empty": "Pas encore d’historique. Relancez l’import des prix au fil des jours.",
   "period": "Sur la période affichée",
-  "days": "{n, plural, one {# jour} other {# jours}}"
+  "days": "{n, plural, one {# jour} other {# jours}}",
+  "value": "Valeur marché",
+  "invested": "Investi",
+  "profit": "Plus / moins-value",
+  "purchase": "Achat",
+  "purchases": "{n, plural, one {# achat} other {# achats}}",
+  "morePurchases": "+{n} autre(s)",
+  "periodProfit": "P&L sur la période"
 }

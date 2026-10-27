@@ -26,6 +26,10 @@ export async function DELETE(request: Request, context: Context) {
   const user = await requireUser(request);
   if (!user) return sessionRequired(request);
   const { id } = await context.params;
-  const result = await deleteCollectionLine(user.id, id);
-  return NextResponse.json(result);
+  try {
+    const result = await deleteCollectionLine(user.id, id);
+    return NextResponse.json(result);
+  } catch (error) {
+    return errorResponse(request, "collection-delete", error, "common.updateFailed");
+  }
 }

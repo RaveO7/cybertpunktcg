@@ -973,6 +973,8 @@ export type InvestmentLine = {
   purchaseUnit: number | null;
   purchaseCurrency: string | null;
   purchaseTotal: number | null;
+  /** Date d'achat « AAAA-MM-JJ », null = inconnue. */
+  purchasedAt: string | null;
   profit: number | null;
   marketDelta: PriceMovement;
 };
@@ -1051,6 +1053,7 @@ export function buildInvestmentLines(
       purchaseUnit,
       purchaseCurrency,
       purchaseTotal,
+      purchasedAt: item.purchasedAt ?? null,
       profit,
       marketDelta: priceMovement(marketUnit, previousMarketUnit),
     });
@@ -1065,8 +1068,9 @@ export function buildInvestmentLines(
 
 /**
  * Ramène chaque ligne à une période : la variation marché part du prix de référence
- * au début de la période, et le P&L aussi — sauf pour une ligne ajoutée pendant la
- * période, dont le P&L reste calculé depuis son prix d'achat. Seules les lignes avec
+ * au début de la période, et le P&L aussi — sauf pour une ligne achetée pendant la
+ * période, dont le P&L reste calculé depuis son prix d'achat. Le jour d'achat est la
+ * date d'achat saisie, sinon la date d'ajout (`addedAtById`). Seules les lignes avec
  * un prix d'achat ont un P&L.
  * `startDay` nul = toute la période (P&L d'achat inchangé).
  */
@@ -1082,9 +1086,9 @@ export function applyInvestmentPeriod(
     let profit = line.profit;
     // Pas de prix d'achat (EUR) = pas de P&L, quelle que soit la période.
     if (startDay != null && line.profit != null) {
-      const addedDay = addedAtById.get(line.itemId)?.slice(0, 10);
-      const addedDuringPeriod = addedDay != null && addedDay > startDay;
-      if (!addedDuringPeriod) {
+      const acquiredDay = line.purchasedAt ?? addedAtById.get(line.itemId)?.slice(0, 10);
+      const acquiredDuringPeriod = acquiredDay != null && acquiredDay > startDay;
+      if (!acquiredDuringPeriod) {
         profit =
           line.marketUnit == null || previousMarketUnit == null
             ? null

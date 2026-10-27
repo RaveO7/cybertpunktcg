@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { chipColor } from "@/components/CardTile";
@@ -13,12 +13,85 @@ import { ModalHeader } from "@/components/card-modal/ModalHeader";
 import { PrintingsStrip } from "@/components/card-modal/PrintingsStrip";
 import { isTypingTarget, toAmount } from "@/components/card-modal/shared";
 import type { CardDTO, CollectionItemDTO, ConditionDTO, Filters, PrintingDTO } from "@/lib/types";
+import { thumbnailPath } from "@/lib/card-image";
 import { printingTitle, resolveRulesText } from "@/lib/logic";
 import { WISHLIST_ENABLED } from "@/lib/site";
 import { useModal } from "@/components/use-modal";
 
 // Prix et historique (graphique compris) : chargés à la demande, une fois la fiche ouverte.
 const PricePanel = dynamic(() => import("@/components/card-modal/PricePanel").then((module) => module.PricePanel));
+
+/**
+ * Télécharge et décode une image hors de la page : affichée ensuite, elle apparaît sans délai.
+ * `cancel` abandonne le décodage (carte déjà quittée) pour ne pas retarder les suivantes.
+ */
+function decodeImage(url: string) {
+  const image = new Image();
+  image.src = url;
+  const ready = image.decode().then(
+    () => true,
+    () => false,
+  );
+  return { ready, cancel: () => image.removeAttribute("src") };
+}
+
+/**
+ * Illustration de la fiche. Une seule balise, jamais remontée : la nouvelle carte (miniature,
+ * puis pleine résolution) n'y est placée qu'une fois décodée, sans image noire entre deux cartes,
+ * même en maintenant la flèche. Si elle tarde, l'ancienne carte est masquée pour ne pas rester affichée.
+ */
+function ModalCardImage({ src }: { src: string }) {
+  const [shown, setShown] = useState<{ src: string | null; full: boolean }>({ src: null, full: false });
+
+  useEffect(() => {
+    let alive = true;
+    const thumb = thumbnailPath(src);
+    const hideStale = window.setTimeout(() => {
+      if (alive) setShown((current) => (current.src === src ? current : { src: null, full: false }));
+    }, 150);
+    const pending: ReturnType<typeof decodeImage>[] = [];
+    const loadFull = () => {
+      const full = decodeImage(src);
+      pending.push(full);
+      void full.ready.then((ok) => {
+        if (alive && ok) setShown({ src, full: true });
+      });
+    };
+    // Miniature tout de suite ; pleine résolution seulement si la carte reste affichée.
+    const fullTimer = thumb ? window.setTimeout(loadFull, 150) : null;
+    if (thumb) {
+      const small = decodeImage(thumb);
+      pending.push(small);
+      void small.ready.then((ok) => {
+        if (!alive) return;
+        if (ok) setShown((current) => (current.src === src ? current : { src, full: false }));
+        // Miniature absente : on passe tout de suite à l'image d'origine.
+        else if (fullTimer !== null) {
+          window.clearTimeout(fullTimer);
+          loadFull();
+        }
+      });
+    } else {
+      loadFull();
+    }
+    return () => {
+      alive = false;
+      window.clearTimeout(hideStale);
+      if (fullTimer !== null) window.clearTimeout(fullTimer);
+      for (const image of pending) image.cancel();
+    };
+  }, [src]);
+
+  const displayed = shown.src && (shown.full ? shown.src : (thumbnailPath(shown.src) ?? shown.src));
+  return (
+    <div className="aspect-[63/88] w-full overflow-hidden rounded-xl" data-src={src}>
+      {displayed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={displayed} alt="" className="h-full w-full object-contain" />
+      ) : null}
+    </div>
+  );
+}
 
 export function CardModal({
   printing,
@@ -31,6 +104,7 @@ export function CardModal({
   onClose,
   prevId,
   nextId,
+  preloadImages,
   onFilterArtist,
   onFilterRarity,
   onFilterSet,
@@ -51,6 +125,8 @@ export function CardModal({
   onClose: () => void;
   prevId?: string | null;
   nextId?: string | null;
+  /** Images des cartes précédente / suivante, à mettre en cache d'avance. */
+  preloadImages?: string[];
   onFilterArtist?: (artist: string) => void;
   onFilterRarity?: (rarity: string) => void;
   onFilterSet?: (set: string) => void;
@@ -62,6 +138,7 @@ export function CardModal({
     notes?: string | null;
     purchasePrice?: string | null;
     purchaseCurrency?: string | null;
+    purchasedAt?: string | null;
   }) => Promise<void>;
   onPatch?: (id: string, input: Record<string, unknown>) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
@@ -114,6 +191,20 @@ export function CardModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onOpen, prevId, nextId, canAdd, setQuantity]);
+
+  const preloadKey = preloadImages?.join("|") ?? "";
+  useEffect(() => {
+    if (!preloadKey) return;
+    // Miniatures (légères) pour toutes les voisines, pleine résolution pour les deux plus proches.
+    preloadKey.split("|").forEach((src, index) => {
+      for (const url of [thumbnailPath(src), index < 2 ? src : null]) {
+        if (!url) continue;
+        const image = new Image();
+        image.decoding = "async";
+        image.src = url;
+      }
+    });
+  }, [preloadKey]);
 
   const canEdit = !readOnly && onPatch && onDelete;
 
@@ -183,8 +274,7 @@ export function CardModal({
               }
             >
               {printing.imagePath ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={printing.imagePath} alt="" className="w-full rounded-xl object-contain" />
+                <ModalCardImage src={printing.imagePath} />
               ) : (
                 <div
                   className="flex aspect-[63/88] items-center justify-center text-sm text-muted"
@@ -229,12 +319,13 @@ export function CardModal({
                 <div className="px-4 pb-1 pt-2 sm:px-5">
                   {canEdit ? (
                     <div
-                      className="hidden gap-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted md:grid md:grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_minmax(0,1fr)_2.75rem]"
+                      className="hidden gap-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted md:grid md:grid-cols-[9rem_7.5rem_minmax(7rem,10rem)_9rem_minmax(0,1fr)_2.75rem]"
                       aria-hidden="true"
                     >
                       <span>{t("modal.condition")}</span>
                       <span>{t("modal.quantity")}</span>
                       <span>{t("modal.unitPurchasePrice")}</span>
+                      <span>{t("modal.purchaseDate")}</span>
                       <span>{t("modal.notes")}</span>
                       <span />
                     </div>
@@ -242,7 +333,7 @@ export function CardModal({
                   <ul className="flex flex-col">
                     {items.map((item) => (
                       <li
-                        key={`${item.id}:${item.conditionCode}:${item.notes ?? ""}:${item.purchasePrice ?? ""}:${item.purchaseCurrency ?? ""}`}
+                        key={`${item.id}:${item.conditionCode}:${item.notes ?? ""}:${item.purchasePrice ?? ""}:${item.purchaseCurrency ?? ""}:${item.purchasedAt ?? ""}`}
                         className="border-t border-line/50 py-2.5 first:border-t-0 md:first:border-t"
                       >
                         {pendingIds?.has(item.id) ? (

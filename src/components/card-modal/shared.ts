@@ -46,3 +46,10 @@ export function toAmount(value: string | null | undefined) {
   const amount = Number(value);
   return Number.isFinite(amount) ? amount : null;
 }
+
+/** Aujourd'hui en « AAAA-MM-JJ » (heure locale), borne haute des champs de date d'achat. */
+export function todayInputValue() {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}

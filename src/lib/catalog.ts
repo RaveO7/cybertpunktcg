@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { userFromRequest } from "./auth";
 import { prisma } from "./prisma";
+import { lineDate } from "./collection-line";
 import type { CardDTO, CatalogDTO, CollectionItemDTO, ConditionDTO, PrintingDTO, SetDTO } from "./types";
 
 export const CATALOG_CACHE_TAG = "catalog";
@@ -118,6 +119,7 @@ export async function loadCollection(userId: string): Promise<CollectionItemDTO[
     notes: item.notes,
     purchasePrice: decimalToString(item.purchasePrice),
     purchaseCurrency: item.purchaseCurrency,
+    purchasedAt: lineDate(item.purchasedAt),
     addedAt: item.addedAt.toISOString(),
   }));
 }

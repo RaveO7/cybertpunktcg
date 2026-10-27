@@ -88,6 +88,7 @@ function item(partial: Partial<CollectionItemDTO> & Pick<CollectionItemDTO, "pri
     notes: null,
     purchasePrice: null,
     purchaseCurrency: null,
+    purchasedAt: null,
     addedAt: "2026-01-01T00:00:00.000Z",
     ...partial,
   };
@@ -126,6 +127,7 @@ function line(partial: Partial<InvestmentLine> & Pick<InvestmentLine, "itemId">)
     purchaseUnit: null,
     purchaseCurrency: null,
     purchaseTotal: null,
+    purchasedAt: null,
     profit: null,
     marketDelta: "none",
     ...partial,
@@ -735,5 +737,21 @@ describe("investissement (cas limites)", () => {
     assert.equal(applyInvestmentPeriod(lines, { p: Number.NaN }, null, added)[0].previousMarketUnit, null);
     assert.equal(lines[0].previousMarketUnit, null);
     assert.equal(lines[0].profit, 8);
+  });
+
+  it("applyInvestmentPeriod : la date d'achat saisie prime sur la date d'ajout", () => {
+    const lines = [
+      // Ajoutée avant la période mais achetée pendant : P&L d'achat.
+      line({ itemId: "bought", printingId: "p", quantity: 1, marketUnit: 10, profit: 4, purchasedAt: "2026-06-10" }),
+      // Ajoutée pendant la période mais achetée avant : P&L depuis la référence.
+      line({ itemId: "backdated", printingId: "p", quantity: 1, marketUnit: 10, profit: 4, purchasedAt: "2026-02-01" }),
+    ];
+    const added = new Map([
+      ["bought", "2026-01-01T10:00:00.000Z"],
+      ["backdated", "2026-06-20T10:00:00.000Z"],
+    ]);
+    const byId = new Map(applyInvestmentPeriod(lines, { p: 7 }, "2026-06-01", added).map((l) => [l.itemId, l]));
+    assert.equal(byId.get("bought")?.profit, 4);
+    assert.equal(byId.get("backdated")?.profit, 3);
   });
 });

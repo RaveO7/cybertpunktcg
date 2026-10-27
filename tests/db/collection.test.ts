@@ -18,6 +18,7 @@ type Line = {
   notes: string | null;
   purchasePrice: string | null;
   purchaseCurrency: string | null;
+  purchasedAt: string | null;
 };
 type Mutation = { item: Line | null; deletedId: string | null };
 
@@ -82,7 +83,7 @@ function bulk(body: unknown, session: string | null = token) {
 
 const rows = () => prisma.collectionItem.findMany({ where: { userId }, orderBy: { addedAt: "asc" } });
 const row = (printingId: string, conditionId = nmId) =>
-  prisma.collectionItem.findUnique({ where: { userId_printingId_conditionId: { userId, printingId, conditionId } } });
+  prisma.collectionItem.findFirst({ where: { userId, printingId, conditionId }, orderBy: { addedAt: "asc" } });
 
 async function expectRejected(body: unknown, message?: RegExp) {
   const before = await rows();
@@ -207,8 +208,8 @@ describe.sequential("validation de POST /api/collection", () => {
     assert.equal(kept.item?.purchaseCurrency, "GBP", "sans prix ni devise, les valeurs existantes restent");
     assert.equal(Number(kept.item?.purchasePrice), 2);
     const usd = await saveOk({ printingId: P1, quantity: 4, mode: "set", purchaseCurrency: "USD" });
-    assert.equal(usd.item?.purchaseCurrency, "USD");
-    assert.equal(Number(usd.item?.purchasePrice), 2, "changer la devise garde le prix");
+    assert.equal(usd.item?.id, kept.item?.id, "une devise sans prix ne départage pas les lignes");
+    assert.equal(usd.item?.purchaseCurrency, "GBP", "le prix et la devise d'une ligne se modifient par PATCH");
   });
 
   it("notes : tronquées à 2000 caractères, vides = null, type vérifié", async () => {
@@ -236,9 +237,29 @@ describe.sequential("modes add et set", () => {
     const set = await saveOk({ printingId: P1, quantity: 1, mode: "set" });
     assert.equal(set.item?.quantity, 1);
     assert.equal(set.item?.notes, "classeur rouge", "set sans notes garde les notes");
-    const notes = await saveOk({ printingId: P1, quantity: 1, mode: "add", notes: null });
-    assert.equal(notes.item?.notes, null, "notes: null efface les notes");
-    assert.equal((await rows()).length, 1, "toujours une seule ligne par carte et par état");
+    assert.equal((await rows()).length, 1, "prix et notes absents : on rejoint la ligne existante");
+    const bare = await saveOk({ printingId: P1, quantity: 1, mode: "add", notes: null, purchasePrice: null });
+    assert.equal(bare.item?.notes, null, "notes: null = sans notes");
+    assert.equal((await rows()).length, 2, "sans prix ni notes : une autre ligne que celle qui en a");
+  });
+
+  it("une ligne = carte × état × prix unitaire × date × notes", async () => {
+    const first = (await saveOk({ printingId: P1, quantity: 2, purchasePrice: "3", notes: "classeur" })).item!;
+    const same = await saveOk({ printingId: P1, quantity: 2, purchasePrice: "3,00", notes: " classeur " });
+    assert.equal(same.item?.id, first.id, "mêmes valeurs : quantités cumulées");
+    assert.equal(same.item?.quantity, 4);
+    assert.equal(Number(same.item?.purchasePrice), 3, "le prix reste unitaire");
+    const pricier = await saveOk({ printingId: P1, quantity: 1, purchasePrice: "5", notes: "classeur" });
+    assert.notEqual(pricier.item?.id, first.id, "autre prix : nouvelle ligne");
+    const otherCurrency = await saveOk({ printingId: P1, quantity: 1, purchasePrice: "3", purchaseCurrency: "USD", notes: "classeur" });
+    assert.notEqual(otherCurrency.item?.id, first.id, "autre devise : nouvelle ligne");
+    const otherNotes = await saveOk({ printingId: P1, quantity: 1, purchasePrice: "3", notes: "boîte" });
+    assert.notEqual(otherNotes.item?.id, first.id, "autres notes : nouvelle ligne");
+    const dated = await saveOk({ printingId: P1, quantity: 1, purchasePrice: "3", notes: "classeur", purchasedAt: "2026-01-15" });
+    assert.notEqual(dated.item?.id, first.id, "autre date : nouvelle ligne");
+    assert.equal(dated.item?.purchasedAt, "2026-01-15");
+    assert.equal((await rows()).length, 5);
+    assert.equal((await row(P1))?.quantity, 4);
   });
 
   it("une même carte dans deux états fait deux lignes", async () => {
@@ -295,9 +316,13 @@ describe.sequential("ajout groupé", () => {
     });
     assert.equal(response.status, 200);
     assert.equal((await row(P1))?.quantity, 5, "doublons du lot cumulés");
-    assert.equal((await row(P2))?.quantity, 5, "ajouté à la ligne existante");
+    assert.equal((await row(P2))?.quantity, 1, "la ligne avec notes ne bouge pas");
     assert.equal((await row(P2))?.notes, "gardée", "les notes existantes restent");
-    assert.equal((await rows()).length, 2, "pas de ligne en double");
+    assert.equal((await rows()).length, 3, "ajout sans notes : une ligne à part");
+    await bulk({ lines: [{ printingId: P2, quantity: 2 }] });
+    const bare = await prisma.collectionItem.findFirst({ where: { userId, printingId: P2, notes: null } });
+    assert.equal(bare?.quantity, 6, "ajouté à la ligne sans prix ni notes");
+    assert.equal((await rows()).length, 3);
   });
 
   it("ignore les lignes à 0 et les cartes inconnues, refuse un lot sans carte valide", async () => {
@@ -358,7 +383,7 @@ describe.sequential("PATCH et DELETE /api/collection/[id]", () => {
   });
 
   it("changer d'état vers une ligne existante fusionne les quantités", async () => {
-    const source = (await saveOk({ printingId: P1, conditionCode: NM, quantity: 2, notes: "source" })).item!;
+    const source = (await saveOk({ printingId: P1, conditionCode: NM, quantity: 2, notes: "cible" })).item!;
     const target = (await saveOk({ printingId: P1, conditionCode: LP, quantity: 3, notes: "cible" })).item!;
     const response = await patch(source.id, { conditionCode: LP });
     assert.equal(response.status, 200);
@@ -375,9 +400,33 @@ describe.sequential("PATCH et DELETE /api/collection/[id]", () => {
   it("changer d'état avec une quantité fournie l'ajoute à la cible", async () => {
     const source = (await saveOk({ printingId: P1, conditionCode: NM, quantity: 2 })).item!;
     await saveOk({ printingId: P1, conditionCode: LP, quantity: 3 });
-    const result = await json<Mutation>(await patch(source.id, { conditionCode: LP, quantity: 4, notes: "fusion" }));
+    const result = await json<Mutation>(await patch(source.id, { conditionCode: LP, quantity: 4 }));
     assert.equal(result.item?.quantity, 7);
-    assert.equal(result.item?.notes, "fusion");
+    assert.equal(result.deletedId, source.id);
+  });
+
+  it("changer d'état vers une ligne aux notes différentes ne fusionne pas", async () => {
+    const source = (await saveOk({ printingId: P1, conditionCode: NM, quantity: 2, notes: "source" })).item!;
+    await saveOk({ printingId: P1, conditionCode: LP, quantity: 3, notes: "cible" });
+    const result = await json<Mutation>(await patch(source.id, { conditionCode: LP }));
+    assert.equal(result.deletedId, null);
+    assert.equal(result.item?.id, source.id);
+    assert.equal(result.item?.quantity, 2);
+    assert.equal((await rows()).length, 2);
+  });
+
+  it("modifier prix, date ou notes pour égaler une autre ligne les fusionne", async () => {
+    const cheap = (await saveOk({ printingId: P1, quantity: 2, purchasePrice: "1" })).item!;
+    const dear = (await saveOk({ printingId: P1, quantity: 3, purchasePrice: "4" })).item!;
+    const moved = await json<Mutation>(await patch(cheap.id, { purchasePrice: "4", purchaseCurrency: "EUR" }));
+    assert.equal(moved.deletedId, cheap.id);
+    assert.equal(moved.item?.id, dear.id);
+    assert.equal(moved.item?.quantity, 5);
+    const dated = (await saveOk({ printingId: P1, quantity: 1, purchasePrice: "4", purchasedAt: "2026-02-01" })).item!;
+    const undated = await json<Mutation>(await patch(dated.id, { purchasedAt: null }));
+    assert.equal(undated.item?.id, dear.id, "date effacée : rejoint la ligne sans date");
+    assert.equal(undated.item?.quantity, 6);
+    assert.equal((await rows()).length, 1);
   });
 
   it("changer d'état vers un état libre garde la même ligne", async () => {
@@ -456,6 +505,7 @@ describe.sequential("PATCH et DELETE /api/collection/[id]", () => {
       "printingId",
       "purchaseCurrency",
       "purchasePrice",
+      "purchasedAt",
       "quantity",
     ]);
     const others = (await json<{ items: Line[] }>(await readRoute(request("/api/collection", {}, otherToken)))).items;

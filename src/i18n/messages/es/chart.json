@@ -2,5 +2,12 @@
   "label": "Evolución",
   "empty": "Aún no hay historial. Importa precios a lo largo de varios días.",
   "period": "En el período mostrado",
-  "days": "{n, plural, one {# día} other {# días}}"
+  "days": "{n, plural, one {# día} other {# días}}",
+  "value": "Valor de mercado",
+  "invested": "Invertido",
+  "profit": "Plusvalía / minusvalía",
+  "purchase": "Compra",
+  "purchases": "{n, plural, one {# compra} other {# compras}}",
+  "morePurchases": "+{n} más",
+  "periodProfit": "P&L del periodo"
 }

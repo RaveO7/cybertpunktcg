@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { intlLocale } from "@/i18n/config";
 import { useNumberFormat } from "@/i18n/number-format";
 import { Link, type Href } from "@/i18n/navigation";
 import type { Translator } from "@/i18n/translator";
@@ -131,6 +132,7 @@ export function LineTable({
 
 function LineRow({ line }: { line: InvestmentLine }) {
   const fmt = useNumberFormat();
+  const locale = useLocale();
   const href = lineHref(line);
   return (
     <tr className="border-t border-line hover:bg-white/5">
@@ -157,6 +159,9 @@ function LineRow({ line }: { line: InvestmentLine }) {
         {line.purchaseTotal == null
           ? "—"
           : fmt.money(line.purchaseTotal, line.purchaseCurrency || "EUR")}
+        {line.purchasedAt ? (
+          <span className="block font-sans text-xs text-muted">{formatPurchaseDay(line.purchasedAt, locale)}</span>
+        ) : null}
       </td>
       <td className="px-3 py-2 font-mono">{line.marketTotal == null ? "—" : fmt.money(line.marketTotal)}</td>
       <td className="px-3 py-2">
@@ -174,6 +179,7 @@ function LineRow({ line }: { line: InvestmentLine }) {
 
 function LineItem({ line, t }: { line: InvestmentLine; t: Translator }) {
   const fmt = useNumberFormat();
+  const locale = useLocale();
   return (
     <li className="border-t border-line first:border-t-0">
       <Link href={lineHref(line)} className="flex gap-3 px-3 py-3 hover:bg-white/5">
@@ -209,6 +215,9 @@ function LineItem({ line, t }: { line: InvestmentLine; t: Translator }) {
               <dd className="truncate font-mono">
                 {line.purchaseTotal == null ? "—" : fmt.money(line.purchaseTotal, line.purchaseCurrency || "EUR")}
               </dd>
+              {line.purchasedAt ? (
+                <dd className="truncate text-muted">{formatPurchaseDay(line.purchasedAt, locale)}</dd>
+              ) : null}
             </div>
             <div className="min-w-0 text-right">
               <dt className="truncate text-muted">{t("investment.purchasePnL")}</dt>
@@ -220,6 +229,13 @@ function LineItem({ line, t }: { line: InvestmentLine; t: Translator }) {
         </div>
       </Link>
     </li>
+  );
+}
+
+/** Date d'achat courte (« 12 mars 2026 »). */
+function formatPurchaseDay(day: string, locale: string) {
+  return new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
+    new Date(`${day}T00:00:00.000Z`),
   );
 }
 

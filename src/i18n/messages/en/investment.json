@@ -31,7 +31,7 @@
     "marketValue": "Current value from the Cardmarket trend price (price × quantity).",
     "marketVar": "Change in market value over the selected period (Cardmarket price at the start of the period → current price).",
     "invested": "Sum of the purchase prices you entered.",
-    "purchasePnL": "Profit or loss over the selected period: from the market price at the start of the period, or from the purchase price for cards added during the period (only rows with a purchase price). With “All”: current market value minus entered purchase price.",
+    "purchasePnL": "Profit or loss over the selected period: from the market price at the start of the period, or from the purchase price for cards bought during the period (purchase date, otherwise date added) (only rows with a purchase price). With “All”: current market value minus entered purchase price.",
     "card": "Card or product name and number.",
     "qty": "Quantity owned.",
     "purchase": "Total purchase price entered for this row.",

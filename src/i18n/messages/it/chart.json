@@ -2,5 +2,12 @@
   "label": "Andamento",
   "empty": "Nessuno storico ancora. Riesegui l’import dei prezzi nei giorni successivi.",
   "period": "Nel periodo visualizzato",
-  "days": "{n, plural, one {# giorno} other {# giorni}}"
+  "days": "{n, plural, one {# giorno} other {# giorni}}",
+  "value": "Valore di mercato",
+  "invested": "Investito",
+  "profit": "Plus / minusvalenza",
+  "purchase": "Acquisto",
+  "purchases": "{n, plural, one {# acquisto} other {# acquisti}}",
+  "morePurchases": "+{n} altri",
+  "periodProfit": "P&L nel periodo"
 }

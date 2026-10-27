@@ -92,6 +92,7 @@ function item(partial: Partial<CollectionItemDTO> & Pick<CollectionItemDTO, "pri
     notes: null,
     purchasePrice: null,
     purchaseCurrency: null,
+    purchasedAt: null,
     addedAt: "2026-01-01T00:00:00.000Z",
     ...partial,
   };

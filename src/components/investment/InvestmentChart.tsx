@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import type { ChartPoint } from "@/components/PriceChart";
+import type { ChartPoint, ChartPurchase } from "@/components/PriceChart";
 import { ScreenError, ScreenSkeleton, SkeletonBlock } from "@/components/site/ScreenSkeleton";
 import type { Translator } from "@/i18n/translator";
 
@@ -35,6 +35,24 @@ export function filterChartRange(points: ChartPoint[], range: ChartRange) {
   const cutoff = chartRangeStart(points, range);
   if (cutoff == null) return points;
   return points.filter((point) => point.day >= cutoff);
+}
+
+/**
+ * Place chaque achat sur le premier point de la courbe à sa date ou après (le dernier point s'il est plus
+ * récent que l'historique). Les achats antérieurs au début de la durée choisie sont ignorés ; en « Total »,
+ * ceux d'avant le premier jour d'historique vont sur le premier point.
+ */
+export function attachPurchases(points: ChartPoint[], purchases: ChartPurchase[], rangeStart: string | null) {
+  if (points.length === 0 || purchases.length === 0) return points;
+  const byIndex = new Map<number, ChartPurchase[]>();
+  for (const purchase of purchases) {
+    if (rangeStart != null && purchase.day < rangeStart) continue;
+    let index = points.findIndex((point) => point.day >= purchase.day);
+    if (index === -1) index = points.length - 1;
+    byIndex.set(index, [...(byIndex.get(index) ?? []), purchase]);
+  }
+  if (byIndex.size === 0) return points;
+  return points.map((point, index) => (byIndex.has(index) ? { ...point, purchases: byIndex.get(index) } : point));
 }
 
 function ChartLoading() {

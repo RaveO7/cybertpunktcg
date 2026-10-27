@@ -23,6 +23,10 @@
   "decreaseQty": "Diminuer la quantité",
   "increaseQty": "Augmenter la quantité",
   "unitPurchasePrice": "Prix d’achat unitaire",
+  "purchaseDate": "Date d’achat",
+  "perUnit": "{price} / u",
+  "priceTotal": "= {total} au total",
+  "lineSplitHint": "Même état, prix, date et notes : les exemplaires s’ajoutent à la ligne existante. Une valeur différente crée une nouvelle ligne.",
   "otherPrintings": "Autres tirages",
   "artist": "Artiste",
   "viewArtist": "Voir toutes les cartes de {artist}",
@@ -57,7 +61,7 @@
   "set": "Extension",
   "number": "Numéro",
   "keyboardHint": "← → naviguer · Échap fermer",
-  "moreFields": "Prix d’achat et notes",
+  "moreFields": "Prix, date d’achat et notes",
   "editLine": "Modifier la ligne {code}",
   "doneEditing": "Terminer la modification"
 }

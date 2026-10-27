@@ -4,10 +4,16 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
-import type { ChartPoint } from "@/components/PriceChart";
+import type { ChartPoint, ChartPurchase } from "@/components/PriceChart";
 import { useCollection } from "@/components/CollectionProvider";
 import { fetchCached, readCached } from "@/components/data-cache";
-import { InvestmentChart, chartRangeStart, filterChartRange, type ChartRange } from "@/components/investment/InvestmentChart";
+import {
+  InvestmentChart,
+  attachPurchases,
+  chartRangeStart,
+  filterChartRange,
+  type ChartRange,
+} from "@/components/investment/InvestmentChart";
 import { InvestmentFilters } from "@/components/investment/InvestmentFilters";
 import { LineTable } from "@/components/investment/LineTable";
 import { SetTable } from "@/components/investment/SetTable";
@@ -25,6 +31,7 @@ import {
   buildInvestmentLines,
   filterInvestmentLines,
   investmentBySet,
+  printingTitle,
   summarizeInvestment,
   type InvestmentPerformance,
 } from "@/lib/logic";
@@ -34,6 +41,19 @@ import {
   partitionCatalogSets,
   SEALED_GROUP_FILTER,
 } from "@/lib/reference-data";
+
+type HistoryPurchase = {
+  day: string;
+  printingId: string;
+  quantity: number;
+  unitPrice: number | null;
+  currency: string | null;
+};
+
+type HistoryBody = {
+  points?: { day: string; marketTotal: number; invested?: number; profit?: number | null }[];
+  purchases?: HistoryPurchase[];
+};
 
 function languageParam(value: string | null) {
   return value === "en" || value === "fr" ? value : "";
@@ -57,13 +77,13 @@ export function InvestmentScreen() {
   const [performance, setPerformance] = useState<InvestmentPerformance>("all");
   const [query, setQuery] = useState("");
   const [chartPoints, setChartPoints] = useState<ChartPoint[]>([]);
+  const [chartPurchases, setChartPurchases] = useState<HistoryPurchase[]>([]);
   const [chartStatus, setChartStatus] = useState<"loading" | "ready" | "error">("loading");
   const [chartRange, setChartRange] = useState<ChartRange>("all");
   // Après le premier chargement, le graphique reste affiché pendant les rechargements (pas de saut de mise en page).
   const [chartLoaded, setChartLoaded] = useState(false);
   // Incrémenté par « Réessayer » : relance le chargement de l'historique.
   const [historyAttempt, setHistoryAttempt] = useState(0);
-  const rangedChartPoints = useMemo(() => filterChartRange(chartPoints, chartRange), [chartPoints, chartRange]);
   const periodStart = useMemo(() => chartRangeStart(chartPoints, chartRange), [chartPoints, chartRange]);
   const [reference, setReference] = useState<{ day: string | null; prices: Record<string, number> } | null>(null);
   const [setSort, setSetSort] = useState<SortState<SetSortKey> | null>(null);
@@ -74,6 +94,25 @@ export function InvestmentScreen() {
 
   const cardsById = useMemo(() => new Map(catalog?.cards.map((card) => [card.id, card]) ?? []), [catalog]);
 
+  // Achats datés affichés sur la courbe, avec le nom de la carte.
+  const rangedChartPoints = useMemo(() => {
+    const ranged = filterChartRange(chartPoints, chartRange);
+    if (!catalog || chartPurchases.length === 0) return ranged;
+    const printingsById = new Map(catalog.printings.map((printing) => [printing.id, printing]));
+    const purchases: ChartPurchase[] = chartPurchases.map((purchase) => {
+      const printing = printingsById.get(purchase.printingId);
+      const card = printing ? cardsById.get(printing.cardId) : undefined;
+      return {
+        day: purchase.day,
+        title: printing && card ? printingTitle(card, printing) : purchase.printingId,
+        quantity: purchase.quantity,
+        unitPrice: purchase.unitPrice,
+        currency: purchase.currency,
+      };
+    });
+    return attachPurchases(ranged, purchases, periodStart);
+  }, [cardsById, catalog, chartPoints, chartPurchases, chartRange, periodStart]);
+
   const baseLines = useMemo(() => {
     if (!catalog) return [];
     return buildInvestmentLines(items, catalog.printings, cardsById);
@@ -82,6 +121,7 @@ export function InvestmentScreen() {
   // Var. marché et P&L suivent la durée choisie, dès que les prix de référence sont chargés.
   const allLines = useMemo(() => {
     if (!reference || reference.day !== periodStart) return baseLines;
+    // Date d'ajout : jour d'achat des lignes sans date d'achat saisie.
     const addedAtById = new Map(items.map((item) => [item.id, item.addedAt]));
     return applyInvestmentPeriod(baseLines, reference.prices, periodStart, addedAtById);
   }, [baseLines, items, periodStart, reference]);
@@ -134,9 +174,16 @@ export function InvestmentScreen() {
       if (setFilter && setFilter !== "all") params.set("set", setFilter);
       if (language) params.set("language", language);
       const url = `/api/investment/history?${params}`;
-      type HistoryBody = { points?: { day: string; marketTotal: number }[] };
       const show = (body: HistoryBody) => {
-        setChartPoints((body.points ?? []).map((point) => ({ day: point.day, value: point.marketTotal })));
+        setChartPoints(
+          (body.points ?? []).map((point) => ({
+            day: point.day,
+            value: point.marketTotal,
+            invested: point.invested ?? null,
+            profit: point.profit ?? null,
+          })),
+        );
+        setChartPurchases(body.purchases ?? []);
         setChartStatus("ready");
         setChartLoaded(true);
       };
@@ -150,6 +197,7 @@ export function InvestmentScreen() {
       } catch {
         if (!cancelled && !cached) {
           setChartPoints([]);
+          setChartPurchases([]);
           setChartStatus("error");
         }
       }

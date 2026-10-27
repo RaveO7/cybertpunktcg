@@ -5,9 +5,24 @@ import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { intlLocale } from "@/i18n/config";
 
+/** Achat placé sur la courbe (le jour du point, ou le premier jour d'historique qui suit). */
+export type ChartPurchase = {
+  /** Date réelle de l'achat « AAAA-MM-JJ ». */
+  day: string;
+  title: string;
+  quantity: number;
+  unitPrice: number | null;
+  currency: string | null;
+};
+
 export type ChartPoint = {
   day: string;
   value: number;
+  /** Prix d'achat cumulé à ce jour : tracé en pointillés quand il est fourni. */
+  invested?: number | null;
+  /** Plus / moins-value à ce jour (exemplaires avec prix d'achat). */
+  profit?: number | null;
+  purchases?: ChartPurchase[];
 };
 
 type PriceChartProps = {
@@ -20,6 +35,10 @@ type PriceChartProps = {
 
 const LINE = "#3ee0ff";
 const ACCENT = "#f5e642";
+const INVESTED = "#e8eef7";
+const PURCHASE = "#f5e642";
+/** Achats listés au survol d'un point, au-delà : « +N autres ». */
+const MAX_TOOLTIP_PURCHASES = 4;
 const GRID = "#2c384c";
 const AXIS_TEXT = "#93a0b4";
 const BACKGROUND = "#07080d";
@@ -37,9 +56,13 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
   const width = useElementWidth(container);
   const localeTag = intlLocale(locale);
 
+  const hasInvested = points.some((point) => point.invested != null && point.invested > 0);
+  const hasPurchases = points.some((point) => (point.purchases?.length ?? 0) > 0);
+
   const geometry = useMemo(() => {
     if (points.length === 0 || width <= 0) return null;
     const values = points.map((point) => point.value);
+    if (hasInvested) for (const point of points) if (point.invested != null) values.push(point.invested);
     const minValue = Math.min(...values);
     const maxValue = Math.max(...values);
     const span = Math.max(maxValue - minValue, maxValue * 0.04, 0.05);
@@ -60,6 +83,16 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
       padding.top + ((domainMax - value) / (domainMax - domainMin || 1)) * innerHeight;
     const coords = points.map((point, index) => ({ x: xAt(index), y: yAt(point.value) }));
     const line = smoothPath(coords);
+    // Investi : en marches, il ne change qu'au jour d'un achat.
+    const investedLine = hasInvested
+      ? points
+          .map((point, index) => {
+            const y = yAt(point.invested ?? 0).toFixed(2);
+            const x = coords[index].x.toFixed(2);
+            return index === 0 ? `M${x} ${y}` : `H${x} V${y}`;
+          })
+          .join(" ")
+      : "";
     const baseline = padding.top + innerHeight;
     const area =
       coords.length > 1
@@ -79,15 +112,15 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
       baseline,
       coords,
       line,
+      investedLine,
       area,
       ticks,
       yAt,
       xLabels,
-      delta: last - first,
-      deltaPct: first > 0 ? (last - first) / first : null,
+      ...periodDelta(points),
       last,
     };
-  }, [compact, resolvedHeight, points, width]);
+  }, [compact, hasInvested, resolvedHeight, points, width]);
 
   if (points.length === 0) {
     // Compact : le conteneur porte déjà le titre, seule l'explication reste.
@@ -112,6 +145,9 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
         ? "border-danger/40 bg-danger/10 text-danger"
         : "border-line bg-panel-2 text-muted";
   const showDots = geometry != null && points.length <= Math.max(2, geometry.innerWidth / 18);
+  const activePurchases = active?.purchases ?? [];
+  const detailedTooltip =
+    active != null && (active.invested != null || active.profit != null || activePurchases.length > 0);
 
   const handlePointer = (event: PointerEvent<HTMLDivElement>) => {
     if (!geometry) return;
@@ -154,9 +190,34 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
                 <span className="opacity-75">({formatPct(geometry.deltaPct, localeTag)})</span>
               ) : null}
             </span>
-            {points.length > 1 ? <span className="text-xs text-muted">{t("chart.days", { n: points.length })}</span> : null}
+            {points.length > 1 ? (
+              <span className="text-xs text-muted">
+                {geometry?.profitBased ? `${t("chart.periodProfit")} · ` : ""}
+                {t("chart.days", { n: points.length })}
+              </span>
+            ) : null}
           </div>
         </div>
+      ) : null}
+      {!compact && (hasInvested || hasPurchases) ? (
+        <ul className="-mt-3 mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-hidden="true">
+          <li className="flex items-center gap-1.5">
+            <span className="h-0.5 w-4" style={{ background: LINE }} />
+            {t("chart.value")}
+          </li>
+          {hasInvested ? (
+            <li className="flex items-center gap-1.5">
+              <span className="w-4 border-t-2 border-dashed" style={{ borderColor: INVESTED, opacity: 0.7 }} />
+              {t("chart.invested")}
+            </li>
+          ) : null}
+          {hasPurchases ? (
+            <li className="flex items-center gap-1.5">
+              <span className="size-2 rotate-45" style={{ background: PURCHASE }} />
+              {t("chart.purchase")}
+            </li>
+          ) : null}
+        </ul>
       ) : null}
       <div
         ref={setContainer}
@@ -260,6 +321,17 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
               filter={`url(#${uid}-glow)`}
             />
 
+            {geometry.investedLine ? (
+              <path
+                d={geometry.investedLine}
+                fill="none"
+                stroke={INVESTED}
+                strokeOpacity="0.7"
+                strokeWidth="1.5"
+                strokeDasharray="5 4"
+              />
+            ) : null}
+
             {showDots
               ? geometry.coords.map((coord, index) => (
                   <circle
@@ -272,6 +344,25 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
                     strokeWidth="1.5"
                   />
                 ))
+              : null}
+
+            {hasPurchases
+              ? geometry.coords.map((coord, index) =>
+                  points[index].purchases?.length ? (
+                    <rect
+                      key={`buy-${points[index].day}`}
+                      x={coord.x - 4}
+                      y={coord.y - 4}
+                      width="8"
+                      height="8"
+                      transform={`rotate(45 ${coord.x} ${coord.y})`}
+                      fill={PURCHASE}
+                      stroke={BACKGROUND}
+                      strokeWidth="1.5"
+                      pointerEvents="none"
+                    />
+                  ) : null,
+                )
               : null}
 
             {activeCoord ? (
@@ -310,9 +401,15 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
             className="pointer-events-none absolute z-10 border border-cyan/50 bg-black/95 px-2.5 py-1.5 whitespace-nowrap shadow-[0_8px_24px_rgba(0,0,0,0.55)]"
             style={{
               left: activeCoord.x,
-              top: Math.max(geometry.padding.top, activeCoord.y),
-              transform:
-                activeCoord.x > width * 0.62 ? "translate(calc(-100% - 14px), -50%)" : "translate(14px, -50%)",
+              // Bulle détaillée : posée en haut du tracé pour ne pas déborder sous le graphique.
+              top: detailedTooltip ? geometry.padding.top : Math.max(geometry.padding.top, activeCoord.y),
+              transform: detailedTooltip
+                ? activeCoord.x > width * 0.62
+                  ? "translateX(calc(-100% - 14px))"
+                  : "translateX(14px)"
+                : activeCoord.x > width * 0.62
+                  ? "translate(calc(-100% - 14px), -50%)"
+                  : "translate(14px, -50%)",
             }}
           >
             <p className="font-mono text-[10px] tracking-wide text-cyan uppercase">
@@ -321,11 +418,77 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
             <p className={`font-mono leading-none text-yellow ${compact ? "mt-0.5 text-sm" : "mt-1 text-base"}`}>
               {fmt.money(active.value)}
             </p>
+            {active.invested != null || active.profit != null ? (
+              <dl className="mt-2 grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5 text-xs">
+                {active.invested != null ? (
+                  <>
+                    <dt className="text-muted">{t("chart.invested")}</dt>
+                    <dd className="text-right font-mono">{fmt.money(active.invested)}</dd>
+                  </>
+                ) : null}
+                {active.profit != null ? (
+                  <>
+                    <dt className="text-muted">{t("chart.profit")}</dt>
+                    <dd
+                      className={`text-right font-mono ${active.profit > 0.004 ? "text-gain" : active.profit < -0.004 ? "text-danger" : "text-muted"}`}
+                    >
+                      {active.profit > 0 ? "+" : active.profit < 0 ? "−" : ""}
+                      {fmt.money(Math.abs(active.profit))}
+                    </dd>
+                  </>
+                ) : null}
+              </dl>
+            ) : null}
+            {activePurchases.length > 0 ? (
+              <div className="mt-2 border-t border-line pt-1.5 text-xs">
+                <p className="font-mono text-[10px] tracking-wide text-yellow uppercase">
+                  {t("chart.purchases", { n: activePurchases.length })}
+                </p>
+                <ul className="mt-1 flex flex-col gap-0.5">
+                  {activePurchases.slice(0, MAX_TOOLTIP_PURCHASES).map((purchase, index) => (
+                    <li key={index} className="flex max-w-[16rem] items-baseline gap-2">
+                      <span className="shrink-0 font-mono text-muted">×{purchase.quantity}</span>
+                      <span className="min-w-0 truncate">{purchase.title}</span>
+                      <span className="ml-auto shrink-0 pl-2 font-mono">
+                        {purchase.unitPrice == null ? "—" : fmt.money(purchase.unitPrice, purchase.currency || "EUR")}
+                      </span>
+                      {purchase.day !== active.day ? (
+                        <span className="shrink-0 text-muted">{formatDay(purchase.day, localeTag)}</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+                {activePurchases.length > MAX_TOOLTIP_PURCHASES ? (
+                  <p className="mt-0.5 text-muted">
+                    {t("chart.morePurchases", { n: activePurchases.length - MAX_TOOLTIP_PURCHASES })}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
     </div>
   );
+}
+
+/**
+ * Variation affichée en tête. Avec des prix d'achat, c'est la variation de la plus / moins-value
+ * (en % de l'investi à la fin) : un achat fait monter la valeur marché sans être un gain.
+ * Sinon, la variation de la valeur marché.
+ */
+function periodDelta(points: ChartPoint[]) {
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (first.profit != null && last.profit != null && last.invested != null && last.invested > 0) {
+    const delta = last.profit - first.profit;
+    return { delta, deltaPct: delta / last.invested, profitBased: true };
+  }
+  return {
+    delta: last.value - first.value,
+    deltaPct: first.value > 0 ? (last.value - first.value) / first.value : null,
+    profitBased: false,
+  };
 }
 
 /** Largeur de l'élément. Reçoit l'élément (ref callback) : le conteneur n'existe pas tant que

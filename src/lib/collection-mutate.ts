@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import type { CollectionItemDTO } from "./types";
 import { fail } from "./app-error";
+import { lineDate, lineKey, lineNotes, linePrice, matchLine, newLineFields, purchaseDay } from "./collection-line";
 
 type SaveInput = {
   printingId: string;
@@ -10,6 +11,8 @@ type SaveInput = {
   notes?: string | null;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;
+  /** « AAAA-MM-JJ » ; null = date inconnue. */
+  purchasedAt?: string | null;
 };
 
 type PatchInput = {
@@ -18,6 +21,8 @@ type PatchInput = {
   notes?: string | null;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;
+  /** « AAAA-MM-JJ » ; null = date inconnue. */
+  purchasedAt?: string | null;
 };
 
 export type MutationResult = {
@@ -39,6 +44,7 @@ function toDTO(item: {
   notes: string | null;
   purchasePrice: { toString(): string } | null;
   purchaseCurrency: string | null;
+  purchasedAt: Date | null;
   addedAt: Date;
   condition: { code: string; name: string };
 }): CollectionItemDTO {
@@ -51,10 +57,16 @@ function toDTO(item: {
     notes: item.notes,
     purchasePrice: item.purchasePrice ? item.purchasePrice.toString() : null,
     purchaseCurrency: item.purchaseCurrency,
+    purchasedAt: lineDate(item.purchasedAt),
     addedAt: item.addedAt.toISOString(),
   };
 }
 
+/**
+ * Ajout (« add ») ou quantité fixée (« set ») pour une carte × état × prix × date × notes : la ligne identique
+ * est mise à jour, sinon une nouvelle ligne est créée (voir matchLine pour un prix ou des notes absents).
+ * Le prix et les notes d'une ligne existante ne se modifient que par patchCollectionLine.
+ */
 export async function saveCollectionLine(userId: string, input: SaveInput): Promise<MutationResult> {
   const printing = await prisma.printing.findFirst({
     where: { id: input.printingId, isActive: true },
@@ -63,16 +75,21 @@ export async function saveCollectionLine(userId: string, input: SaveInput): Prom
   if (!printing || !condition) {
     fail("collection.cardOrConditionNotFound");
   }
-  const where = {
-    userId_printingId_conditionId: {
-      userId,
-      printingId: printing.id,
-      conditionId: condition.id,
-    },
+  const query = {
+    conditionCode: condition.code,
+    notes: input.notes,
+    purchasePrice: input.purchasePrice,
+    purchaseCurrency: input.purchaseCurrency,
+    purchasedAt: input.purchasedAt,
   };
 
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.collectionItem.findUnique({ where, include });
+    const candidates = await tx.collectionItem.findMany({
+      where: { userId, printingId: printing.id, conditionId: condition.id },
+      include,
+      orderBy: { addedAt: "asc" },
+    });
+    const existing = matchLine(candidates.map((item) => ({ ...item, conditionCode: condition.code })), query) ?? null;
     // Ajouter 0 exemplaire ne change rien (seul « set 0 » retire la ligne).
     if (input.mode === "add" && input.quantity <= 0) {
       return { item: existing ? toDTO(existing) : null, deletedId: null };
@@ -83,43 +100,11 @@ export async function saveCollectionLine(userId: string, input: SaveInput): Prom
       return { item: null, deletedId: existing.id };
     }
 
-    if (input.mode === "add" && existing) {
-      const notes = input.notes === undefined ? undefined : input.notes;
-      const purchasePrice = input.purchasePrice === undefined ? undefined : input.purchasePrice;
-      const purchaseCurrency = input.purchaseCurrency === undefined ? undefined : input.purchaseCurrency;
-      const saved = await tx.collectionItem.update({
-        where: { id: existing.id },
-        data: {
-          quantity: capped(existing.quantity + input.quantity),
-          ...(notes !== undefined ? { notes } : {}),
-          ...(purchasePrice !== undefined ? { purchasePrice } : {}),
-          ...(purchaseCurrency !== undefined ? { purchaseCurrency } : {}),
-        },
-        include,
-      });
-      return { item: toDTO(saved), deletedId: null };
-    }
-
-    const quantity = capped(input.quantity);
-    const data = {
-      quantity,
-      notes: input.notes === undefined ? existing?.notes ?? null : input.notes,
-      purchasePrice:
-        input.purchasePrice === undefined ? existing?.purchasePrice ?? null : input.purchasePrice,
-      purchaseCurrency:
-        input.purchaseCurrency === undefined
-          ? existing?.purchaseCurrency ?? null
-          : input.purchaseCurrency,
-    };
+    const quantity = capped(input.mode === "add" && existing ? existing.quantity + input.quantity : input.quantity);
     const saved = existing
-      ? await tx.collectionItem.update({ where: { id: existing.id }, data, include })
+      ? await tx.collectionItem.update({ where: { id: existing.id }, data: { quantity }, include })
       : await tx.collectionItem.create({
-          data: {
-            userId,
-            printingId: printing.id,
-            conditionId: condition.id,
-            ...data,
-          },
+          data: { userId, printingId: printing.id, conditionId: condition.id, quantity, ...newLineFields(query) },
           include,
         });
     return { item: toDTO(saved), deletedId: null };
@@ -148,14 +133,11 @@ export async function saveCollectionBatch(
   return prisma.$transaction(async (tx) => {
     const saved = [];
     for (const line of accepted) {
-      const where = {
-        userId_printingId_conditionId: {
-          userId,
-          printingId: line.printingId,
-          conditionId: condition.id,
-        },
-      };
-      const existing = await tx.collectionItem.findUnique({ where });
+      // Ajout rapide, sans prix, date ni notes : ne rejoint que la ligne sans prix, date ni notes.
+      const existing = await tx.collectionItem.findFirst({
+        where: { userId, printingId: line.printingId, conditionId: condition.id, purchasePrice: null, purchasedAt: null, notes: null },
+        orderBy: { addedAt: "asc" },
+      });
       const row = existing
         ? await tx.collectionItem.update({
             where: { id: existing.id },
@@ -186,13 +168,16 @@ type ImportInput = {
     notes?: string;
     purchasePrice?: string;
     purchaseCurrency?: string;
+    purchasedAt?: string;
   }[];
 };
 
 /**
  * Import CSV : « add » ajoute aux quantités existantes, « set » remplace la quantité des
- * cartes du fichier (les autres lignes de la collection ne bougent pas). Les notes et prix
- * absents du fichier sont conservés. Une seule transaction, requêtes groupées.
+ * lignes du fichier (les autres lignes de la collection ne bougent pas). Une ligne du fichier
+ * rejoint la ligne identique (carte × état × prix × date × notes) ; un prix, une date ou des notes absents du
+ * fichier ne départagent pas : la ligne rejoint alors celle de même carte × état, de préférence
+ * sans ces valeurs, et ses valeurs sont conservées. Une seule transaction, requêtes groupées.
  */
 export async function importCollectionLines(userId: string, input: ImportInput) {
   const [conditions, printings] = await Promise.all([
@@ -205,7 +190,7 @@ export async function importCollectionLines(userId: string, input: ImportInput) 
   const conditionIds = new Map(conditions.map((condition) => [condition.code, condition.id]));
   const validPrintings = new Set(printings.map((printing) => printing.id));
 
-  // Fusionne les doublons (même carte × état) envoyés dans le même import.
+  // Fusionne les doublons (même carte × état × prix × notes) envoyés dans le même import.
   const merged = new Map<string, ImportInput["lines"][number] & { conditionId: string }>();
   let skipped = 0;
   for (const line of input.lines) {
@@ -214,60 +199,58 @@ export async function importCollectionLines(userId: string, input: ImportInput) 
       skipped += 1;
       continue;
     }
-    const key = `${line.printingId}|${conditionId}`;
+    const key = JSON.stringify([
+      line.printingId,
+      line.conditionCode,
+      line.notes === undefined ? "?" : lineNotes(line.notes),
+      line.purchasePrice === undefined ? "?" : linePrice(line.purchasePrice),
+      line.purchasePrice ? line.purchaseCurrency || "EUR" : null,
+      line.purchasedAt === undefined ? "?" : lineDate(line.purchasedAt),
+    ]);
     const current = merged.get(key);
-    merged.set(
-      key,
-      current
-        ? {
-            ...current,
-            quantity: current.quantity + line.quantity,
-            notes: line.notes ?? current.notes,
-            purchasePrice: line.purchasePrice ?? current.purchasePrice,
-            purchaseCurrency: line.purchasePrice ? line.purchaseCurrency : current.purchaseCurrency,
-          }
-        : { ...line, conditionId },
-    );
+    merged.set(key, current ? { ...current, quantity: current.quantity + line.quantity } : { ...line, conditionId });
   }
   if (merged.size === 0) fail("collection.noValidCard");
 
   const existing = await prisma.collectionItem.findMany({
     where: { userId, printingId: { in: [...new Set([...merged.values()].map((line) => line.printingId))] } },
-    select: { id: true, printingId: true, conditionId: true, quantity: true },
+    include,
+    orderBy: { addedAt: "asc" },
   });
-  const existingByKey = new Map(existing.map((item) => [`${item.printingId}|${item.conditionId}`, item]));
+  const existingByCard = new Map<string, CollectionItemDTO[]>();
+  for (const item of existing) {
+    existingByCard.set(item.printingId, [...(existingByCard.get(item.printingId) ?? []), toDTO(item)]);
+  }
 
   const creates = [];
-  const updates = [];
-  for (const [key, line] of merged) {
-    const fields = {
-      ...(line.notes !== undefined ? { notes: line.notes } : {}),
-      ...(line.purchasePrice !== undefined
-        ? { purchasePrice: line.purchasePrice, purchaseCurrency: line.purchaseCurrency ?? "EUR" }
-        : {}),
-    };
-    const current = existingByKey.get(key);
+  const updates = new Map<string, { quantity: number }>();
+  for (const line of merged.values()) {
+    const current = matchLine(existingByCard.get(line.printingId) ?? [], line);
     if (current) {
-      const quantity = capped(input.mode === "add" ? current.quantity + line.quantity : line.quantity);
-      updates.push(prisma.collectionItem.update({ where: { id: current.id }, data: { quantity, ...fields } }));
+      const base = updates.get(current.id)?.quantity ?? (input.mode === "add" ? current.quantity : 0);
+      updates.set(current.id, { quantity: capped(base + line.quantity) });
     } else {
       creates.push({
         userId,
         printingId: line.printingId,
         conditionId: line.conditionId,
         quantity: capped(line.quantity),
-        ...fields,
+        ...newLineFields(line),
       });
     }
   }
 
   await prisma.$transaction([
     ...(creates.length ? [prisma.collectionItem.createMany({ data: creates })] : []),
-    ...updates,
+    ...[...updates].map(([id, data]) => prisma.collectionItem.update({ where: { id }, data })),
   ]);
-  return { created: creates.length, updated: updates.length, skipped };
+  return { created: creates.length, updated: updates.size, skipped };
 }
 
+/**
+ * Modifie une ligne. Si elle devient identique à une autre ligne de la même carte
+ * (état, prix, date d'achat et notes), les deux sont fusionnées.
+ */
 export async function patchCollectionLine(
   userId: string,
   id: string,
@@ -286,45 +269,35 @@ export async function patchCollectionLine(
     const conditionCode = input.conditionCode ?? current.condition.code;
     const condition = await tx.condition.findUnique({ where: { code: conditionCode } });
     if (!condition) fail("collection.conditionNotFound");
-    const moved = condition.id !== current.conditionId;
-    if (moved) {
-      const target = await tx.collectionItem.findUnique({
-        where: {
-          userId_printingId_conditionId: {
-            userId,
-            printingId: current.printingId,
-            conditionId: condition.id,
-          },
-        },
+    const purchasePrice = linePrice(input.purchasePrice === undefined ? current.purchasePrice : input.purchasePrice);
+    const fields = {
+      notes: lineNotes(input.notes === undefined ? current.notes : input.notes),
+      purchasePrice,
+      purchaseCurrency:
+        purchasePrice == null
+          ? null
+          : (input.purchaseCurrency === undefined ? current.purchaseCurrency : input.purchaseCurrency) || "EUR",
+      purchasedAt: purchaseDay(input.purchasedAt === undefined ? current.purchasedAt : input.purchasedAt),
+    };
+    const key = lineKey({ ...fields, conditionCode });
+    const siblings = await tx.collectionItem.findMany({
+      where: { userId, printingId: current.printingId, conditionId: condition.id, id: { not: current.id } },
+      include,
+      orderBy: { addedAt: "asc" },
+    });
+    const target = siblings.find((item) => lineKey({ ...item, conditionCode }) === key);
+    if (target) {
+      const saved = await tx.collectionItem.update({
+        where: { id: target.id },
+        data: { quantity: capped((input.quantity ?? current.quantity) + target.quantity) },
+        include,
       });
-      if (target) {
-        const quantity = capped((input.quantity ?? current.quantity) + target.quantity);
-        const saved = await tx.collectionItem.update({
-          where: { id: target.id },
-          data: {
-            quantity,
-            notes: input.notes === undefined ? target.notes : input.notes,
-            purchasePrice:
-              input.purchasePrice === undefined ? target.purchasePrice : input.purchasePrice,
-            purchaseCurrency:
-              input.purchaseCurrency === undefined ? target.purchaseCurrency : input.purchaseCurrency,
-          },
-          include,
-        });
-        await tx.collectionItem.delete({ where: { id: current.id } });
-        return { item: toDTO(saved), deletedId: current.id };
-      }
+      await tx.collectionItem.delete({ where: { id: current.id } });
+      return { item: toDTO(saved), deletedId: current.id };
     }
     const saved = await tx.collectionItem.update({
       where: { id: current.id },
-      data: {
-        conditionId: condition.id,
-        quantity: input.quantity ?? current.quantity,
-        notes: input.notes === undefined ? current.notes : input.notes,
-        purchasePrice: input.purchasePrice === undefined ? current.purchasePrice : input.purchasePrice,
-        purchaseCurrency:
-          input.purchaseCurrency === undefined ? current.purchaseCurrency : input.purchaseCurrency,
-      },
+      data: { conditionId: condition.id, quantity: input.quantity ?? current.quantity, ...fields },
       include,
     });
     return { item: toDTO(saved), deletedId: null };

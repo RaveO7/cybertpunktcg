@@ -1,4 +1,8 @@
-export type OwnedQuantity = { printingId: string; quantity: number };
+/**
+ * Exemplaires possédés. `fromDay` : date d'achat (« AAAA-MM-JJ »), les exemplaires ne comptent qu'à partir
+ * de ce jour (absente = possédés depuis toujours). `cost` : prix d'achat unitaire en EUR (absent = inconnu).
+ */
+export type OwnedQuantity = { printingId: string; quantity: number; fromDay?: string | null; cost?: number | null };
 
 export type SnapshotRow = {
   printingId: string;
@@ -10,6 +14,10 @@ export type PortfolioHistoryPoint = {
   day: string;
   marketTotal: number;
   pricedCopies: number;
+  /** Prix d'achat cumulé (EUR) des exemplaires possédés ce jour-là ; absent sans aucun prix d'achat. */
+  invested?: number;
+  /** Valeur marché moins prix d'achat, sur les exemplaires qui ont les deux ; null = aucun. */
+  profit?: number | null;
 };
 
 /** Jour UTC à minuit. */
@@ -57,17 +65,16 @@ export function extendPortfolioHistory(
   startPrices: ReadonlyMap<string, number>,
   snapshots: SnapshotRow[],
 ): { points: PortfolioHistoryPoint[]; lastPrice: Map<string, number> } {
-  const quantities = new Map<string, number>();
-  for (const row of owned) {
-    if (row.quantity <= 0) continue;
-    quantities.set(row.printingId, (quantities.get(row.printingId) ?? 0) + row.quantity);
-  }
+  const rows = owned.filter((row) => row.quantity > 0);
+  const printingIds = new Set(rows.map((row) => row.printingId));
+  // Investi et P&L ne sont ajoutés aux points que si au moins un exemplaire a un prix d'achat.
+  const withCosts = rows.some((row) => row.cost != null && Number.isFinite(row.cost));
   const lastPrice = new Map(startPrices);
-  if (quantities.size === 0) return { points: [], lastPrice };
+  if (rows.length === 0) return { points: [], lastPrice };
 
   const byDay = new Map<string, { printingId: string; amount: number }[]>();
   for (const snapshot of snapshots) {
-    if (!quantities.has(snapshot.printingId)) continue;
+    if (!printingIds.has(snapshot.printingId)) continue;
     if (!Number.isFinite(snapshot.amount) || snapshot.amount <= 0) continue;
     const list = byDay.get(snapshot.day) ?? [];
     list.push({ printingId: snapshot.printingId, amount: snapshot.amount });
@@ -80,20 +87,36 @@ export function extendPortfolioHistory(
     for (const row of byDay.get(day) ?? []) lastPrice.set(row.printingId, row.amount);
     let marketTotal = 0;
     let pricedCopies = 0;
-    for (const [printingId, quantity] of quantities) {
-      const amount = lastPrice.get(printingId);
+    let invested = 0;
+    let profit = 0;
+    let hasProfit = false;
+    for (const row of rows) {
+      // Pas encore acheté ce jour-là.
+      if (row.fromDay != null && row.fromDay > day) continue;
+      const cost = row.cost != null && Number.isFinite(row.cost) ? row.cost * row.quantity : null;
+      if (cost != null) invested += cost;
+      const amount = lastPrice.get(row.printingId);
       if (amount == null) continue;
-      marketTotal += amount * quantity;
-      pricedCopies += quantity;
+      marketTotal += amount * row.quantity;
+      pricedCopies += row.quantity;
+      if (cost != null) {
+        profit += amount * row.quantity - cost;
+        hasProfit = true;
+      }
     }
     if (pricedCopies === 0) continue;
     points.push({
       day,
-      marketTotal: Math.round(marketTotal * 100) / 100,
+      marketTotal: round2(marketTotal),
       pricedCopies,
+      ...(withCosts ? { invested: round2(invested), profit: hasProfit ? round2(profit) : null } : {}),
     });
   }
   return { points, lastPrice };
+}
+
+function round2(value: number) {
+  return Math.round(value * 100) / 100;
 }
 
 export function buildPrintingHistory(snapshots: SnapshotRow[]): { day: string; amount: number }[] {

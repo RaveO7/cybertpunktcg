@@ -40,9 +40,10 @@ export function QuickAddSheet({
     printingId: string;
     conditionCode: string;
     quantity: number;
-    notes?: string;
-    purchasePrice?: string;
-    purchaseCurrency?: string;
+    notes?: string | null;
+    purchasePrice?: string | null;
+    purchaseCurrency?: string | null;
+    purchasedAt?: string | null;
   }) => Promise<void>;
   onClose: () => void;
 }) {
@@ -110,9 +111,11 @@ export function QuickAddSheet({
         printingId: current.id,
         conditionCode,
         quantity: parsedQuantity,
-        notes: notes.trim() ? notes.trim() : undefined,
-        purchasePrice: price.trim() ? price.trim() : undefined,
-        purchaseCurrency: price.trim() ? currency : undefined,
+        // null (et non undefined) : un ajout sans prix ni notes ne rejoint pas une ligne qui en a.
+        notes: notes.trim() ? notes.trim() : null,
+        purchasePrice: price.trim() ? price.trim() : null,
+        purchaseCurrency: price.trim() ? currency : null,
+        purchasedAt: null,
       });
       onClose();
     } catch (saveError) {

@@ -64,6 +64,8 @@ export type CollectionItemDTO = {
   notes: string | null;
   purchasePrice: string | null;
   purchaseCurrency: string | null;
+  /** Date d'achat « AAAA-MM-JJ », null = inconnue. */
+  purchasedAt: string | null;
   addedAt: string;
 };
 

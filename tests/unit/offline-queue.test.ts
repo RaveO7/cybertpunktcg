@@ -12,6 +12,7 @@ import {
   replayQueue,
   requestFor,
   type QueuedOp,
+  type SavePayload,
   type SendResponse,
 } from "../../src/lib/offline-queue";
 import type { CollectionItemDTO } from "../../src/lib/types";
@@ -31,6 +32,7 @@ function line(id: string, printingId: string, quantity: number, conditionCode = 
     notes: null,
     purchasePrice: null,
     purchaseCurrency: null,
+    purchasedAt: null,
     addedAt: "2026-01-01T00:00:00.000Z",
   };
 }
@@ -120,6 +122,35 @@ describe("file hors ligne de la collection : affichage", () => {
     assert.deepEqual(
       applyOps(items, ops, conditions).map((item) => [item.id, item.quantity]),
       [["b", 3]],
+    );
+  });
+
+  it("un prix ou des notes différents font une autre ligne ; les égaler fusionne", () => {
+    const items = [{ ...line("a", "p1", 2), purchasePrice: "3.00", purchaseCurrency: "EUR" }];
+    const add = (seq: number, lineId: string, payload: Partial<SavePayload>): QueuedOp => ({
+      v: 1, seq, userId: "u1", lineId, kind: "save", createdAt: "x",
+      payload: { printingId: "p1", conditionCode: "NM", quantity: 1, mode: "add", ...payload },
+    });
+    const ops: QueuedOp[] = [
+      add(1, "a", { purchasePrice: "3,0", purchaseCurrency: "EUR" }),
+      add(2, "tmp_b", { purchasePrice: "5", purchaseCurrency: "EUR" }),
+      add(3, "tmp_c", { purchasePrice: null, notes: "boîte" }),
+    ];
+    assert.deepEqual(
+      applyOps(items, ops, conditions).map((item) => [item.id, item.quantity, item.purchasePrice, item.notes]),
+      [
+        ["a", 3, "3.00", null],
+        ["tmp_b", 1, "5.00", null],
+        ["tmp_c", 1, null, "boîte"],
+      ],
+    );
+    const merge: QueuedOp = { v: 1, seq: 4, userId: "u1", lineId: "tmp_b", kind: "patch", createdAt: "x", payload: { purchasePrice: "3" } };
+    assert.deepEqual(
+      applyOps(items, [...ops, merge], conditions).map((item) => [item.id, item.quantity]),
+      [
+        ["a", 4],
+        ["tmp_c", 1],
+      ],
     );
   });
 });

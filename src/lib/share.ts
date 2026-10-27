@@ -58,6 +58,7 @@ export async function loadSharedBinder(token: string) {
     notes: null,
     purchasePrice: null,
     purchaseCurrency: null,
+    purchasedAt: null,
     addedAt: item.addedAt.toISOString(),
   }));
 

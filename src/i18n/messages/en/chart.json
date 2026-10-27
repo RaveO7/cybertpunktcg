@@ -2,5 +2,12 @@
   "label": "Trend",
   "empty": "No history yet. Re-run the price import over successive days.",
   "period": "Over the displayed period",
-  "days": "{n, plural, one {# day} other {# days}}"
+  "days": "{n, plural, one {# day} other {# days}}",
+  "value": "Market value",
+  "invested": "Invested",
+  "profit": "Profit / loss",
+  "purchase": "Purchase",
+  "purchases": "{n, plural, one {# purchase} other {# purchases}}",
+  "morePurchases": "+{n} more",
+  "periodProfit": "P&L over the period"
 }

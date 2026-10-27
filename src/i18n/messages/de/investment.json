@@ -31,7 +31,7 @@
     "marketValue": "Aktueller Wert nach Cardmarket-Trendpreis (Preis × Menge).",
     "marketVar": "Änderung des Marktwerts im gewählten Zeitraum (Cardmarket-Preis zu Beginn des Zeitraums → aktueller Preis).",
     "invested": "Summe der eingegebenen Kaufpreise.",
-    "purchasePnL": "Gewinn oder Verlust im gewählten Zeitraum: ab dem Marktpreis zu Beginn des Zeitraums bzw. ab dem Kaufpreis für Karten, die im Zeitraum hinzugefügt wurden (nur Zeilen mit Kaufpreis). Bei „Gesamt“: aktueller Marktwert minus eingegebener Kaufpreis.",
+    "purchasePnL": "Gewinn oder Verlust im gewählten Zeitraum: ab dem Marktpreis zu Beginn des Zeitraums bzw. ab dem Kaufpreis für Karten, die im Zeitraum gekauft wurden (Kaufdatum, sonst Datum des Hinzufügens) (nur Zeilen mit Kaufpreis). Bei „Gesamt“: aktueller Marktwert minus eingegebener Kaufpreis.",
     "card": "Name und Nummer der Karte oder des Produkts.",
     "qty": "Besessene Menge.",
     "purchase": "Eingegebener Gesamtkaufpreis für diese Zeile.",
