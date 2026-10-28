@@ -9,5 +9,9 @@
   "purchase": "Purchase",
   "purchases": "{n, plural, one {# purchase} other {# purchases}}",
   "morePurchases": "+{n} more",
-  "periodProfit": "P&L over the period"
+  "periodProfit": "P&L over the period",
+  "zoomHint": "Drag across the chart to zoom into a period",
+  "zoomHintTouch": "Place two fingers on the chart to zoom into the period between them",
+  "zoomed": "Zoom: {range}",
+  "resetZoom": "Show all"
 }

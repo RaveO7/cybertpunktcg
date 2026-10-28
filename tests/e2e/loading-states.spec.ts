@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { prisma } from "@/lib/prisma";
 import { expect, settle, test } from "./fixtures";
 
 const CATALOG = /\/api\/catalog(\?|$)/;
@@ -63,7 +64,12 @@ test("écrans du compte : squelette et aucun « 0 » avant l'arrivée du catalog
 });
 
 test("historique de prix en échec : « Réessayer » puis la courbe", async ({ page, account }) => {
-  void account;
+  // Collection vide : la page invite à ajouter des cartes, sans courbe. Une carte suffit (supprimée avec le compte).
+  const printing = await prisma.printing.findFirstOrThrow({ where: { isActive: true }, select: { id: true } });
+  const condition = await prisma.condition.findFirstOrThrow({ where: { code: "NM" } });
+  await prisma.collectionItem.create({
+    data: { userId: account.id, printingId: printing.id, conditionId: condition.id, quantity: 1 },
+  });
   let fail = true;
   await page.route(HISTORY, (route) => (fail ? route.fulfill({ status: 500, body: "{}" }) : route.continue()));
   await page.goto("/fr/investissement");

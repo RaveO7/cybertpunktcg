@@ -1,7 +1,7 @@
 // Tri des tableaux de la page Investissement (par extension et par ligne).
 
 import type { Translator } from "@/i18n/translator";
-import type { InvestmentLine, SetInvestment } from "@/lib/logic";
+import { amountSign, type InvestmentLine, type InvestmentPosition, type SetInvestment } from "@/lib/logic";
 
 export type SortDir = "asc" | "desc";
 
@@ -26,8 +26,13 @@ export function initialSortDir(columnKey: string): SortDir {
   return DESC_FIRST_COLUMNS.has(columnKey) ? "desc" : "asc";
 }
 
+// Ordre du menu de tri (téléphone) : les colonnes chiffrées d'abord.
 export const SET_SORT_KEYS: SetSortKey[] = ["marketValue", "marketVar", "purchasePnL", "invested", "copies", "set"];
 export const LINE_SORT_KEYS: LineSortKey[] = ["market", "marketVar", "purchasePnL", "purchase", "qty", "card", "set"];
+
+// Colonnes des tableaux (ordinateur), de gauche à droite.
+export const SET_TABLE_KEYS: SetSortKey[] = ["set", "copies", "marketValue", "marketVar", "invested", "purchasePnL"];
+export const LINE_TABLE_KEYS: LineSortKey[] = ["card", "set", "qty", "purchase", "market", "marketVar", "purchasePnL"];
 
 export function setSortLabel(key: SetSortKey, t: Translator) {
   const labels: Record<SetSortKey, string> = {
@@ -54,13 +59,15 @@ export function lineSortLabel(key: LineSortKey, t: Translator) {
   return labels[key];
 }
 
-export function sortSetRows(rows: SetInvestment[], sort: SortState<SetSortKey>) {
+/** Tri par extension ; les noms suivent l'ordre alphabétique de la langue de la page (`locale`). */
+export function sortSetRows(rows: SetInvestment[], sort: SortState<SetSortKey>, locale: string) {
+  const collator = textCollator(locale);
   const list = [...rows];
   list.sort((left, right) => {
     let result = 0;
     switch (sort.key) {
       case "set":
-        result = directedText(left.setName, right.setName, sort.dir);
+        result = directedText(collator, left.setName, right.setName, sort.dir);
         break;
       case "copies":
         result = directedNumber(left.copies, right.copies, sort.dir);
@@ -68,36 +75,46 @@ export function sortSetRows(rows: SetInvestment[], sort: SortState<SetSortKey>) 
       case "marketValue":
         result = directedNumber(left.marketTotal, right.marketTotal, sort.dir);
         break;
+      // Comme le détail : tri sur le % affiché en principal, puis sur le montant.
       case "marketVar":
-        result = directedNullableNumber(movingAmount(left.marketDeltaAmount), movingAmount(right.marketDeltaAmount), sort.dir);
+        result =
+          directedNullableNumber(setMovingPct(left), setMovingPct(right), sort.dir) ||
+          directedNullableNumber(movingAmount(left.marketDeltaAmount), movingAmount(right.marketDeltaAmount), sort.dir);
         break;
       case "invested":
         result = directedNumber(left.investedEur, right.investedEur, sort.dir);
         break;
       case "purchasePnL":
-        result = directedNullableNumber(left.profitEur, right.profitEur, sort.dir);
+        result =
+          directedNullableNumber(setProfitPct(left), setProfitPct(right), sort.dir) ||
+          directedNullableNumber(left.profitEur, right.profitEur, sort.dir);
         break;
     }
-    if (result === 0) result = left.sortOrder - right.sortOrder || compareText(left.setName, right.setName);
+    if (result === 0) result = left.sortOrder - right.sortOrder || collator.compare(left.setName, right.setName);
     return result;
   });
   return list;
 }
 
-export function sortLineRows(rows: InvestmentLine[], sort: SortState<LineSortKey>) {
+/**
+ * Tri du détail : porte sur les cartes regroupées (positions), pas sur chaque achat. Les textes suivent
+ * l'ordre alphabétique de la langue de la page (`locale`).
+ */
+export function sortPositionRows(rows: InvestmentPosition[], sort: SortState<LineSortKey>, locale: string) {
+  const collator = textCollator(locale);
   const list = [...rows];
   list.sort((left, right) => {
     let result = 0;
     switch (sort.key) {
       case "card":
         result =
-          directedText(left.title, right.title, sort.dir) ||
-          directedText(left.collectorNumber, right.collectorNumber, sort.dir);
+          directedText(collator, left.title, right.title, sort.dir) ||
+          directedText(collator, left.collectorNumber, right.collectorNumber, sort.dir);
         break;
       case "set":
         result =
-          directedText(left.setName, right.setName, sort.dir) ||
-          directedText(left.collectorNumber, right.collectorNumber, sort.dir);
+          directedText(collator, left.setName, right.setName, sort.dir) ||
+          directedText(collator, left.collectorNumber, right.collectorNumber, sort.dir);
         break;
       case "qty":
         result = directedNumber(left.quantity, right.quantity, sort.dir);
@@ -106,45 +123,92 @@ export function sortLineRows(rows: InvestmentLine[], sort: SortState<LineSortKey
         result = directedNullableNumber(left.purchaseTotal, right.purchaseTotal, sort.dir);
         break;
       case "market":
-        // Toujours le prix Cardmarket actuel (marketUnit), pas previousMarketUnit.
+        // Valeur actuelle affichée en principal (total), puis le prix unitaire ; jamais previousMarketUnit.
         result =
-          directedNullableNumber(left.marketUnit, right.marketUnit, sort.dir) ||
-          directedNullableNumber(left.marketTotal, right.marketTotal, sort.dir);
+          directedNullableNumber(left.marketTotal, right.marketTotal, sort.dir) ||
+          directedNullableNumber(left.marketUnit, right.marketUnit, sort.dir);
         break;
+      // Variation et P&L : tri sur le % affiché en principal, puis sur le montant.
       case "marketVar":
-        result = directedNullableNumber(movingAmount(lineMarketDelta(left)), movingAmount(lineMarketDelta(right)), sort.dir);
+        result =
+          directedNullableNumber(movingPct(left), movingPct(right), sort.dir) ||
+          directedNullableNumber(movingAmount(lineMarketDelta(left)), movingAmount(lineMarketDelta(right)), sort.dir);
         break;
       case "purchasePnL":
-        result = directedNullableNumber(left.profit, right.profit, sort.dir);
+        result =
+          directedNullableNumber(lineProfitPct(left), lineProfitPct(right), sort.dir) ||
+          directedNullableNumber(left.profit, right.profit, sort.dir);
         break;
     }
     if (result === 0) {
       result =
-        compareText(left.setName, right.setName) ||
-        compareText(left.collectorNumber, right.collectorNumber) ||
-        compareText(left.itemId, right.itemId);
+        collator.compare(left.setName, right.setName) ||
+        collator.compare(left.collectorNumber, right.collectorNumber) ||
+        collator.compare(left.printingId, right.printingId);
     }
     return result;
   });
   return list;
 }
 
-export function lineMarketDelta(line: InvestmentLine) {
+type MarketFigures = Pick<InvestmentLine, "marketUnit" | "previousMarketUnit" | "quantity">;
+
+/** Variation de valeur de toute la ligne (quantité comprise), comme les colonnes Achat, Marché et P&L. */
+export function lineMarketDelta(line: MarketFigures) {
   if (line.marketUnit == null || line.previousMarketUnit == null) return null;
   return (line.marketUnit - line.previousMarketUnit) * line.quantity;
 }
 
+/** Variation du marché en % : identique pour un exemplaire ou pour toute la ligne. */
+export function lineMarketDeltaPct(line: MarketFigures) {
+  if (line.marketUnit == null || line.previousMarketUnit == null || line.previousMarketUnit <= 0) return null;
+  return ((line.marketUnit - line.previousMarketUnit) / line.previousMarketUnit) * 100;
+}
+
+/** P&L en % de sa base : le coût d'achat des exemplaires comptés. */
+export function lineProfitPct(line: Pick<InvestmentLine, "profit" | "profitBasis">) {
+  if (line.profit == null || line.profitBasis == null || line.profitBasis <= 0) return null;
+  return (line.profit / line.profitBasis) * 100;
+}
+
+/** Variation du marché d'une extension en % de sa valeur au début de la période. */
+export function setMarketDeltaPct(row: Pick<SetInvestment, "marketDeltaAmount" | "previousMarketTotal">) {
+  if (row.marketDeltaAmount == null || row.previousMarketTotal == null || row.previousMarketTotal <= 0) return null;
+  return (row.marketDeltaAmount / row.previousMarketTotal) * 100;
+}
+
+/** P&L d'une extension en % de son prix d'achat. */
+export function setProfitPct(row: Pick<SetInvestment, "profitEur" | "profitBasis">) {
+  return lineProfitPct({ profit: row.profitEur, profitBasis: row.profitBasis });
+}
+
 /** Variation nulle (« — ») : rangée avec les lignes sans variation, toujours en fin de liste. */
 function movingAmount(value: number | null) {
-  return value == null || Math.abs(value) < 0.005 ? null : value;
+  return value == null || amountSign(value) === 0 ? null : value;
 }
 
-function compareText(left: string, right: string) {
-  return left.localeCompare(right, undefined, { sensitivity: "base", numeric: true });
+function movingPct(line: MarketFigures) {
+  return movingAmount(lineMarketDelta(line)) == null ? null : lineMarketDeltaPct(line);
 }
 
-function directedText(left: string, right: string, dir: SortDir) {
-  const result = compareText(left, right);
+function setMovingPct(row: SetInvestment) {
+  return movingAmount(row.marketDeltaAmount) == null ? null : setMarketDeltaPct(row);
+}
+
+// Un comparateur par langue, partagé par tous les tris : en créer un coûte cher.
+const collators = new Map<string, Intl.Collator>();
+
+function textCollator(locale: string) {
+  let collator = collators.get(locale);
+  if (!collator) {
+    collator = new Intl.Collator(locale, { sensitivity: "base", numeric: true });
+    collators.set(locale, collator);
+  }
+  return collator;
+}
+
+function directedText(collator: Intl.Collator, left: string, right: string, dir: SortDir) {
+  const result = collator.compare(left, right);
   return dir === "asc" ? result : -result;
 }
 

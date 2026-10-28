@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState, type PointerEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { intlLocale } from "@/i18n/config";
+import { amountSign } from "@/lib/logic";
 
 /** Achat placé sur la courbe (le jour du point, ou le premier jour d'historique qui suit). */
 export type ChartPurchase = {
@@ -43,7 +44,7 @@ const GRID = "#2c384c";
 const AXIS_TEXT = "#93a0b4";
 const BACKGROUND = "#07080d";
 
-export function PriceChart({ points, label, emptyHint, height, compact = false }: PriceChartProps) {
+export function PriceChart({ points: allPoints, label, emptyHint, height, compact = false }: PriceChartProps) {
   const fmt = useNumberFormat();
   const t = useTranslations();
   const locale = useLocale();
@@ -55,6 +56,28 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const width = useElementWidth(container);
   const localeTag = intlLocale(locale);
+
+  // Zoom : premier et dernier jour affichés. Oublié quand la durée reçue change (autre bouton de durée).
+  const [zoom, setZoom] = useState<{ from: string; to: string } | null>(null);
+  const span = allPoints.length > 0 ? `${allPoints[0].day}|${allPoints[allPoints.length - 1].day}` : "";
+  const [zoomSpan, setZoomSpan] = useState(span);
+  if (zoomSpan !== span) {
+    setZoomSpan(span);
+    setZoom(null);
+  }
+  const points = useMemo(() => {
+    if (!zoom) return allPoints;
+    const inside = allPoints.filter((point) => point.day >= zoom.from && point.day <= zoom.to);
+    return inside.length >= 2 ? inside : allPoints;
+  }, [allPoints, zoom]);
+  const zoomed = points !== allPoints;
+  const canZoom = !compact && points.length > 2;
+  // Période en cours de sélection (indices dans `points`), avant le zoom.
+  const [selectionState, setSelection] = useState<{ from: number; to: number } | null>(null);
+  const selection = selectionState && selectionState.to < points.length ? selectionState : null;
+  // Souris : point où le glisser a commencé. Doigts : point sous chaque doigt posé.
+  const dragRef = useRef<number | null>(null);
+  const touchesRef = useRef(new Map<number, number>());
 
   const hasInvested = points.some((point) => point.invested != null && point.invested > 0);
   const hasPurchases = points.some((point) => (point.purchases?.length ?? 0) > 0);
@@ -136,8 +159,11 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
   const active = hover == null ? null : points[hover];
   const activeCoord = hover != null && geometry ? geometry.coords[hover] : null;
   const lastCoord = geometry ? geometry.coords[geometry.coords.length - 1] : null;
-  const delta = geometry?.delta ?? 0;
-  const trend = delta > 0.004 ? "up" : delta < -0.004 ? "down" : "flat";
+  // Pendant une sélection, l'en-tête donne la variation de la période sélectionnée.
+  const period = selection ? periodDelta(points.slice(selection.from, selection.to + 1)) : geometry;
+  const periodLength = selection ? selection.to - selection.from + 1 : points.length;
+  const delta = period?.delta ?? 0;
+  const trend = amountSign(delta) > 0 ? "up" : amountSign(delta) < 0 ? "down" : "flat";
   const deltaClass =
     trend === "up"
       ? "border-gain/40 bg-gain/10 text-gain"
@@ -149,19 +175,86 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
   const detailedTooltip =
     active != null && (active.invested != null || active.profit != null || activePurchases.length > 0);
 
+  /** Position horizontale dans la zone de tracé et point le plus proche. */
+  const pointerAt = (event: PointerEvent<HTMLDivElement>, plotLeft: number, plotWidth: number) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left - plotLeft;
+    const ratio = x / Math.max(1, plotWidth);
+    const index = points.length === 1 ? 0 : Math.round(ratio * (points.length - 1));
+    return { x, index: Math.min(points.length - 1, Math.max(0, index)) };
+  };
+
+  const zoomTo = (from: string, to: string) => {
+    setZoom({ from, to });
+    setHover(null);
+  };
+
+  const resetZoom = () => {
+    setZoom(null);
+    setHover(null);
+  };
+
   const handlePointer = (event: PointerEvent<HTMLDivElement>) => {
     if (!geometry) return;
+    const { x, index } = pointerAt(event, geometry.padding.left, geometry.innerWidth);
+    const touches = touchesRef.current;
+    if (touches.has(event.pointerId)) touches.set(event.pointerId, index);
+    if (touches.size >= 2) {
+      // Deux doigts : la période entre eux est sélectionnée.
+      const [a, b] = [...touches.values()];
+      setSelection({ from: Math.min(a, b), to: Math.max(a, b) });
+      setHover(null);
+      return;
+    }
+    if (dragRef.current != null) {
+      const anchor = dragRef.current;
+      setSelection(anchor === index ? null : { from: Math.min(anchor, index), to: Math.max(anchor, index) });
+      setHover(index);
+      return;
+    }
     // Souris : seulement au survol de la zone de tracé. Doigt : partout sur le graphique.
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left - geometry.padding.left;
     if (event.pointerType === "mouse" && (x < 0 || x > geometry.innerWidth)) {
       setHover(null);
       return;
     }
-    const ratio = x / Math.max(1, geometry.innerWidth);
-    const index = points.length === 1 ? 0 : Math.round(ratio * (points.length - 1));
-    setHover(Math.min(points.length - 1, Math.max(0, index)));
+    setHover(index);
   };
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (canZoom && geometry) {
+      const { x, index } = pointerAt(event, geometry.padding.left, geometry.innerWidth);
+      if (event.pointerType === "mouse") {
+        // Glisser à la souris sur la zone de tracé : sélection d'une période.
+        if (event.button === 0 && x >= 0 && x <= geometry.innerWidth) {
+          dragRef.current = index;
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
+      } else if (event.pointerType === "touch") {
+        touchesRef.current.set(event.pointerId, index);
+      }
+    }
+    handlePointer(event);
+  };
+
+  // Fin du glisser (ou premier doigt levé) : zoom sur la période sélectionnée.
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const selecting = touchesRef.current.size >= 2 || (event.pointerType === "mouse" && dragRef.current != null);
+    touchesRef.current.delete(event.pointerId);
+    if (event.pointerType === "mouse") dragRef.current = null;
+    if (!selecting) return;
+    if (selection && selection.to > selection.from) zoomTo(points[selection.from].day, points[selection.to].day);
+    setSelection(null);
+  };
+
+  const handlePointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    touchesRef.current.delete(event.pointerId);
+    if (event.pointerType === "mouse") dragRef.current = null;
+    setSelection(null);
+    setHover(null);
+  };
+
+  const selectionCoords =
+    selection && geometry ? { from: geometry.coords[selection.from], to: geometry.coords[selection.to] } : null;
 
   return (
     <div className={compact ? "" : "border border-line bg-panel p-4 sm:p-5"}>
@@ -173,7 +266,13 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
             <p className="mt-2.5 font-mono text-lg leading-none text-yellow">
               {fmt.money(active?.value ?? geometry?.last ?? points[points.length - 1].value)}
             </p>
-            <p className="mt-2.5 text-xs text-muted">{active ? formatDay(active.day, localeTag, true) : t("chart.period")}</p>
+            <p className="mt-2.5 text-xs text-muted">
+              {selection
+                ? formatDayRange(points[selection.from].day, points[selection.to].day, localeTag)
+                : active
+                  ? formatDay(active.day, localeTag, true)
+                  : t("chart.period")}
+            </p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2 text-sm">
             <span
@@ -186,14 +285,14 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
                 {delta > 0 ? "+" : delta < 0 ? "−" : ""}
                 {fmt.money(Math.abs(delta))}
               </span>
-              {geometry?.deltaPct != null ? (
-                <span className="opacity-75">({formatPct(geometry.deltaPct, localeTag)})</span>
+              {period?.deltaPct != null ? (
+                <span className="opacity-75">({formatPct(period.deltaPct, localeTag)})</span>
               ) : null}
             </span>
             {points.length > 1 ? (
               <span className="text-xs text-muted">
-                {geometry?.profitBased ? `${t("chart.periodProfit")} · ` : ""}
-                {t("chart.days", { n: points.length })}
+                {period?.profitBased ? `${t("chart.periodProfit")} · ` : ""}
+                {t("chart.days", { n: periodLength })}
               </span>
             ) : null}
           </div>
@@ -221,18 +320,20 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
       ) : null}
       <div
         ref={setContainer}
-        className="relative w-full select-none"
+        className={`relative w-full select-none ${canZoom ? "cursor-crosshair" : ""}`}
         data-no-swipe=""
         // touch-action est ignoré sur les éléments internes d'un SVG : il doit être porté par ce conteneur.
         // Au doigt : glisser horizontalement parcourt la courbe, verticalement fait défiler la page.
         style={{ height: resolvedHeight, touchAction: "pan-y", WebkitTouchCallout: "none" }}
-        onPointerDown={handlePointer}
+        onPointerDown={handlePointerDown}
         onPointerMove={handlePointer}
+        onPointerUp={handlePointerUp}
         // Au doigt, le dernier point reste affiché après avoir relâché ; la souris l'efface en sortant.
         onPointerLeave={(event) => {
           if (event.pointerType === "mouse") setHover(null);
         }}
-        onPointerCancel={() => setHover(null)}
+        onPointerCancel={handlePointerCancel}
+        onDoubleClick={zoomed ? resetZoom : undefined}
       >
         {geometry ? (
           <svg
@@ -309,6 +410,30 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
                 </text>
               );
             })}
+
+            {selectionCoords ? (
+              <g pointerEvents="none">
+                <rect
+                  x={selectionCoords.from.x}
+                  y={geometry.padding.top}
+                  width={selectionCoords.to.x - selectionCoords.from.x}
+                  height={geometry.innerHeight}
+                  fill={LINE}
+                  fillOpacity="0.1"
+                />
+                {[selectionCoords.from.x, selectionCoords.to.x].map((x, index) => (
+                  <line
+                    key={index}
+                    x1={x}
+                    x2={x}
+                    y1={geometry.padding.top}
+                    y2={geometry.baseline}
+                    stroke={LINE}
+                    strokeOpacity="0.6"
+                  />
+                ))}
+              </g>
+            ) : null}
 
             {geometry.area ? <path d={geometry.area} fill={`url(#${uid}-fill)`} /> : null}
             <path
@@ -430,7 +555,7 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
                   <>
                     <dt className="text-muted">{t("chart.profit")}</dt>
                     <dd
-                      className={`text-right font-mono ${active.profit > 0.004 ? "text-gain" : active.profit < -0.004 ? "text-danger" : "text-muted"}`}
+                      className={`text-right font-mono ${amountSign(active.profit) > 0 ? "text-gain" : amountSign(active.profit) < 0 ? "text-danger" : "text-muted"}`}
                     >
                       {active.profit > 0 ? "+" : active.profit < 0 ? "−" : ""}
                       {fmt.money(Math.abs(active.profit))}
@@ -468,6 +593,20 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
           </div>
         ) : null}
       </div>
+      {zoomed ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted">
+          <span>{t("chart.zoomed", { range: formatDayRange(points[0].day, points[points.length - 1].day, localeTag) })}</span>
+          {/* Marges négatives : zone de toucher agrandie sans changer la hauteur de la ligne. */}
+          <button type="button" onClick={resetZoom} className="-my-2 py-2 text-cyan hover:text-yellow">
+            {t("chart.resetZoom")}
+          </button>
+        </div>
+      ) : canZoom ? (
+        <p className="mt-3 text-xs text-muted">
+          <span className="pointer-coarse:hidden">{t("chart.zoomHint")}</span>
+          <span className="hidden pointer-coarse:inline">{t("chart.zoomHintTouch")}</span>
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -475,13 +614,14 @@ export function PriceChart({ points, label, emptyHint, height, compact = false }
 /**
  * Variation affichée en tête. Avec des prix d'achat, c'est la variation de la plus / moins-value
  * (en % de l'investi à la fin) : un achat fait monter la valeur marché sans être un gain.
+ * Plus-value absente au début (achats faits pendant la période) : elle part de 0.
  * Sinon, la variation de la valeur marché.
  */
 function periodDelta(points: ChartPoint[]) {
   const first = points[0];
   const last = points[points.length - 1];
-  if (first.profit != null && last.profit != null && last.invested != null && last.invested > 0) {
-    const delta = last.profit - first.profit;
+  if (last.profit != null && last.invested != null && last.invested > 0) {
+    const delta = last.profit - (first.profit ?? 0);
     return { delta, deltaPct: delta / last.invested, profitBased: true };
   }
   return {
@@ -553,6 +693,10 @@ function formatDay(day: string, localeTag: string, withYear = false) {
     ...(withYear ? { year: "numeric" } : {}),
     timeZone: "UTC",
   }).format(date);
+}
+
+function formatDayRange(from: string, to: string, localeTag: string) {
+  return `${formatDay(from, localeTag, true)} – ${formatDay(to, localeTag, true)}`;
 }
 
 function formatPct(value: number, localeTag: string) {

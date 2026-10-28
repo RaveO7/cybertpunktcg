@@ -63,30 +63,34 @@ const notesSchema = z
     return trimmed ? trimmed.slice(0, 2000) : null;
   });
 
-// Date d'achat « AAAA-MM-JJ » (jour calendaire réel, pas dans le futur) ; "" ou null efface la date.
-const purchaseDateSchema = z
-  .string({ error: m("collection.invalidPurchaseDate") })
-  .nullable()
-  .optional()
-  .transform((value, ctx) => {
-    if (value == null) return value;
-    const text = value.trim();
-    if (text === "") return null;
-    const date = new Date(`${text}T00:00:00.000Z`);
-    // Un jour d'avance toléré : la date locale de l'utilisateur peut précéder le jour UTC.
-    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-    const valid =
-      /^\d{4}-\d{2}-\d{2}$/.test(text) &&
-      !Number.isNaN(date.getTime()) &&
-      date.toISOString().slice(0, 10) === text &&
-      text >= "1990-01-01" &&
-      text <= tomorrow;
-    if (!valid) {
-      ctx.addIssue({ code: "custom", message: m("collection.invalidPurchaseDate") });
-      return z.NEVER;
-    }
-    return text;
-  });
+// Jour « AAAA-MM-JJ » (jour calendaire réel, pas dans le futur) ; "" ou null efface la date.
+function pastDaySchema(message: string) {
+  return z
+    .string({ error: message })
+    .nullable()
+    .optional()
+    .transform((value, ctx) => {
+      if (value == null) return value;
+      const text = value.trim();
+      if (text === "") return null;
+      const date = new Date(`${text}T00:00:00.000Z`);
+      // Un jour d'avance toléré : la date locale de l'utilisateur peut précéder le jour UTC.
+      const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+      const valid =
+        /^\d{4}-\d{2}-\d{2}$/.test(text) &&
+        !Number.isNaN(date.getTime()) &&
+        date.toISOString().slice(0, 10) === text &&
+        text >= "1990-01-01" &&
+        text <= tomorrow;
+      if (!valid) {
+        ctx.addIssue({ code: "custom", message });
+        return z.NEVER;
+      }
+      return text;
+    });
+}
+
+const purchaseDateSchema = pastDaySchema(m("collection.invalidPurchaseDate"));
 
 const currencySchema = z.enum(CURRENCIES, { error: m("common.invalidCurrency") }).nullable().optional();
 
@@ -195,6 +199,57 @@ export const wishlistBulkSchema = z.object({
     .min(1)
     .max(MAX_WISHLIST_BULK)
     .transform((ids) => [...new Set(ids)]),
+});
+
+/** Courbe d'investissement d'un ensemble d'exemplaires (sélection ou filtres du détail), doublons retirés. */
+export const MAX_HISTORY_ITEMS = 20_000;
+export const portfolioHistorySchema = z.object({
+  items: z
+    .array(id)
+    .min(1)
+    .max(MAX_HISTORY_ITEMS)
+    .transform((ids) => [...new Set(ids)]),
+});
+
+// Vente : prix de vente total obligatoire, frais facultatifs (0), date de vente obligatoire.
+const salePriceSchema = priceSchema.refine((value) => value != null, m("investment.invalidSalePrice"));
+const feesSchema = priceSchema.transform((value) => value ?? "0.00");
+const saleDaySchema = pastDaySchema(m("investment.invalidSaleDate"));
+const saleCurrencySchema = z.enum(CURRENCIES, { error: m("common.invalidCurrency") });
+
+/** Vente d'exemplaires d'une ligne de la collection. */
+export const saleCreateSchema = z.object({
+  itemId: id,
+  quantity: quantitySchema.refine((quantity) => quantity >= 1, m("collection.invalidQuantity")),
+  salePrice: salePriceSchema.transform((value) => value as string),
+  saleCurrency: saleCurrencySchema.default("EUR"),
+  fees: feesSchema,
+  soldAt: saleDaySchema.refine((value) => value != null, m("investment.invalidSaleDate")).transform((value) => value as string),
+});
+
+/** Correction d'une vente : seuls les champs envoyés changent. */
+export const salePatchSchema = z.object({
+  salePrice: salePriceSchema.optional().transform((value) => value ?? undefined),
+  saleCurrency: saleCurrencySchema.optional(),
+  fees: priceSchema.transform((value) => (value === null ? "0.00" : value)),
+  soldAt: saleDaySchema.refine((value) => value !== null, m("investment.invalidSaleDate")).transform((value) => value ?? undefined),
+});
+
+/** Alerte de revente : prix visé en EUR, strictement positif. */
+export const sellAlertSaveSchema = z.object({
+  printingId: id,
+  targetPrice: priceSchema
+    .refine((value) => value != null && Number(value) > 0, m("investment.invalidTargetPrice"))
+    .transform((value) => value as string),
+});
+
+/** Taux de change demandés : clés « USD:2024-03-01 » (voir rateKey), doublons retirés. */
+export const MAX_RATE_KEYS = 5000;
+export const exchangeRatesSchema = z.object({
+  keys: z
+    .array(z.string().regex(/^[A-Z]{3}:\d{4}-\d{2}-\d{2}$/))
+    .max(MAX_RATE_KEYS)
+    .transform((keys) => [...new Set(keys)]),
 });
 
 /** Clé d'un abonnement Web Push (base64url). */

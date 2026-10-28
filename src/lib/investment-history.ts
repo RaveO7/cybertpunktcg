@@ -1,10 +1,14 @@
 import { createHash } from "node:crypto";
+import type { Prisma } from "@prisma/client";
+import { loadExchangeRates } from "./exchange-rates";
+import { rateKey, toEur } from "./logic";
 import { prisma } from "./prisma";
 import {
   buildPortfolioHistory,
   buildPrintingHistory,
   extendPortfolioHistory,
   type OwnedQuantity,
+  type PortfolioHistoryOptions,
   type SnapshotRow,
   shiftUtcDay,
   type PortfolioHistoryPoint,
@@ -31,53 +35,111 @@ export type PortfolioPurchase = {
 
 type PortfolioHistory = { points: PortfolioHistoryPoint[]; days: number };
 
+/** Exemplaires d'une ligne de la collection ou d'une vente, tels que lus pour la courbe. */
+type HeldRow = {
+  printingId: string;
+  quantity: number;
+  purchasePrice: { toString(): string } | null;
+  purchaseCurrency: string | null;
+  purchasedAt: Date | null;
+  addedAt: Date;
+  soldAt: Date | null;
+};
+
+const HELD_SELECT = {
+  printingId: true,
+  quantity: true,
+  purchasePrice: true,
+  purchaseCurrency: true,
+  purchasedAt: true,
+  addedAt: true,
+} as const;
+
+function unitPrice(row: HeldRow) {
+  const price = row.purchasePrice == null ? null : Number(row.purchasePrice.toString());
+  return price != null && Number.isFinite(price) ? price : null;
+}
+
+/** Jour du taux de change d'un achat : sa date d'achat, sinon son ajout à la collection. */
+function rateDay(row: HeldRow) {
+  return utcDayKey(row.purchasedAt ?? row.addedAt);
+}
+
 export async function loadPortfolioPriceHistory(input: {
   userId: string;
   setCode?: string;
   language?: string;
+  /** Exemplaires de la collection retenus dans le détail (sélection, recherche, performance). */
+  itemIds?: string[];
 }): Promise<PortfolioHistory & { purchases: PortfolioPurchase[] }> {
+  const printingWhere =
+    input.setCode || input.language
+      ? {
+          printing: {
+            ...(input.setCode ? { set: setCodeWhere(input.setCode) } : {}),
+            ...(input.language ? { language: input.language } : {}),
+          },
+        }
+      : {};
   const items = await prisma.collectionItem.findMany({
     where: {
       userId: input.userId,
       quantity: { gt: 0 },
-      ...(input.setCode || input.language
-        ? {
-            printing: {
-              ...(input.setCode ? { set: setCodeWhere(input.setCode) } : {}),
-              ...(input.language ? { language: input.language } : {}),
-            },
-          }
-        : {}),
+      ...(input.itemIds?.length ? { id: { in: input.itemIds } } : {}),
+      ...printingWhere,
     },
-    select: { printingId: true, quantity: true, purchasePrice: true, purchaseCurrency: true, purchasedAt: true },
+    select: HELD_SELECT,
     orderBy: { addedAt: "asc" },
   });
-  const ownedList: OwnedQuantity[] = items.map((item) => {
-    const price = item.purchasePrice == null ? null : Number(item.purchasePrice.toString());
-    const eur = price != null && Number.isFinite(price) && (item.purchaseCurrency || "EUR") === "EUR";
+  // Exemplaires vendus : sur la courbe de l'achat jusqu'au jour de la vente (pas pour une liste d'exemplaires
+  // précis, qui ne porte que sur des lignes de la collection).
+  const sales = input.itemIds?.length
+    ? []
+    : await prisma.collectionSale.findMany({
+        where: { userId: input.userId, ...printingWhere },
+        select: { ...HELD_SELECT, soldAt: true },
+        orderBy: { addedAt: "asc" },
+      });
+  const held: HeldRow[] = [...items.map((item) => ({ ...item, soldAt: null })), ...sales];
+  // Achats en devise : convertis en euros au taux BCE du jour d'achat.
+  const rates = await loadExchangeRates(
+    prisma,
+    held.filter((row) => row.purchasePrice != null && row.purchaseCurrency && row.purchaseCurrency !== "EUR").map(
+      (row) => rateKey(row.purchaseCurrency as string, rateDay(row)),
+    ),
+  );
+  const ownedList: OwnedQuantity[] = held.map((row) => {
+    const price = unitPrice(row);
     return {
-      printingId: item.printingId,
-      quantity: item.quantity,
-      fromDay: item.purchasedAt ? utcDayKey(item.purchasedAt) : null,
-      cost: eur ? price : null,
+      printingId: row.printingId,
+      quantity: row.quantity,
+      fromDay: row.purchasedAt ? utcDayKey(row.purchasedAt) : null,
+      untilDay: row.soldAt ? utcDayKey(row.soldAt) : null,
+      cost: price == null ? null : toEur(price, row.purchaseCurrency || "EUR", rateDay(row), rates),
     };
   });
-  const purchases: PortfolioPurchase[] = items
+  const purchases: PortfolioPurchase[] = held
     .filter((item) => item.purchasedAt != null)
     .map((item) => {
-      const price = item.purchasePrice == null ? null : Number(item.purchasePrice.toString());
-      const unitPrice = price != null && Number.isFinite(price) ? price : null;
+      const price = unitPrice(item);
       return {
         day: utcDayKey(item.purchasedAt as Date),
         printingId: item.printingId,
         quantity: item.quantity,
-        unitPrice,
-        currency: unitPrice == null ? null : item.purchaseCurrency || "EUR",
+        unitPrice: price,
+        currency: price == null ? null : item.purchaseCurrency || "EUR",
       };
     })
     .sort((left, right) => left.day.localeCompare(right.day));
-  const printingIds = [...new Set(items.map((item) => item.printingId))];
+  const printingIds = [...new Set(held.map((item) => item.printingId))];
   if (printingIds.length === 0) return { points: [], days: 0, purchases: [] };
+
+  // Ensemble d'exemplaires : calcul complet, pas de ligne de cache par ensemble. Cartes précises : tout
+  // leur historique de prix, y compris avant l'achat (l'investi et le P&L partent de l'achat).
+  if (input.itemIds?.length) {
+    const rows = await loadSnapshotRows(printingIds, null);
+    return { ...(await computeFullHistory(printingIds, ownedList, rows, { valueBeforePurchase: true })), purchases };
+  }
 
   const scope = `${input.setCode ?? "*"}|${input.language ?? "*"}`;
   try {
@@ -149,7 +211,12 @@ async function loadWithCache(
 }
 
 /** Courbe complète sans cache. Avec un seul jour d'historique, on ajoute la veille à partir du prix précédent. */
-async function computeFullHistory(printingIds: string[], ownedList: OwnedQuantity[], allRows: SnapshotRow[]) {
+async function computeFullHistory(
+  printingIds: string[],
+  ownedList: OwnedQuantity[],
+  allRows: SnapshotRow[],
+  options: PortfolioHistoryOptions = {},
+) {
   if (new Set(allRows.map((row) => row.day)).size <= 1) {
     const prices = await prisma.price.findMany({
       where: {
@@ -167,18 +234,21 @@ async function computeFullHistory(printingIds: string[], ownedList: OwnedQuantit
       allRows.push({ printingId: price.printingId, day: priorDay, amount });
     }
   }
-  const points = buildPortfolioHistory(ownedList, allRows);
+  const points = buildPortfolioHistory(ownedList, allRows, options);
   return { points, days: points.length };
 }
 
 /** Changer cette valeur invalide tous les caches (ex. si le calcul de la courbe évolue). */
-const CACHE_VERSION = "2";
+const CACHE_VERSION = "3";
 const SETTLE_DELAY_DAYS = 2;
 
-/** Empreinte des exemplaires (quantité, date et prix d'achat) : toute modification invalide le cache. */
+/**
+ * Empreinte des exemplaires (quantité, dates d'achat et de vente, prix d'achat en euros) : toute modification
+ * invalide le cache, y compris un taux de change devenu disponible.
+ */
 function collectionFingerprint(owned: OwnedQuantity[]) {
   const entries = owned
-    .map((row) => `${row.printingId}:${row.quantity}:${row.fromDay ?? ""}:${row.cost ?? ""}`)
+    .map((row) => `${row.printingId}:${row.quantity}:${row.fromDay ?? ""}:${row.untilDay ?? ""}:${row.cost ?? ""}`)
     .sort();
   const hash = createHash("sha256").update(CACHE_VERSION);
   for (const entry of entries) hash.update(`|${entry}`);
@@ -227,49 +297,109 @@ export async function loadPrintingPriceHistory(printingId: string) {
   );
 }
 
+/** Snapshots retenus par la courbe : tendance Cardmarket, prix nuls ignorés. */
+const PRICED_SNAPSHOT: Prisma.PriceSnapshotWhereInput = {
+  kind: "trend",
+  source: { code: "cardmarket" },
+  amount: { gt: 0 },
+};
+
 /**
- * Prix de référence de chaque printing possédé au début d'une période :
- * dernier snapshot <= `day` (ou le plus ancien si `day` est nul).
+ * Prix de référence de chaque printing possédé au début d'une période de `days` jours,
+ * comptée depuis le dernier jour d'historique (comme la courbe ; aujourd'hui sans historique) :
+ * dernier snapshot <= ce jour (ou le plus ancien si `days` est nul = tout l'historique).
  * Sans snapshot assez ancien, on prend le plus ancien connu (ou le prix précédent
  * Cardmarket quand il n'existe qu'un seul jour d'historique, comme la courbe).
+ * La base renvoie un jour par carte (agrégats), jamais tout l'historique.
  */
 export async function loadReferencePrices(input: {
   userId: string;
-  day: string | null;
-}): Promise<Record<string, number>> {
+  days: number | null;
+}): Promise<{ day: string | null; prices: Record<string, number> }> {
   const items = await prisma.collectionItem.findMany({
     where: { userId: input.userId, quantity: { gt: 0 } },
     select: { printingId: true },
   });
   const printingIds = [...new Set(items.map((item) => item.printingId))];
-  if (printingIds.length === 0) return {};
-  const rows = await loadSnapshotRows(printingIds, null);
-  const reference = new Map<string, number>();
-  const earliest = new Map<string, number>();
-  const dayCount = new Map<string, number>();
-  for (const row of rows) {
-    dayCount.set(row.printingId, (dayCount.get(row.printingId) ?? 0) + 1);
-    if (!earliest.has(row.printingId)) earliest.set(row.printingId, row.amount);
-    if (input.day != null && row.day <= input.day) reference.set(row.printingId, row.amount);
-  }
-  const singleDay = printingIds.filter((id) => !reference.has(id) && (dayCount.get(id) ?? 0) <= 1);
-  if (singleDay.length > 0) {
-    const prices = await prisma.price.findMany({
-      where: {
-        kind: "trend",
-        source: { code: "cardmarket" },
-        printingId: { in: singleDay },
-        previousAmount: { not: null },
-      },
-      select: { printingId: true, previousAmount: true },
+  const owned: Prisma.PriceSnapshotWhereInput = { ...PRICED_SNAPSHOT, printingId: { in: printingIds } };
+  // Premier et dernier jour coté de chaque carte.
+  const spans =
+    printingIds.length > 0
+      ? await prisma.priceSnapshot.groupBy({ by: ["printingId"], where: owned, _min: { day: true }, _max: { day: true } })
+      : [];
+  const lastDay = spans.reduce<string | null>((max, span) => {
+    const key = span._max.day ? utcDayKey(span._max.day) : null;
+    return key != null && (max == null || key > max) ? key : max;
+  }, null);
+  const day = input.days == null ? null : utcDayKey(shiftUtcDay(lastDay ?? utcDayKey(), -input.days));
+  if (printingIds.length === 0) return { day, prices: {} };
+
+  // Dernier jour coté au plus tard le premier jour de la période.
+  const referenceDay = new Map<string, Date>();
+  if (day != null) {
+    const before = await prisma.priceSnapshot.groupBy({
+      by: ["printingId"],
+      where: { ...owned, day: { lt: shiftUtcDay(day, 1) } },
+      _max: { day: true },
     });
-    for (const price of prices) {
-      const amount = Number(price.previousAmount?.toString());
-      if (Number.isFinite(amount) && amount > 0) reference.set(price.printingId, amount);
-    }
+    for (const row of before) if (row._max.day) referenceDay.set(row.printingId, row._max.day);
   }
-  for (const [printingId, amount] of earliest) {
-    if (!reference.has(printingId)) reference.set(printingId, amount);
+  const spanById = new Map(spans.map((span) => [span.printingId, span]));
+  const earliestDay = new Map<string, Date>();
+  const singleDay: string[] = [];
+  for (const printingId of printingIds) {
+    if (referenceDay.has(printingId)) continue;
+    const first = spanById.get(printingId)?._min.day;
+    const last = spanById.get(printingId)?._max.day;
+    if (first) earliestDay.set(printingId, first);
+    if (!first || first.getTime() === last?.getTime()) singleDay.push(printingId);
   }
-  return Object.fromEntries(reference);
+
+  const [amounts, previous] = await Promise.all([
+    snapshotAmounts(new Map([...referenceDay, ...earliestDay])),
+    singleDay.length > 0
+      ? prisma.price.findMany({
+          where: {
+            kind: "trend",
+            source: { code: "cardmarket" },
+            printingId: { in: singleDay },
+            previousAmount: { not: null },
+          },
+          select: { printingId: true, previousAmount: true },
+        })
+      : [],
+  ]);
+  const reference = new Map<string, number>();
+  for (const printingId of referenceDay.keys()) {
+    const amount = amounts.get(printingId);
+    if (amount != null) reference.set(printingId, amount);
+  }
+  for (const price of previous) {
+    const amount = Number(price.previousAmount?.toString());
+    if (Number.isFinite(amount) && amount > 0) reference.set(price.printingId, amount);
+  }
+  for (const printingId of earliestDay.keys()) {
+    const amount = amounts.get(printingId);
+    if (amount != null && !reference.has(printingId)) reference.set(printingId, amount);
+  }
+  return { day, prices: Object.fromEntries(reference) };
+}
+
+/** Prix d'un jour précis par carte, en une requête (les cartes d'un même jour sont regroupées). */
+async function snapshotAmounts(dayByPrinting: ReadonlyMap<string, Date>) {
+  const byDay = new Map<number, string[]>();
+  for (const [printingId, day] of dayByPrinting) {
+    const group = byDay.get(day.getTime());
+    if (group) group.push(printingId);
+    else byDay.set(day.getTime(), [printingId]);
+  }
+  if (byDay.size === 0) return new Map<string, number>();
+  const rows = await prisma.priceSnapshot.findMany({
+    where: {
+      ...PRICED_SNAPSHOT,
+      OR: [...byDay].map(([time, ids]) => ({ day: new Date(time), printingId: { in: ids } })),
+    },
+    select: { printingId: true, amount: true },
+  });
+  return new Map(rows.map((row) => [row.printingId, Number(row.amount.toString())]));
 }

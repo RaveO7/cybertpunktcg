@@ -22,7 +22,8 @@ import {
 } from "./cardmarket-sealed";
 import { shiftUtcDay, utcDay, utcDayKey } from "./price-history";
 import { reportError } from "./monitoring";
-import type { PushReport } from "./push";
+import type { AlertKind, PushReport } from "./push";
+import { evaluateSellAlerts } from "./sell-alerts";
 import { evaluateWishlistAlerts } from "./wishlist";
 
 const DOWNLOAD_BASE = "https://downloads.s3.cardmarket.com/productCatalog";
@@ -272,18 +273,24 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
 
   await prisma.priceSource.update({ where: { id: source.id }, data: { guideCreatedAt: guideDate } });
 
-  // Nouveaux prix : signale les cartes souhaitées passées sous leur prix cible.
+  // Nouveaux prix : signale les cartes souhaitées passées sous leur prix cible, et les cartes possédées
+  // arrivées à leur prix de revente.
   const { triggeredItems, ...wishlistAlerts } = await evaluateWishlistAlerts(prisma);
+  const { triggeredItems: triggeredSellItems, ...sellAlerts } = await evaluateSellAlerts(prisma);
   // Notifications push des nouvelles alertes : un échec ne fait jamais échouer l'import.
-  let pushNotifications: PushReport | { error: true } | null = null;
-  try {
-    const { notifyPriceAlerts } = await import("./push");
-    pushNotifications = await notifyPriceAlerts(prisma, triggeredItems, { log: ctx.log });
-    if (pushNotifications.failed) await reportError("price-alerts-push", `${pushNotifications.failed} envoi(s) en échec`);
-  } catch (error) {
-    pushNotifications = { error: true };
-    await reportError("price-alerts-push", error);
-  }
+  const notify = async (alerts: typeof triggeredItems, kind: AlertKind): Promise<PushReport | { error: true }> => {
+    try {
+      const { notifyPriceAlerts } = await import("./push");
+      const sent = await notifyPriceAlerts(prisma, alerts, { log: ctx.log, kind });
+      if (sent.failed) await reportError(`${kind}-alerts-push`, `${sent.failed} envoi(s) en échec`);
+      return sent;
+    } catch (error) {
+      await reportError(`${kind}-alerts-push`, error);
+      return { error: true };
+    }
+  };
+  const pushNotifications = await notify(triggeredItems, "wishlist");
+  const sellPushNotifications = await notify(triggeredSellItems, "sell");
 
   return {
     status: "imported",
@@ -307,6 +314,8 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
       baselinesWritten,
       wishlistAlerts,
       pushNotifications,
+      sellAlerts,
+      sellPushNotifications,
       expansions: report.expansions.map((entry) => ({
         expansion: entry.key,
         set: entry.setCode,

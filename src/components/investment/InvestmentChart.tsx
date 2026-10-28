@@ -2,14 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import type { ChartPoint, ChartPurchase } from "@/components/PriceChart";
+import type { ChartPoint } from "@/components/PriceChart";
+import type { ChartRange } from "@/components/investment/chart-range";
 import { ScreenError, ScreenSkeleton, SkeletonBlock } from "@/components/site/ScreenSkeleton";
 import type { Translator } from "@/i18n/translator";
-
-// Durée affichée par le graphique de valeur, et fenêtre de dates correspondante.
-export type ChartRange = "1d" | "1w" | "1m" | "1y" | "all";
-
-const CHART_RANGE_DAYS: Record<ChartRange, number | null> = { "1d": 1, "1w": 7, "1m": 30, "1y": 365, all: null };
 
 function chartRangeOptions(t: Translator): { value: ChartRange; label: string }[] {
   return [
@@ -19,40 +15,6 @@ function chartRangeOptions(t: Translator): { value: ChartRange; label: string }[
     { value: "1y", label: t("investment.range1y") },
     { value: "all", label: t("investment.rangeAll") },
   ];
-}
-
-/** Premier jour de la fenêtre, compté depuis le dernier point connu (nul = tout l’historique). */
-export function chartRangeStart(points: ChartPoint[], range: ChartRange) {
-  const days = CHART_RANGE_DAYS[range];
-  if (days == null) return null;
-  const last = new Date(`${points.length > 0 ? points[points.length - 1].day : new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
-  last.setUTCDate(last.getUTCDate() - days);
-  return last.toISOString().slice(0, 10);
-}
-
-/** Garde les points dont le jour est dans la fenêtre. */
-export function filterChartRange(points: ChartPoint[], range: ChartRange) {
-  const cutoff = chartRangeStart(points, range);
-  if (cutoff == null) return points;
-  return points.filter((point) => point.day >= cutoff);
-}
-
-/**
- * Place chaque achat sur le premier point de la courbe à sa date ou après (le dernier point s'il est plus
- * récent que l'historique). Les achats antérieurs au début de la durée choisie sont ignorés ; en « Total »,
- * ceux d'avant le premier jour d'historique vont sur le premier point.
- */
-export function attachPurchases(points: ChartPoint[], purchases: ChartPurchase[], rangeStart: string | null) {
-  if (points.length === 0 || purchases.length === 0) return points;
-  const byIndex = new Map<number, ChartPurchase[]>();
-  for (const purchase of purchases) {
-    if (rangeStart != null && purchase.day < rangeStart) continue;
-    let index = points.findIndex((point) => point.day >= purchase.day);
-    if (index === -1) index = points.length - 1;
-    byIndex.set(index, [...(byIndex.get(index) ?? []), purchase]);
-  }
-  if (byIndex.size === 0) return points;
-  return points.map((point, index) => (byIndex.has(index) ? { ...point, purchases: byIndex.get(index) } : point));
 }
 
 function ChartLoading() {
@@ -69,6 +31,11 @@ const PriceChart = dynamic(() => import("@/components/PriceChart").then((module)
   loading: ChartLoading,
 });
 
+/** Libellé d'une durée (« 1 mois »). */
+export function chartRangeLabel(range: ChartRange, t: Translator) {
+  return chartRangeOptions(t).find((option) => option.value === range)?.label ?? range;
+}
+
 /** Graphique de la valeur marché, avec le choix de la durée. */
 export function InvestmentChart({
   chartRange,
@@ -77,6 +44,8 @@ export function InvestmentChart({
   chartLoaded,
   rangedChartPoints,
   onRetry,
+  referenceError,
+  onRetryReference,
 }: {
   chartRange: ChartRange;
   setChartRange: (range: ChartRange) => void;
@@ -84,6 +53,9 @@ export function InvestmentChart({
   chartLoaded: boolean;
   rangedChartPoints: ChartPoint[];
   onRetry: () => void;
+  /** Prix de début de période introuvables : les variations du marché ne sont pas affichées. */
+  referenceError: boolean;
+  onRetryReference: () => void;
 }) {
   const t = useTranslations();
   return (
@@ -107,6 +79,14 @@ export function InvestmentChart({
           );
         })}
       </div>
+      {referenceError ? (
+        <p role="alert" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-danger">
+          {t("investment.referenceError")}
+          <button type="button" className="text-cyan hover:underline" onClick={onRetryReference}>
+            {t("errors.retry")}
+          </button>
+        </p>
+      ) : null}
       {chartStatus === "loading" && !chartLoaded ? (
         <ChartLoading />
       ) : chartStatus === "error" ? (

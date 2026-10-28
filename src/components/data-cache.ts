@@ -27,8 +27,13 @@ function subscribe(listener: () => void) {
   };
 }
 
-export function readCached<T>(url: string): T | undefined {
-  return store.get(url) as T | undefined;
+/** Clé de cache d'une requête : l'URL, suivie du corps pour un POST. */
+function requestKey(url: string, body?: string) {
+  return body == null ? url : `${url}\n${body}`;
+}
+
+export function readCached<T>(url: string, body?: string): T | undefined {
+  return store.get(requestKey(url, body)) as T | undefined;
 }
 
 function putEntry(url: string, value: unknown) {
@@ -50,23 +55,31 @@ export function clearDataCache() {
   notify();
 }
 
-/** GET JSON mis en cache ; les appels simultanés à la même URL partagent la même requête. */
-export function fetchCached<T>(url: string): Promise<T> {
-  const pending = inflight.get(url);
+/**
+ * GET JSON mis en cache ; les appels simultanés à la même URL partagent la même requête.
+ * `body` (JSON) : lecture en POST, pour des paramètres trop longs pour l'URL ; mise en cache par URL et corps.
+ */
+export function fetchCached<T>(url: string, body?: string): Promise<T> {
+  const key = requestKey(url, body);
+  const pending = inflight.get(key);
   if (pending) return pending as Promise<T>;
   const startedAt = generation;
-  const editsAtStart = edits.get(url) ?? 0;
-  const request = fetch(url, { cache: "no-store" })
+  const editsAtStart = edits.get(key) ?? 0;
+  const init: RequestInit =
+    body == null
+      ? { cache: "no-store" }
+      : { method: "POST", headers: { "Content-Type": "application/json" }, body, cache: "no-store" };
+  const request = fetch(url, init)
     .then(async (response) => {
       if (!response.ok) throw new Error(String(response.status));
-      const body = (await response.json()) as T;
-      if (startedAt === generation && editsAtStart === (edits.get(url) ?? 0)) putEntry(url, body);
-      return body;
+      const result = (await response.json()) as T;
+      if (startedAt === generation && editsAtStart === (edits.get(key) ?? 0)) putEntry(key, result);
+      return result;
     })
     .finally(() => {
-      if (inflight.get(url) === request) inflight.delete(url);
+      if (inflight.get(key) === request) inflight.delete(key);
     });
-  inflight.set(url, request);
+  inflight.set(key, request);
   return request;
 }
 

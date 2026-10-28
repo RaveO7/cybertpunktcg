@@ -27,6 +27,7 @@ import type {
   Ownership,
   PrintingDTO,
   Progress,
+  SaleDTO,
   SetDTO,
   SortKey,
 } from "./types";
@@ -832,6 +833,16 @@ export function printingTitle(card: CardDTO | undefined, printing: PrintingDTO) 
   return printing.localizedName || card?.canonicalName || card?.name || "Carte";
 }
 
+/** Autres éditions d'une carte (fiche carte), par extension puis par numéro. */
+export function siblingPrintings(printings: PrintingDTO[], printing: Pick<PrintingDTO, "id" | "cardId">) {
+  return printings
+    .filter((entry) => entry.cardId === printing.cardId && entry.id !== printing.id)
+    .sort(
+      (a, b) =>
+        frenchOrder.compare(a.setName, b.setName) || frenchNumericOrder.compare(a.collectorNumber, b.collectorNumber),
+    );
+}
+
 /** Prefers official printed rules in the UI locale, falling back to the current printing / English card text. */
 export function resolveRulesText(
   card: CardDTO,
@@ -937,19 +948,80 @@ export function marketValue(printings: PrintingDTO[], agg: Map<string, Ownership
   };
 }
 
+/** Moins d'un demi-centime : le montant s'affiche « 0,00 » et compte pour nul (ni gain, ni perte, ni variation). */
+export const MONEY_EPSILON = 0.005;
+
+/** Signe d'un montant en euros : 0 quand il s'arrondit à zéro centime. */
+export function amountSign(value: number): -1 | 0 | 1 {
+  if (Math.abs(value) < MONEY_EPSILON) return 0;
+  return value > 0 ? 1 : -1;
+}
+
 export type PriceMovement = "up" | "down" | "flat" | "none";
 
 export function priceMovement(current: number | null, previous: number | null): PriceMovement {
   if (current == null || previous == null || !Number.isFinite(current) || !Number.isFinite(previous)) return "none";
-  const delta = current - previous;
-  if (Math.abs(delta) < 0.005) return "flat";
-  return delta > 0 ? "up" : "down";
+  const sign = amountSign(current - previous);
+  if (sign === 0) return "flat";
+  return sign > 0 ? "up" : "down";
 }
 
 /** Vrai quand le prix du marché est au niveau du prix cible de la liste de souhaits ou en dessous. */
 export function wishlistTargetReached(target: number | null, price: number | null) {
   if (target == null || price == null || !Number.isFinite(target) || !Number.isFinite(price) || price <= 0) return false;
   return Math.round(price * 100) <= Math.round(target * 100);
+}
+
+/** Vrai quand le prix du marché atteint le prix de revente visé ou le dépasse (alerte de revente). */
+export function sellTargetReached(target: number | null, price: number | null) {
+  if (target == null || price == null || !Number.isFinite(target) || !Number.isFinite(price) || price <= 0 || target <= 0) {
+    return false;
+  }
+  return Math.round(price * 100) >= Math.round(target * 100);
+}
+
+/** Taux de change d'une devise un jour donné, tels qu'envoyés par /api/investment/rates : unités pour 1 EUR. */
+export type ExchangeRates = Readonly<Record<string, number>>;
+
+/** Clé d'un taux de change : « USD:2024-03-01 ». */
+export function rateKey(currency: string, day: string) {
+  return `${currency}:${day}`;
+}
+
+export function parseRateKey(key: string): { currency: string; day: string } | null {
+  const match = /^([A-Z]{3}):(\d{4}-\d{2}-\d{2})$/.exec(key);
+  return match ? { currency: match[1], day: match[2] } : null;
+}
+
+/** Jour du taux d'un achat : sa date d'achat, sinon le jour où la ligne a été ajoutée. */
+export function purchaseRateDay(line: { purchasedAt: string | null; addedAt: string }) {
+  return line.purchasedAt ?? line.addedAt.slice(0, 10);
+}
+
+/**
+ * Taux à demander pour la page Investissement : achats en devise des lignes et des ventes (jour d'achat,
+ * sinon d'ajout), ventes en devise (jour de la vente). Clés triées, sans doublon.
+ */
+export function investmentRateKeys(items: CollectionItemDTO[], sales: SaleDTO[]) {
+  const keys = new Set<string>();
+  const addPurchase = (line: { purchasePrice: string | null; purchaseCurrency: string | null; purchasedAt: string | null; addedAt: string }) => {
+    if (line.purchasePrice != null && line.purchaseCurrency && line.purchaseCurrency !== "EUR") {
+      keys.add(rateKey(line.purchaseCurrency, purchaseRateDay(line)));
+    }
+  };
+  for (const item of items) if (item.quantity > 0) addPurchase(item);
+  for (const sale of sales) {
+    addPurchase(sale);
+    if (sale.saleCurrency !== "EUR") keys.add(rateKey(sale.saleCurrency, sale.soldAt));
+  }
+  return [...keys].sort();
+}
+
+/** Montant en euros : tel quel en EUR, sinon converti au taux BCE du jour ; null sans taux connu. */
+export function toEur(amount: number, currency: string | null, day: string, rates: ExchangeRates): number | null {
+  if (!currency || currency === "EUR") return amount;
+  const rate = rates[rateKey(currency, day)];
+  return rate != null && Number.isFinite(rate) && rate > 0 ? amount / rate : null;
 }
 
 export type InvestmentPerformance = "all" | "profit" | "loss" | "flat" | "unknown" | "rising" | "falling";
@@ -973,10 +1045,50 @@ export type InvestmentLine = {
   purchaseUnit: number | null;
   purchaseCurrency: string | null;
   purchaseTotal: number | null;
+  /**
+   * Prix d'achat total en euros : tel quel en EUR, sinon converti au taux BCE du jour d'achat (ou d'ajout).
+   * null sans prix d'achat, ou pour un achat en devise dont le taux n'est pas connu.
+   */
+  costEur: number | null;
   /** Date d'achat « AAAA-MM-JJ », null = inconnue. */
   purchasedAt: string | null;
   profit: number | null;
+  /** Base du P&L (P&L = marché − base) : prix d'achat total en euros. */
+  profitBasis: number | null;
   marketDelta: PriceMovement;
+};
+
+/** Achats d'une même carte (même édition) regroupés : une ligne du portefeuille. */
+export type InvestmentPosition = {
+  printingId: string;
+  cardId: string;
+  title: string;
+  setCode: string;
+  setName: string;
+  collectorNumber: string;
+  language: string;
+  rarity: string | null;
+  imagePath: string | null;
+  quantity: number;
+  /** États distincts des achats, dans l'ordre des achats. */
+  conditionCodes: string[];
+  marketUnit: number | null;
+  previousMarketUnit: number | null;
+  marketTotal: number | null;
+  marketDelta: PriceMovement;
+  /** Somme des prix d'achat ; null si aucun prix ou si les devises diffèrent. */
+  purchaseTotal: number | null;
+  purchaseCurrency: string | null;
+  /** Prix de revient unitaire : prix moyen payé par exemplaire. */
+  purchaseUnit: number | null;
+  /** Prix d'achat total en euros des achats convertibles (devises comprises) ; null s'il n'y en a aucun. */
+  costEur: number | null;
+  profit: number | null;
+  profitBasis: number | null;
+  /** Exemplaires comptés dans le P&L (ceux qui ont un prix d'achat connu en euros). */
+  profitQuantity: number;
+  /** Achats, du plus ancien au plus récent ; ceux sans date à la fin. */
+  lines: InvestmentLine[];
 };
 
 export type SetInvestment = {
@@ -992,6 +1104,8 @@ export type SetInvestment = {
   investedEur: number;
   investedLines: number;
   profitEur: number | null;
+  /** Base du P&L (prix d'achat des lignes qui en ont un) : sert au % affiché. */
+  profitBasis: number | null;
   profitLines: number;
 };
 
@@ -1002,9 +1116,13 @@ export type InvestmentSummary = {
   marketDeltaAmount: number | null;
   investedEur: number;
   profitEur: number | null;
+  /** Prix d'achat des exemplaires comptés dans le P&L (base du % de rendement). */
+  profitBasis: number | null;
   copies: number;
   pricedCopies: number;
   trackedProfitCopies: number;
+  /** Achats en devise sans taux de change connu : exclus de l'investi et du P&L. */
+  unconvertedLines: number;
 };
 
 function moneyOrNull(value: string | null | undefined) {
@@ -1013,10 +1131,15 @@ function moneyOrNull(value: string | null | undefined) {
   return Number.isFinite(amount) ? amount : null;
 }
 
+/**
+ * Lignes du portefeuille. Un achat en devise est converti en euros avec `rates` (taux BCE du jour d'achat,
+ * sinon du jour d'ajout) ; sans taux, il n'a ni coût en euros ni P&L.
+ */
 export function buildInvestmentLines(
   items: CollectionItemDTO[],
   printings: PrintingDTO[],
   cards: Map<string, CardDTO>,
+  rates: ExchangeRates = {},
 ): InvestmentLine[] {
   const printingById = new Map(printings.map((printing) => [printing.id, printing]));
   const lines: InvestmentLine[] = [];
@@ -1032,8 +1155,8 @@ export function buildInvestmentLines(
     const purchaseCurrency = item.purchaseCurrency || (purchaseUnit == null ? null : "EUR");
     const marketTotal = marketUnit == null ? null : marketUnit * item.quantity;
     const purchaseTotal = purchaseUnit == null ? null : purchaseUnit * item.quantity;
-    const profit =
-      marketTotal == null || purchaseTotal == null || purchaseCurrency !== "EUR" ? null : marketTotal - purchaseTotal;
+    const costEur = purchaseTotal == null ? null : toEur(purchaseTotal, purchaseCurrency, purchaseRateDay(item), rates);
+    const profit = marketTotal == null || costEur == null ? null : marketTotal - costEur;
     lines.push({
       itemId: item.id,
       printingId: printing.id,
@@ -1053,8 +1176,10 @@ export function buildInvestmentLines(
       purchaseUnit,
       purchaseCurrency,
       purchaseTotal,
+      costEur,
       purchasedAt: item.purchasedAt ?? null,
       profit,
+      profitBasis: profit == null ? null : costEur,
       marketDelta: priceMovement(marketUnit, previousMarketUnit),
     });
   }
@@ -1067,39 +1192,96 @@ export function buildInvestmentLines(
 }
 
 /**
- * Ramène chaque ligne à une période : la variation marché part du prix de référence
- * au début de la période, et le P&L aussi — sauf pour une ligne achetée pendant la
- * période, dont le P&L reste calculé depuis son prix d'achat. Le jour d'achat est la
- * date d'achat saisie, sinon la date d'ajout (`addedAtById`). Seules les lignes avec
- * un prix d'achat ont un P&L.
- * `startDay` nul = toute la période (P&L d'achat inchangé).
+ * Ramène la variation du marché à une période : elle part du prix de référence au début
+ * de la période (sans prix de référence : pas de variation). Le P&L ne dépend pas de la
+ * période : il reste calculé depuis le prix d'achat.
  */
 export function applyInvestmentPeriod(
   lines: InvestmentLine[],
   referencePrices: Readonly<Record<string, number>>,
-  startDay: string | null,
-  addedAtById: ReadonlyMap<string, string>,
 ): InvestmentLine[] {
   return lines.map((line) => {
     const reference = referencePrices[line.printingId];
     const previousMarketUnit = reference != null && Number.isFinite(reference) ? reference : null;
-    let profit = line.profit;
-    // Pas de prix d'achat (EUR) = pas de P&L, quelle que soit la période.
-    if (startDay != null && line.profit != null) {
-      const acquiredDay = line.purchasedAt ?? addedAtById.get(line.itemId)?.slice(0, 10);
-      const acquiredDuringPeriod = acquiredDay != null && acquiredDay > startDay;
-      if (!acquiredDuringPeriod) {
-        profit =
-          line.marketUnit == null || previousMarketUnit == null
-            ? null
-            : (line.marketUnit - previousMarketUnit) * line.quantity;
-      }
-    }
     return {
       ...line,
       previousMarketUnit,
-      profit,
       marketDelta: priceMovement(line.marketUnit, previousMarketUnit),
+    };
+  });
+}
+
+/**
+ * Regroupe les achats par carte (même édition) : une position par carte, dans l'ordre des lignes.
+ * Le P&L ne compte que les achats qui en ont un ; le prix d'achat total, que si une seule devise.
+ */
+export function groupInvestmentPositions(lines: InvestmentLine[]): InvestmentPosition[] {
+  const byPrinting = new Map<string, InvestmentLine[]>();
+  for (const line of lines) {
+    const group = byPrinting.get(line.printingId);
+    if (group) group.push(line);
+    else byPrinting.set(line.printingId, [line]);
+  }
+  return [...byPrinting.values()].map((group) => {
+    const sorted = [...group].sort(
+      (left, right) =>
+        (left.purchasedAt == null ? 1 : 0) - (right.purchasedAt == null ? 1 : 0) ||
+        (left.purchasedAt ?? "").localeCompare(right.purchasedAt ?? "") ||
+        left.itemId.localeCompare(right.itemId),
+    );
+    const first = sorted[0];
+    const currencies = new Set(sorted.filter((line) => line.purchaseTotal != null).map((line) => line.purchaseCurrency));
+    const purchaseCurrency = currencies.size === 1 ? [...currencies][0] : null;
+    let quantity = 0;
+    let purchaseTotal = 0;
+    let purchasedQuantity = 0;
+    let costEur = 0;
+    let costedQuantity = 0;
+    let profit = 0;
+    let profitBasis = 0;
+    let profitQuantity = 0;
+    for (const line of sorted) {
+      quantity += line.quantity;
+      if (purchaseCurrency != null && line.purchaseTotal != null) {
+        purchaseTotal += line.purchaseTotal;
+        purchasedQuantity += line.quantity;
+      }
+      if (line.costEur != null) {
+        costEur += line.costEur;
+        costedQuantity += line.quantity;
+      }
+      if (line.profit != null) {
+        profit += line.profit;
+        profitBasis += line.profitBasis ?? 0;
+        profitQuantity += line.quantity;
+      }
+    }
+    // Même carte : même prix de marché et même prix de référence pour tous les achats.
+    const marketUnit = first.marketUnit;
+    return {
+      printingId: first.printingId,
+      cardId: first.cardId,
+      title: first.title,
+      setCode: first.setCode,
+      setName: first.setName,
+      collectorNumber: first.collectorNumber,
+      language: first.language,
+      rarity: first.rarity,
+      imagePath: first.imagePath,
+      quantity,
+      conditionCodes: [...new Set(sorted.map((line) => line.conditionCode))],
+      marketUnit,
+      previousMarketUnit: first.previousMarketUnit,
+      marketTotal: marketUnit == null ? null : marketUnit * quantity,
+      marketDelta: first.marketDelta,
+      purchaseTotal: purchasedQuantity > 0 ? purchaseTotal : null,
+      purchaseCurrency: purchasedQuantity > 0 ? purchaseCurrency : null,
+      purchaseUnit: purchasedQuantity > 0 ? purchaseTotal / purchasedQuantity : null,
+      costEur: costedQuantity > 0 ? costEur : null,
+      profit: profitQuantity > 0 ? profit : null,
+      profitBasis: profitQuantity > 0 ? profitBasis : null,
+      profitQuantity,
+      lines: sorted,
     };
   });
 }
@@ -1110,10 +1292,12 @@ export function summarizeInvestment(lines: InvestmentLine[]): InvestmentSummary 
   let compared = false;
   let investedEur = 0;
   let profitEur = 0;
+  let profitBasis = 0;
   let hasProfit = false;
   let copies = 0;
   let pricedCopies = 0;
   let trackedProfitCopies = 0;
+  let unconvertedLines = 0;
   for (const line of lines) {
     copies += line.quantity;
     if (line.marketTotal != null) {
@@ -1126,11 +1310,11 @@ export function summarizeInvestment(lines: InvestmentLine[]): InvestmentSummary 
         previousMarketTotal += line.marketTotal;
       }
     }
-    if (line.purchaseTotal != null && line.purchaseCurrency === "EUR") {
-      investedEur += line.purchaseTotal;
-    }
+    if (line.costEur != null) investedEur += line.costEur;
+    else if (line.purchaseTotal != null) unconvertedLines += 1;
     if (line.profit != null) {
       profitEur += line.profit;
+      profitBasis += line.profitBasis ?? 0;
       hasProfit = true;
       trackedProfitCopies += line.quantity;
     }
@@ -1143,9 +1327,11 @@ export function summarizeInvestment(lines: InvestmentLine[]): InvestmentSummary 
     marketDeltaAmount: previous == null ? null : marketTotal - previous,
     investedEur,
     profitEur: hasProfit ? profitEur : null,
+    profitBasis: hasProfit ? profitBasis : null,
     copies,
     pricedCopies,
     trackedProfitCopies,
+    unconvertedLines,
   };
 }
 
@@ -1168,6 +1354,7 @@ export function investmentBySet(lines: InvestmentLine[], sets: SetDTO[]): SetInv
       investedEur: 0,
       investedLines: 0,
       profitEur: null,
+      profitBasis: null,
       profitLines: 0,
       compared: false,
       previousAcc: 0,
@@ -1189,6 +1376,7 @@ export function investmentBySet(lines: InvestmentLine[], sets: SetDTO[]): SetInv
         investedEur: 0,
         investedLines: 0,
         profitEur: null,
+        profitBasis: null,
         profitLines: 0,
         compared: false,
         previousAcc: 0,
@@ -1207,12 +1395,13 @@ export function investmentBySet(lines: InvestmentLine[], sets: SetDTO[]): SetInv
         entry.previousAcc += line.marketTotal;
       }
     }
-    if (line.purchaseTotal != null && line.purchaseCurrency === "EUR") {
-      entry.investedEur += line.purchaseTotal;
+    if (line.costEur != null) {
+      entry.investedEur += line.costEur;
       entry.investedLines += 1;
     }
     if (line.profit != null) {
       entry.profitEur = (entry.profitEur ?? 0) + line.profit;
+      entry.profitBasis = (entry.profitBasis ?? 0) + (line.profitBasis ?? 0);
       entry.profitLines += 1;
     }
   }
@@ -1233,6 +1422,7 @@ export function investmentBySet(lines: InvestmentLine[], sets: SetDTO[]): SetInv
         investedEur: entry.investedEur,
         investedLines: entry.investedLines,
         profitEur: entry.profitEur,
+        profitBasis: entry.profitBasis,
         profitLines: entry.profitLines,
       };
     })
@@ -1252,9 +1442,9 @@ export function filterInvestmentLines(
   return lines.filter((line) => {
     if (!matchesSetFilter(line.setCode, filters.set)) return false;
     if (filters.language && line.language !== filters.language) return false;
-    if (filters.performance === "profit" && !(line.profit != null && line.profit > 0.004)) return false;
-    if (filters.performance === "loss" && !(line.profit != null && line.profit < -0.004)) return false;
-    if (filters.performance === "flat" && !(line.profit != null && Math.abs(line.profit) <= 0.004)) return false;
+    if (filters.performance === "profit" && !(line.profit != null && amountSign(line.profit) > 0)) return false;
+    if (filters.performance === "loss" && !(line.profit != null && amountSign(line.profit) < 0)) return false;
+    if (filters.performance === "flat" && !(line.profit != null && amountSign(line.profit) === 0)) return false;
     if (filters.performance === "unknown" && line.profit != null) return false;
     if (filters.performance === "rising" && line.marketDelta !== "up") return false;
     if (filters.performance === "falling" && line.marketDelta !== "down") return false;
@@ -1266,6 +1456,203 @@ export function filterInvestmentLines(
     }
     return true;
   });
+}
+
+/** Vente du portefeuille : exemplaires vendus, montants en euros et plus-value réalisée. */
+export type SaleLine = {
+  saleId: string;
+  printingId: string;
+  cardId: string;
+  title: string;
+  setCode: string;
+  setName: string;
+  collectorNumber: string;
+  language: string;
+  rarity: string | null;
+  imagePath: string | null;
+  conditionCode: string;
+  quantity: number;
+  /** « AAAA-MM-JJ ». */
+  soldAt: string;
+  purchasedAt: string | null;
+  /** Prix de vente total et frais, dans `saleCurrency`. */
+  salePrice: number;
+  fees: number;
+  saleCurrency: string;
+  /** Prix d'achat unitaire dans `purchaseCurrency`, null = inconnu. */
+  purchaseUnit: number | null;
+  purchaseCurrency: string | null;
+  /** Vente nette des frais, en euros au taux du jour de la vente ; null sans taux. */
+  proceedsEur: number | null;
+  /** Prix de revient en euros des exemplaires vendus (taux du jour d'achat) ; null sans prix d'achat ou sans taux. */
+  costEur: number | null;
+  /** Plus-value réalisée : vente nette moins prix de revient ; null si l'un des deux manque. */
+  realized: number | null;
+};
+
+export type SalesSummary = {
+  sales: number;
+  copies: number;
+  /** Ventes nettes des frais, en euros (ventes convertibles). */
+  proceedsEur: number;
+  /** Plus-value réalisée des ventes dont le prix de revient est connu ; null s'il n'y en a aucune. */
+  realized: number | null;
+  /** Prix de revient de ces ventes : base du % de rendement. */
+  realizedBasis: number | null;
+  /** Ventes sans prix de revient connu (prix d'achat absent ou taux manquant). */
+  unknownCost: number;
+};
+
+/** Ventes du compte, de la plus récente à la plus ancienne. Une vente d'une carte absente du catalogue est ignorée. */
+export function buildSaleLines(
+  sales: SaleDTO[],
+  printings: PrintingDTO[],
+  cards: Map<string, CardDTO>,
+  rates: ExchangeRates = {},
+): SaleLine[] {
+  const printingById = new Map(printings.map((printing) => [printing.id, printing]));
+  const lines: SaleLine[] = [];
+  for (const sale of sales) {
+    const printing = printingById.get(sale.printingId);
+    const card = printing ? cards.get(printing.cardId) : undefined;
+    if (!printing || !card) continue;
+    const salePrice = moneyOrNull(sale.salePrice) ?? 0;
+    const fees = moneyOrNull(sale.fees) ?? 0;
+    const purchaseUnit = moneyOrNull(sale.purchasePrice);
+    const purchaseCurrency = sale.purchaseCurrency || (purchaseUnit == null ? null : "EUR");
+    const proceedsEur = toEur(salePrice - fees, sale.saleCurrency, sale.soldAt, rates);
+    const costEur =
+      purchaseUnit == null ? null : toEur(purchaseUnit * sale.quantity, purchaseCurrency, purchaseRateDay(sale), rates);
+    lines.push({
+      saleId: sale.id,
+      printingId: printing.id,
+      cardId: card.id,
+      title: printingTitle(card, printing),
+      setCode: printing.setCode,
+      setName: printing.setName,
+      collectorNumber: printing.collectorNumber,
+      language: printing.language,
+      rarity: printing.rarity,
+      imagePath: printing.imagePath,
+      conditionCode: sale.conditionCode,
+      quantity: sale.quantity,
+      soldAt: sale.soldAt,
+      purchasedAt: sale.purchasedAt,
+      salePrice,
+      fees,
+      saleCurrency: sale.saleCurrency,
+      purchaseUnit,
+      purchaseCurrency,
+      proceedsEur,
+      costEur,
+      realized: proceedsEur == null || costEur == null ? null : proceedsEur - costEur,
+    });
+  }
+  return lines.sort((left, right) => right.soldAt.localeCompare(left.soldAt) || left.saleId.localeCompare(right.saleId));
+}
+
+export function summarizeSales(lines: SaleLine[]): SalesSummary {
+  let copies = 0;
+  let proceedsEur = 0;
+  let realized = 0;
+  let realizedBasis = 0;
+  let hasRealized = false;
+  let unknownCost = 0;
+  for (const line of lines) {
+    copies += line.quantity;
+    if (line.proceedsEur != null) proceedsEur += line.proceedsEur;
+    if (line.realized != null) {
+      realized += line.realized;
+      realizedBasis += line.costEur ?? 0;
+      hasRealized = true;
+    } else {
+      unknownCost += 1;
+    }
+  }
+  return {
+    sales: lines.length,
+    copies,
+    proceedsEur,
+    realized: hasRealized ? realized : null,
+    realizedBasis: hasRealized ? realizedBasis : null,
+    unknownCost,
+  };
+}
+
+/** Ventes retenues par les filtres de la page (extension, langue, recherche) ; la performance ne s'y applique pas. */
+export function filterSaleLines(lines: SaleLine[], filters: { set: string; language: string; q: string }) {
+  const query = normalizeText(filters.q);
+  return lines.filter((line) => {
+    if (!matchesSetFilter(line.setCode, filters.set)) return false;
+    if (filters.language && line.language !== filters.language) return false;
+    if (query) {
+      const hay = normalizeText(`${line.title} ${line.setName} ${line.collectorNumber} ${line.rarity ?? ""} ${line.conditionCode}`);
+      if (!hay.includes(query)) return false;
+    }
+    return true;
+  });
+}
+
+/** Carte dont la valeur a bougé sur la période : variation en euros (quantité comprise) et en %. */
+export type InvestmentMover = { position: InvestmentPosition; amount: number; percent: number | null };
+
+/**
+ * Plus fortes hausses et baisses de valeur sur la période choisie, en euros (quantité comprise) :
+ * au plus `limit` de chaque côté. Une carte sans prix de référence ou stable n'y figure pas.
+ */
+export function topMovers(positions: InvestmentPosition[], limit = 5) {
+  const moving: InvestmentMover[] = [];
+  for (const position of positions) {
+    if (position.marketUnit == null || position.previousMarketUnit == null) continue;
+    const amount = (position.marketUnit - position.previousMarketUnit) * position.quantity;
+    if (amountSign(amount) === 0) continue;
+    const percent =
+      position.previousMarketUnit > 0
+        ? ((position.marketUnit - position.previousMarketUnit) / position.previousMarketUnit) * 100
+        : null;
+    moving.push({ position, amount, percent });
+  }
+  const byTitle = (left: InvestmentMover, right: InvestmentMover) => frenchOrder.compare(left.position.title, right.position.title);
+  return {
+    gainers: moving
+      .filter((mover) => mover.amount > 0)
+      .sort((left, right) => right.amount - left.amount || byTitle(left, right))
+      .slice(0, limit),
+    losers: moving
+      .filter((mover) => mover.amount < 0)
+      .sort((left, right) => left.amount - right.amount || byTitle(left, right))
+      .slice(0, limit),
+  };
+}
+
+export type ValueConcentration = {
+  /** Valeur marché de toutes les cartes cotées. */
+  total: number;
+  /** Cartes cotées. */
+  positions: number;
+  /** Nombre de cartes de tête comptées dans `topShare` (au plus `topCount`). */
+  topCount: number;
+  /** Part de la valeur (0 à 1) des `topCount` cartes les plus chères. */
+  topShare: number;
+  /** Les plus grosses cartes, avec leur part de la valeur. */
+  largest: { position: InvestmentPosition; share: number }[];
+};
+
+/** Concentration du portefeuille : part de la valeur des cartes les plus chères ; null sans valeur. */
+export function valueConcentration(positions: InvestmentPosition[], topCount = 10, shown = 5): ValueConcentration | null {
+  const priced = positions
+    .filter((position) => position.marketTotal != null && position.marketTotal > 0)
+    .sort((left, right) => (right.marketTotal ?? 0) - (left.marketTotal ?? 0) || frenchOrder.compare(left.title, right.title));
+  const total = priced.reduce((sum, position) => sum + (position.marketTotal ?? 0), 0);
+  if (total <= 0) return null;
+  const head = priced.slice(0, topCount);
+  return {
+    total,
+    positions: priced.length,
+    topCount: head.length,
+    topShare: head.reduce((sum, position) => sum + (position.marketTotal ?? 0), 0) / total,
+    largest: priced.slice(0, shown).map((position) => ({ position, share: (position.marketTotal ?? 0) / total })),
+  };
 }
 
 function languageFromParams(params: URLSearchParams, base: Filters) {

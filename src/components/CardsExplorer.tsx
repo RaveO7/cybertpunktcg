@@ -31,6 +31,7 @@ import {
   parseFilters,
   sealedBrowseFilters,
   serializeFilters,
+  siblingPrintings,
   sortPrintings,
 } from "@/lib/logic";
 import {
@@ -901,13 +902,7 @@ export function CardsExplorer({
         <CardModal
           printing={selected}
           card={selectedCard}
-          siblings={catalog.printings
-            .filter((printing) => printing.cardId === selected.cardId && printing.id !== selected.id)
-            .sort(
-              (a, b) =>
-                a.setName.localeCompare(b.setName, "fr") ||
-                a.collectorNumber.localeCompare(b.collectorNumber, "fr", { numeric: true }),
-            )}
+          siblings={siblingPrintings(catalog.printings, selected)}
           items={items.filter((item) => item.printingId === selected.id)}
           conditions={catalog.conditions}
           ownedIds={ownedIds}

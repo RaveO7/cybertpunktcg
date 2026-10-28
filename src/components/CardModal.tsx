@@ -292,7 +292,7 @@ export function CardModal({
           </aside>
 
           <div className="contents md:flex md:min-w-0 md:flex-col md:gap-5">
-            <PricePanel printing={printing} items={items} market={market} titleId={titleId} />
+            <PricePanel printing={printing} items={items} market={market} titleId={titleId} linkToInvestment={!readOnly} />
 
             {rules.text ? (
               <div className="order-4 md:order-none">

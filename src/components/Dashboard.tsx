@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { getPathname, useRouter } from "@/i18n/navigation";
@@ -27,6 +27,7 @@ import { ScopeDetail } from "@/components/dashboard/ScopeDetail";
 import { EmptyCatalog, GlobalStat, ProgressRing, SearchIcon, SegmentButton, SegmentGroup } from "@/components/dashboard/ui";
 import { ValueBySet } from "@/components/dashboard/ValueBySet";
 import { ScreenError, ScreenSkeleton, SkeletonBlock } from "@/components/site/ScreenSkeleton";
+import { useIsDesktop } from "@/components/use-is-desktop";
 import { intlLocale } from "@/i18n/config";
 import { ALL_SETS_ID, BETA_SET_CODE, isSealedSetCode } from "@/lib/reference-data";
 
@@ -343,20 +344,6 @@ function DashboardSkeleton() {
       </div>
     </ScreenSkeleton>
   );
-}
-
-/** Point de rupture `md` de Tailwind : tableau sur ordinateur, liste sur téléphone. */
-const DESKTOP_QUERY = "(min-width: 48rem)";
-
-function subscribeDesktop(onChange: () => void) {
-  const query = window.matchMedia(DESKTOP_QUERY);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-/** Largeur ordinateur : une seule des deux mises en page est rendue (l'autre serait masquée en CSS). */
-function useIsDesktop() {
-  return useSyncExternalStore(subscribeDesktop, () => window.matchMedia(DESKTOP_QUERY).matches, () => false);
 }
 
 /**

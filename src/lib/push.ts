@@ -9,6 +9,15 @@ import { prisma } from "./prisma";
 
 /** Regroupe les notifications d'alerte : une nouvelle remplace la précédente au lieu de s'empiler. */
 export const PUSH_TAG = "price-alerts";
+
+/** Alertes notifiées : prix cible de la liste de souhaits atteint, ou prix de revente d'une carte possédée atteint. */
+export type AlertKind = "wishlist" | "sell";
+
+/** Textes, page ouverte au clic et regroupement de chaque type d'alerte (un type ne remplace pas l'autre). */
+const ALERT_PUSH = {
+  wishlist: { namespace: "wishlist", route: "/souhaits", tag: PUSH_TAG },
+  sell: { namespace: "investment", route: "/investissement", tag: "sell-alerts" },
+} as const;
 /** Envois simultanés au plus. */
 const CONCURRENCY = 10;
 /** Durée de conservation par le service push si l'appareil est éteint : un jour, jusqu'à l'import suivant. */
@@ -52,23 +61,33 @@ export function vapidConfig(env: NodeJS.ProcessEnv = process.env): VapidConfig |
 
 let missingKeysLogged = false;
 
-async function webPushSender(config: VapidConfig): Promise<PushSender> {
+async function webPushSender(config: VapidConfig, topic: string): Promise<PushSender> {
   const { default: webPush } = await import("web-push");
   const details = { subject: config.subject, publicKey: config.publicKey, privateKey: config.privateKey };
   return (target, payload) =>
-    webPush.sendNotification(target, payload, { TTL: TTL_SECONDS, topic: PUSH_TAG, urgency: "normal", vapidDetails: details });
+    webPush.sendNotification(target, payload, { TTL: TTL_SECONDS, topic, urgency: "normal", vapidDetails: details });
 }
 
-/** Texte de la notification d'un compte : la carte et son prix s'il n'y a qu'une alerte, sinon le nombre. */
-export async function alertPayload(locale: Locale, alerts: { name: string; price: number }[]): Promise<PushPayload> {
-  const t = await translatorFor(locale, "wishlist");
+/**
+ * Texte de la notification d'un compte : la carte et son prix s'il n'y a qu'une alerte, sinon le nombre.
+ * Une seule alerte de revente : le clic ouvre l'investissement avec la carte sélectionnée.
+ */
+export async function alertPayload(
+  locale: Locale,
+  alerts: { name: string; price: number; printingId?: string }[],
+  kind: AlertKind = "wishlist",
+): Promise<PushPayload> {
+  const config = ALERT_PUSH[kind];
+  const t = await translatorFor(locale, config.namespace);
   const format = formatterFor(locale);
   const [first] = alerts;
   const body =
     alerts.length === 1
       ? t("push.one", { name: first.name, price: format.number(first.price, { style: "currency", currency: "EUR" }) })
       : t("push.many", { count: alerts.length });
-  return { title: t("push.title"), body, url: routePath("/souhaits", locale), tag: PUSH_TAG };
+  const path = routePath(config.route, locale);
+  const url = kind === "sell" && alerts.length === 1 && first.printingId ? `${path}?printing=${encodeURIComponent(first.printingId)}` : path;
+  return { title: t("push.title"), body, url, tag: config.tag };
 }
 
 /** Exécute les tâches avec au plus `limit` en cours. */
@@ -92,8 +111,9 @@ function statusOf(error: unknown) {
 export async function notifyPriceAlerts(
   client: PrismaClient,
   alerts: TriggeredAlert[],
-  options: { send?: PushSender; log?: (message: string) => void } = {},
+  options: { send?: PushSender; log?: (message: string) => void; kind?: AlertKind } = {},
 ): Promise<PushReport> {
+  const kind = options.kind ?? "wishlist";
   const log = options.log ?? console.log;
   const byUser = new Map<string, TriggeredAlert[]>();
   for (const alert of alerts) byUser.set(alert.userId, [...(byUser.get(alert.userId) ?? []), alert]);
@@ -108,7 +128,7 @@ export async function notifyPriceAlerts(
       missingKeysLogged = true;
       return { ...report, skipped: "no-keys" };
     }
-    send = await webPushSender(config);
+    send = await webPushSender(config, ALERT_PUSH[kind].tag);
   }
 
   const subscriptions = await client.pushSubscription.findMany({
@@ -127,8 +147,12 @@ export async function notifyPriceAlerts(
   const payloadFor = (userId: string, locale: Locale) => {
     const key = `${userId}|${locale}`;
     if (!payloads.has(key)) {
-      const entries = byUser.get(userId)!.map((alert) => ({ name: names.get(alert.printingId) ?? "?", price: alert.price }));
-      payloads.set(key, alertPayload(locale, entries).then((payload) => JSON.stringify(payload)));
+      const entries = byUser.get(userId)!.map((alert) => ({
+        name: names.get(alert.printingId) ?? "?",
+        price: alert.price,
+        printingId: alert.printingId,
+      }));
+      payloads.set(key, alertPayload(locale, entries, kind).then((payload) => JSON.stringify(payload)));
     }
     return payloads.get(key)!;
   };

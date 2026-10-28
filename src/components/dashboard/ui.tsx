@@ -5,11 +5,13 @@ import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { Link, type Href } from "@/i18n/navigation";
 import { formatSignedMoney } from "@/components/TrendBadge";
+import { amountSign } from "@/lib/logic";
 
 export function ProfitText({ value }: { value: number | null }) {
   const fmt = useNumberFormat();
   if (value == null) return <span className="text-muted">—</span>;
-  const tone = value > 0.004 ? "text-gain" : value < -0.004 ? "text-danger" : "text-muted";
+  const sign = amountSign(value);
+  const tone = sign > 0 ? "text-gain" : sign < 0 ? "text-danger" : "text-muted";
   return <span className={`font-mono ${tone}`}>{formatSignedMoney(fmt, value)}</span>;
 }
 

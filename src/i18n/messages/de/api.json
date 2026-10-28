@@ -227,5 +227,14 @@
     "alreadyDropped": "Dieser Spieler hat bereits gedroppt.",
     "topCutUseLoss": "Der Top Cut hat begonnen: Trage für diesen Spieler eine Niederlage ein.",
     "startedUseDrop": "Das Turnier hat begonnen: Verwende den Drop."
+  },
+  "investment": {
+    "invalidSaleQuantity": "Ungültige verkaufte Menge (höchstens {max}).",
+    "saleBeforePurchase": "Ein Verkauf kann nicht vor dem Kauf liegen.",
+    "saleNotFound": "Verkauf nicht gefunden.",
+    "invalidSalePrice": "Ungültiger Verkaufspreis.",
+    "invalidSaleDate": "Ungültiges Verkaufsdatum.",
+    "alertNotOwned": "Diese Karte ist nicht in deiner Sammlung.",
+    "invalidTargetPrice": "Ungültiger Wiederverkaufspreis."
   }
 }

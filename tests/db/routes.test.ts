@@ -11,7 +11,7 @@ vi.mock("next/cache", () => ({ unstable_cache: <T>(fn: T) => fn }));
 import { POST as logoutRoute } from "../../src/app/api/auth/logout/route";
 import { GET as sessionRoute } from "../../src/app/api/auth/session/route";
 import { GET as catalogRoute } from "../../src/app/api/catalog/route";
-import { GET as historyRoute } from "../../src/app/api/investment/history/route";
+import { GET as historyRoute, POST as historyItemsRoute } from "../../src/app/api/investment/history/route";
 import { GET as statsRoute } from "../../src/app/api/stats/route";
 import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, createSession, registerAccount } from "../../src/lib/auth";
 import { loadCatalog } from "../../src/lib/catalog";
@@ -256,18 +256,39 @@ describe.sequential("historique de prix", () => {
     }
   });
 
-  it("jour de référence invalide ignoré ; collection vide = aucun prix", async () => {
-    for (const day of ["", "hier", "2024-13-45x", "2024-1-1"]) {
+  it("durée de référence invalide = tout l'historique ; collection vide = aucun prix", async () => {
+    for (const days of ["", "hier", "-3", "1.5", "123456"]) {
       const response = await historyRoute(
-        request(`/api/investment/history?referenceDay=${encodeURIComponent(day)}`, account.token),
+        request(`/api/investment/history?referenceDays=${encodeURIComponent(days)}`, account.token),
       );
       assert.equal(response.status, 200);
       assert.deepEqual(await json(response), { kind: "reference", day: null, prices: {} });
     }
+    // Sans historique, la période est comptée depuis aujourd'hui.
     const valid = await json<{ day: string | null }>(
-      await historyRoute(request("/api/investment/history?referenceDay=2024-01-01", account.token)),
+      await historyRoute(request("/api/investment/history?referenceDays=30", account.token)),
     );
-    assert.equal(valid.day, "2024-01-01");
+    const expected = new Date();
+    expected.setUTCDate(expected.getUTCDate() - 30);
+    assert.equal(valid.day, expected.toISOString().slice(0, 10));
+  });
+
+  it("courbe d'une liste d'exemplaires (POST) : session, corps invalide, exemplaires d'un autre compte ignorés", async () => {
+    const post = (body: unknown, token: string | null) =>
+      historyItemsRoute(
+        request("/api/investment/history", token, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }),
+      );
+    assert.equal((await post({ items: ["x"] }, null)).status, 401);
+    for (const body of [{}, { items: [] }, { items: "x" }, { items: [""] }]) {
+      assert.equal((await post(body, account.token)).status, 400, JSON.stringify(body));
+    }
+    const response = await post({ items: [`inconnu-${stamp}`, `inconnu-${stamp}`] }, account.token);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await json(response), { kind: "portfolio", points: [], days: 0, purchases: [] });
   });
 
   it("courbe du portefeuille : filtres par défaut et inconnus", async () => {

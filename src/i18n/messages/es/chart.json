@@ -9,5 +9,9 @@
   "purchase": "Compra",
   "purchases": "{n, plural, one {# compra} other {# compras}}",
   "morePurchases": "+{n} más",
-  "periodProfit": "P&L del periodo"
+  "periodProfit": "P&L del periodo",
+  "zoomHint": "Arrastra sobre la curva para ampliar un período",
+  "zoomHintTouch": "Pon dos dedos sobre la curva para ampliar el período entre ellos",
+  "zoomed": "Zoom: {range}",
+  "resetZoom": "Ver todo"
 }

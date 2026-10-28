@@ -1,8 +1,15 @@
 /**
  * Exemplaires possédés. `fromDay` : date d'achat (« AAAA-MM-JJ »), les exemplaires ne comptent qu'à partir
- * de ce jour (absente = possédés depuis toujours). `cost` : prix d'achat unitaire en EUR (absent = inconnu).
+ * de ce jour (absente = possédés depuis toujours). `untilDay` : date de vente, ils ne comptent plus à partir
+ * de ce jour (absente = toujours possédés). `cost` : prix d'achat unitaire en EUR (absent = inconnu).
  */
-export type OwnedQuantity = { printingId: string; quantity: number; fromDay?: string | null; cost?: number | null };
+export type OwnedQuantity = {
+  printingId: string;
+  quantity: number;
+  fromDay?: string | null;
+  untilDay?: string | null;
+  cost?: number | null;
+};
 
 export type SnapshotRow = {
   printingId: string;
@@ -44,6 +51,14 @@ export function shiftUtcDay(value: Date | string, days: number) {
   return base;
 }
 
+export type PortfolioHistoryOptions = {
+  /**
+   * Valeur marché des exemplaires comptée aussi avant leur date d'achat (courbe de cartes précises :
+   * tout leur historique de prix). L'investi et le P&L, eux, ne comptent qu'à partir de l'achat.
+   */
+  valueBeforePurchase?: boolean;
+};
+
 /**
  * Construit la courbe de valeur marché d'un portefeuille.
  * Pour chaque jour, on reprend le dernier prix connu (<= jour) de chaque printing possédé.
@@ -51,8 +66,9 @@ export function shiftUtcDay(value: Date | string, days: number) {
 export function buildPortfolioHistory(
   owned: OwnedQuantity[],
   snapshots: SnapshotRow[],
+  options: PortfolioHistoryOptions = {},
 ): PortfolioHistoryPoint[] {
-  return extendPortfolioHistory(owned, new Map(), snapshots).points;
+  return extendPortfolioHistory(owned, new Map(), snapshots, options).points;
 }
 
 /**
@@ -64,6 +80,7 @@ export function extendPortfolioHistory(
   owned: OwnedQuantity[],
   startPrices: ReadonlyMap<string, number>,
   snapshots: SnapshotRow[],
+  options: PortfolioHistoryOptions = {},
 ): { points: PortfolioHistoryPoint[]; lastPrice: Map<string, number> } {
   const rows = owned.filter((row) => row.quantity > 0);
   const printingIds = new Set(rows.map((row) => row.printingId));
@@ -91,9 +108,12 @@ export function extendPortfolioHistory(
     let profit = 0;
     let hasProfit = false;
     for (const row of rows) {
-      // Pas encore acheté ce jour-là.
-      if (row.fromDay != null && row.fromDay > day) continue;
-      const cost = row.cost != null && Number.isFinite(row.cost) ? row.cost * row.quantity : null;
+      // Vendu ce jour-là ou avant : sorti du portefeuille (valeur, investi et P&L).
+      if (row.untilDay != null && row.untilDay <= day) continue;
+      // Pas encore acheté ce jour-là : ni investi ni P&L, et sa valeur ne compte qu'avec `valueBeforePurchase`.
+      const held = row.fromDay == null || row.fromDay <= day;
+      if (!held && !options.valueBeforePurchase) continue;
+      const cost = held && row.cost != null && Number.isFinite(row.cost) ? row.cost * row.quantity : null;
       if (cost != null) invested += cost;
       const amount = lastPrice.get(row.printingId);
       if (amount == null) continue;
@@ -105,6 +125,7 @@ export function extendPortfolioHistory(
       }
     }
     if (pricedCopies === 0) continue;
+    // Investi présent sur tous les points (0 avant le premier achat) : la ligne « Investi » couvre toute la courbe.
     points.push({
       day,
       marketTotal: round2(marketTotal),

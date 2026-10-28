@@ -8,6 +8,7 @@ import {
   baseCollectorNumber,
   buildFacets,
   buildInvestmentLines,
+  groupInvestmentPositions,
   defaultFilters,
   equivalentPrintingIds,
   filterInvestmentLines,
@@ -38,6 +39,7 @@ import {
   type InvestmentLine,
 } from "../../src/lib/logic";
 import type { CardDTO, CollectionItemDTO, Filters, Ownership, PrintingDTO, SetDTO, SortKey } from "../../src/lib/types";
+import { lineMarketDelta, lineMarketDeltaPct, lineProfitPct, sortPositionRows } from "../../src/components/investment/sorting";
 
 function card(partial: Partial<CardDTO> & Pick<CardDTO, "id">): CardDTO {
   return {
@@ -127,8 +129,10 @@ function line(partial: Partial<InvestmentLine> & Pick<InvestmentLine, "itemId">)
     purchaseUnit: null,
     purchaseCurrency: null,
     purchaseTotal: null,
+    costEur: null,
     purchasedAt: null,
     profit: null,
+    profitBasis: null,
     marketDelta: "none",
     ...partial,
   };
@@ -640,6 +644,14 @@ describe("investissement (cas limites)", () => {
     assert.equal(noprice.marketUnit, null);
     assert.equal(noprice.profit, null);
     assert.equal(noprice.marketDelta, "none");
+    const [eur] = buildInvestmentLines(
+      [item({ id: "eur", printingId: "p2", quantity: 2, purchasePrice: "2" })],
+      printings,
+      cards,
+    );
+    assert.equal(eur.profit, 2);
+    assert.equal(eur.profitBasis, 4, "base du P&L : prix d'achat total");
+    assert.equal(usd.profitBasis, null);
   });
 
   it("summarizeInvestment : liste vide et achats non EUR", () => {
@@ -650,18 +662,25 @@ describe("investissement (cas limites)", () => {
       marketDeltaAmount: null,
       investedEur: 0,
       profitEur: null,
+      profitBasis: null,
       copies: 0,
       pricedCopies: 0,
       trackedProfitCopies: 0,
+      unconvertedLines: 0,
     });
     const summary = summarizeInvestment([
+      // Achat en dollars sans taux de change : ni investi ni P&L, signalé comme non converti.
       line({ itemId: "a", quantity: 2, purchaseTotal: 10, purchaseCurrency: "USD" }),
-      line({ itemId: "b", quantity: 1, marketTotal: 4, marketUnit: 4, previousMarketUnit: 5, purchaseTotal: 3, purchaseCurrency: "EUR", profit: 1 }),
+      line({ itemId: "b", quantity: 1, marketTotal: 4, marketUnit: 4, previousMarketUnit: 5, purchaseTotal: 3, purchaseCurrency: "EUR", costEur: 3, profit: 1, profitBasis: 3 }),
+      // Prix d'achat sans prix marché : compté dans l'investi, pas dans la base du P&L.
+      line({ itemId: "c", quantity: 1, purchaseTotal: 7, purchaseCurrency: "EUR", costEur: 7 }),
     ]);
-    assert.equal(summary.copies, 3);
+    assert.equal(summary.copies, 4);
     assert.equal(summary.pricedCopies, 1);
-    assert.equal(summary.investedEur, 3);
+    assert.equal(summary.investedEur, 10);
+    assert.equal(summary.unconvertedLines, 1);
     assert.equal(summary.profitEur, 1);
+    assert.equal(summary.profitBasis, 3, "base du % : achat des exemplaires comptés dans le P&L");
     assert.equal(summary.trackedProfitCopies, 1);
     assert.equal(summary.marketDelta, "down");
     assert.equal(summary.marketDeltaAmount, -1);
@@ -671,7 +690,7 @@ describe("investissement (cas limites)", () => {
     const result = investmentBySet(
       [
         line({ itemId: "1", setCode: "inconnu", setName: "Inconnu", quantity: 1, marketTotal: 2, marketUnit: 2 }),
-        line({ itemId: "2", setCode: "b", setName: "B", quantity: 3, purchaseTotal: 6, purchaseCurrency: "EUR", profit: -1 }),
+        line({ itemId: "2", setCode: "b", setName: "B", quantity: 3, purchaseTotal: 6, purchaseCurrency: "EUR", costEur: 6, profit: -1 }),
       ],
       [set({ code: "a", sortOrder: 0 }), set({ code: "b", name: "B", sortOrder: 5 })],
     );
@@ -706,52 +725,112 @@ describe("investissement (cas limites)", () => {
     assert.equal(run({ q: "   " }).length, lines.length);
   });
 
-  it("applyInvestmentPeriod : référence de période, lignes ajoutées pendant la période, sans achat", () => {
+  it("applyInvestmentPeriod : variation depuis la référence de période, P&L d'achat inchangé", () => {
     const lines = [
-      line({ itemId: "old", printingId: "p", quantity: 2, marketUnit: 10, profit: 8, purchaseCurrency: "EUR" }),
-      line({ itemId: "new", printingId: "p", quantity: 1, marketUnit: 10, profit: 3, purchaseCurrency: "EUR" }),
-      line({ itemId: "nopurchase", printingId: "p", quantity: 1, marketUnit: 10, profit: null }),
-      line({ itemId: "noref", printingId: "q", quantity: 1, marketUnit: 10, profit: 2, purchaseCurrency: "EUR" }),
+      line({ itemId: "achat", printingId: "p", quantity: 2, marketUnit: 10, profit: 8, profitBasis: 12, purchaseCurrency: "EUR" }),
+      line({ itemId: "sans-achat", printingId: "p", quantity: 1, marketUnit: 10, profit: null }),
+      line({ itemId: "sans-ref", printingId: "q", quantity: 1, marketUnit: 10, profit: 2, profitBasis: 8, purchaseCurrency: "EUR" }),
     ];
-    const added = new Map([
-      ["old", "2026-01-01T10:00:00.000Z"],
-      ["new", "2026-06-15T10:00:00.000Z"],
-      ["nopurchase", "2026-01-01T10:00:00.000Z"],
-      ["noref", "2026-01-01T10:00:00.000Z"],
-    ]);
-    const result = applyInvestmentPeriod(lines, { p: 7 }, "2026-06-01", added);
-    const byId = new Map(result.map((l) => [l.itemId, l]));
-    assert.equal(byId.get("old")?.profit, 6, "(10 - 7) × 2");
-    assert.equal(byId.get("old")?.previousMarketUnit, 7);
-    assert.equal(byId.get("old")?.marketDelta, "up");
-    assert.equal(byId.get("new")?.profit, 3, "ajoutée pendant la période : P&L d'achat");
-    assert.equal(byId.get("nopurchase")?.profit, null);
-    assert.equal(byId.get("noref")?.profit, null);
-    assert.equal(byId.get("noref")?.marketDelta, "none");
+    const byId = new Map(applyInvestmentPeriod(lines, { p: 7 }).map((l) => [l.itemId, l]));
+    assert.equal(byId.get("achat")?.previousMarketUnit, 7);
+    assert.equal(byId.get("achat")?.marketDelta, "up");
+    assert.equal(byId.get("achat")?.profit, 8, "P&L depuis l'achat, quelle que soit la période");
+    assert.equal(byId.get("achat")?.profitBasis, 12);
+    assert.equal(byId.get("sans-achat")?.profit, null);
+    assert.equal(byId.get("sans-ref")?.previousMarketUnit, null);
+    assert.equal(byId.get("sans-ref")?.marketDelta, "none", "sans prix de référence : pas de variation");
+    assert.equal(byId.get("sans-ref")?.profit, 2);
 
-    // Toute la période : P&L d'achat inchangé, seule la référence change.
-    const all = applyInvestmentPeriod(lines, { p: 12 }, null, added);
-    assert.deepEqual(all.map((l) => l.profit), [8, 3, null, 2]);
-    assert.equal(all[0].marketDelta, "down");
+    // Prix de référence pas encore chargés (ou en échec) : aucune variation, P&L intact.
+    const none = applyInvestmentPeriod(lines, {});
+    assert.deepEqual(none.map((l) => l.marketDelta), ["none", "none", "none"]);
+    assert.deepEqual(none.map((l) => l.profit), [8, null, 2]);
     // Référence non finie ignorée ; l'entrée n'est pas modifiée.
-    assert.equal(applyInvestmentPeriod(lines, { p: Number.NaN }, null, added)[0].previousMarketUnit, null);
+    assert.equal(applyInvestmentPeriod(lines, { p: Number.NaN })[0].previousMarketUnit, null);
     assert.equal(lines[0].previousMarketUnit, null);
-    assert.equal(lines[0].profit, 8);
   });
 
-  it("applyInvestmentPeriod : la date d'achat saisie prime sur la date d'ajout", () => {
-    const lines = [
-      // Ajoutée avant la période mais achetée pendant : P&L d'achat.
-      line({ itemId: "bought", printingId: "p", quantity: 1, marketUnit: 10, profit: 4, purchasedAt: "2026-06-10" }),
-      // Ajoutée pendant la période mais achetée avant : P&L depuis la référence.
-      line({ itemId: "backdated", printingId: "p", quantity: 1, marketUnit: 10, profit: 4, purchasedAt: "2026-02-01" }),
-    ];
-    const added = new Map([
-      ["bought", "2026-01-01T10:00:00.000Z"],
-      ["backdated", "2026-06-20T10:00:00.000Z"],
+  it("variation marché et P&L d'une ligne : montants totaux, % sur leur base", () => {
+    // 3 box achetées 714 € pendant la période : 208,73 € → 293,65 € l'unité.
+    const [bought] = applyInvestmentPeriod(
+      [
+        line({
+          itemId: "box",
+          quantity: 3,
+          marketUnit: 293.65,
+          marketTotal: 880.95,
+          purchaseTotal: 714,
+          profit: 166.95,
+          profitBasis: 714,
+          purchasedAt: "2026-10-26",
+        }),
+      ],
+      { box: 208.73 },
+    );
+    assert.equal(lineMarketDelta(bought)?.toFixed(2), "254.76", "variation × quantité");
+    assert.equal(lineMarketDeltaPct(bought)?.toFixed(1), "40.7");
+    assert.equal(lineProfitPct(bought)?.toFixed(1), "23.4", "P&L d'achat : % du coût d'achat");
+
+    // Achetée avant la période : seule la variation part de la référence, le P&L reste celui de l'achat.
+    const [held] = applyInvestmentPeriod(
+      [line({ itemId: "held", quantity: 2, marketUnit: 12, marketTotal: 24, profit: 14, profitBasis: 10, purchasedAt: "2026-01-01" })],
+      { held: 8 },
+    );
+    assert.equal(held.profit, 14);
+    assert.equal(held.profitBasis, 10);
+    assert.equal(lineProfitPct(held), 140);
+    assert.equal(lineMarketDeltaPct(held), 50);
+
+    assert.equal(lineMarketDeltaPct(line({ itemId: "zero", marketUnit: 1, previousMarketUnit: 0 })), null);
+    assert.equal(lineProfitPct(line({ itemId: "none", marketTotal: 5 })), null);
+    assert.equal(lineProfitPct(line({ itemId: "free", profit: 5, profitBasis: 0 })), null, "achat à 0 € : pas de %");
+  });
+
+  it("groupInvestmentPositions : une position par carte, P&L sur les achats avec prix", () => {
+    const box = { printingId: "box", marketUnit: 293.65, previousMarketUnit: 208.73, marketDelta: "up" as const };
+    const [position, other] = groupInvestmentPositions([
+      line({ ...box, itemId: "sans-prix", quantity: 1, marketTotal: 293.65, conditionCode: "NM" }),
+      line({ ...box, itemId: "achat", quantity: 3, marketTotal: 880.95, purchaseTotal: 714, purchaseCurrency: "EUR", profit: 166.95, profitBasis: 714, purchasedAt: "2026-10-26" }),
+      line({ itemId: "autre", printingId: "autre" }),
+      line({ ...box, itemId: "ancien", quantity: 1, marketTotal: 293.65, purchaseTotal: 200, purchaseCurrency: "EUR", profit: 93.65, profitBasis: 200, purchasedAt: "2026-01-05", conditionCode: "LP" }),
     ]);
-    const byId = new Map(applyInvestmentPeriod(lines, { p: 7 }, "2026-06-01", added).map((l) => [l.itemId, l]));
-    assert.equal(byId.get("bought")?.profit, 4);
-    assert.equal(byId.get("backdated")?.profit, 3);
+    assert.deepEqual(position.lines.map((l) => l.itemId), ["ancien", "achat", "sans-prix"], "par date, sans date à la fin");
+    assert.equal(position.quantity, 5);
+    assert.deepEqual(position.conditionCodes, ["LP", "NM"]);
+    assert.equal(position.marketTotal?.toFixed(2), "1468.25");
+    assert.equal(position.marketDelta, "up");
+    assert.equal(position.purchaseTotal, 914);
+    assert.equal(position.purchaseUnit, 228.5, "PRU : 914 € pour 4 exemplaires");
+    assert.equal(position.profit?.toFixed(2), "260.60");
+    assert.equal(position.profitBasis, 914);
+    assert.equal(position.profitQuantity, 4);
+    assert.equal(lineMarketDelta(position)?.toFixed(2), "424.60");
+    assert.equal(lineProfitPct(position)?.toFixed(1), "28.5");
+
+    assert.equal(other.printingId, "autre");
+    assert.equal(other.purchaseTotal, null);
+    assert.equal(other.purchaseUnit, null);
+    assert.equal(other.profit, null);
+    assert.equal(other.profitQuantity, 0);
+
+    // Devises différentes : pas de total d'achat commun.
+    const [mixed] = groupInvestmentPositions([
+      line({ itemId: "eur", printingId: "m", purchaseTotal: 2, purchaseCurrency: "EUR" }),
+      line({ itemId: "usd", printingId: "m", purchaseTotal: 3, purchaseCurrency: "USD" }),
+    ]);
+    assert.equal(mixed.purchaseTotal, null);
+    assert.equal(mixed.purchaseCurrency, null);
+  });
+
+  it("sortPositionRows : colonne Marché triée sur le total affiché, puis le prix unitaire", () => {
+    const positions = groupInvestmentPositions([
+      line({ itemId: "cher", quantity: 1, marketUnit: 5, marketTotal: 5 }),
+      line({ itemId: "lot", quantity: 4, marketUnit: 2, marketTotal: 8 }),
+      line({ itemId: "egal", quantity: 5, marketUnit: 1, marketTotal: 5 }),
+      line({ itemId: "sans-prix" }),
+    ]);
+    const order = (dir: "asc" | "desc") => sortPositionRows(positions, { key: "market", dir }, "fr").map((p) => p.printingId);
+    assert.deepEqual(order("desc"), ["lot", "cher", "egal", "sans-prix"]);
+    assert.deepEqual(order("asc"), ["egal", "cher", "lot", "sans-prix"], "sans prix : toujours en fin de liste");
   });
 });

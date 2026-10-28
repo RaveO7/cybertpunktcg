@@ -9,5 +9,9 @@
   "purchase": "Kauf",
   "purchases": "{n, plural, one {# Kauf} other {# Käufe}}",
   "morePurchases": "+{n} weitere",
-  "periodProfit": "GuV im Zeitraum"
+  "periodProfit": "GuV im Zeitraum",
+  "zoomHint": "Über den Verlauf ziehen, um einen Zeitraum zu vergrößern",
+  "zoomHintTouch": "Zwei Finger auf den Verlauf legen, um den Zeitraum dazwischen zu vergrößern",
+  "zoomed": "Zoom: {range}",
+  "resetZoom": "Alles anzeigen"
 }
