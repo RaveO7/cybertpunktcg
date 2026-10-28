@@ -13,9 +13,6 @@ import { attachPurchases, chartRangeStart, filterChartRange, type ChartRange } f
 import { InvestmentChart, chartRangeLabel } from "@/components/investment/InvestmentChart";
 import { InvestmentFilters } from "@/components/investment/InvestmentFilters";
 import { LineTable } from "@/components/investment/LineTable";
-import { MoversPanel } from "@/components/investment/MoversPanel";
-import { SalesTable } from "@/components/investment/SalesTable";
-import { SellAlertDialog, SellDialog, type SellTarget } from "@/components/investment/SellDialogs";
 import { SetTable } from "@/components/investment/SetTable";
 import {
   lineProfitPct,
@@ -28,27 +25,19 @@ import {
 import { SetChip, SummaryStat, profitClass } from "@/components/investment/ui";
 import { investmentViewParams, parseInvestmentView } from "@/components/investment/url-state";
 import { useInvestmentHistory, usePeriodReference } from "@/components/investment/use-investment-history";
-import { useExchangeRates, useSales, useSellAlerts } from "@/components/investment/use-investment-ledger";
 import { displayRows, useLineSelection } from "@/components/investment/use-line-selection";
-import { formatSignedMoney, formatSignedPercent } from "@/components/TrendBadge";
+import { formatSignedPercent } from "@/components/TrendBadge";
 import { ScreenError, ScreenSkeleton, SkeletonBlock, SkeletonRows } from "@/components/site/ScreenSkeleton";
 import {
   applyInvestmentPeriod,
   buildInvestmentLines,
-  buildSaleLines,
   filterInvestmentLines,
-  filterSaleLines,
   groupInvestmentPositions,
   investmentBySet,
-  investmentRateKeys,
   printingTitle,
   siblingPrintings,
   summarizeInvestment,
-  summarizeSales,
-  topMovers,
-  valueConcentration,
   type InvestmentPerformance,
-  type InvestmentPosition,
 } from "@/lib/logic";
 import {
   CARDS_GROUP_FILTER,
@@ -61,17 +50,8 @@ export function InvestmentScreen() {
   const fmt = useNumberFormat();
   // Textes des tableaux triés dans l'ordre alphabétique de la langue de la page.
   const locale = intlLocale(useLocale());
-  const { ready, error, retry, user, catalog, items, saveLine, patchLine, deleteLine, pendingIds } = useCollection();
+  const { ready, error, retry, catalog, items, saveLine, patchLine, deleteLine, pendingIds } = useCollection();
   const t = useTranslations();
-  // Ventes, alertes de revente et taux de change : chargés une fois la collection du compte connue.
-  const ledgerEnabled = ready && user != null;
-  const sales = useSales(ledgerEnabled);
-  const sellAlerts = useSellAlerts(ledgerEnabled);
-  const rateKeys = useMemo(() => investmentRateKeys(items, sales.sales ?? []), [items, sales.sales]);
-  const rates = useExchangeRates(rateKeys);
-  // Fenêtres ouvertes depuis le détail ou la liste des ventes.
-  const [sellTarget, setSellTarget] = useState<SellTarget | null>(null);
-  const [alertPosition, setAlertPosition] = useState<InvestmentPosition | null>(null);
   // Vue lue dans l'URL : lien du tableau de bord, rechargement, lien partagé. Elle y est réécrite à chaque changement.
   const searchParams = useSearchParams();
   const [initialView] = useState(() => parseInvestmentView(searchParams));
@@ -130,11 +110,10 @@ export function InvestmentScreen() {
   const modalPrinting = modalPrintingId ? catalog?.printings.find((printing) => printing.id === modalPrintingId) : undefined;
   const modalCard = modalPrinting ? cardsById.get(modalPrinting.cardId) : undefined;
 
-  // Achats en devise convertis en euros au taux BCE du jour d'achat.
   const baseLines = useMemo(() => {
     if (!catalog) return [];
-    return buildInvestmentLines(items, catalog.printings, cardsById, rates);
-  }, [cardsById, catalog, items, rates]);
+    return buildInvestmentLines(items, catalog.printings, cardsById);
+  }, [cardsById, catalog, items]);
 
   // Var. marché suit la durée choisie (le P&L, lui, part toujours du prix d'achat). Tant que les prix de
   // référence de cette durée manquent (chargement, échec) : pas de variation, plutôt que celle d'une autre durée.
@@ -233,54 +212,6 @@ export function InvestmentScreen() {
     [filtered, selectedLines],
   );
   const profitPct = lineProfitPct({ profit: summary.profitEur, profitBasis: summary.profitBasis });
-
-  // Hausses, baisses et concentration : mêmes cartes que les chiffres du haut (sélection, sinon filtres).
-  const summaryPositions = useMemo(
-    () => groupInvestmentPositions(selectedLines.length > 0 ? selectedLines : filtered),
-    [filtered, selectedLines],
-  );
-  const movers = useMemo(() => topMovers(summaryPositions), [summaryPositions]);
-  const concentration = useMemo(() => valueConcentration(summaryPositions), [summaryPositions]);
-  const moversHint = t("investment.movers.hint", {
-    all: chartRange === "all" ? "yes" : "no",
-    range: chartRangeLabel(chartRange, t),
-  });
-
-  // Ventes : mêmes filtres d'extension, de langue et de recherche que le détail.
-  const saleLines = useMemo(
-    () => (catalog ? buildSaleLines(sales.sales ?? [], catalog.printings, cardsById, rates) : []),
-    [cardsById, catalog, rates, sales.sales],
-  );
-  const filteredSales = useMemo(
-    () => filterSaleLines(saleLines, { set: setFilter, language, q: query }),
-    [language, query, saleLines, setFilter],
-  );
-  const salesSummary = useMemo(() => summarizeSales(filteredSales), [filteredSales]);
-  const realizedPct = lineProfitPct({ profit: salesSummary.realized, profitBasis: salesSummary.realizedBasis });
-  const hasSales = saleLines.length > 0;
-
-  const alertsByPrinting = useMemo(
-    () => new Map((sellAlerts.alerts ?? []).map((alert) => [alert.printingId, alert])),
-    [sellAlerts.alerts],
-  );
-  // Alertes de revente atteintes depuis la dernière visite : signalées le temps de la visite, puis marquées vues.
-  const [freshAlertIds, setFreshAlertIds] = useState<ReadonlySet<string> | null>(null);
-  if (sellAlerts.alerts && freshAlertIds === null) {
-    setFreshAlertIds(new Set(sellAlerts.alerts.filter((alert) => alert.alertAt && !alert.alertSeen).map((alert) => alert.id)));
-  }
-  const { acknowledge: acknowledgeAlerts } = sellAlerts;
-  useEffect(() => {
-    if (freshAlertIds && freshAlertIds.size > 0) void acknowledgeAlerts().catch(() => undefined);
-  }, [acknowledgeAlerts, freshAlertIds]);
-  const freshAlerts = useMemo(() => {
-    if (!catalog || !freshAlertIds || freshAlertIds.size === 0) return [];
-    const printingsById = new Map(catalog.printings.map((printing) => [printing.id, printing]));
-    return (sellAlerts.alerts ?? []).flatMap((alert) => {
-      const printing = printingsById.get(alert.printingId);
-      if (!freshAlertIds.has(alert.id) || !alert.alertAt || !printing) return [];
-      return [{ alert, title: printingTitle(cardsById.get(printing.cardId), printing) }];
-    });
-  }, [cardsById, catalog, freshAlertIds, sellAlerts.alerts]);
   const bySet = useMemo(
     () => (catalog ? investmentBySet(filteredAnySet, catalog.sets) : []),
     [catalog, filteredAnySet],
@@ -358,8 +289,7 @@ export function InvestmentScreen() {
   if (catalog.printings.length === 0) {
     return <p className="p-6 text-sm text-muted">{t("investment.emptyCatalog")}</p>;
   }
-  // Collection vide : la page n'a rien à montrer, sauf des ventes passées.
-  if (baseLines.length === 0 && !hasSales) {
+  if (baseLines.length === 0) {
     return (
       <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6">
         <h1 className="text-2xl text-yellow sm:text-4xl">{t("investment.eyebrow")}</h1>
@@ -381,7 +311,7 @@ export function InvestmentScreen() {
     <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6">
       <h1 className="text-2xl text-yellow sm:text-4xl">{t("investment.eyebrow")}</h1>
 
-      <section className={`grid grid-cols-2 gap-2 sm:gap-3 ${hasSales ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}>
+      <section className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         <SummaryStat
           label={t("investment.marketValue")}
           value={summary.pricedCopies > 0 ? fmt.money(summary.marketTotal) : "—"}
@@ -421,56 +351,9 @@ export function InvestmentScreen() {
           label={t("investment.trackedCopies")}
           value={`${fmt.int(summary.pricedCopies)} / ${fmt.int(summary.copies)}`}
         />
-        {hasSales ? (
-          <SummaryStat
-            className="col-span-2 xl:col-span-1"
-            label={t("investment.realized")}
-            value={salesSummary.realized == null ? "—" : formatSignedMoney(fmt, salesSummary.realized)}
-            tone={salesSummary.realized == null ? undefined : salesSummary.realized >= 0 ? "gain" : "loss"}
-            aside={
-              realizedPct == null ? null : (
-                <span className={`font-mono ${profitClass(salesSummary.realized)}`}>{formatSignedPercent(fmt, realizedPct)}</span>
-              )
-            }
-            detail={
-              salesSummary.realized == null
-                ? null
-                : t("investment.realizedDetail", {
-                    count: fmt.int(salesSummary.sales - salesSummary.unknownCost),
-                    n: salesSummary.sales - salesSummary.unknownCost,
-                  })
-            }
-          />
-        ) : null}
       </section>
 
-      {freshAlerts.length > 0 ? (
-        <section role="status" className="border border-yellow/60 bg-yellow/10 px-4 py-3 text-sm">
-          <h2 className="font-semibold text-yellow">{t("investment.alert.reachedTitle", { n: freshAlerts.length })}</h2>
-          <ul className="mt-1 flex flex-col gap-0.5">
-            {freshAlerts.map(({ alert, title }) => (
-              <li key={alert.id}>
-                <button
-                  type="button"
-                  className="text-left underline-offset-2 hover:text-cyan hover:underline"
-                  onClick={() => setModalPrintingId(alert.printingId)}
-                >
-                  {t("investment.alert.reachedItem", {
-                    name: title,
-                    price: fmt.money(Number(alert.alertPrice ?? alert.targetPrice)),
-                    target: fmt.money(Number(alert.targetPrice)),
-                  })}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
       {!catalog.hasPrices ? <p className="text-sm text-muted">{t("investment.noPrices")}</p> : null}
-      {summary.unconvertedLines > 0 ? (
-        <p className="text-sm text-muted">{t("investment.unconverted", { n: summary.unconvertedLines })}</p>
-      ) : null}
 
       <InvestmentChart
         chartRange={chartRange}
@@ -495,16 +378,6 @@ export function InvestmentScreen() {
         setQuery={setQuery}
         setOptions={setOptions}
       />
-
-      {summaryPositions.length > 0 ? (
-        <MoversPanel
-          gainers={movers.gainers}
-          losers={movers.losers}
-          concentration={concentration}
-          hint={moversHint}
-          openCard={setModalPrintingId}
-        />
-      ) : null}
 
       <SetTable
         bySet={bySet}
@@ -535,41 +408,7 @@ export function InvestmentScreen() {
             {renderItemChip()}
           </>
         }
-        alerts={alertsByPrinting}
-        onSell={(position, itemId) => setSellTarget({ kind: "sell", position, itemId })}
-        onAlert={setAlertPosition}
       />
-
-      {hasSales ? (
-        <SalesTable
-          lines={filteredSales}
-          onEdit={(sale) => setSellTarget({ kind: "edit", sale })}
-          onUndo={(sale) => sales.undo(sale.saleId)}
-          openCard={setModalPrintingId}
-        />
-      ) : sales.error ? (
-        <ScreenError message={t("investment.sales.loadError")} onRetry={sales.retry} />
-      ) : null}
-
-      {sellTarget ? (
-        <SellDialog
-          target={sellTarget}
-          rates={rates}
-          pendingIds={pendingIds}
-          onSell={sales.sell}
-          onUpdate={sales.update}
-          onClose={() => setSellTarget(null)}
-        />
-      ) : null}
-      {alertPosition ? (
-        <SellAlertDialog
-          position={alertPosition}
-          alert={alertsByPrinting.get(alertPosition.printingId) ?? null}
-          onSave={sellAlerts.save}
-          onRemove={sellAlerts.remove}
-          onClose={() => setAlertPosition(null)}
-        />
-      ) : null}
 
       {modalPrinting && modalCard ? (
         <CardModal

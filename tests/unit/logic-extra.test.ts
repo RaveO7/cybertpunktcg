@@ -129,7 +129,6 @@ function line(partial: Partial<InvestmentLine> & Pick<InvestmentLine, "itemId">)
     purchaseUnit: null,
     purchaseCurrency: null,
     purchaseTotal: null,
-    costEur: null,
     purchasedAt: null,
     profit: null,
     profitBasis: null,
@@ -666,19 +665,16 @@ describe("investissement (cas limites)", () => {
       copies: 0,
       pricedCopies: 0,
       trackedProfitCopies: 0,
-      unconvertedLines: 0,
     });
     const summary = summarizeInvestment([
-      // Achat en dollars sans taux de change : ni investi ni P&L, signalé comme non converti.
       line({ itemId: "a", quantity: 2, purchaseTotal: 10, purchaseCurrency: "USD" }),
-      line({ itemId: "b", quantity: 1, marketTotal: 4, marketUnit: 4, previousMarketUnit: 5, purchaseTotal: 3, purchaseCurrency: "EUR", costEur: 3, profit: 1, profitBasis: 3 }),
+      line({ itemId: "b", quantity: 1, marketTotal: 4, marketUnit: 4, previousMarketUnit: 5, purchaseTotal: 3, purchaseCurrency: "EUR", profit: 1, profitBasis: 3 }),
       // Prix d'achat sans prix marché : compté dans l'investi, pas dans la base du P&L.
-      line({ itemId: "c", quantity: 1, purchaseTotal: 7, purchaseCurrency: "EUR", costEur: 7 }),
+      line({ itemId: "c", quantity: 1, purchaseTotal: 7, purchaseCurrency: "EUR" }),
     ]);
     assert.equal(summary.copies, 4);
     assert.equal(summary.pricedCopies, 1);
     assert.equal(summary.investedEur, 10);
-    assert.equal(summary.unconvertedLines, 1);
     assert.equal(summary.profitEur, 1);
     assert.equal(summary.profitBasis, 3, "base du % : achat des exemplaires comptés dans le P&L");
     assert.equal(summary.trackedProfitCopies, 1);
@@ -690,7 +686,7 @@ describe("investissement (cas limites)", () => {
     const result = investmentBySet(
       [
         line({ itemId: "1", setCode: "inconnu", setName: "Inconnu", quantity: 1, marketTotal: 2, marketUnit: 2 }),
-        line({ itemId: "2", setCode: "b", setName: "B", quantity: 3, purchaseTotal: 6, purchaseCurrency: "EUR", costEur: 6, profit: -1 }),
+        line({ itemId: "2", setCode: "b", setName: "B", quantity: 3, purchaseTotal: 6, purchaseCurrency: "EUR", profit: -1 }),
       ],
       [set({ code: "a", sortOrder: 0 }), set({ code: "b", name: "B", sortOrder: 5 })],
     );

@@ -4,7 +4,6 @@ import path from "node:path";
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { CATALOG_CACHE_TAG } from "@/lib/catalog";
-import { syncExchangeRates } from "@/lib/exchange-rates";
 import { purgeGeocodeCache } from "@/lib/geo/server";
 import { checkPriceGuideFreshness, recordJobFailure, recordJobSuccess } from "@/lib/job-status";
 import { reportError } from "@/lib/monitoring";
@@ -30,13 +29,9 @@ function authorized(request: Request) {
 export async function GET(request: Request) {
   if (!authorized(request)) return apiError(request, "common.unauthorized", 401);
 
-  // Ménage et données annexes : un échec ici ne doit pas empêcher l'import.
+  // Ménage annexe : un échec ici ne doit pas empêcher l'import.
   await purgeExpiredRateLimits().catch((error) => reportError("purge rate-limit", error));
   await purgeGeocodeCache().catch((error) => reportError("purge geocode-cache", error));
-  // Taux BCE du jour, pour convertir en euros les achats et ventes en devise.
-  await syncExchangeRates(prisma)
-    .then((report) => console.log(JSON.stringify({ exchangeRates: report })))
-    .catch((error) => reportError("exchange-rates", error));
 
   try {
     // Seul /tmp est inscriptible sur Vercel.

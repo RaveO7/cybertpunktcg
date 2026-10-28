@@ -1,15 +1,8 @@
 /**
  * Exemplaires possédés. `fromDay` : date d'achat (« AAAA-MM-JJ »), les exemplaires ne comptent qu'à partir
- * de ce jour (absente = possédés depuis toujours). `untilDay` : date de vente, ils ne comptent plus à partir
- * de ce jour (absente = toujours possédés). `cost` : prix d'achat unitaire en EUR (absent = inconnu).
+ * de ce jour (absente = possédés depuis toujours). `cost` : prix d'achat unitaire en EUR (absent = inconnu).
  */
-export type OwnedQuantity = {
-  printingId: string;
-  quantity: number;
-  fromDay?: string | null;
-  untilDay?: string | null;
-  cost?: number | null;
-};
+export type OwnedQuantity = { printingId: string; quantity: number; fromDay?: string | null; cost?: number | null };
 
 export type SnapshotRow = {
   printingId: string;
@@ -108,8 +101,6 @@ export function extendPortfolioHistory(
     let profit = 0;
     let hasProfit = false;
     for (const row of rows) {
-      // Vendu ce jour-là ou avant : sorti du portefeuille (valeur, investi et P&L).
-      if (row.untilDay != null && row.untilDay <= day) continue;
       // Pas encore acheté ce jour-là : ni investi ni P&L, et sa valeur ne compte qu'avec `valueBeforePurchase`.
       const held = row.fromDay == null || row.fromDay <= day;
       if (!held && !options.valueBeforePurchase) continue;

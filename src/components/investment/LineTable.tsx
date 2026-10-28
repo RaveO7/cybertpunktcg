@@ -18,16 +18,7 @@ import {
   type SortState,
 } from "@/components/investment/sorting";
 import { MarketChange, ProfitValue, moneyOrDash, profitClass } from "@/components/investment/ui";
-import { sellTargetReached, type InvestmentLine, type InvestmentPosition } from "@/lib/logic";
-import type { SellAlertDTO } from "@/lib/types";
-
-/** Actions d'une carte : vendre un de ses achats, poser son alerte de revente. */
-type LineActions = {
-  /** Alertes de revente, par carte (printingId). */
-  alerts: ReadonlyMap<string, SellAlertDTO>;
-  onSell: (position: InvestmentPosition, itemId: string) => void;
-  onAlert: (position: InvestmentPosition) => void;
-};
+import type { InvestmentLine, InvestmentPosition } from "@/lib/logic";
 
 /** Clic sur une ligne : sa clé (carte ou achat) et les achats qu'elle couvre. */
 type RowClick = (event: MouseEvent, rowKey: string, itemIds: string[]) => void;
@@ -55,10 +46,7 @@ export function LineTable({
   onRowToggle,
   openCard,
   setChip,
-  alerts,
-  onSell,
-  onAlert,
-}: LineActions & {
+}: {
   filtered: InvestmentLine[];
   positions: InvestmentPosition[];
   /** Tri appliqué, celui par défaut compris : la colonne triée est toujours signalée. */
@@ -95,9 +83,6 @@ export function LineTable({
       onToggle: () => onToggleExpanded(position.printingId),
       onSelect: (event: MouseEvent) => (touch ? onRowToggle(itemIds) : onRowClick(event, position.printingId, itemIds)),
       onOpenCard: () => openCard(position.printingId),
-      alert: alerts.get(position.printingId) ?? null,
-      onSell: () => onSell(position, position.lines[0].itemId),
-      onAlert: () => onAlert(position),
     };
   };
   const purchaseProps = (position: InvestmentPosition, line: InvestmentLine, touch: boolean) => ({
@@ -107,7 +92,6 @@ export function LineTable({
     active: selectedItemIds.has(line.itemId),
     anchor: rangeAnchor === line.itemId,
     onSelect: (event: MouseEvent) => (touch ? onRowToggle([line.itemId]) : onRowClick(event, line.itemId, [line.itemId])),
-    onSell: () => onSell(position, line.itemId),
   });
   return (
 
@@ -143,7 +127,7 @@ export function LineTable({
       ) : (
         <>
           <div className="scrollbar-hud relative overflow-x-auto overscroll-x-contain border border-line">
-            <table className="w-full min-w-[54rem] text-left text-sm [&_td]:whitespace-nowrap [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:z-[1] [&_td:first-child]:bg-panel [&_td:first-child]:whitespace-normal [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:z-[2] [&_th:first-child]:bg-panel-2">
+            <table className="w-full min-w-[46rem] text-left text-sm [&_td]:whitespace-nowrap [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:z-[1] [&_td:first-child]:bg-panel [&_td:first-child]:whitespace-normal [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:z-[2] [&_th:first-child]:bg-panel-2">
               <thead className="bg-panel-2 text-muted">
                 <tr>
                   {LINE_TABLE_KEYS.map((key) => (
@@ -156,9 +140,6 @@ export function LineTable({
                       t={t}
                     />
                   ))}
-                  <th className="px-3 py-2 font-medium">
-                    <span className="sr-only">{t("investment.actions")}</span>
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -223,9 +204,6 @@ type PositionProps = {
   onToggle: () => void;
   onSelect: (event: MouseEvent) => void;
   onOpenCard: () => void;
-  alert: SellAlertDTO | null;
-  onSell: () => void;
-  onAlert: () => void;
 };
 
 type PurchaseProps = {
@@ -236,22 +214,9 @@ type PurchaseProps = {
   active: boolean;
   anchor: boolean;
   onSelect: (event: MouseEvent) => void;
-  onSell: () => void;
 };
 
-function PositionRow({
-  position,
-  t,
-  selected,
-  anchor,
-  open,
-  onToggle,
-  onSelect,
-  onOpenCard,
-  alert,
-  onSell,
-  onAlert,
-}: PositionProps) {
+function PositionRow({ position, t, selected, anchor, open, onToggle, onSelect, onOpenCard }: PositionProps) {
   const fmt = useNumberFormat();
   // Clic sur la ligne : sélection ; clic sur le nom : fiche carte.
   return (
@@ -289,18 +254,12 @@ function PositionRow({
       <td className={`px-3 py-2 font-mono ${profitClass(position.profit)}`}>
         <ProfitValue profit={position.profit} basis={position.profitBasis} />
       </td>
-      <td className="px-3 py-2 text-right">
-        <span className="inline-flex gap-1.5">
-          <AlertButton position={position} alert={alert} t={t} onAlert={onAlert} />
-          <SellButton title={position.title} t={t} onSell={onSell} />
-        </span>
-      </td>
     </tr>
   );
 }
 
 /** Un achat d'une carte dépliée, aligné sous le nom de la carte. */
-function PurchaseRow({ line, title, t, active, anchor, onSelect, onSell }: PurchaseProps) {
+function PurchaseRow({ line, title, t, active, anchor, onSelect }: PurchaseProps) {
   const fmt = useNumberFormat();
   return (
     <tr className={`cursor-pointer select-none border-t border-line/40 ${rowClass(active, anchor)}`} onClick={onSelect}>
@@ -312,10 +271,7 @@ function PurchaseRow({ line, title, t, active, anchor, onSelect, onSell }: Purch
       </td>
       <td />
       <td className="px-3 py-1.5 font-mono">×{line.quantity}</td>
-      <td className="px-3 py-1.5 font-mono">
-        {moneyOrDash(fmt, line.purchaseTotal, line.purchaseCurrency)}
-        <EurEquivalent currency={line.purchaseCurrency} costEur={line.costEur} t={t} />
-      </td>
+      <td className="px-3 py-1.5 font-mono">{moneyOrDash(fmt, line.purchaseTotal, line.purchaseCurrency)}</td>
       <td className="px-3 py-1.5 font-mono">{moneyOrDash(fmt, line.marketTotal)}</td>
       <td className="px-3 py-1.5">
         <MarketVar row={line} />
@@ -323,26 +279,11 @@ function PurchaseRow({ line, title, t, active, anchor, onSelect, onSell }: Purch
       <td className={`px-3 py-1.5 font-mono ${profitClass(line.profit)}`}>
         <ProfitValue profit={line.profit} basis={line.profitBasis} />
       </td>
-      <td className="px-3 py-1.5 text-right">
-        <SellButton title={title} t={t} onSell={onSell} />
-      </td>
     </tr>
   );
 }
 
-function PositionItem({
-  position,
-  t,
-  selected,
-  anchor,
-  open,
-  onToggle,
-  onSelect,
-  onOpenCard,
-  alert,
-  onSell,
-  onAlert,
-}: PositionProps) {
+function PositionItem({ position, t, selected, anchor, open, onToggle, onSelect, onOpenCard }: PositionProps) {
   const fmt = useNumberFormat();
   return (
     <li
@@ -392,17 +333,13 @@ function PositionItem({
             </dd>
           </div>
         </dl>
-        <div className="mt-2 flex justify-end gap-1.5">
-          <AlertButton position={position} alert={alert} t={t} onAlert={onAlert} />
-          <SellButton title={position.title} t={t} onSell={onSell} />
-        </div>
       </div>
     </li>
   );
 }
 
 /** Un achat d'une carte dépliée (téléphone), aligné sous le nom de la carte. */
-function PurchaseItem({ line, title, t, active, anchor, onSelect, onSell }: PurchaseProps) {
+function PurchaseItem({ line, title, t, active, anchor, onSelect }: PurchaseProps) {
   const fmt = useNumberFormat();
   return (
     <li
@@ -425,89 +362,9 @@ function PurchaseItem({ line, title, t, active, anchor, onSelect, onSell }: Purc
         <p className={`font-mono ${profitClass(line.profit)}`}>
           <ProfitValue profit={line.profit} basis={line.profitBasis} />
         </p>
-        <p className="mt-1">
-          <SellButton title={title} t={t} onSell={onSell} />
-        </p>
       </div>
     </li>
   );
-}
-
-/** Bouton d'action d'une ligne : n'agit pas sur la sélection (le clic ne remonte pas jusqu'à la ligne). */
-function RowButton({
-  label,
-  ariaLabel,
-  tone = "default",
-  onClick,
-}: {
-  label: string;
-  ariaLabel: string;
-  tone?: "default" | "set" | "reached";
-  onClick: () => void;
-}) {
-  const toneClass =
-    tone === "reached"
-      ? "border-yellow bg-yellow/10 text-yellow"
-      : tone === "set"
-        ? "border-cyan/60 text-cyan hover:border-cyan"
-        : "border-line text-muted hover:border-cyan hover:text-cyan";
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      title={ariaLabel}
-      className={`h-8 shrink-0 border px-2.5 font-sans text-xs whitespace-nowrap ${toneClass}`}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick();
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-function SellButton({ title, t, onSell }: { title: string; t: Translator; onSell: () => void }) {
-  return <RowButton label={t("investment.sell.button")} ariaLabel={t("investment.sell.buttonLabel", { name: title })} onClick={onSell} />;
-}
-
-/** Alerte de revente : à poser, posée (prix visé) ou atteinte (le prix actuel est au niveau de la cible). */
-function AlertButton({
-  position,
-  alert,
-  t,
-  onAlert,
-}: {
-  position: InvestmentPosition;
-  alert: SellAlertDTO | null;
-  t: Translator;
-  onAlert: () => void;
-}) {
-  const fmt = useNumberFormat();
-  const target = alert ? Number(alert.targetPrice) : null;
-  const reached = alert != null && sellTargetReached(target, position.marketUnit);
-  const price = target == null ? "" : fmt.money(target);
-  return (
-    <RowButton
-      label={
-        !alert
-          ? t("investment.alert.button")
-          : reached
-            ? t("investment.alert.buttonReached", { price })
-            : t("investment.alert.buttonSet", { price })
-      }
-      ariaLabel={t("investment.alert.buttonLabel", { name: position.title })}
-      tone={!alert ? "default" : reached ? "reached" : "set"}
-      onClick={onAlert}
-    />
-  );
-}
-
-/** Équivalent en euros d'un achat en devise (taux BCE du jour d'achat). */
-function EurEquivalent({ currency, costEur, t }: { currency: string | null; costEur: number | null; t: Translator }) {
-  const fmt = useNumberFormat();
-  if (!currency || currency === "EUR" || costEur == null) return null;
-  return <span className="block font-sans text-xs text-muted">{t("investment.approxEur", { amount: fmt.money(costEur) })}</span>;
 }
 
 /** « 2 achats ▸ » : déplie la carte en un achat par sous-ligne, sans changer la sélection. */
@@ -530,21 +387,14 @@ function PurchasesToggle({ count, t, open, onToggle }: { count: number; t: Trans
   );
 }
 
-/**
- * Achat d'une carte : total (en euros quand ses achats sont dans plusieurs devises), son équivalent en
- * euros pour une devise étrangère, puis la date (un seul achat) ou le prix de revient unitaire (plusieurs).
- */
+/** Achat d'une carte : total, puis la date (un seul achat) ou le prix de revient unitaire (plusieurs). */
 function PurchaseValue({ position, t }: { position: InvestmentPosition; t: Translator }) {
   const fmt = useNumberFormat();
   const locale = useLocale();
   const single = position.lines.length === 1 ? position.lines[0] : null;
-  const mixedCurrencies = position.purchaseTotal == null && position.costEur != null;
   return (
     <>
-      {mixedCurrencies && position.costEur != null
-        ? t("investment.approxEur", { amount: fmt.money(position.costEur) })
-        : moneyOrDash(fmt, position.purchaseTotal, position.purchaseCurrency)}
-      <EurEquivalent currency={position.purchaseCurrency} costEur={position.costEur} t={t} />
+      {moneyOrDash(fmt, position.purchaseTotal, position.purchaseCurrency)}
       {single?.purchasedAt ? (
         <span className="block font-sans text-xs text-muted">{formatPurchaseDay(single.purchasedAt, locale)}</span>
       ) : !single && position.purchaseUnit != null ? (

@@ -227,14 +227,5 @@
     "alreadyDropped": "This player has already dropped.",
     "topCutUseLoss": "The top cut has started: enter a loss for this player.",
     "startedUseDrop": "The tournament has started: use drop."
-  },
-  "investment": {
-    "invalidSaleQuantity": "Invalid quantity sold ({max} at most).",
-    "saleBeforePurchase": "A sale cannot be dated before the purchase.",
-    "saleNotFound": "Sale not found.",
-    "invalidSalePrice": "Invalid sale price.",
-    "invalidSaleDate": "Invalid sale date.",
-    "alertNotOwned": "This card is not in your collection.",
-    "invalidTargetPrice": "Invalid resale price."
   }
 }

@@ -35,9 +35,9 @@ const include = { condition: true } as const;
 /** Exemplaires maximum par ligne (carte × état), quel que soit le nombre d'ajouts. */
 export const MAX_LINE_QUANTITY = 999;
 
-export const capped = (quantity: number) => Math.min(quantity, MAX_LINE_QUANTITY);
+const capped = (quantity: number) => Math.min(quantity, MAX_LINE_QUANTITY);
 
-export function toDTO(item: {
+function toDTO(item: {
   id: string;
   printingId: string;
   quantity: number;

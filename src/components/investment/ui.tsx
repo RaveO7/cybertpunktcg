@@ -14,7 +14,6 @@ export function SummaryStat({
   tone,
   aside,
   detail,
-  className = "",
 }: {
   label: string;
   value: string;
@@ -25,10 +24,9 @@ export function SummaryStat({
   aside?: ReactNode;
   /** Ligne d'explication sous la valeur. */
   detail?: ReactNode;
-  className?: string;
 }) {
   return (
-    <div className={`min-w-0 border border-line bg-panel px-3 py-3 sm:px-4 ${className}`}>
+    <div className="min-w-0 border border-line bg-panel px-3 py-3 sm:px-4">
       <p className="text-[11px] tracking-[0.12em] text-muted uppercase sm:text-xs sm:tracking-[0.14em]">{label}</p>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <p className={`text-xl sm:text-2xl ${tone === "gain" ? "text-gain" : tone === "loss" ? "text-danger" : "text-foreground"}`}>

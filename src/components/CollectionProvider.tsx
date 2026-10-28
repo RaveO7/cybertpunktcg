@@ -106,8 +106,6 @@ type CollectionContextValue = {
   importLines: (input: { mode: "add" | "set"; lines: ImportLine[] }) => Promise<ImportSummary>;
   patchLine: (id: string, input: PatchInput) => Promise<void>;
   deleteLine: (id: string) => Promise<void>;
-  /** Ligne modifiée par une autre route (vente, annulation de vente) : la collection affichée la reprend. */
-  applyMutation: (result: MutationResult) => void;
   /** Modifications faites hors ligne, pas encore envoyées au serveur. */
   pendingCount: number;
   /** Lignes visées par une modification en attente. */
@@ -658,7 +656,6 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       deleteLine: async (id) => {
         await request(`/api/collection/${id}`, { method: "DELETE" }, { kind: "delete", lineId: id, payload: null });
       },
-      applyMutation: applyResult,
       pendingCount: ops.length,
       pendingIds,
       syncing,

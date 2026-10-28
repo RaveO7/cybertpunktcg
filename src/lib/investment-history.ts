@@ -1,7 +1,5 @@
 import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
-import { loadExchangeRates } from "./exchange-rates";
-import { rateKey, toEur } from "./logic";
 import { prisma } from "./prisma";
 import {
   buildPortfolioHistory,
@@ -35,36 +33,6 @@ export type PortfolioPurchase = {
 
 type PortfolioHistory = { points: PortfolioHistoryPoint[]; days: number };
 
-/** Exemplaires d'une ligne de la collection ou d'une vente, tels que lus pour la courbe. */
-type HeldRow = {
-  printingId: string;
-  quantity: number;
-  purchasePrice: { toString(): string } | null;
-  purchaseCurrency: string | null;
-  purchasedAt: Date | null;
-  addedAt: Date;
-  soldAt: Date | null;
-};
-
-const HELD_SELECT = {
-  printingId: true,
-  quantity: true,
-  purchasePrice: true,
-  purchaseCurrency: true,
-  purchasedAt: true,
-  addedAt: true,
-} as const;
-
-function unitPrice(row: HeldRow) {
-  const price = row.purchasePrice == null ? null : Number(row.purchasePrice.toString());
-  return price != null && Number.isFinite(price) ? price : null;
-}
-
-/** Jour du taux de change d'un achat : sa date d'achat, sinon son ajout à la collection. */
-function rateDay(row: HeldRow) {
-  return utcDayKey(row.purchasedAt ?? row.addedAt);
-}
-
 export async function loadPortfolioPriceHistory(input: {
   userId: string;
   setCode?: string;
@@ -72,66 +40,48 @@ export async function loadPortfolioPriceHistory(input: {
   /** Exemplaires de la collection retenus dans le détail (sélection, recherche, performance). */
   itemIds?: string[];
 }): Promise<PortfolioHistory & { purchases: PortfolioPurchase[] }> {
-  const printingWhere =
-    input.setCode || input.language
-      ? {
-          printing: {
-            ...(input.setCode ? { set: setCodeWhere(input.setCode) } : {}),
-            ...(input.language ? { language: input.language } : {}),
-          },
-        }
-      : {};
   const items = await prisma.collectionItem.findMany({
     where: {
       userId: input.userId,
       quantity: { gt: 0 },
       ...(input.itemIds?.length ? { id: { in: input.itemIds } } : {}),
-      ...printingWhere,
+      ...(input.setCode || input.language
+        ? {
+            printing: {
+              ...(input.setCode ? { set: setCodeWhere(input.setCode) } : {}),
+              ...(input.language ? { language: input.language } : {}),
+            },
+          }
+        : {}),
     },
-    select: HELD_SELECT,
+    select: { printingId: true, quantity: true, purchasePrice: true, purchaseCurrency: true, purchasedAt: true },
     orderBy: { addedAt: "asc" },
   });
-  // Exemplaires vendus : sur la courbe de l'achat jusqu'au jour de la vente (pas pour une liste d'exemplaires
-  // précis, qui ne porte que sur des lignes de la collection).
-  const sales = input.itemIds?.length
-    ? []
-    : await prisma.collectionSale.findMany({
-        where: { userId: input.userId, ...printingWhere },
-        select: { ...HELD_SELECT, soldAt: true },
-        orderBy: { addedAt: "asc" },
-      });
-  const held: HeldRow[] = [...items.map((item) => ({ ...item, soldAt: null })), ...sales];
-  // Achats en devise : convertis en euros au taux BCE du jour d'achat.
-  const rates = await loadExchangeRates(
-    prisma,
-    held.filter((row) => row.purchasePrice != null && row.purchaseCurrency && row.purchaseCurrency !== "EUR").map(
-      (row) => rateKey(row.purchaseCurrency as string, rateDay(row)),
-    ),
-  );
-  const ownedList: OwnedQuantity[] = held.map((row) => {
-    const price = unitPrice(row);
+  const ownedList: OwnedQuantity[] = items.map((item) => {
+    const price = item.purchasePrice == null ? null : Number(item.purchasePrice.toString());
+    const eur = price != null && Number.isFinite(price) && (item.purchaseCurrency || "EUR") === "EUR";
     return {
-      printingId: row.printingId,
-      quantity: row.quantity,
-      fromDay: row.purchasedAt ? utcDayKey(row.purchasedAt) : null,
-      untilDay: row.soldAt ? utcDayKey(row.soldAt) : null,
-      cost: price == null ? null : toEur(price, row.purchaseCurrency || "EUR", rateDay(row), rates),
+      printingId: item.printingId,
+      quantity: item.quantity,
+      fromDay: item.purchasedAt ? utcDayKey(item.purchasedAt) : null,
+      cost: eur ? price : null,
     };
   });
-  const purchases: PortfolioPurchase[] = held
+  const purchases: PortfolioPurchase[] = items
     .filter((item) => item.purchasedAt != null)
     .map((item) => {
-      const price = unitPrice(item);
+      const price = item.purchasePrice == null ? null : Number(item.purchasePrice.toString());
+      const unitPrice = price != null && Number.isFinite(price) ? price : null;
       return {
         day: utcDayKey(item.purchasedAt as Date),
         printingId: item.printingId,
         quantity: item.quantity,
-        unitPrice: price,
-        currency: price == null ? null : item.purchaseCurrency || "EUR",
+        unitPrice,
+        currency: unitPrice == null ? null : item.purchaseCurrency || "EUR",
       };
     })
     .sort((left, right) => left.day.localeCompare(right.day));
-  const printingIds = [...new Set(held.map((item) => item.printingId))];
+  const printingIds = [...new Set(items.map((item) => item.printingId))];
   if (printingIds.length === 0) return { points: [], days: 0, purchases: [] };
 
   // Ensemble d'exemplaires : calcul complet, pas de ligne de cache par ensemble. Cartes précises : tout
@@ -239,16 +189,13 @@ async function computeFullHistory(
 }
 
 /** Changer cette valeur invalide tous les caches (ex. si le calcul de la courbe évolue). */
-const CACHE_VERSION = "3";
+const CACHE_VERSION = "2";
 const SETTLE_DELAY_DAYS = 2;
 
-/**
- * Empreinte des exemplaires (quantité, dates d'achat et de vente, prix d'achat en euros) : toute modification
- * invalide le cache, y compris un taux de change devenu disponible.
- */
+/** Empreinte des exemplaires (quantité, date et prix d'achat) : toute modification invalide le cache. */
 function collectionFingerprint(owned: OwnedQuantity[]) {
   const entries = owned
-    .map((row) => `${row.printingId}:${row.quantity}:${row.fromDay ?? ""}:${row.untilDay ?? ""}:${row.cost ?? ""}`)
+    .map((row) => `${row.printingId}:${row.quantity}:${row.fromDay ?? ""}:${row.cost ?? ""}`)
     .sort();
   const hash = createHash("sha256").update(CACHE_VERSION);
   for (const entry of entries) hash.update(`|${entry}`);

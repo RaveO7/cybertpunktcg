@@ -69,39 +69,6 @@ export type CollectionItemDTO = {
   addedAt: string;
 };
 
-/** Vente d'exemplaires : prix de revient copié de la ligne vendue, prix de vente total et frais. */
-export type SaleDTO = {
-  id: string;
-  printingId: string;
-  conditionCode: string;
-  quantity: number;
-  /** Prix d'achat unitaire (2 décimales) et devise de la ligne vendue, null = inconnu. */
-  purchasePrice: string | null;
-  purchaseCurrency: string | null;
-  /** « AAAA-MM-JJ », null = inconnue. */
-  purchasedAt: string | null;
-  notes: string | null;
-  /** Ajout de la ligne vendue à la collection (ISO). */
-  addedAt: string;
-  /** Prix de vente total des exemplaires et frais (2 décimales), dans `saleCurrency`. */
-  salePrice: string;
-  saleCurrency: string;
-  fees: string;
-  /** « AAAA-MM-JJ ». */
-  soldAt: string;
-};
-
-/** Alerte de revente d'une carte possédée : prix cible en EUR (2 décimales). */
-export type SellAlertDTO = {
-  id: string;
-  printingId: string;
-  targetPrice: string;
-  /** Date à laquelle le prix a atteint la cible (null tant qu'elle n'est pas atteinte). */
-  alertAt: string | null;
-  alertPrice: string | null;
-  alertSeen: boolean;
-};
-
 export type WishlistItemDTO = {
   id: string;
   printingId: string;
