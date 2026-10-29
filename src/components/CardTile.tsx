@@ -1,9 +1,11 @@
 "use client";
 
-import type { CSSProperties, MouseEvent } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { useTranslations } from "next-intl";
+import { useNumberFormat } from "@/i18n/number-format";
 import type { CardDTO, PrintingDTO } from "@/lib/types";
 import { CardImage } from "@/components/CardImage";
+import { toAmount } from "@/components/card-modal/shared";
 
 export function chipColor(color: string | null | undefined) {
   switch ((color ?? "").toLowerCase()) {
@@ -90,6 +92,8 @@ export function CardTile({
   const title = subname ? `${name} — ${subname}` : name;
   const accent = active ? "hud-panel-active" : queued > 0 || ownedQty > 0 ? "hud-panel-owned" : "";
   const chip = chipColor(card?.color);
+  // Bouton prix en bas à droite, hors mode ajout (ses boutons ♥ et +1 occupent déjà ce coin).
+  const showPrice = !addMode && (toAmount(printing.marketPrice) != null || printing.priceGuide != null);
 
   return (
     <div className="group relative h-full">
@@ -141,7 +145,8 @@ export function CardTile({
                 </span>
               </div>
             ) : null}
-            <div className="mt-auto flex flex-wrap gap-x-2 gap-y-1 pt-2 md:gap-x-3">
+            {/* Place du bouton prix : la ligne passe à la ligne au lieu de glisser dessous. */}
+            <div className={`mt-auto flex flex-wrap gap-x-2 gap-y-1 pt-2 md:gap-x-3 ${showPrice ? "pr-10" : ""}`}>
               {card?.cost != null ? (
                 <span className="inline-flex items-center gap-1 hud-label">
                   <span className="opacity-80">COST</span>
@@ -164,6 +169,12 @@ export function CardTile({
             </div>
           </div>
         </button>
+        {showPrice ? (
+          // Barre sur toute la largeur, bouton calé à droite : l'info-bulle s'y ancre au-dessus, sans sortir de la tuile.
+          <div className="pointer-events-none absolute inset-x-2 bottom-2 z-20 flex justify-end sm:inset-x-2.5 sm:bottom-2.5 md:inset-x-3 md:bottom-3">
+            <PriceHint printing={printing} title={title} tabIndex={tabIndex} />
+          </div>
+        ) : null}
         {addMode ? (
           <div className="absolute bottom-2 right-2 z-20 flex gap-2 sm:bottom-2.5 sm:right-2.5 md:bottom-3 md:right-3 md:gap-2.5">
             {onToggleFavorite ? (
@@ -228,5 +239,100 @@ export function CardTile({
         ) : null}
       </article>
     </div>
+  );
+}
+
+/**
+ * Prix Cardmarket de la carte sans ouvrir sa fiche. L'info-bulle s'affiche au survol de la souris
+ * et s'ouvre au clic, au toucher ou au clavier ; un appui ailleurs, Échap ou un appui sur elle la referme.
+ */
+function PriceHint({ printing, title, tabIndex }: { printing: PrintingDTO; title: string; tabIndex?: number }) {
+  const t = useTranslations();
+  const fmt = useNumberFormat();
+  const id = useId();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+
+  // iOS ne donne pas le focus à un bouton touché (donc pas de blur) : un appui ailleurs referme l'info-bulle.
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (!buttonRef.current?.contains(target) && !panelRef.current?.contains(target)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  const money = (value: string | null | undefined) => {
+    const amount = toAmount(value);
+    return amount == null ? "—" : fmt.money(amount);
+  };
+  const guide = printing.priceGuide;
+  const rows = [
+    { label: t("cards.priceLow"), value: guide?.low },
+    { label: t("cards.priceAvg"), value: guide?.avg },
+    { label: t("cards.priceAvg7"), value: guide?.avg7 },
+    { label: t("cards.priceAvg30"), value: guide?.avg30 },
+  ];
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        tabIndex={tabIndex}
+        aria-label={t("cards.priceDetails", { title })}
+        aria-expanded={open}
+        aria-controls={id}
+        // Petite icône, zone de toucher de 44 px (pseudo-élément).
+        className={`peer/price pointer-events-auto relative grid h-8 w-8 place-items-center border bg-background/85 transition before:absolute before:-inset-1.5 before:content-[''] hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/70 md:h-9 md:w-9 ${
+          open ? "border-cyan text-cyan" : "border-line text-foreground/80"
+        }`}
+        onClick={() => setOpen((value) => !value)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setOpen(false);
+        }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-[18px] w-[18px] md:h-5 md:w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M4 4v16h16" />
+          <path d="m7.5 15 3.5-4 3 2.5 4.5-5.5" />
+        </svg>
+      </button>
+      {/* Au-dessus des boutons, calée à droite, jamais plus large que la tuile. */}
+      <div
+        ref={panelRef}
+        id={id}
+        className={`absolute inset-x-0 bottom-full mb-2 ml-auto max-w-56 border border-cyan/50 bg-black/95 px-2.5 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.55)] ${
+          open ? "pointer-events-auto block" : "hidden peer-hover/price:block"
+        }`}
+        onClick={() => setOpen(false)}
+      >
+        <p className="hud-label text-cyan">Cardmarket</p>
+        <dl className="mt-1.5 space-y-1 text-xs">
+          {rows.map((row) => (
+            <div key={row.label} className="flex items-baseline justify-between gap-2">
+              <dt className="text-muted">{row.label}</dt>
+              <dd className="whitespace-nowrap font-mono tabular-nums">{money(row.value)}</dd>
+            </div>
+          ))}
+          <div className="flex items-baseline justify-between gap-2 border-t border-cyan/20 pt-1.5">
+            <dt className="font-semibold">{t("cards.priceTrend")}</dt>
+            <dd className="whitespace-nowrap font-mono font-semibold tabular-nums text-yellow">{money(printing.marketPrice)}</dd>
+          </div>
+        </dl>
+      </div>
+    </>
   );
 }

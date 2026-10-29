@@ -56,5 +56,11 @@
   "removeFavorite": "Rimuovi {title} dai preferiti",
   "favoriteFailed": "Impossibile aggiornare i preferiti.",
   "quickAddVersion": "Versione",
-  "quickAddCancel": "Annulla"
+  "quickAddCancel": "Annulla",
+  "priceDetails": "Prezzi Cardmarket di {title}",
+  "priceLow": "Minimo",
+  "priceAvg": "Medio",
+  "priceAvg7": "Media 7 g",
+  "priceAvg30": "Media 30 g",
+  "priceTrend": "Tendenza"
 }

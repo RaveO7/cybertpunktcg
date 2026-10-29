@@ -1,8 +1,9 @@
 import { unstable_cache } from "next/cache";
 import { userFromRequest } from "./auth";
 import { prisma } from "./prisma";
+import { GUIDE_DETAIL_KINDS, type GuideDetailKind } from "./cardmarket";
 import { lineDate } from "./collection-line";
-import type { CardDTO, CatalogDTO, CollectionItemDTO, ConditionDTO, PrintingDTO, SetDTO } from "./types";
+import type { CardDTO, CatalogDTO, CollectionItemDTO, ConditionDTO, PrintingDTO, PriceGuideDTO, SetDTO } from "./types";
 
 export const CATALOG_CACHE_TAG = "catalog";
 
@@ -11,7 +12,7 @@ function decimalToString(value: { toString(): string } | null) {
 }
 
 export async function loadCatalog(): Promise<CatalogDTO> {
-  const [sets, conditions, cards, printings, prices] = await Promise.all([
+  const [sets, conditions, cards, printings, prices, guidePrices] = await Promise.all([
     prisma.set.findMany({ orderBy: { sortOrder: "asc" } }),
     prisma.condition.findMany({ orderBy: { sortOrder: "asc" } }),
     prisma.card.findMany({
@@ -26,11 +27,21 @@ export async function loadCatalog(): Promise<CatalogDTO> {
       where: { kind: "trend", source: { code: "cardmarket" } },
       select: { printingId: true, amount: true, previousAmount: true },
     }),
+    prisma.price.findMany({
+      where: { kind: { in: [...GUIDE_DETAIL_KINDS] }, source: { code: "cardmarket" } },
+      select: { printingId: true, kind: true, amount: true },
+    }),
   ]);
   const marketPriceByPrinting = new Map(prices.map((price) => [price.printingId, decimalToString(price.amount)]));
   const previousMarketPriceByPrinting = new Map(
     prices.map((price) => [price.printingId, decimalToString(price.previousAmount)]),
   );
+  const priceGuideByPrinting = new Map<string, PriceGuideDTO>();
+  for (const price of guidePrices) {
+    const guide = priceGuideByPrinting.get(price.printingId) ?? {};
+    guide[price.kind as GuideDetailKind] = price.amount.toString();
+    priceGuideByPrinting.set(price.printingId, guide);
+  }
 
   const cardDTOs: CardDTO[] = cards.map((card) => ({
     id: card.id,
@@ -68,6 +79,7 @@ export async function loadCatalog(): Promise<CatalogDTO> {
     officialFinish: printing.officialFinish,
     marketPrice: marketPriceByPrinting.get(printing.id) ?? null,
     previousMarketPrice: previousMarketPriceByPrinting.get(printing.id) ?? null,
+    ...(priceGuideByPrinting.has(printing.id) ? { priceGuide: priceGuideByPrinting.get(printing.id) } : {}),
   }));
 
   const setDTOs: SetDTO[] = sets.map((set) => ({

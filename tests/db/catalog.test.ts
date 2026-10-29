@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
+import { GUIDE_DETAIL_KINDS, type GuideDetailKind } from "../../src/lib/cardmarket";
 import { loadCatalog, loadCollection } from "../../src/lib/catalog";
 import { deleteCollectionLine, saveCollectionLine } from "../../src/lib/collection-mutate";
 import { aggregateCollection, computeProgress, defaultFilters, filterPrintings } from "../../src/lib/logic";
@@ -21,14 +22,21 @@ describe("catalogue importé", () => {
   it("les prix Cardmarket correspondent au catalogue", async () => {
     const catalog = await loadCatalog();
     const prices = await prisma.price.findMany({ include: { source: true } });
+    const trendPrinting = new Set(prices.filter((price) => price.kind === "trend").map((price) => price.printingId));
     for (const price of prices) {
       assert.equal(price.source.code, "cardmarket");
-      assert.equal(price.kind, "trend");
       assert.ok(Number(price.amount) > 0);
       const printing = catalog.printings.find((item) => item.id === price.printingId);
-      assert.equal(Number(printing?.marketPrice), Number(price.amount));
+      if (price.kind === "trend") {
+        assert.equal(Number(printing?.marketPrice), Number(price.amount));
+        continue;
+      }
+      // Prix bas / moyens du guide : seulement pour une impression cotée.
+      assert.ok(GUIDE_DETAIL_KINDS.includes(price.kind as GuideDetailKind), `kind inattendu : ${price.kind}`);
+      assert.ok(trendPrinting.has(price.printingId));
+      assert.equal(Number(printing?.priceGuide?.[price.kind as GuideDetailKind]), Number(price.amount));
     }
-    assert.equal(catalog.hasPrices, prices.length > 0);
+    assert.equal(catalog.hasPrices, trendPrinting.size > 0);
     assert.ok(catalog.cards.length >= 140);
     assert.ok(catalog.printings.length >= 600);
   });

@@ -210,9 +210,52 @@ export function parseTrends(data: unknown) {
 function pickMarketAmount(record: Record<string, unknown>) {
   return (
     readEuro(record.trend ?? record["Trend Price"] ?? record.trendPrice ?? record.TREND) ??
-    readEuro(record.low ?? record["Low Price"] ?? record.lowPrice ?? record.LOW) ??
-    readEuro(record.avg ?? record["Avg. Sell Price"] ?? record.avgSellPrice ?? record.AVG ?? record.SELL)
+    readLow(record) ??
+    readAvg(record)
   );
+}
+
+function readLow(record: Record<string, unknown>) {
+  return readEuro(record.low ?? record["Low Price"] ?? record.lowPrice ?? record.LOW);
+}
+
+function readAvg(record: Record<string, unknown>) {
+  return readEuro(record.avg ?? record["Avg. Sell Price"] ?? record.avgSellPrice ?? record.AVG ?? record.SELL);
+}
+
+/** Prix du guide gardés à côté de la tendance (hors foil, comme elle), en `kind` de `Price`. */
+export const GUIDE_DETAIL_KINDS = ["low", "avg", "avg7", "avg30"] as const;
+export type GuideDetailKind = (typeof GUIDE_DETAIL_KINDS)[number];
+export type GuideDetails = Partial<Record<GuideDetailKind, number>>;
+
+/** Prix le plus bas, moyenne de vente et moyennes 7 / 30 jours de chaque produit (seulement ceux renseignés). */
+export function parseGuideDetails(data: unknown) {
+  const rows = rowsOf(data, ["priceGuides", "priceguides", "prices"]);
+  if (!rows) throw new Error("Guide de prix illisible.");
+  const details = new Map<number, GuideDetails>();
+  for (const row of rows) {
+    const record = asRecord(row);
+    if (!record) continue;
+    const idProduct = readId(record);
+    if (idProduct == null) continue;
+    const values: Record<GuideDetailKind, number | null> = {
+      low: readLow(record),
+      avg: readAvg(record),
+      avg7: readEuro(record.avg7 ?? record.AVG7),
+      avg30: readEuro(record.avg30 ?? record.AVG30),
+    };
+    const entry: GuideDetails = {};
+    for (const kind of GUIDE_DETAIL_KINDS) {
+      const value = values[kind];
+      if (value != null) entry[kind] = value;
+    }
+    if (Object.keys(entry).length > 0) details.set(idProduct, entry);
+  }
+  return details;
+}
+
+export function parseGuideDetailsFile(text: string) {
+  return parseGuideDetails(parseFile(text));
 }
 
 export function matchCardmarketPrices(

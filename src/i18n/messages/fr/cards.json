@@ -56,5 +56,11 @@
   "removeFavorite": "Retirer {title} des favoris",
   "favoriteFailed": "Impossible de modifier les favoris.",
   "quickAddVersion": "Version",
-  "quickAddCancel": "Annuler"
+  "quickAddCancel": "Annuler",
+  "priceDetails": "Prix Cardmarket de {title}",
+  "priceLow": "Bas",
+  "priceAvg": "Moyen",
+  "priceAvg7": "Moy. 7 j",
+  "priceAvg30": "Moy. 30 j",
+  "priceTrend": "Tendance"
 }

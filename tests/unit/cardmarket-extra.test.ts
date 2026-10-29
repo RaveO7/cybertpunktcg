@@ -8,6 +8,8 @@ import { describe, it } from "vitest";
 import {
   languageMarketSetPairs,
   matchCardmarketPrices,
+  parseGuideDetails,
+  parseGuideDetailsFile,
   parsePriceFile,
   parsePriceGuideDate,
   parseProductFile,
@@ -69,6 +71,26 @@ describe("lecture du guide de prix", () => {
       [2, 1.2],
       [3, 4.44],
     ]);
+  });
+
+  it("prix du guide : low, avg, avg7, avg30 hors foil, seulement ceux renseignés (JSON et CSV)", () => {
+    const details = parseGuideDetails({
+      priceGuides: [
+        { idProduct: 1, trend: 2.5, low: 1, avg: 3.333, avg7: 2, avg30: 0, "low-foil": 9, "avg-foil": 9 },
+        { idProduct: 2, trend: 4, low: 0, avg: null },
+        { idProduct: 3, avg7: "1,5" },
+        { low: 1 },
+        "ligne invalide",
+      ],
+    });
+    assert.deepEqual([...details.entries()], [
+      [1, { low: 1, avg: 3.33, avg7: 2 }],
+      [3, { avg7: 1.5 }],
+    ]);
+    const csv = parseGuideDetailsFile(
+      'idProduct,Avg. Sell Price,Low Price,Trend Price,AVG1,AVG7,AVG30,Foil Low\n7,"2,50",1,3,,2.2,2.4,8\n',
+    );
+    assert.deepEqual([...csv.entries()], [[7, { low: 1, avg: 2.5, avg7: 2.2, avg30: 2.4 }]]);
   });
 
   it("arrondit au centime et accepte la virgule décimale et les espaces", () => {

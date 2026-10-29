@@ -48,7 +48,14 @@ let fileCount = 0;
 
 async function runImport(
   trends: Trends,
-  options: { createdAt?: string | null; force?: boolean; nonsingles?: unknown; gzip?: boolean } = {},
+  options: {
+    createdAt?: string | null;
+    force?: boolean;
+    nonsingles?: unknown;
+    gzip?: boolean;
+    /** Autres colonnes du guide (low, avg, avg7, avg30) par produit. */
+    details?: Record<number, Record<string, number>>;
+  } = {},
 ) {
   fileCount += 1;
   const products = path.join(filesDir, `products-${fileCount}.json`);
@@ -72,7 +79,13 @@ async function runImport(
   const guide = JSON.stringify({
     version: 1,
     ...(createdAt ? { createdAt } : {}),
-    priceGuides: Object.entries(trends).map(([id, amount]) => ({ idProduct: Number(id), trend: amount, low: 0, avg: 0 })),
+    priceGuides: Object.entries(trends).map(([id, amount]) => ({
+      idProduct: Number(id),
+      trend: amount,
+      low: 0,
+      avg: 0,
+      ...options.details?.[Number(id)],
+    })),
   });
   writeFileSync(prices, options.gzip ? gzipSync(guide) : guide);
   let nonsingles: string | null = null;
@@ -363,5 +376,41 @@ describe.sequential("import des prix Cardmarket en base (copie)", () => {
     assert.equal(p1[dayKey(2)], 1.5, "état de départ : 1,50 à J-2");
     assert.equal(p1[dayKey(0)], 1.5);
     assert.ok(p1[dayKey(1)] === undefined || p1[dayKey(1)] === 1.5, `J-1 inventé : ${p1[dayKey(1)]}`);
+  });
+
+  it("prix bas / moyens du guide : écrits pour les impressions cotées, exposés au catalogue, remplacés à chaque import", async () => {
+    const { loadCatalog } = await import("../../src/lib/catalog");
+    /** Prix du guide des impressions suivies : `${index}:${kind}=${montant}`, triés. */
+    const guideRows = async () =>
+      (await prisma.price.findMany({ where: { printingId: { in: P }, kind: { not: "trend" } } }))
+        .map((row) => {
+          assert.equal(row.previousAmount, null, "pas de prix précédent pour le guide");
+          return `${P.indexOf(row.printingId)}:${row.kind}=${Number(row.amount)}`;
+        })
+        .sort();
+    const trends = trend([2, 3, undefined, 4]);
+
+    const report = await imported(trends, {
+      details: {
+        [BASE_ID + 1]: { low: 1.5, avg: 2.25, avg7: 2.1, avg30: 1.9 },
+        // 0 = pas de prix, comme pour la tendance.
+        [BASE_ID + 2]: { low: 2.8, avg7: 0 },
+      },
+    });
+    assert.equal(report.guideDetailsWritten, 5);
+    assert.deepEqual(await guideRows(), ["0:avg30=1.9", "0:avg7=2.1", "0:avg=2.25", "0:low=1.5", "1:low=2.8"]);
+
+    const catalog = await loadCatalog();
+    const byId = new Map(catalog.printings.map((printing) => [printing.id, printing]));
+    assert.deepEqual(byId.get(P[0])?.priceGuide, { avg: "2.25", avg30: "1.9", avg7: "2.1", low: "1.5" });
+    assert.deepEqual(byId.get(P[1])?.priceGuide, { low: "2.8" });
+    assert.equal(byId.get(P[3])?.marketPrice, "4");
+    assert.equal("priceGuide" in (byId.get(P[3]) ?? {}), false, "pas de champ sans prix du guide");
+
+    // Guide suivant sans ces colonnes : les anciens prix du guide disparaissent, la tendance reste.
+    const next = await imported(trends);
+    assert.equal(next.guideDetailsWritten, 0);
+    assert.deepEqual(await guideRows(), []);
+    assert.deepEqual((await priceState()).map((state) => state?.[0] ?? null), [2, 3, null, 4]);
   });
 });

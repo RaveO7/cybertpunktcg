@@ -35,6 +35,16 @@ export type PrintingDTO = {
   officialFinish: string | null;
   marketPrice: string | null;
   previousMarketPrice: string | null;
+  /** Autres prix du guide Cardmarket (absent si aucun n'est connu). */
+  priceGuide?: PriceGuideDTO;
+};
+
+/** Prix du guide Cardmarket hors tendance : plus bas, moyenne de vente, moyennes 7 et 30 jours. */
+export type PriceGuideDTO = {
+  low?: string;
+  avg?: string;
+  avg7?: string;
+  avg30?: string;
 };
 
 export type SetDTO = {
