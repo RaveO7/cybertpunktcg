@@ -232,7 +232,7 @@ describe("recherche tolérante", () => {
   it("respecte le tri choisi", () => {
     const priced = searchPrintings.map((entry, index) => ({ ...entry, marketPrice: String(10 - index) }));
     const matched = filterPrintings(priced, search, new Map(), filters({ q: "streetkid" }));
-    const sorted = sortPrintings(matched, search, new Map(), new Map(), "cost-asc", { q: "streetkid", defaultSort: "default" });
+    const sorted = sortPrintings(matched, search, new Map(), new Map(), "price-asc", { q: "streetkid", defaultSort: "default" });
     assert.deepEqual(sorted.map((entry) => entry.id), ["s-kid", "s-rules", "s-v"]);
   });
 

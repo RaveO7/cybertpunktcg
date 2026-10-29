@@ -8,6 +8,7 @@ import {
   baseCollectorNumber,
   buildFacets,
   buildInvestmentLines,
+  collectorRangeIds,
   groupInvestmentPositions,
   defaultFilters,
   equivalentPrintingIds,
@@ -274,7 +275,7 @@ describe("langues et filtres d'extension (cas limites)", () => {
     assert.equal(filters.q, "boite");
     assert.equal(filters.collection, "owned");
     assert.equal(sealedBrowseFilters("sealed-box", { language: "it" }).language, "en");
-    assert.equal(sealedBrowseFilters("sealed-box", { sort: "cost-desc", page: 3 }).sort, "cost-desc");
+    assert.equal(sealedBrowseFilters("sealed-box", { sort: "price-desc", page: 3 }).sort, "price-desc");
   });
 });
 
@@ -293,6 +294,12 @@ describe("parseFilters / serializeFilters", () => {
     assert.equal(parseFilters(new URLSearchParams("set=wtmc-both")).language, "");
     assert.equal(parseFilters(new URLSearchParams("set=wtmc-both&language=fr")).set, "welcometonightcityretail-fr");
     assert.equal(parseFilters(new URLSearchParams(""), false).set, "all");
+  });
+
+  it("anciens liens : sort=cost-* triait par prix et devient price-*", () => {
+    assert.equal(parseFilters(new URLSearchParams("sort=cost-asc")).sort, "price-asc");
+    assert.equal(parseFilters(new URLSearchParams("sort=cost-desc")).sort, "price-desc");
+    assert.equal(parseFilters(new URLSearchParams("sort=play-cost-desc")).sort, "play-cost-desc");
   });
 
   it("l'URL par défaut est vide", () => {
@@ -322,7 +329,7 @@ describe("parseFilters / serializeFilters", () => {
           rarity: "Iconic Legend",
           collection: "duplicates",
           condition: "LP",
-          sort: "cost-desc",
+          sort: "price-desc",
           page: 4,
           printingId: "p-42",
         },
@@ -416,8 +423,28 @@ describe("sortPrintings", () => {
   });
 
   it("prix : les cartes sans prix (ou prix illisible) restent à la fin dans les deux sens", () => {
-    assert.deepEqual(sort("cost-asc"), ["p9b", "p10", "pb1", "p9", "p9a"]);
-    assert.deepEqual(sort("cost-desc"), ["pb1", "p9b", "p10", "p9", "p9a"]);
+    assert.deepEqual(sort("price-asc"), ["p9b", "p10", "pb1", "p9", "p9a"]);
+    assert.deepEqual(sort("price-desc"), ["pb1", "p9b", "p10", "p9", "p9a"]);
+  });
+
+  it("coût, power et RAM de jeu : sans valeur à la fin dans les deux sens, égalités par numéro", () => {
+    assert.deepEqual(sort("play-cost-asc"), ["p10", "p9", "p9a", "pb1", "p9b"]);
+    assert.deepEqual(sort("play-cost-desc"), ["pb1", "p9", "p9a", "p10", "p9b"]);
+    const stats = new Map<string, CardDTO>([
+      ["a", card({ id: "a", power: 3, ram: null })],
+      ["b", card({ id: "b", power: null, ram: 2 })],
+      ["c", card({ id: "c", power: 4, ram: 1 })],
+    ]);
+    const list = [
+      printing({ id: "pa", cardId: "a", collectorNumber: "002" }),
+      printing({ id: "pb", cardId: "b", collectorNumber: "003" }),
+      printing({ id: "pc", cardId: "c", collectorNumber: "001" }),
+    ];
+    const by = (key: SortKey) => ids(sortPrintings(list, stats, new Map(), sets, key));
+    assert.deepEqual(by("power-asc"), ["pa", "pc", "pb"]);
+    assert.deepEqual(by("power-desc"), ["pc", "pa", "pb"]);
+    assert.deepEqual(by("ram-asc"), ["pc", "pb", "pa"]);
+    assert.deepEqual(by("ram-desc"), ["pb", "pc", "pa"]);
   });
 
   it("rareté : ordre officiel, rareté inconnue puis absente à la fin", () => {
@@ -451,9 +478,30 @@ describe("sortPrintings", () => {
 
   it("ne modifie pas la liste reçue ; liste vide", () => {
     const before = ids(printings);
-    sort("cost-desc");
+    sort("price-desc");
     assert.deepEqual(ids(printings), before);
     assert.deepEqual(sortPrintings([], cards, new Map(), sets, "rarity"), []);
+  });
+});
+
+describe("collectorRangeIds", () => {
+  // Identifiant = numéro de collection, dans le désordre : l'ordre de la liste est conservé.
+  const list = ["005b", "001", "010", "β003", "005", "002", "005a"].map((collectorNumber) =>
+    printing({ id: collectorNumber, collectorNumber }),
+  );
+
+  it("bornes incluses, dans n'importe quel ordre ; un suffixe borne la plage (#005a sans #005b)", () => {
+    assert.deepEqual(collectorRangeIds(list, "001", "005a"), ["001", "005", "002", "005a"]);
+    assert.deepEqual(collectorRangeIds(list, "005a", "001"), ["001", "005", "002", "005a"]);
+  });
+
+  it("même ordre que le tri par numéro : beta après la retail", () => {
+    assert.deepEqual(collectorRangeIds(list, "001", "010"), ["005b", "001", "010", "005", "002", "005a"]);
+    assert.deepEqual(collectorRangeIds(list, "005b", "β003"), ["005b", "010", "β003"]);
+  });
+
+  it("carte absente de la liste → aucune", () => {
+    assert.deepEqual(collectorRangeIds(list, "001", "inconnue"), []);
   });
 });
 

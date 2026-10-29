@@ -47,7 +47,8 @@ export function nameParts(card: CardDTO | undefined, printing: PrintingDTO) {
     return { name: localized, subname: card?.subname ?? null };
   }
   return {
-    name: card?.name || card?.canonicalName || "Carte",
+    // Sans nom connu : le numéro de collection, identique dans toutes les langues.
+    name: card?.name || card?.canonicalName || `#${printing.collectorNumber}`,
     subname: card?.subname ?? null,
   };
 }
@@ -131,7 +132,7 @@ export function CardTile({
               />
             ) : (
               <div className="flex h-full items-center justify-center px-2 text-center text-xs text-muted">
-                Image indisponible
+                {t("modal.noImage")}
               </div>
             )}
           </div>

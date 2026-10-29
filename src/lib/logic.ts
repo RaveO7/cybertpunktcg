@@ -14,6 +14,7 @@ import {
   MAIN_SET_CODE,
   matchesSetFilter,
   parseSetList,
+  parseSortKey,
   RARITY_ORDER,
   RELEASED_SET_ID,
   TYPE_ORDER,
@@ -574,15 +575,38 @@ function marketAmount(printing: PrintingDTO) {
   return Number.isFinite(amount) ? amount : null;
 }
 
-function compareMarketPrice(a: PrintingDTO, b: PrintingDTO, direction: 1 | -1) {
-  const priceA = marketAmount(a);
-  const priceB = marketAmount(b);
-  if (priceA == null && priceB == null) return compareNumber(a, b);
-  if (priceA == null) return 1;
-  if (priceB == null) return -1;
-  const diff = (priceA - priceB) * direction;
+/** Valeurs absentes en fin de liste dans les deux sens ; égalités départagées par le numéro. */
+function compareValues(a: PrintingDTO, b: PrintingDTO, valueA: number | null, valueB: number | null, direction: 1 | -1) {
+  if (valueA == null && valueB == null) return compareNumber(a, b);
+  if (valueA == null) return 1;
+  if (valueB == null) return -1;
+  const diff = (valueA - valueB) * direction;
   if (diff !== 0) return diff;
   return compareNumber(a, b);
+}
+
+/** Tris sur une caractéristique de jeu de la carte : [caractéristique, sens]. */
+const CARD_STAT_SORTS: Partial<Record<SortKey, ["cost" | "power" | "ram", 1 | -1]>> = {
+  "play-cost-asc": ["cost", 1],
+  "play-cost-desc": ["cost", -1],
+  "power-asc": ["power", 1],
+  "power-desc": ["power", -1],
+  "ram-asc": ["ram", 1],
+  "ram-desc": ["ram", -1],
+};
+
+/**
+ * Cartes de la liste dont le numéro de collection est entre ceux des deux cartes, bornes incluses et dans
+ * n'importe quel ordre ; même ordre que le tri par numéro (#001 à #005a ne prend pas #005b).
+ */
+export function collectorRangeIds(list: PrintingDTO[], anchorId: string, endId: string) {
+  const anchor = list.find((printing) => printing.id === anchorId);
+  const end = list.find((printing) => printing.id === endId);
+  if (!anchor || !end) return [];
+  const [low, high] = compareNumber(anchor, end) <= 0 ? [anchor, end] : [end, anchor];
+  return list
+    .filter((printing) => compareNumber(printing, low) >= 0 && compareNumber(printing, high) <= 0)
+    .map((printing) => printing.id);
 }
 
 function emptyCard(id: string): CardDTO {
@@ -641,8 +665,13 @@ function sortPrintingsBy(
     }
     if (sort === "number-asc") return compareNumber(a, b);
     if (sort === "number-desc") return compareNumber(b, a);
-    if (sort === "cost-asc" || sort === "cost-desc") {
-      return compareMarketPrice(a, b, sort === "cost-asc" ? 1 : -1);
+    if (sort === "price-asc" || sort === "price-desc") {
+      return compareValues(a, b, marketAmount(a), marketAmount(b), sort === "price-asc" ? 1 : -1);
+    }
+    const stat = CARD_STAT_SORTS[sort];
+    if (stat) {
+      const [key, direction] = stat;
+      return compareValues(a, b, cards.get(a.cardId)?.[key] ?? null, cards.get(b.cardId)?.[key] ?? null, direction);
     }
     if (sort === "qty-asc" || sort === "qty-desc") {
       const diff = ownershipOf(a.id, agg).qty - ownershipOf(b.id, agg).qty;
@@ -1432,7 +1461,6 @@ export function parseFilters(
       .filter(Boolean);
   const textList = (key: string) => splitList(params.get(key) ?? "");
   const collection = params.get("collection");
-  const sort = params.get("sort");
   const eddiable = params.get("eddiable");
   const page = Number(params.get("page") ?? "1");
   const language = languageFromParams(params, base);
@@ -1462,28 +1490,10 @@ export function parseFilters(
         ? collection
         : base.collection,
     condition: params.get("condition") ?? "",
-    sort: isSortKey(sort) ? sort : base.sort,
+    sort: parseSortKey(params.get("sort")) ?? base.sort,
     page: Number.isFinite(page) && page > 0 ? Math.floor(page) : 1,
     printingId: params.get("printing"),
   };
-}
-
-function isSortKey(value: string | null): value is SortKey {
-  return (
-    value === "default" ||
-    value === "number-asc" ||
-    value === "number-desc" ||
-    value === "cost-asc" ||
-    value === "cost-desc" ||
-    value === "qty-asc" ||
-    value === "qty-desc" ||
-    value === "name-asc" ||
-    value === "name-desc" ||
-    value === "rarity" ||
-    value === "set" ||
-    value === "owned-first" ||
-    value === "missing-first"
-  );
 }
 
 export function serializeFilters(

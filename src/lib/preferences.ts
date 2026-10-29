@@ -1,4 +1,4 @@
-import { CONDITIONS } from "@/lib/reference-data";
+import { CONDITIONS, parseSortKey } from "@/lib/reference-data";
 import type { CollectionFilter, SortKey } from "@/lib/types";
 import { CURRENCIES, type CurrencyCode } from "@/lib/parse";
 
@@ -26,21 +26,6 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 };
 
 const CONDITION_CODES = new Set<string>(CONDITIONS.map((entry) => entry.code));
-const SORT_KEYS = new Set<SortKey>([
-  "default",
-  "number-asc",
-  "number-desc",
-  "cost-asc",
-  "cost-desc",
-  "qty-asc",
-  "qty-desc",
-  "name-asc",
-  "name-desc",
-  "rarity",
-  "set",
-  "owned-first",
-  "missing-first",
-]);
 const COLLECTION_FILTERS = new Set<CollectionFilter>(["all", "owned", "missing", "duplicates"]);
 const PANEL_MODES = new Set<FiltersPanelMode>(["auto", "open", "closed"]);
 const THEME_MODES = new Set<ThemeMode>(["dark", "light"]);
@@ -88,10 +73,7 @@ export function normalizePreferences(raw: unknown): UserPreferences {
       typeof value.condition === "string" && CONDITION_CODES.has(value.condition)
         ? value.condition
         : DEFAULT_PREFERENCES.condition,
-    sort:
-      typeof value.sort === "string" && SORT_KEYS.has(value.sort as SortKey)
-        ? (value.sort as SortKey)
-        : DEFAULT_PREFERENCES.sort,
+    sort: parseSortKey(value.sort) ?? DEFAULT_PREFERENCES.sort,
     collection:
       typeof value.collection === "string" && COLLECTION_FILTERS.has(value.collection as CollectionFilter)
         ? (value.collection as CollectionFilter)

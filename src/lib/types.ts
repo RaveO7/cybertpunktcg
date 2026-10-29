@@ -1,3 +1,5 @@
+import type { SORT_KEYS } from "./reference-data";
+
 export type CardDTO = {
   id: string;
   externalId: string;
@@ -112,20 +114,7 @@ export type CatalogDTO = {
 
 export type CollectionFilter = "all" | "owned" | "missing" | "duplicates";
 
-export type SortKey =
-  | "default"
-  | "number-asc"
-  | "number-desc"
-  | "cost-asc"
-  | "cost-desc"
-  | "qty-asc"
-  | "qty-desc"
-  | "name-asc"
-  | "name-desc"
-  | "rarity"
-  | "set"
-  | "owned-first"
-  | "missing-first";
+export type SortKey = (typeof SORT_KEYS)[number];
 
 export type Filters = {
   q: string;

@@ -23,6 +23,7 @@ import {
   languageOptions,
   setForLanguage,
   buildFacets,
+  collectorRangeIds,
   defaultFilters,
   filterPrintings,
   ownershipOf,
@@ -47,42 +48,6 @@ import { usePreferences } from "@/components/PreferencesProvider";
 import { conditionOptionLabel } from "@/lib/condition-label";
 import type { Translator } from "@/i18n/translator";
 import { filterDefaultsFrom } from "@/lib/preferences";
-
-function collectorRank(value: string) {
-  const beta = /^β/i.test(value) ? 1 : 0;
-  const body = value.replace(/^β/i, "");
-  const match = body.match(/^0*(\d+)(.*)$/i);
-  return {
-    beta,
-    number: match ? Number(match[1]) : Number.MAX_SAFE_INTEGER,
-    suffix: (match?.[2] ?? "").toLowerCase(),
-  };
-}
-
-function compareCollector(left: ReturnType<typeof collectorRank>, right: ReturnType<typeof collectorRank>) {
-  if (left.beta !== right.beta) return left.beta - right.beta;
-  if (left.number !== right.number) return left.number - right.number;
-  if (left.suffix === right.suffix) return 0;
-  return left.suffix < right.suffix ? -1 : 1;
-}
-
-function collectorRangeIds(list: PrintingDTO[], anchorId: string, endId: string) {
-  const anchor = list.find((printing) => printing.id === anchorId);
-  const end = list.find((printing) => printing.id === endId);
-  if (!anchor || !end) return [];
-  const start = collectorRank(anchor.collectorNumber);
-  const finish = collectorRank(end.collectorNumber);
-  const low = compareCollector(start, finish) <= 0 ? start : finish;
-  const high = compareCollector(start, finish) <= 0 ? finish : start;
-  const beta = start.beta === finish.beta ? start.beta : null;
-  return list
-    .filter((printing) => {
-      const rank = collectorRank(printing.collectorNumber);
-      if (beta !== null && rank.beta !== beta) return false;
-      return compareCollector(rank, low) >= 0 && compareCollector(rank, high) <= 0;
-    })
-    .map((printing) => printing.id);
-}
 
 /** Mêmes critères de liste : seule la fiche ouverte (`printingId`) peut différer. */
 function sameListFilters(a: Filters, b: Filters) {
@@ -123,7 +88,10 @@ function sortFields(t: Translator): SortField[] {
   return [
     { id: "default", label: t("cards.sortDefault"), keys: { asc: "default" } },
     { id: "number", label: t("cards.sortFieldNumber"), keys: { asc: "number-asc", desc: "number-desc" } },
-    { id: "cost", label: t("cards.sortFieldCost"), keys: { asc: "cost-asc", desc: "cost-desc" } },
+    { id: "price", label: t("cards.sortFieldPrice"), keys: { asc: "price-asc", desc: "price-desc" } },
+    { id: "play-cost", label: t("filters.cost"), keys: { asc: "play-cost-asc", desc: "play-cost-desc" } },
+    { id: "power", label: t("filters.power"), keys: { asc: "power-asc", desc: "power-desc" } },
+    { id: "ram", label: t("filters.ram"), keys: { asc: "ram-asc", desc: "ram-desc" } },
     { id: "qty", label: t("cards.sortFieldQty"), keys: { asc: "qty-asc", desc: "qty-desc" } },
     { id: "name", label: t("cards.sortFieldName"), keys: { asc: "name-asc", desc: "name-desc" } },
     { id: "owned", label: t("cards.sortFieldOwned"), keys: { asc: "missing-first", desc: "owned-first" } },

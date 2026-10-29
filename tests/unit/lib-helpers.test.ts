@@ -22,6 +22,7 @@ import {
   PRICE_SOURCES,
   RARITY_ORDER,
   SEALED_GROUP_FILTER,
+  SORT_KEYS,
   isSealedSetCode,
   matchesSetFilter,
   partitionCatalogSets,
@@ -232,6 +233,12 @@ describe("preferences", () => {
   it("accepte toutes les devises et tous les états de référence", () => {
     for (const currency of CURRENCIES) assert.equal(normalizePreferences({ currency }).currency, currency);
     for (const { code } of CONDITIONS) assert.equal(normalizePreferences({ condition: code }).condition, code);
+  });
+
+  it("accepte tous les tris et convertit l'ancien tri par prix (cost-*) enregistré", () => {
+    for (const sort of SORT_KEYS) assert.equal(normalizePreferences({ sort }).sort, sort);
+    assert.equal(normalizePreferences({ sort: "cost-asc" }).sort, "price-asc");
+    assert.equal(normalizePreferences({ sort: "cost-desc" }).sort, "price-desc");
   });
 
   it("lecture / écriture sans navigateur (SSR) : défauts, aucune exception", () => {

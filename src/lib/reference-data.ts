@@ -111,6 +111,42 @@ export const RARITY_ORDER = [
   "Secret",
 ] as const;
 
+/** Tris de la liste des cartes : paramètre `sort` de l'URL et préférence « tri par défaut ». */
+export const SORT_KEYS = [
+  "default",
+  "number-asc",
+  "number-desc",
+  "price-asc",
+  "price-desc",
+  "play-cost-asc",
+  "play-cost-desc",
+  "power-asc",
+  "power-desc",
+  "ram-asc",
+  "ram-desc",
+  "qty-asc",
+  "qty-desc",
+  "name-asc",
+  "name-desc",
+  "rarity",
+  "set",
+  "owned-first",
+  "missing-first",
+] as const;
+
+// `cost-*` triait par prix avant l'arrivée du tri par coût de jeu : anciens liens et préférences enregistrées.
+const LEGACY_SORT_KEYS = new Map<string, (typeof SORT_KEYS)[number]>([
+  ["cost-asc", "price-asc"],
+  ["cost-desc", "price-desc"],
+]);
+
+/** Clé de tri connue (une ancienne clé est convertie), sinon `null`. */
+export function parseSortKey(value: unknown): (typeof SORT_KEYS)[number] | null {
+  if (typeof value !== "string") return null;
+  if ((SORT_KEYS as readonly string[]).includes(value)) return value as (typeof SORT_KEYS)[number];
+  return LEGACY_SORT_KEYS.get(value) ?? null;
+}
+
 export const CONDITIONS = [
   { code: "NM", name: "Near Mint", sortOrder: 0 },
   { code: "LP", name: "Lightly Played", sortOrder: 1 },
