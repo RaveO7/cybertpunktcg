@@ -9,18 +9,21 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
 
 /** Compte connecté propriétaire du deck ; sinon la réponse à renvoyer (deck d'autrui : 404). */
-async function ownerOf(request: Request, context: Context): Promise<{ response: Promise<Response> } | { deckId: string }> {
+async function ownerOf(
+  request: Request,
+  context: Context,
+): Promise<{ response: Promise<Response> } | { userId: string; deckId: string }> {
   const user = await requireUser(request);
   if (!user) return { response: sessionRequired(request) };
   const { id } = await context.params;
   if (!(await ownsDeck(user.id, id))) return { response: apiError(request, "decks.notFound", 404) };
-  return { deckId: id };
+  return { userId: user.id, deckId: id };
 }
 
 export async function GET(request: Request, context: Context) {
   const owner = await ownerOf(request, context);
   if ("response" in owner) return owner.response;
-  return NextResponse.json(deckShareInfo(request, await getDeckShare(owner.deckId)));
+  return NextResponse.json(deckShareInfo(request, await getDeckShare(owner.userId, owner.deckId)));
 }
 
 export async function POST(request: Request, context: Context) {
@@ -28,13 +31,13 @@ export async function POST(request: Request, context: Context) {
   if ("response" in owner) return owner.response;
   const parsed = await readJsonBody(request, shareSchema);
   if (!parsed.ok) return parsed.response;
-  const share = await createOrRotateDeckShare(owner.deckId, parsed.data?.rotate === true);
+  const share = await createOrRotateDeckShare(owner.userId, owner.deckId, parsed.data?.rotate === true);
   return NextResponse.json(deckShareInfo(request, share));
 }
 
 export async function DELETE(request: Request, context: Context) {
   const owner = await ownerOf(request, context);
   if ("response" in owner) return owner.response;
-  await revokeDeckShare(owner.deckId);
+  await revokeDeckShare(owner.userId, owner.deckId);
   return NextResponse.json({ active: false });
 }

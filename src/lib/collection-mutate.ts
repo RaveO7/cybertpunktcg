@@ -96,13 +96,13 @@ export async function saveCollectionLine(userId: string, input: SaveInput): Prom
     }
     if (input.quantity <= 0) {
       if (!existing) return { item: null, deletedId: null };
-      await tx.collectionItem.delete({ where: { id: existing.id } });
+      await tx.collectionItem.delete({ where: { id: existing.id, userId } });
       return { item: null, deletedId: existing.id };
     }
 
     const quantity = capped(input.mode === "add" && existing ? existing.quantity + input.quantity : input.quantity);
     const saved = existing
-      ? await tx.collectionItem.update({ where: { id: existing.id }, data: { quantity }, include })
+      ? await tx.collectionItem.update({ where: { id: existing.id, userId }, data: { quantity }, include })
       : await tx.collectionItem.create({
           data: { userId, printingId: printing.id, conditionId: condition.id, quantity, ...newLineFields(query) },
           include,
@@ -140,7 +140,7 @@ export async function saveCollectionBatch(
       });
       const row = existing
         ? await tx.collectionItem.update({
-            where: { id: existing.id },
+            where: { id: existing.id, userId },
             data: { quantity: capped(existing.quantity + line.quantity) },
             include,
           })
@@ -242,7 +242,7 @@ export async function importCollectionLines(userId: string, input: ImportInput) 
 
   await prisma.$transaction([
     ...(creates.length ? [prisma.collectionItem.createMany({ data: creates })] : []),
-    ...[...updates].map(([id, data]) => prisma.collectionItem.update({ where: { id }, data })),
+    ...[...updates].map(([id, data]) => prisma.collectionItem.update({ where: { id, userId }, data })),
   ]);
   return { created: creates.length, updated: updates.size, skipped };
 }
@@ -263,7 +263,7 @@ export async function patchCollectionLine(
     });
     if (!current) fail("collection.lineNotFound");
     if (input.quantity != null && input.quantity <= 0) {
-      await tx.collectionItem.delete({ where: { id: current.id } });
+      await tx.collectionItem.delete({ where: { id: current.id, userId } });
       return { item: null, deletedId: current.id };
     }
     const conditionCode = input.conditionCode ?? current.condition.code;
@@ -288,15 +288,15 @@ export async function patchCollectionLine(
     const target = siblings.find((item) => lineKey({ ...item, conditionCode }) === key);
     if (target) {
       const saved = await tx.collectionItem.update({
-        where: { id: target.id },
+        where: { id: target.id, userId },
         data: { quantity: capped((input.quantity ?? current.quantity) + target.quantity) },
         include,
       });
-      await tx.collectionItem.delete({ where: { id: current.id } });
+      await tx.collectionItem.delete({ where: { id: current.id, userId } });
       return { item: toDTO(saved), deletedId: current.id };
     }
     const saved = await tx.collectionItem.update({
-      where: { id: current.id },
+      where: { id: current.id, userId },
       data: { conditionId: condition.id, quantity: input.quantity ?? current.quantity, ...fields },
       include,
     });
@@ -307,6 +307,6 @@ export async function patchCollectionLine(
 export async function deleteCollectionLine(userId: string, id: string): Promise<MutationResult> {
   const current = await prisma.collectionItem.findFirst({ where: { id, userId } });
   if (!current) return { item: null, deletedId: null };
-  await prisma.collectionItem.delete({ where: { id: current.id } });
+  await prisma.collectionItem.delete({ where: { id: current.id, userId } });
   return { item: null, deletedId: current.id };
 }

@@ -4,6 +4,7 @@ import { DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { formatRoute } from "@/i18n/match";
 import { requestLocale } from "@/lib/api-response";
 import { absoluteAppUrl } from "@/lib/app-url";
+import { fail } from "@/lib/app-error";
 import { prisma } from "@/lib/prisma";
 import { createShareToken, isShareTokenFormat } from "@/lib/share-token";
 import { analyzeDeck, deckShortfall, deckToText, type DeckAnalysis, type DeckEntry, type DeckLine } from "@/lib/deck-rules";
@@ -28,14 +29,16 @@ export async function ownsDeck(userId: string, deckId: string) {
   return (await prisma.deck.count({ where: { id: deckId, userId } })) > 0;
 }
 
-export async function getDeckShare(deckId: string) {
-  return prisma.deckShare.findUnique({ where: { deckId } });
+// Chaque fonction filtre elle-même par propriétaire : la sécurité ne dépend pas d'un contrôle fait par l'appelant.
+export async function getDeckShare(userId: string, deckId: string) {
+  return prisma.deckShare.findFirst({ where: { deckId, deck: { userId } } });
 }
 
 /** Renvoie le lien existant, ou en crée un ; `rotate` remplace le jeton (l'ancien cesse de fonctionner). */
-export async function createOrRotateDeckShare(deckId: string, rotate = false) {
+export async function createOrRotateDeckShare(userId: string, deckId: string, rotate = false) {
+  if (!(await ownsDeck(userId, deckId))) fail("decks.notFound", 404);
   if (!rotate) {
-    const existing = await getDeckShare(deckId);
+    const existing = await getDeckShare(userId, deckId);
     if (existing) return existing;
   }
   const token = createShareToken();
@@ -46,8 +49,8 @@ export async function createOrRotateDeckShare(deckId: string, rotate = false) {
   });
 }
 
-export async function revokeDeckShare(deckId: string) {
-  await prisma.deckShare.deleteMany({ where: { deckId } });
+export async function revokeDeckShare(userId: string, deckId: string) {
+  await prisma.deckShare.deleteMany({ where: { deckId, deck: { userId } } });
 }
 
 export type SharedDeck = {

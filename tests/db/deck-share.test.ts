@@ -9,7 +9,13 @@ import { DELETE as revokeRoute, GET as readRoute, POST as shareRoute } from "../
 import { SESSION_COOKIE, createSession, registerAccount } from "../../src/lib/auth";
 import { isDeckCard } from "../../src/lib/deck-rules";
 import { createShareToken } from "../../src/lib/share-token";
-import { deckSharePath, loadSharedDeck } from "../../src/lib/deck-share";
+import {
+  createOrRotateDeckShare,
+  deckSharePath,
+  getDeckShare,
+  loadSharedDeck,
+  revokeDeckShare,
+} from "../../src/lib/deck-share";
 import { prisma } from "../../src/lib/prisma";
 
 // `unstable_cache` exige le contexte d'un serveur Next : le catalogue est lu directement.
@@ -123,6 +129,13 @@ describe.sequential("partage d'un deck", () => {
     }
     assert.equal((await call("GET", "deck-inexistant", owner.token)).status, 404, "deck inconnu");
     assert.equal((await prisma.deckShare.findUnique({ where: { deckId } }))?.token, firstToken, "lien inchangé");
+  });
+
+  it("les fonctions de lib refusent le deck d'autrui, même appelées sans le contrôle de la route", async () => {
+    assert.equal(await getDeckShare(other.id, deckId), null, "lecture");
+    await assert.rejects(createOrRotateDeckShare(other.id, deckId, true), /decks\.notFound/, "renouvellement");
+    await revokeDeckShare(other.id, deckId);
+    assert.equal((await getDeckShare(owner.id, deckId))?.token, firstToken, "lien du propriétaire intact");
   });
 
   it("la vue publique ne montre que le nom, le propriétaire et les cartes", async () => {

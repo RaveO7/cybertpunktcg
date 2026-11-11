@@ -112,7 +112,7 @@ export async function patchWishlistItem(userId: string, id: string, input: Patch
     data.targetPrice = input.targetPrice;
     Object.assign(data, alertAfterEdit(amount(input.targetPrice), await currentTrend(prisma, existing.printingId), existing));
   }
-  const row = await prisma.wishlistItem.update({ where: { id }, data });
+  const row = await prisma.wishlistItem.update({ where: { id, userId }, data });
   return toDTO(row);
 }
 
