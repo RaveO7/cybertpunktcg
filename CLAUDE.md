@@ -31,6 +31,7 @@ Tout test, script de vérification ou essai manuel qui crée quelque chose en ba
 ## Pièges
 
 - Arrêter le serveur de dev avant `prisma generate` : sous Windows, le moteur Prisma reste verrouillé tant que Node tourne.
+- Vitest qui échoue sur « Cannot read properties of undefined (reading 'config') » : le dossier courant est en `c:\` minuscule (deux copies de Vitest chargées). Relancer après `cd "C:/Users/phoenix/Desktop/prog/cybertpunktcg"`.
 - Le set principal s'appelle « Welcome to Night City — Retail » (pas « Extension 001 »).
 - Aucun prix de marché inventé : sans guide Cardmarket importé, la valeur reste vide.
 
