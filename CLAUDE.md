@@ -4,12 +4,14 @@
 
 ## Commandes de vérification
 
+- Vérification rapide (typecheck + lint + tests unitaires en parallèle, sortie courte) : `npm run check`
 - Typecheck : `npm run typecheck` · Lint : `npm run lint`
 - Un fichier de test : `npx vitest run tests/unit/x.test.ts` · Suites : `npm run test:unit`, `npm run test:db` (base SQLite, en série)
 - Captures d'une page modifiée (desktop + mobile, compte de test créé puis supprimé) :
   `CAPTURE_PATHS="fr/collection,fr/decks" npx playwright test capture --project=desktop-chrome --project=pixel`
   → `tests/e2e/screenshots/<appareil>/capture_*.png`. Chemins sans « / » initial ; `CAPTURE_SIGNED_OUT=1` pour un visiteur.
-- e2e complets : `npm run test:e2e:desktop`, `npm run test:e2e:mobile` (serveur de test sur le port 3100, à côté du `next dev` sur 3000).
+- e2e complets : `npm run test:e2e:desktop`, `npm run test:e2e:mobile` (serveur de test sur le port 3100, à côté du `next dev` sur 3000 ; dans un worktree, port propre au dossier).
+- Worktree (`claude -w`) : `.env` et `data/collection.db` copiés, `node_modules` partagé. Ne pas y modifier le schéma Prisma : le client généré dans `node_modules` est commun à toutes les copies.
 - Mutations (une garde de sécurité ou de cache est bien testée) : `npx tsx scripts/mutate-account-checks.ts`, `npx tsx scripts/mutate-cache-checks.ts history`.
 
 ## Tests : ne jamais polluer la base
