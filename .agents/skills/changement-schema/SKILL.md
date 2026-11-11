@@ -4,7 +4,8 @@ description: Modifier le schéma Prisma de ce projet (ajout/modification de mod�
 effort: high
 ---
 
-1. **Serveur de dev** : arrête tout `next dev` en cours (le moteur Prisma reste verrouillé sous Windows), sinon `generate` échoue.
+0. **Worktree** (`.git` est un fichier) sans `node_modules` à lui : lance `npm ci` dans le worktree avant tout, pour que le client généré reste local et n'écrase pas celui du projet principal (un hook bloque la génération sinon).
+1. **Serveur de dev** : arrête tout `next dev` en cours de cette copie (le moteur Prisma reste verrouillé sous Windows), sinon `generate` échoue avec EPERM.
 2. **Modifier `prisma/schema.prisma`** (il reste en `provider = "postgresql"`) :
    - relation vers `User` : `onDelete: Cascade` pour que la suppression d'un compte emporte tout (règle des tests et suppression de compte) ;
    - relation vers le catalogue (`Card`, `Printing`, `Set`, `Condition`) : garder la règle des modèles voisins (`Restrict` ou `Cascade`) ;

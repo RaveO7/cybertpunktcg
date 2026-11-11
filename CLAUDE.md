@@ -11,7 +11,7 @@
   `CAPTURE_PATHS="fr/collection,fr/decks" npx playwright test capture --project=desktop-chrome --project=pixel`
   → `tests/e2e/screenshots/<appareil>/capture_*.png`. Chemins sans « / » initial ; `CAPTURE_SIGNED_OUT=1` pour un visiteur.
 - e2e complets : `npm run test:e2e:desktop`, `npm run test:e2e:mobile` (serveur de test sur le port 3100, à côté du `next dev` sur 3000 ; dans un worktree, port propre au dossier).
-- Worktree (`claude -w`) : `.env` et `data/collection.db` copiés, `node_modules` partagé. Ne pas y modifier le schéma Prisma : le client généré dans `node_modules` est commun à toutes les copies.
+- Worktree (`claude -w`) : `.env` et `data/collection.db` copiés, `node_modules` du projet principal utilisé. Pour modifier le schéma Prisma dans un worktree : `npm ci` dans le worktree d'abord (sinon le client généré écraserait celui du principal ; un hook bloque).
 - Mutations (une garde de sécurité ou de cache est bien testée) : `npx tsx scripts/mutate-account-checks.ts`, `npx tsx scripts/mutate-cache-checks.ts history`.
 
 ## Tests : ne jamais polluer la base
