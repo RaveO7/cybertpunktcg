@@ -1,3 +1,4 @@
+import { existsSync, statSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 import { requireLocalDatabase } from "./tests/e2e/setup/local-db";
 
@@ -8,7 +9,15 @@ const databaseUrl = requireLocalDatabase();
 // Posée ici pour que les tests (workers) sachent aussi qu'elle est affichée.
 process.env.NEXT_PUBLIC_WISHLIST_ENABLED ??= "1";
 
-const PORT = 3100;
+// Port propre à chaque copie de travail : dans un worktree git (.git est un fichier), un port dérivé du dossier,
+// pour ne jamais réutiliser le serveur de test d'une autre copie (reuseExistingServer) et tester le mauvais code.
+const PORT = Number(process.env.E2E_PORT) || (existsSync(".git") && statSync(".git").isFile() ? worktreePort(process.cwd()) : 3100);
+
+function worktreePort(dir: string) {
+  let hash = 0;
+  for (const char of dir.toLowerCase()) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return 3101 + (hash % 800);
+}
 const baseURL = `http://localhost:${PORT}`;
 
 /**
