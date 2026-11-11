@@ -32,6 +32,31 @@ if (result.status === 0) {
   process.exit(0);
 }
 
-const output = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim().split("\n").slice(-60).join("\n");
-console.error(`Le typecheck échoue, corrige ces erreurs avant de terminer :\n${output}`);
+// Plusieurs sessions peuvent travailler dans le même dossier : ne bloquer que sur les erreurs des fichiers
+// modifiés par CETTE session (chemins relevés dans son historique). Sans historique lisible, tout compte.
+const ownFiles = editedBySession(input.transcript_path);
+const lines = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim().split("\n");
+let currentFile = null;
+const relevant = lines.filter((line) => {
+  const header = line.match(/^(\S.*?)\(\d+,\d+\): error /);
+  if (header) currentFile = path.resolve(cwd, header[1]).toLowerCase();
+  return !ownFiles || (currentFile !== null && ownFiles.has(currentFile));
+});
+if (relevant.length === 0) process.exit(0);
+console.error(`Le typecheck échoue sur des fichiers que tu as modifiés, corrige-les avant de terminer :\n${relevant.slice(-60).join("\n")}`);
 process.exit(2);
+
+function editedBySession(transcriptPath) {
+  if (!transcriptPath || !existsSync(transcriptPath)) return null;
+  const files = new Set();
+  for (const match of readFileSync(transcriptPath, "utf8").matchAll(/"(?:file_path|notebook_path)":"((?:[^"\\]|\\.)*)"/g)) {
+    let file = match[1];
+    try {
+      file = JSON.parse(`"${match[1]}"`);
+    } catch {
+      // Chemin mal échappé : gardé tel quel.
+    }
+    files.add(path.resolve(cwd, file).toLowerCase());
+  }
+  return files;
+}
