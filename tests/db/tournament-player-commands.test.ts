@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
 import type { OrganizerCommand } from "../../src/lib/api-schemas";
-import type { TournamentView } from "../../src/lib/tournament/view";
+import { tournamentViewSchema } from "../../src/lib/api-responses";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
 type Routes = {
@@ -87,7 +87,7 @@ async function viewAs(table: Table, cookie: string | null) {
     new Request(`http://127.0.0.1/api/tournaments/${table.tournamentId}/state`, { headers: cookie ? { cookie } : {} }),
     { params: Promise.resolve({ id: table.tournamentId }) },
   );
-  return (await response.json()) as TournamentView;
+  return tournamentViewSchema.parse(await response.json());
 }
 
 const match = (table: Table) => prisma.tournamentMatch.findUniqueOrThrow({ where: { id: table.matchId } });

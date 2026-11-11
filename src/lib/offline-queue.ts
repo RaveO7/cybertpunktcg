@@ -5,6 +5,8 @@
 // son ajout tant qu'il n'est pas parti, puis l'id du serveur le remplace.
 
 import { lineDate, lineKey, lineNotes, linePrice, matchLine, newLineFields } from "@/lib/collection-line";
+import type { MutationResult } from "@/lib/api-responses";
+import { loadResponseSchemas, type ResponseSchemas } from "@/lib/client/api";
 import type { CollectionItemDTO, ConditionDTO } from "@/lib/types";
 
 /** Version du format d'une opération : une opération d'une autre version est abandonnée. */
@@ -266,11 +268,11 @@ export function classifyResponse(status: number): Outcome {
   return "rejected";
 }
 
-export type MutationResult = { item: CollectionItemDTO | null; deletedId: string | null };
-
 export type ReplayReport = {
   applied: { op: QueuedOp; result: MutationResult }[];
   rejected: { op: QueuedOp; error: string | null }[];
+  /** Envois acceptés dont la réponse est au format inattendu : la collection est à relire sur le serveur. */
+  unverified: number;
   /** Opérations illisibles abandonnées. */
   corrupted: number;
   /** « done » : file vide ; « auth » : session refusée ; « retry » : à reprendre plus tard. */
@@ -278,12 +280,9 @@ export type ReplayReport = {
   remaining: QueuedOp[];
 };
 
-function readResult(body: unknown): MutationResult {
-  const result = isObject(body) ? body : {};
-  return {
-    item: isObject(result.item) ? (result.item as CollectionItemDTO) : null,
-    deletedId: typeof result.deletedId === "string" ? result.deletedId : null,
-  };
+function readResult(schemas: ResponseSchemas, body: unknown): MutationResult | null {
+  const parsed = schemas.mutationResultSchema.safeParse(body);
+  return parsed.success ? parsed.data : null;
 }
 
 /** Retire l'opération envoyée ; après un ajout, l'id temporaire est remplacé dans la suite de la file. */
@@ -311,7 +310,16 @@ export async function replayQueue(
   userId: string,
   send: (op: QueuedOp) => Promise<SendResponse>,
 ): Promise<ReplayReport> {
-  const report: ReplayReport = { applied: [], rejected: [], corrupted: 0, stop: "done", remaining: [] };
+  const report: ReplayReport = { applied: [], rejected: [], unverified: 0, corrupted: 0, stop: "done", remaining: [] };
+  let schemas: ResponseSchemas;
+  try {
+    // Chargés avant le premier envoi : une réponse reçue doit toujours pouvoir être vérifiée.
+    schemas = await loadResponseSchemas();
+  } catch {
+    report.stop = "retry";
+    report.remaining = readOps(await store.read(userId)).ops;
+    return report;
+  }
   for (;;) {
     let op: QueuedOp | undefined;
     const record = await store.update(userId, (current) => {
@@ -339,10 +347,12 @@ export async function replayQueue(
     }
     const sent = op;
     if (outcome === "ok") {
-      const result = readResult(response.body);
-      report.applied.push({ op: sent, result });
+      // Réponse illisible : la modification est bien reçue (pas un refus), mais son résultat est inconnu.
+      const result = readResult(schemas, response.body);
+      if (result) report.applied.push({ op: sent, result });
+      else report.unverified += 1;
       await store.update(userId, (current) =>
-        settle(current, sent, sent.kind === "save" ? (result.item?.id ?? null) : undefined),
+        settle(current, sent, sent.kind === "save" ? (result?.item?.id ?? null) : undefined),
       );
     } else {
       const body = isObject(response.body) ? response.body : {};
@@ -353,13 +363,12 @@ export async function replayQueue(
   }
 }
 
-/** Requête HTTP d'une opération. */
-export function requestFor(op: QueuedOp): { url: string; init: RequestInit } {
-  const headers = { "content-type": "application/json" };
-  if (op.kind === "save") return { url: "/api/collection", init: { method: "POST", headers, body: JSON.stringify(op.payload) } };
+/** Requête HTTP d'une opération (corps envoyé en JSON). */
+export function requestFor(op: NewOp): { url: string; method: "POST" | "PATCH" | "DELETE"; body?: unknown } {
+  if (op.kind === "save") return { url: "/api/collection", method: "POST", body: op.payload };
   const url = `/api/collection/${encodeURIComponent(op.lineId)}`;
-  if (op.kind === "patch") return { url, init: { method: "PATCH", headers, body: JSON.stringify(op.payload) } };
-  return { url, init: { method: "DELETE", headers } };
+  if (op.kind === "patch") return { url, method: "PATCH", body: op.payload };
+  return { url, method: "DELETE" };
 }
 
 export async function addOp(store: QueueStore, userId: string, op: NewOp): Promise<QueuedOp[]> {

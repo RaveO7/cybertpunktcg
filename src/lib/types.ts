@@ -1,5 +1,7 @@
 import type { SORT_KEYS } from "./reference-data";
 
+export type { AuthUser, CollectionItemDTO, DeckDTO, WishlistItemDTO } from "./api-responses";
+
 export type CardDTO = {
   id: string;
   externalId: string;
@@ -67,43 +69,6 @@ export type ConditionDTO = {
   sortOrder: number;
 };
 
-export type CollectionItemDTO = {
-  id: string;
-  printingId: string;
-  conditionCode: string;
-  conditionName: string;
-  quantity: number;
-  notes: string | null;
-  purchasePrice: string | null;
-  purchaseCurrency: string | null;
-  /** Date d'achat « AAAA-MM-JJ », null = inconnue. */
-  purchasedAt: string | null;
-  addedAt: string;
-};
-
-export type WishlistItemDTO = {
-  id: string;
-  printingId: string;
-  /** Prix cible en EUR (2 décimales), null = simple suivi sans alerte. */
-  targetPrice: string | null;
-  notes: string | null;
-  /** Date à laquelle le prix est passé sous la cible (null si la cible n'est pas atteinte). */
-  alertAt: string | null;
-  alertPrice: string | null;
-  alertSeen: boolean;
-  createdAt: string;
-};
-
-export type DeckDTO = {
-  id: string;
-  name: string;
-  notes: string | null;
-  /** Cartes de jeu (Card.id) et nombre d'exemplaires, Legends comprises. */
-  cards: { cardId: string; quantity: number }[];
-  createdAt: string;
-  updatedAt: string;
-};
-
 export type CatalogDTO = {
   sets: SetDTO[];
   conditions: ConditionDTO[];
@@ -150,12 +115,6 @@ export type Progress = {
   extraCopies: number;
   totalCopies: number;
   percent: number;
-};
-
-export type AuthUser = {
-  id: string;
-  email: string;
-  displayName: string;
 };
 
 export type Facets = {

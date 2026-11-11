@@ -8,6 +8,7 @@ import { POST as bulkRoute } from "../../src/app/api/collection/bulk/route";
 import { DELETE as deleteRoute, PATCH as patchRoute } from "../../src/app/api/collection/[id]/route";
 import { GET as readRoute, POST as saveRoute } from "../../src/app/api/collection/route";
 import { SESSION_COOKIE, createSession, registerAccount } from "../../src/lib/auth";
+import { collectionItemsSchema, collectionSessionSchema, mutationResultSchema } from "../../src/lib/api-responses";
 import { prisma } from "../../src/lib/prisma";
 
 type Line = {
@@ -62,6 +63,7 @@ async function saveOk(body: unknown) {
   const response = await save(body);
   const parsed = await json<Mutation & { error?: string }>(response);
   assert.equal(response.status, 200, `enregistrement refusé : ${parsed.error}`);
+  mutationResultSchema.parse(parsed);
   return parsed;
 }
 
@@ -335,7 +337,7 @@ describe.sequential("ajout groupé", () => {
       ],
     });
     assert.equal(mixed.status, 200);
-    const body = await json<{ items: Line[] }>(mixed);
+    const body = collectionItemsSchema.parse(await json(mixed));
     assert.deepEqual(
       body.items.map((item) => [item.printingId, item.conditionCode, item.quantity]),
       [[P3, LP, 1]],
@@ -387,7 +389,7 @@ describe.sequential("PATCH et DELETE /api/collection/[id]", () => {
     const target = (await saveOk({ printingId: P1, conditionCode: LP, quantity: 3, notes: "cible" })).item!;
     const response = await patch(source.id, { conditionCode: LP });
     assert.equal(response.status, 200);
-    const result = await json<Mutation>(response);
+    const result = mutationResultSchema.parse(await json(response));
     assert.equal(result.deletedId, source.id, "la ligne d'origine disparaît");
     assert.equal(result.item?.id, target.id, "la ligne cible est conservée");
     assert.equal(result.item?.quantity, 5);
@@ -494,7 +496,7 @@ describe.sequential("PATCH et DELETE /api/collection/[id]", () => {
 
   it("GET ne renvoie que les lignes du compte, avec les champs attendus", async () => {
     await saveOk({ printingId: P1, quantity: 1, notes: "n", purchasePrice: "2", purchaseCurrency: "USD" });
-    const items = (await json<{ items: Line[] }>(await readRoute(request("/api/collection")))).items;
+    const items = collectionSessionSchema.parse(await json(await readRoute(request("/api/collection")))).items;
     assert.equal(items.length, 1);
     assert.deepEqual(Object.keys(items[0]).sort(), [
       "addedAt",

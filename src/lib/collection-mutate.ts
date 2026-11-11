@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import type { MutationResult } from "./api-responses";
 import type { CollectionItemDTO } from "./types";
 import { fail } from "./app-error";
 import { lineDate, lineKey, lineNotes, linePrice, matchLine, newLineFields, purchaseDay } from "./collection-line";
@@ -23,11 +24,6 @@ type PatchInput = {
   purchaseCurrency?: string | null;
   /** « AAAA-MM-JJ » ; null = date inconnue. */
   purchasedAt?: string | null;
-};
-
-export type MutationResult = {
-  item: CollectionItemDTO | null;
-  deletedId: string | null;
 };
 
 const include = { condition: true } as const;

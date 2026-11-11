@@ -4,26 +4,18 @@ import { useEffect, useState } from "react";
 import type { ChartPoint } from "@/components/PriceChart";
 import { fetchCached, readCached } from "@/components/data-cache";
 import { CHART_RANGE_DAYS, type ChartRange } from "@/components/investment/chart-range";
+import type { Parsed } from "@/lib/client/api";
 import type { CatalogDTO, CollectionItemDTO } from "@/lib/types";
 
 /** Collection chargée : rien n'est demandé avant, et toute modification de la collection recharge. */
 type CollectionState = { ready: boolean; catalog: CatalogDTO | null; items: CollectionItemDTO[] };
 
+type HistoryBody = Parsed<"portfolioHistoryResponseSchema">;
+
 /** Achat daté, placé sur la courbe. */
-export type HistoryPurchase = {
-  day: string;
-  printingId: string;
-  quantity: number;
-  unitPrice: number | null;
-  currency: string | null;
-};
+export type HistoryPurchase = HistoryBody["purchases"][number];
 
-type HistoryBody = {
-  points?: { day: string; marketTotal: number; invested?: number; profit?: number | null }[];
-  purchases?: HistoryPurchase[];
-};
-
-type ReferenceBody = { day?: string | null; prices?: Record<string, number> };
+type ReferenceBody = Parsed<"referencePricesSchema">;
 
 /** Prix de chaque carte au début d'une durée, dont le premier jour est compté côté serveur. */
 export type PeriodReference = { range: ChartRange; day: string | null; prices: Record<string, number> };
@@ -65,22 +57,22 @@ export function useInvestmentHistory({
       if (language) params.set("language", language);
       // Liste d'exemplaires : envoyée en POST, trop longue pour l'URL.
       const url = itemIds ? "/api/investment/history" : `/api/investment/history?${params}`;
-      const requestBody = itemIds ? JSON.stringify({ items: itemIds }) : undefined;
+      const requestBody = itemIds ? { items: itemIds } : undefined;
       const show = (body: HistoryBody) => {
         setPoints(
-          (body.points ?? []).map((point) => ({
+          body.points.map((point) => ({
             day: point.day,
             value: point.marketTotal,
             invested: point.invested ?? null,
             profit: point.profit ?? null,
           })),
         );
-        setPurchases(body.purchases ?? []);
+        setPurchases(body.purchases);
         setStatus("ready");
         setLoaded(true);
       };
       // Aucun exemplaire retenu par la recherche ou la performance : courbe vide, sans requête.
-      if (itemIds?.length === 0) return show({});
+      if (itemIds?.length === 0) return show({ points: [], purchases: [] });
       // Dernière courbe connue pour ces filtres affichée aussitôt, puis mise à jour.
       const cached = readCached<HistoryBody>(url, requestBody);
       if (cached) show(cached);
@@ -90,7 +82,7 @@ export function useInvestmentHistory({
         if (cancelled) return;
       }
       try {
-        const body = await fetchCached<HistoryBody>(url, requestBody);
+        const body = await fetchCached(url, { schema: "portfolioHistoryResponseSchema", body: requestBody });
         if (!cancelled) show(body);
       } catch {
         if (!cancelled && !cached) {
@@ -133,13 +125,13 @@ export function usePeriodReference({ ready, catalog, items, range }: CollectionS
       const days = CHART_RANGE_DAYS[range];
       const url = `/api/investment/history?${new URLSearchParams({ referenceDays: days == null ? "" : String(days) })}`;
       const show = (body: ReferenceBody) => {
-        setReference({ range, day: body.day ?? null, prices: body.prices ?? {} });
+        setReference({ range, day: body.day, prices: body.prices });
         setError(null);
       };
       const cached = readCached<ReferenceBody>(url);
       if (cached) show(cached);
       try {
-        const body = await fetchCached<ReferenceBody>(url);
+        const body = await fetchCached(url, { schema: "referencePricesSchema" });
         if (!cancelled) show(body);
       } catch {
         if (!cancelled && !cached) setError(range);

@@ -15,6 +15,7 @@ import { GET as historyRoute, POST as historyItemsRoute } from "../../src/app/ap
 import { GET as statsRoute } from "../../src/app/api/stats/route";
 import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, createSession, registerAccount } from "../../src/lib/auth";
 import { loadCatalog } from "../../src/lib/catalog";
+import { authResponseSchema, portfolioHistoryResponseSchema, printingHistorySchema, referencePricesSchema } from "../../src/lib/api-responses";
 import { prisma } from "../../src/lib/prisma";
 
 type Progress = Record<string, unknown>;
@@ -137,7 +138,7 @@ describe.sequential("session et déconnexion", () => {
     });
     const response = await sessionRoute(request("/api/auth/session", account.token));
     assert.equal(response.status, 200);
-    const body = await json<{ user: Record<string, unknown> }>(response);
+    const body = authResponseSchema.parse(await json(response));
     assert.deepEqual(body.user, { id: account.id, email: account.email, displayName: "Routes session" });
     const line = sessionCookieLine(response);
     assert.ok(line);
@@ -251,6 +252,7 @@ describe.sequential("historique de prix", () => {
       assert.equal(response.status, 200);
       const body = await json<{ kind: string; printingId: string; points: unknown[] }>(response);
       assert.equal(body.kind, "printing");
+      printingHistorySchema.parse(body);
       assert.equal(body.printingId, printingId);
       assert.deepEqual(body.points, []);
     }
@@ -265,8 +267,8 @@ describe.sequential("historique de prix", () => {
       assert.deepEqual(await json(response), { kind: "reference", day: null, prices: {} });
     }
     // Sans historique, la période est comptée depuis aujourd'hui.
-    const valid = await json<{ day: string | null }>(
-      await historyRoute(request("/api/investment/history?referenceDays=30", account.token)),
+    const valid = referencePricesSchema.parse(
+      await json(await historyRoute(request("/api/investment/history?referenceDays=30", account.token))),
     );
     const expected = new Date();
     expected.setUTCDate(expected.getUTCDate() - 30);
@@ -296,6 +298,7 @@ describe.sequential("historique de prix", () => {
       await historyRoute(request("/api/investment/history", account.token)),
     );
     assert.equal(all.kind, "portfolio");
+    portfolioHistoryResponseSchema.parse(all);
     assert.equal(all.set, "all");
     assert.equal(all.language, "");
     assert.deepEqual(all.points, []);

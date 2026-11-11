@@ -1,5 +1,7 @@
 // Abonnement Web Push de l'appareil, côté navigateur (alertes de prix). Le serveur : src/lib/push.ts.
 
+import { api } from "@/lib/client/api";
+
 /** Clé publique VAPID ; absente (local, preview), l'option est masquée. */
 export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null;
 
@@ -45,12 +47,7 @@ function keyBytes(base64url: string) {
 }
 
 async function sendSubscription(subscription: PushSubscription, locale: string) {
-  const response = await fetch(SUBSCRIBE_URL, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ...subscription.toJSON(), locale }),
-  });
-  if (!response.ok) throw new Error(`push-subscribe ${response.status}`);
+  await api(SUBSCRIBE_URL, { body: { ...subscription.toJSON(), locale } });
 }
 
 /** Autorisation des notifications : API Permissions si disponible (à jour même en navigateur piloté), sinon `Notification`. */
@@ -100,11 +97,7 @@ export async function disablePush(): Promise<void> {
   try {
     const subscription = await currentSubscription();
     if (!subscription) return;
-    await fetch(SUBSCRIBE_URL, {
-      method: "DELETE",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ endpoint: subscription.endpoint }),
-    }).catch(() => undefined);
+    await api(SUBSCRIBE_URL, { method: "DELETE", body: { endpoint: subscription.endpoint } }).catch(() => undefined);
     await subscription.unsubscribe().catch(() => undefined);
   } catch {
     // Service worker indisponible : rien à désabonner.

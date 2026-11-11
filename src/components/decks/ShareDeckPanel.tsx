@@ -4,28 +4,29 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useCachedJson } from "@/components/data-cache";
 import { buttonClass, copyText, primaryClass } from "@/components/decks/ui";
-import { sendJson, useRequestErrors } from "@/components/send-json";
-import type { DeckShareInfo } from "@/lib/deck-share";
+import type { ShareInfo } from "@/lib/api-responses";
+import { api } from "@/lib/client/api";
+import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
 
 /** Lien de partage d'un deck : créer, copier, renouveler (nouveau jeton) et révoquer. */
 export function ShareDeckPanel({ deckId, onClose }: { deckId: string; onClose: () => void }) {
   const t = useTranslations();
-  const errors = useRequestErrors();
+  const requestError = useApiErrorMessage();
   const url = `/api/decks/${encodeURIComponent(deckId)}/share`;
-  const { data: share, error: loadError, mutate, retry } = useCachedJson<DeckShareInfo>(url);
+  const { data: share, error: loadError, mutate, retry } = useCachedJson(url, "shareInfoSchema");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
 
-  async function run(init: RequestInit, done: (next: DeckShareInfo) => string | null) {
+  async function run(request: { method: "POST" | "DELETE"; body?: unknown }, done: (next: ShareInfo) => string | null) {
     setBusy(true);
     setNote(null);
     try {
-      const next = await sendJson<DeckShareInfo>(url, init, errors);
+      const next = await api(url, { ...request, schema: "shareInfoSchema" });
       mutate(() => next);
       const text = done(next);
       if (text) setNote({ text, ok: true });
     } catch (failure) {
-      setNote({ text: failure instanceof Error ? failure.message : errors("saveFailed"), ok: false });
+      setNote({ text: requestError(failure), ok: false });
     } finally {
       setBusy(false);
     }
@@ -74,7 +75,7 @@ export function ShareDeckPanel({ deckId, onClose }: { deckId: string; onClose: (
               className={buttonClass}
               disabled={busy}
               title={t("decks.shareRotateHint")}
-              onClick={() => void run({ method: "POST", body: JSON.stringify({ rotate: true }) }, () => t("decks.shareRotateHint"))}
+              onClick={() => void run({ method: "POST", body: { rotate: true } }, () => t("decks.shareRotateHint"))}
             >
               {t("decks.shareRotate")}
             </button>
@@ -93,7 +94,7 @@ export function ShareDeckPanel({ deckId, onClose }: { deckId: string; onClose: (
         </>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className={primaryClass} disabled={busy} onClick={() => void run({ method: "POST", body: "{}" }, () => null)}>
+          <button type="button" className={primaryClass} disabled={busy} onClick={() => void run({ method: "POST", body: {} }, () => null)}>
             {t("decks.shareCreate")}
           </button>
           <button type="button" className={buttonClass} onClick={onClose}>

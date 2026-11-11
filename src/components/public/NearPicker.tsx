@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { buttonClass, inputClass } from "@/components/tournament/ui";
+import { api, isAbort } from "@/lib/client/api";
 import type { CitySuggestion } from "@/lib/geo/geocode";
 import { SEARCH_RADII_KM } from "@/lib/tournament/listing";
 import { countryName } from "@/components/geo/countries";
@@ -29,11 +30,11 @@ export function NearPicker({ value, onChange }: { value: NearPoint | null; onCha
     const controller = new AbortController();
     const searchCities = async () => {
       try {
-        const response = await fetch(`/api/geocode/cities?q=${encodeURIComponent(query.trim())}`, { signal: controller.signal });
-        const body = (await response.json().catch(() => ({}))) as { cities?: CitySuggestion[] };
-        setCities(body.cities ?? []);
-      } catch {
-        // Annulée par une frappe plus récente.
+        const body = await api(`/api/geocode/cities?q=${encodeURIComponent(query.trim())}`, { schema: "citySuggestionsSchema", signal: controller.signal });
+        setCities(body.cities);
+      } catch (reason) {
+        // Annulée par une frappe plus récente : rien à faire. Autre échec : aucune suggestion.
+        if (!isAbort(reason)) setCities([]);
       }
     };
     const timer = window.setTimeout(() => void searchCities(), 250);

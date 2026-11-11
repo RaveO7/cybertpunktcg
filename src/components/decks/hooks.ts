@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useCollection } from "@/components/CollectionProvider";
 import { useCachedJson } from "@/components/data-cache";
-import { sendJson, useRequestErrors } from "@/components/send-json";
+import { api } from "@/lib/client/api";
+import { useTranslatedRequest } from "@/lib/client/use-api-error-message";
 import { compareDeckLines, extensionsByCard, isDeckCard, type DeckEntry } from "@/lib/deck-rules";
 import type { CardDTO, CatalogDTO, DeckDTO, PrintingDTO } from "@/lib/types";
 
@@ -15,8 +17,9 @@ const NO_DECKS: DeckDTO[] = [];
 /** Decks du compte : copie en cache affichée aussitôt, rechargés à chaque visite, mis à jour localement. */
 export function useDecks() {
   const { user } = useCollection();
-  const errors = useRequestErrors();
-  const { data, error, mutate, retry } = useCachedJson<{ decks: DeckDTO[] }>(user ? DECKS_URL : null);
+  const t = useTranslations("errors.request");
+  const translated = useTranslatedRequest();
+  const { data, error, mutate, retry } = useCachedJson(user ? DECKS_URL : null, "decksSchema");
   const decks = data?.decks ?? NO_DECKS;
   const setDecks = useCallback(
     (update: (current: DeckDTO[]) => DeckDTO[]) => mutate((current) => ({ decks: update(current?.decks ?? []) })),
@@ -30,17 +33,17 @@ export function useDecks() {
 
   return {
     ready: Boolean(user) && data !== undefined,
-    error: error ? errors("loadDecks") : null,
+    error: error ? t("loadDecks") : null,
     retry,
     decks,
     replace,
     create: async (input: { name?: string; cards?: DeckEntry[] }) => {
-      const { deck } = await sendJson<{ deck: DeckDTO }>("/api/decks", { method: "POST", body: JSON.stringify(input) }, errors);
+      const { deck } = await translated(api("/api/decks", { body: input, schema: "deckResponseSchema" }));
       replace(deck);
       return deck;
     },
     remove: async (id: string) => {
-      await sendJson(`/api/decks/${id}`, { method: "DELETE" }, errors);
+      await translated(api(`/api/decks/${id}`, { method: "DELETE" }));
       setDecks((current) => current.filter((deck) => deck.id !== id));
     },
   };
@@ -75,7 +78,7 @@ export type SaveStatus = "idle" | "saving" | "saved" | "error";
  * à la fois, et la dernière version part même si l'on quitte la page entre-temps.
  */
 export function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
-  const errors = useRequestErrors();
+  const translated = useTranslatedRequest();
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const pending = useRef<DeckPatch | null>(null);
@@ -98,11 +101,7 @@ export function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
         pending.current = null;
         setStatus("saving");
         try {
-          const { deck } = await sendJson<{ deck: DeckDTO }>(
-            `/api/decks/${deckId}`,
-            { method: "PATCH", body: JSON.stringify(body) },
-            errors,
-          );
+          const { deck } = await translated(api(`/api/decks/${deckId}`, { method: "PATCH", body, schema: "deckResponseSchema" }));
           onSavedRef.current(deck);
           setError(null);
           setStatus("saved");
@@ -117,7 +116,7 @@ export function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
     } finally {
       inFlight.current = false;
     }
-  }, [deckId, errors]);
+  }, [deckId, translated]);
 
   const queue = useCallback(
     (patch: DeckPatch) => {
@@ -133,12 +132,8 @@ export function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
     () => () => {
       if (timer.current) clearTimeout(timer.current);
       if (pending.current && !inFlight.current) {
-        void fetch(`/api/decks/${deckId}`, {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(pending.current),
-          keepalive: true,
-        }).catch(() => undefined);
+        // Écran quitté : plus personne pour afficher un échec, l'envoi est fait au mieux.
+        void api(`/api/decks/${deckId}`, { method: "PATCH", body: pending.current, keepalive: true }).catch(() => undefined);
       }
     },
     [deckId],
@@ -155,15 +150,8 @@ export function useDeckSaver(deckId: string, onSaved: (deck: DeckDTO) => void) {
       const body: DeckPatch = pending.current;
       pending.current = null;
       inFlight.current = true;
-      fetch(`/api/decks/${deckId}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-        keepalive: true,
-      })
-        .then(async (response) => {
-          if (!response.ok) throw new Error();
-          const { deck } = (await response.json()) as { deck: DeckDTO };
+      api(`/api/decks/${deckId}`, { method: "PATCH", body, keepalive: true, schema: "deckResponseSchema" })
+        .then(({ deck }) => {
           onSavedRef.current(deck);
           setError(null);
           setStatus("saved");

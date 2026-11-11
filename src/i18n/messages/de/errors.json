@@ -22,6 +22,7 @@
     "loadDecks": "Die Decks konnten nicht geladen werden.",
     "loadWishlist": "Die Wunschliste konnte nicht geladen werden.",
     "deleteAccountFailed": "Konto konnte nicht gelöscht werden.",
-    "syncCorrupted": "Eine offline gespeicherte Änderung war unlesbar und wurde verworfen."
+    "syncCorrupted": "Eine offline gespeicherte Änderung war unlesbar und wurde verworfen.",
+    "unexpected": "Unerwartete Antwort des Servers. Lade die App neu."
   }
 }

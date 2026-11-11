@@ -22,6 +22,7 @@
     "loadDecks": "No se pudieron cargar los mazos.",
     "loadWishlist": "No se pudo cargar la lista de deseos.",
     "deleteAccountFailed": "No se ha podido eliminar la cuenta.",
-    "syncCorrupted": "Un cambio guardado sin conexión no se podía leer y se ha descartado."
+    "syncCorrupted": "Un cambio guardado sin conexión no se podía leer y se ha descartado.",
+    "unexpected": "Respuesta inesperada del servidor. Recarga la aplicación."
   }
 }

@@ -5,8 +5,10 @@ import { useLocale, useTranslations } from "next-intl";
 import { formatRoute } from "@/i18n/match";
 import { useRouter } from "@/i18n/navigation";
 import { TOP_CUT_SETTINGS, type TopCutSetting } from "@/lib/tournament/top-cut";
+import { api } from "@/lib/client/api";
 import type { TournamentView } from "@/lib/tournament/view";
 import { PublicationPanel } from "./PublicationPanel";
+import { useTournamentErrorMessage } from "./hooks";
 import type { RunCommand } from "./TournamentConsole";
 import { absoluteUrl, buttonClass, dangerClass, inputClass, panelClass, primaryClass, Tag } from "./ui";
 
@@ -23,6 +25,7 @@ export function SettingsTab({ view, run }: { view: TournamentView; run: RunComma
   const [draft, setDraft] = useState<Draft>(view.tournament);
   const [invite, setInvite] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const errorMessage = useTournamentErrorMessage();
   const isOwner = view.organizerRole === "owner";
   const settings = view.tournament;
   const started = view.rounds.some((round) => round.status === "running" || round.status === "closed");
@@ -61,9 +64,12 @@ export function SettingsTab({ view, run }: { view: TournamentView; run: RunComma
 
   async function remove() {
     if (!window.confirm(t("tournaments.confirmDelete"))) return;
-    const response = await fetch(`/api/tournaments/${settings.id}`, { method: "DELETE" }).catch(() => null);
-    if (response?.ok) router.push("/tournois");
-    else setError(t("tournaments.failed"));
+    try {
+      await api(`/api/tournaments/${settings.id}`, { method: "DELETE" });
+      router.push("/tournois");
+    } catch (failure) {
+      setError(errorMessage(failure));
+    }
   }
 
   const numberField = (key: "roundMinutes" | "topCutExtraMinutes" | "declareTimeoutMinutes" | "swissRounds", label: string, min: number, max: number, disabled = false) => (

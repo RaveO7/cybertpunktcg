@@ -9,6 +9,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
+import { wishlistSchema } from "../../src/lib/api-responses";
 import type { WishlistItemDTO } from "../../src/lib/types";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
@@ -53,7 +54,7 @@ async function add(token: string, body: unknown) {
 async function list(token: string) {
   const response = await routes.list.GET(request("/api/wishlist", token));
   assert.equal(response.status, 200);
-  return ((await response.json()) as { items: WishlistItemDTO[] }).items;
+  return wishlistSchema.parse(await response.json()).items;
 }
 
 async function setPrice(printingId: string, amount: number) {

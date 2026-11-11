@@ -16,6 +16,7 @@ import {
   loadSharedDeck,
   revokeDeckShare,
 } from "../../src/lib/deck-share";
+import { shareInfoSchema } from "../../src/lib/api-responses";
 import { prisma } from "../../src/lib/prisma";
 
 // `unstable_cache` exige le contexte d'un serveur Next : le catalogue est lu directement.
@@ -102,6 +103,7 @@ describe.sequential("partage d'un deck", () => {
   it("crée un lien, puis renvoie le même à chaque demande", async () => {
     const created = await call("POST", deckId, owner.token);
     assert.equal(created.status, 200);
+    shareInfoSchema.parse(created.body);
     assert.equal(created.body.active, true);
     assert.ok(created.body.token && created.body.token.length >= 32, "jeton suffisamment long");
     assert.match(created.body.token, /^[A-Za-z0-9_-]+$/);

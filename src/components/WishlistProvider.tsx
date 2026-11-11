@@ -2,7 +2,9 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useCollection, whenIdle } from "@/components/CollectionProvider";
-import { sendJson, useRequestErrors } from "@/components/send-json";
+import { fetchCached } from "@/components/data-cache";
+import { api } from "@/lib/client/api";
+import { useTranslatedRequest } from "@/lib/client/use-api-error-message";
 import type { WishlistItemDTO } from "@/lib/types";
 
 type WishInput = { targetPrice?: string | null; notes?: string | null };
@@ -34,7 +36,7 @@ export function useWishlist() {
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useCollection();
   const userId = user?.id ?? null;
-  const errors = useRequestErrors();
+  const translated = useTranslatedRequest();
   const [items, setItems] = useState<WishlistItemDTO[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -56,9 +58,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     // Liste secondaire : chargée au repos, pour ne pas ralentir le premier affichage de l'app.
     const load = async () => {
       try {
-        const response = await fetch("/api/wishlist", { cache: "no-store" });
-        if (!response.ok) throw new Error("wishlist");
-        const body = (await response.json()) as { items: WishlistItemDTO[] };
+        const body = await fetchCached("/api/wishlist", { schema: "wishlistSchema" });
         if (!cancelled) {
           setItems(body.items);
           setFailed(false);
@@ -95,19 +95,13 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       items,
       unseenAlerts: items.filter((item) => item.alertAt && !item.alertSeen).length,
       save: async (printingId, input = {}) => {
-        const { item } = await sendJson<{ item: WishlistItemDTO }>(
-          "/api/wishlist",
-          { method: "POST", body: JSON.stringify({ printingId, ...input }) },
-          errors,
-        );
+        const { item } = await translated(api("/api/wishlist", { body: { printingId, ...input }, schema: "wishlistItemResponseSchema" }));
         upsert(item);
       },
       addMany: async (printingIds) => {
-        const { added, alreadyPresent, items: saved } = await sendJson<{
-          added: number;
-          alreadyPresent: number;
-          items: WishlistItemDTO[];
-        }>("/api/wishlist/bulk", { method: "POST", body: JSON.stringify({ printingIds }) }, errors);
+        const { added, alreadyPresent, items: saved } = await translated(
+          api("/api/wishlist/bulk", { body: { printingIds }, schema: "wishlistBulkSchema" }),
+        );
         const byId = new Map(saved.map((item) => [item.id, item]));
         setItems((current) => [
           ...current.map((entry) => byId.get(entry.id) ?? entry),
@@ -116,24 +110,21 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         return { added, alreadyPresent };
       },
       patch: async (id, input) => {
-        const { item } = await sendJson<{ item: WishlistItemDTO }>(
-          `/api/wishlist/${id}`,
-          { method: "PATCH", body: JSON.stringify(input) },
-          errors,
-        );
+        const { item } = await translated(api(`/api/wishlist/${id}`, { method: "PATCH", body: input, schema: "wishlistItemResponseSchema" }));
         upsert(item);
       },
       remove: async (id) => {
-        await sendJson(`/api/wishlist/${id}`, { method: "DELETE" }, errors);
+        await translated(api(`/api/wishlist/${id}`, { method: "DELETE" }));
         setItems((current) => current.filter((entry) => entry.id !== id));
       },
       acknowledge: async () => {
         if (!items.some((item) => item.alertAt && !item.alertSeen)) return;
         setItems((current) => current.map((item) => (item.alertSeen ? item : { ...item, alertSeen: true })));
-        await sendJson("/api/wishlist/seen", { method: "POST" }, errors).catch(() => undefined);
+        // Échec sans conséquence : les alertes restent « non vues » sur le serveur et seront marquées à la prochaine visite.
+        await api("/api/wishlist/seen", { method: "POST" }).catch(() => undefined);
       },
     };
-  }, [items, loadedFor, failed, userId, errors]);
+  }, [items, loadedFor, failed, userId, translated]);
 
   return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
 }

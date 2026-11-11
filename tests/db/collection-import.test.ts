@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 import { POST as importRoute } from "../../src/app/api/collection/import/route";
 import { SESSION_COOKIE, createSession, registerAccount } from "../../src/lib/auth";
+import { collectionImportSchema } from "../../src/lib/api-responses";
 import { prisma } from "../../src/lib/prisma";
 
 type ImportResponse = { created: number; updated: number; skipped: number; items?: unknown[]; error?: string };
@@ -31,6 +32,7 @@ async function importOk(body: unknown) {
   const response = await post(body);
   const parsed = (await response.json()) as ImportResponse;
   assert.equal(response.status, 200, `import refusé : ${parsed.error}`);
+  collectionImportSchema.parse(parsed);
   return parsed;
 }
 

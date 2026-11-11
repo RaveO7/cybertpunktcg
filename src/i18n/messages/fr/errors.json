@@ -22,6 +22,7 @@
     "loadDecks": "Impossible de charger les decks.",
     "loadWishlist": "Impossible de charger la liste de souhaits.",
     "deleteAccountFailed": "Suppression du compte impossible.",
-    "syncCorrupted": "Une modification enregistrée hors ligne était illisible et a été abandonnée."
+    "syncCorrupted": "Une modification enregistrée hors ligne était illisible et a été abandonnée.",
+    "unexpected": "Réponse inattendue du serveur. Rechargez l’application."
   }
 }

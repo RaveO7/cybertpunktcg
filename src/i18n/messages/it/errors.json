@@ -22,6 +22,7 @@
     "loadDecks": "Impossibile caricare i mazzi.",
     "loadWishlist": "Impossibile caricare la lista dei desideri.",
     "deleteAccountFailed": "Impossibile eliminare l’account.",
-    "syncCorrupted": "Una modifica salvata offline era illeggibile ed è stata scartata."
+    "syncCorrupted": "Una modifica salvata offline era illeggibile ed è stata scartata.",
+    "unexpected": "Risposta inattesa dal server. Ricarica l’app."
   }
 }

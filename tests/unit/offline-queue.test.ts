@@ -229,6 +229,23 @@ describe("file hors ligne de la collection : rejeu", () => {
     assert.deepEqual(report.remaining, []);
   });
 
+  it("réponse acceptée au format inattendu : retirée comme envoyée, ni refusée ni appliquée, à relire", async () => {
+    const store = memoryQueueStore();
+    await addOp(store, "u1", { kind: "patch", lineId: "srv1", payload: { quantity: 2 } });
+    await addOp(store, "u1", { kind: "delete", lineId: "srv2", payload: null });
+    const { sent, send } = server({
+      patch: { status: 200, body: { item: { id: "srv1" }, deletedId: null } },
+      delete: { status: 200, body: { item: null, deletedId: "srv2" } },
+    });
+    const report = await replayQueue(store, "u1", send);
+    assert.equal(report.stop, "done");
+    assert.equal(sent.length, 2, "la file continue");
+    assert.deepEqual(report.rejected, []);
+    assert.equal(report.unverified, 1);
+    assert.deepEqual(report.applied.map((entry) => entry.op.lineId), ["srv2"]);
+    assert.deepEqual(report.remaining, []);
+  });
+
   it("ajout refusé : les opérations suivantes sur la ligne sont abandonnées", async () => {
     const store = memoryQueueStore();
     await addOp(store, "u1", save(1));

@@ -8,9 +8,10 @@ import { colorDotClass } from "@/components/CardTile";
 import { useCollection } from "@/components/CollectionProvider";
 import { readCached, writeCached } from "@/components/data-cache";
 import { buttonClass, copyText, issueText, panelClass, primaryClass, ValidityBadge } from "@/components/decks/ui";
-import { sendJson, useRequestErrors } from "@/components/send-json";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useNumberFormat } from "@/i18n/number-format";
+import { api } from "@/lib/client/api";
+import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
 import { cardLabel, type DeckEntry, type DeckLine } from "@/lib/deck-rules";
 import type { SharedDeckSummary } from "@/lib/deck-share";
 import type { DeckDTO } from "@/lib/types";
@@ -139,7 +140,7 @@ function SharedDeckRow({ line }: { line: DeckLine }) {
 function SharedDeckActions({ name, text, cards }: { name: string; text: string; cards: DeckLine[] }) {
   const t = useTranslations();
   const router = useRouter();
-  const errors = useRequestErrors();
+  const requestError = useApiErrorMessage();
   const pathname = useBrowserPathname();
   const { user, session } = useCollection();
   const [copied, setCopied] = useState<boolean | null>(null);
@@ -151,17 +152,13 @@ function SharedDeckActions({ name, text, cards }: { name: string; text: string; 
     setError(null);
     try {
       const entries: DeckEntry[] = cards.map((line) => ({ cardId: line.card.id, quantity: line.quantity }));
-      const { deck } = await sendJson<{ deck: DeckDTO }>(
-        "/api/decks",
-        { method: "POST", body: JSON.stringify({ name, cards: entries }) },
-        errors,
-      );
+      const { deck } = await api("/api/decks", { body: { name, cards: entries }, schema: "deckResponseSchema" });
       // L'écran des decks affiche d'abord sa copie en cache : on y ajoute le nouveau deck.
       const cached = readCached<{ decks: DeckDTO[] }>("/api/decks");
       if (cached) writeCached("/api/decks", { decks: [deck, ...cached.decks] });
       router.push({ pathname: "/decks", query: { deck: deck.id } });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("decks.copyFailed"));
+      setError(requestError(failure, t("decks.copyFailed")));
       setCopying(false);
     }
   }

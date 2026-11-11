@@ -22,6 +22,7 @@
     "loadDecks": "Could not load the decks.",
     "loadWishlist": "Could not load the wishlist.",
     "deleteAccountFailed": "Could not delete the account.",
-    "syncCorrupted": "A change saved offline could not be read and was discarded."
+    "syncCorrupted": "A change saved offline could not be read and was discarded.",
+    "unexpected": "Unexpected response from the server. Please reload the app."
   }
 }

@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
+import { decksSchema } from "../../src/lib/api-responses";
 import type { DeckDTO } from "../../src/lib/types";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
@@ -50,7 +51,7 @@ async function patch(token: string, id: string, body: unknown) {
 async function list(token: string) {
   const response = await routes.list.GET(request("/api/decks", token));
   assert.equal(response.status, 200);
-  return ((await response.json()) as { decks: DeckDTO[] }).decks;
+  return decksSchema.parse(await response.json()).decks;
 }
 
 beforeAll(async () => {

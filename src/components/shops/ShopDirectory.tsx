@@ -14,9 +14,8 @@ import { formatKm } from "@/components/public/format";
 import { NearPicker, type NearPoint } from "@/components/public/NearPicker";
 import { VerifiedBadge } from "@/components/public/TournamentCard";
 import { buttonClass, inputClass, panelClass } from "@/components/tournament/ui";
-import type { ShopSummary } from "@/lib/shops/shops";
-
-export type ShopDirectoryResult = { total: number; page: number; pageSize: number; shops: ShopSummary[] };
+import type { ShopDirectoryResult } from "@/lib/api-responses";
+import { api, isAbort } from "@/lib/client/api";
 type Params = Record<string, string>;
 
 const KEYS = ["country", "city", "lat", "lng", "radius", "place", "page", "view"] as const;
@@ -56,10 +55,10 @@ export function ShopDirectory({
   }
 
   const apiQuery = useMemo(() => {
-    const api = new URLSearchParams(clean(params));
-    api.delete("place");
-    api.delete("view");
-    return api.toString();
+    const query = new URLSearchParams(clean(params));
+    query.delete("place");
+    query.delete("view");
+    return query.toString();
   }, [params]);
 
   useEffect(() => {
@@ -68,14 +67,13 @@ export function ShopDirectory({
       return;
     }
     const controller = new AbortController();
-    fetch(`/api/shops?${apiQuery}`, { signal: controller.signal, cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("shops");
-        setResult((await response.json()) as ShopDirectoryResult);
+    api(`/api/shops?${apiQuery}`, { schema: "shopDirectorySchema", signal: controller.signal, cache: "no-store" })
+      .then((body) => {
+        setResult(body);
         setError(false);
       })
-      .catch((reason: Error) => {
-        if (reason.name !== "AbortError") setError(true);
+      .catch((reason: unknown) => {
+        if (!isAbort(reason)) setError(true);
       });
     return () => controller.abort();
   }, [apiQuery]);

@@ -8,6 +8,7 @@ import { useNumberFormat } from "@/i18n/number-format";
 import { PriceChart, type ChartPoint } from "@/components/PriceChart";
 import { formatSignedMoney, formatSignedPercent } from "@/components/TrendBadge";
 import { fieldLabelClass, toAmount } from "@/components/card-modal/shared";
+import { api } from "@/lib/client/api";
 import { amountSign, priceMovement } from "@/lib/logic";
 import type { CollectionItemDTO, PrintingDTO } from "@/lib/types";
 
@@ -129,14 +130,12 @@ export function PricePanel({
     let cancelled = false;
     async function loadHistory() {
       try {
-        const response = await fetch(
-          `/api/investment/history?printingId=${encodeURIComponent(printing.id)}`,
-          { cache: "no-store" },
-        );
-        if (!response.ok) throw new Error("history");
-        const body = (await response.json()) as { points?: { day: string; amount: number }[] };
+        const body = await api(`/api/investment/history?printingId=${encodeURIComponent(printing.id)}`, {
+          schema: "printingHistorySchema",
+          cache: "no-store",
+        });
         if (cancelled) return;
-        setHistory({ id: printing.id, points: (body.points ?? []).map((point) => ({ day: point.day, value: point.amount })) });
+        setHistory({ id: printing.id, points: body.points.map((point) => ({ day: point.day, value: point.amount })) });
       } catch {
         if (!cancelled) setHistory({ id: printing.id, points: [] });
       }

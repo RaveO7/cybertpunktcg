@@ -9,16 +9,15 @@ import { prisma } from "@/lib/prisma";
 import { createShareToken, isShareTokenFormat } from "@/lib/share-token";
 import { analyzeDeck, deckShortfall, deckToText, type DeckAnalysis, type DeckEntry, type DeckLine } from "@/lib/deck-rules";
 import { TYPE_ORDER } from "@/lib/reference-data";
+import type { ShareInfo } from "@/lib/api-responses";
 import type { CardDTO, CatalogDTO, PrintingDTO } from "@/lib/types";
-
-export type DeckShareInfo = { active: false } | { active: true; token: string; path: string; url: string; createdAt: string };
 
 /** Adresse du deck partagé, dans la langue de celui qui partage. */
 export function deckSharePath(token: string, locale: Locale = DEFAULT_LOCALE) {
   return formatRoute("/deck/[token]", locale, { token });
 }
 
-export function deckShareInfo(request: Request, share: { token: string; createdAt: Date } | null): DeckShareInfo {
+export function deckShareInfo(request: Request, share: { token: string; createdAt: Date } | null): ShareInfo {
   if (!share) return { active: false };
   const path = deckSharePath(share.token, requestLocale(request));
   return { active: true, token: share.token, path, url: absoluteAppUrl(request, path), createdAt: share.createdAt.toISOString() };
