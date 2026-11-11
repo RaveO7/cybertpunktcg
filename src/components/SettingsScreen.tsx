@@ -248,7 +248,7 @@ export function SettingsScreen() {
   }
 
   function patchPref<K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) {
-    setPrefs({ [key]: value } as Partial<UserPreferences>);
+    setPrefs({ [key]: value });
   }
 
   if (!ready) return <SettingsSkeleton />;

@@ -32,7 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   const summary = summarizeSharedDeck(deck.cards, catalog);
   const legends = summary.analysis.legends.slice(0, 3);
   const images = legendImages(legends, catalog.printings);
-  const cards = await Promise.all(legends.map((line) => (images[line.card.id] ? cardPng(request, images[line.card.id]) : null)));
+  const cards = await Promise.all(legends.map(async (line) => (images[line.card.id] ? cardPng(request, images[line.card.id]) : null)));
   return ogImage({
     eyebrow: tSite("og.deck"),
     title: deck.name,

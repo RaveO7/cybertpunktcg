@@ -146,7 +146,7 @@ function DeckSummaryCard({
           const image = line ? preview.get(line.card.id)?.imagePath : null;
           return image ? (
             <CardImage
-              key={line!.card.id}
+              key={line.card.id}
               src={image}
               alt=""
               loading="lazy"

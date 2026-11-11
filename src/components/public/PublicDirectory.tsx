@@ -67,7 +67,7 @@ export function PublicDirectory({
       return;
     }
     const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
+    const loadDirectory = async () => {
       setLoading(true);
       try {
         const response = await fetch(`/api/tournaments/public?${apiQuery}`, { signal: controller.signal, cache: "no-store" });
@@ -79,7 +79,8 @@ export function PublicDirectory({
       } finally {
         setLoading(false);
       }
-    }, 0);
+    };
+    const timer = window.setTimeout(() => void loadDirectory(), 0);
     return () => {
       controller.abort();
       window.clearTimeout(timer);

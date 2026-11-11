@@ -103,6 +103,6 @@ export function writeStoredPreferences(prefs: UserPreferences) {
   }
 }
 
-export function filterDefaultsFrom(prefs: UserPreferences): Pick<UserPreferences, "sort" | "collection"> {
+export function filterDefaultsFrom(prefs: Pick<UserPreferences, "sort" | "collection">): Pick<UserPreferences, "sort" | "collection"> {
   return { sort: prefs.sort, collection: prefs.collection };
 }

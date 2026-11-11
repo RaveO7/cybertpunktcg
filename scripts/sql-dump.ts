@@ -6,7 +6,7 @@ export function literal(value: unknown): string {
   if (value instanceof Date) return `'${value.toISOString().replace("T", " ").replace("Z", "")}'`;
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number" || typeof value === "bigint") return String(value);
-  if (Prisma.Decimal.isDecimal(value)) return (value as Prisma.Decimal).toString();
+  if (Prisma.Decimal.isDecimal(value)) return value.toString();
   return `'${String(value).replace(/'/g, "''")}'`;
 }
 

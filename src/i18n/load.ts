@@ -28,7 +28,7 @@ export function mergeMessages(...layers: (Tree | undefined)[]): Tree {
   for (const layer of layers) {
     if (!layer) continue;
     for (const [key, value] of Object.entries(layer)) {
-      result[key] = isTree(value) && isTree(result[key]) ? mergeMessages(result[key] as Tree, value) : value;
+      result[key] = isTree(value) && isTree(result[key]) ? mergeMessages(result[key], value) : value;
     }
   }
   return result;

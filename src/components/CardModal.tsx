@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { chipColor } from "@/components/CardTile";
@@ -270,7 +270,7 @@ export function CardModal({
                 {
                   borderColor: `color-mix(in srgb, ${accent} 40%, transparent)`,
                   boxShadow: `0 18px 60px color-mix(in srgb, ${accent} 20%, transparent)`,
-                } as CSSProperties
+                }
               }
             >
               {printing.imagePath ? (

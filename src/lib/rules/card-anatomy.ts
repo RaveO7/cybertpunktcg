@@ -94,5 +94,5 @@ export type AnatomyCopy = {
 
 /** Textes de l'anatomie d'une carte dans une langue (bloc rules.anatomy). */
 export function anatomyCopy(text: Messages["rules"]["anatomy"]): AnatomyCopy {
-  return text as AnatomyCopy;
+  return text;
 }

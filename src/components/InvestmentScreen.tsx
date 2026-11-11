@@ -71,11 +71,11 @@ export function InvestmentScreen() {
   const [setSort, setSetSort] = useState<SortState<SetSortKey> | null>(initialView.setSort);
   const [lineSort, setLineSort] = useState<SortState<LineSortKey> | null>(initialView.lineSort);
   const effectiveSetSort = useMemo(
-    () => setSort ?? ({ key: "marketValue", dir: "desc" } as SortState<SetSortKey>),
+    () => setSort ?? ({ key: "marketValue", dir: "desc" } satisfies SortState<SetSortKey>),
     [setSort],
   );
   const effectiveLineSort = useMemo(
-    () => lineSort ?? ({ key: "market", dir: "desc" } as SortState<LineSortKey>),
+    () => lineSort ?? ({ key: "market", dir: "desc" } satisfies SortState<LineSortKey>),
     [lineSort],
   );
 

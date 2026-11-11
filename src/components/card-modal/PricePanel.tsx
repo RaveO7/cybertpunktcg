@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { intlLocale, type Locale } from "@/i18n/config";
+import { intlLocale } from "@/i18n/config";
 import { Link, useRouter, type Href } from "@/i18n/navigation";
 import { useNumberFormat } from "@/i18n/number-format";
 import { PriceChart, type ChartPoint } from "@/components/PriceChart";
@@ -88,7 +88,7 @@ export function PricePanel({
 }) {
   const fmt = useNumberFormat();
   const t = useTranslations();
-  const locale = useLocale() as Locale;
+  const locale = useLocale();
   const router = useRouter();
   // Historique de la carte `id` ; tant qu'il ne correspond pas à la fiche, l'ancien reste affiché, estompé.
   const [history, setHistory] = useState<{ id: string | null; points: ChartPoint[] }>({ id: null, points: [] });

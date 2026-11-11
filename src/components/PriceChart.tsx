@@ -126,7 +126,6 @@ export function PriceChart({ points: allPoints, label, emptyHint, height, compac
       points.length === 1
         ? [0]
         : Array.from(new Set(Array.from({ length: labelCount }, (_, i) => Math.round((i / (labelCount - 1)) * (points.length - 1)))));
-    const first = points[0].value;
     const last = points[points.length - 1].value;
     return {
       padding,

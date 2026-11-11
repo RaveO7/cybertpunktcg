@@ -123,7 +123,7 @@ function defined<T extends object>(value: T): Partial<T> {
 export function enqueueOp(record: QueueRecord, userId: string, next: NewOp, createdAt = new Date().toISOString()): QueueRecord {
   const ops = readOps(record).ops;
   const lineId = record.aliases[next.lineId] ?? next.lineId;
-  const op = { ...next, lineId } as NewOp;
+  const op = { ...next, lineId };
   const append = (): QueueRecord => ({
     ...record,
     nextSeq: record.nextSeq + 1,

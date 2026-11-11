@@ -94,7 +94,7 @@ export async function notifyPriceAlerts(
   alerts: TriggeredAlert[],
   options: { send?: PushSender; log?: (message: string) => void } = {},
 ): Promise<PushReport> {
-  const log = options.log ?? console.log;
+  const log = options.log ?? console.info;
   const byUser = new Map<string, TriggeredAlert[]>();
   for (const alert of alerts) byUser.set(alert.userId, [...(byUser.get(alert.userId) ?? []), alert]);
   const report: PushReport = { users: 0, sent: 0, failed: 0, removed: 0 };

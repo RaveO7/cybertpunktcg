@@ -14,7 +14,6 @@ import { REVEAL_BOOT_SCRIPT } from "@/components/public-site/reveal-boot";
 import { BOOT_REQUESTS_SCRIPT } from "@/lib/boot-requests";
 import { CLIENT_BLOCKS, pickBlocks } from "@/i18n/client-messages";
 import { IntlClientProvider } from "@/i18n/IntlClientProvider";
-import { type Messages } from "@/i18n/load";
 import { PREFERENCES_STORAGE_KEY, THEME_CHROME_COLORS } from "@/lib/preferences";
 import type { Locale } from "@/i18n/config";
 
@@ -52,7 +51,7 @@ const themeBootScript = `(function(){var theme="dark";try{var raw=localStorage.g
 
 /** Document HTML de toutes les pages, dans la langue de l'URL (/fr, /en, /de…). */
 export async function SiteShell({ lang, children }: { lang: Locale; children: ReactNode }) {
-  const messages = pickBlocks((await getMessages()) as Messages, CLIENT_BLOCKS);
+  const messages = pickBlocks((await getMessages()), CLIENT_BLOCKS);
   return (
     <html lang={lang} className={`${fontVariables} h-dvh overflow-hidden antialiased`} data-theme="dark" suppressHydrationWarning>
       {/* Mise en page racine (App Router) : <head> est attendu ici, la règle vise le routeur Pages. */}

@@ -33,7 +33,7 @@ let counter = 0;
 type CommandInput = OrganizerCommand extends infer C ? (C extends OrganizerCommand ? Omit<C, "clientActionId"> : never) : never;
 
 function run(tournamentId: string, command: CommandInput) {
-  return commands.runOrganizerCommand(tournamentId, owner, { ...command, clientActionId: `pc-${stamp}-${++counter}` } as OrganizerCommand);
+  return commands.runOrganizerCommand(tournamentId, owner, { ...command, clientActionId: `pc-${stamp}-${++counter}` });
 }
 
 type Table = {

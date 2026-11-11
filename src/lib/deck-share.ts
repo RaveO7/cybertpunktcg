@@ -116,7 +116,7 @@ export function summarizeSharedDeck(cards: DeckEntry[], catalog: Pick<CatalogDTO
   const known = TYPE_ORDER as readonly string[];
   const groups = [
     ...TYPE_ORDER.filter((type) => type !== "Legend").map((type) => ({
-      key: type as string,
+      key: type,
       lines: analysis.main.filter((line) => line.card.cardType === type),
     })),
     { key: "other", lines: analysis.main.filter((line) => !known.includes(line.card.cardType ?? "")) },

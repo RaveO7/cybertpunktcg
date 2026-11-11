@@ -141,7 +141,7 @@ describe.sequential("decks (copie)", () => {
     });
     assert.equal(full.status, 200);
     assert.equal(full.body.deck?.name, "Rouge");
-    const quantities = Object.fromEntries(full.body.deck!.cards.map((card) => [card.cardId, card.quantity]));
+    const quantities = Object.fromEntries(full.body.deck.cards.map((card) => [card.cardId, card.quantity]));
     assert.deepEqual(quantities, { [C.legend]: 1, [C.unit]: 4 });
     // Le plus récemment modifié en premier.
     assert.deepEqual((await list(owner.token)).map((deck) => deck.name), ["Rouge", "Nouveau deck"]);

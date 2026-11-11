@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { chooseLocale } from "@/i18n/choose-locale";
-import { LANGUAGES, type Locale } from "@/i18n/config";
+import { LANGUAGES } from "@/i18n/config";
 import { Link, useRouter, type Href } from "@/i18n/navigation";
 import { useInternalPathname } from "@/i18n/useInternalPathname";
 import { isInHorizontalScroller } from "@/lib/swipe";
@@ -73,7 +73,7 @@ function useNavigation() {
  */
 function LanguageSelect() {
   const t = useTranslations();
-  const current = useLocale() as Locale;
+  const current = useLocale();
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);

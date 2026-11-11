@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "node scripts/prisma.mjs generate && node scripts/vercel-db-push.mjs && tsx scripts/generate-thumbnails.ts && next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "check": "node scripts/check.mjs",
     "test": "vitest run",

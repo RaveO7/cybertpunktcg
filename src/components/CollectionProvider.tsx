@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { clearDataCache, prefetchCached } from "@/components/data-cache";
 import { mutationFetch, useRequestErrors } from "@/components/send-json";
 import { matchRoute } from "@/i18n/match";
@@ -163,6 +163,8 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const errors = useRequestErrors();
+  // Lu au moment de l'échec, dans la langue courante, sans relancer le chargement initial.
+  const loadFailedMessage = useEffectEvent(() => errors("loadCollection"));
   // Modifications locales de la collection : une réponse partie avant l'une d'elles est périmée.
   const edits = useRef(0);
   const storeRef = useRef<QueueStore | null>(null);
@@ -341,7 +343,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         // sans elle, seul le message d'erreur s'affiche.
         if (!cancelled) {
           settled = true;
-          if (!savedShown) setError(errors("loadCollection"));
+          if (!savedShown) setError(loadFailedMessage());
           setReady(true);
         }
       }

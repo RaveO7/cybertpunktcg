@@ -22,7 +22,7 @@ type Params = Record<string, string>;
 const KEYS = ["country", "city", "lat", "lng", "radius", "place", "page", "view"] as const;
 
 function clean(params: Params) {
-  return Object.fromEntries(KEYS.flatMap((key) => (params[key] ? [[key, params[key]]] : []))) as Params;
+  return Object.fromEntries(KEYS.flatMap((key) => (params[key] ? [[key, params[key]]] : [])));
 }
 
 /** Annuaire des boutiques : sur sa page, filtres dans l'URL ; intégré à l'accueil (`embedded`), filtres locaux. */

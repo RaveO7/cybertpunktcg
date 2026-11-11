@@ -188,7 +188,7 @@ export function FeatureShowcase({
             onPointerLeave={() => setHovered(false)}
             onFocus={() => setFocused(true)}
             onBlur={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+              if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
             }}
           >
             <div className="flex min-w-0 flex-col gap-4" data-reveal="left">
@@ -230,7 +230,7 @@ export function FeatureShowcase({
                         <span
                           aria-hidden="true"
                           className="cp-progress absolute bottom-0 left-0 h-0.5 w-full bg-yellow"
-                          style={{ transform: `scaleX(${progress})` } as CSSProperties}
+                          style={{ transform: `scaleX(${progress})` }}
                         />
                       ) : null}
                     </button>

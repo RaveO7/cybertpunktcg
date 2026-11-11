@@ -45,7 +45,7 @@ export function AddressField({
   useEffect(() => {
     if (!editing || country !== "FR" || query.trim().length < 3) return;
     const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
+    const suggest = async () => {
       try {
         const response = await fetch(`/api/geocode/suggest?country=FR&q=${encodeURIComponent(query.trim())}`, { signal: controller.signal });
         const body = (await response.json().catch(() => ({}))) as { suggestions?: AddressSuggestion[]; error?: string };
@@ -58,7 +58,8 @@ export function AddressField({
       } catch {
         // Requête annulée par une frappe plus récente.
       }
-    }, 300);
+    };
+    const timer = window.setTimeout(() => void suggest(), 300);
     return () => {
       controller.abort();
       window.clearTimeout(timer);

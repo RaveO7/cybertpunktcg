@@ -139,7 +139,11 @@ export function CardsExplorer({
   const { setCardsLocation } = useBrowseSelection();
   const t = useTranslations();
   const { prefs } = usePreferences();
-  const filterDefaults = useMemo(() => filterDefaultsFrom(prefs), [prefs.collection, prefs.sort]);
+  const { sort: prefSort, collection: prefCollection } = prefs;
+  const filterDefaults = useMemo(
+    () => filterDefaultsFrom({ sort: prefSort, collection: prefCollection }),
+    [prefSort, prefCollection],
+  );
   const SORT_FIELDS = sortFields(t);
   const [filters, setFilters] = useState<Filters>(() => parseFilters(searchParams, true, filterDefaultsFrom(prefs)));
   const [filtersVisibility, setFiltersVisibility] = useState<"auto" | "open" | "closed">(prefs.filtersPanel);

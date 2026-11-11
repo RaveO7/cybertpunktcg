@@ -27,7 +27,7 @@ export function NearPicker({ value, onChange }: { value: NearPoint | null; onCha
   useEffect(() => {
     if (query.trim().length < 2) return;
     const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
+    const searchCities = async () => {
       try {
         const response = await fetch(`/api/geocode/cities?q=${encodeURIComponent(query.trim())}`, { signal: controller.signal });
         const body = (await response.json().catch(() => ({}))) as { cities?: CitySuggestion[] };
@@ -35,7 +35,8 @@ export function NearPicker({ value, onChange }: { value: NearPoint | null; onCha
       } catch {
         // Annulée par une frappe plus récente.
       }
-    }, 250);
+    };
+    const timer = window.setTimeout(() => void searchCities(), 250);
     return () => {
       controller.abort();
       window.clearTimeout(timer);

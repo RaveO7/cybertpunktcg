@@ -13,7 +13,6 @@ import type { Place } from "../../src/lib/geo/location";
 import type { OwnedShop } from "../../src/lib/shops/shops";
 import type { DirectoryResult } from "../../src/lib/tournament/directory";
 import type { PublicTournamentDetail } from "../../src/lib/tournament/public-view";
-import type { TournamentView } from "../../src/lib/tournament/view";
 import { rejectsWith } from "../helpers/api-text";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
@@ -76,7 +75,7 @@ const session = (account: Account) => `${sessionCookie}=${encodeURIComponent(acc
 type CommandInput = OrganizerCommand extends infer C ? (C extends OrganizerCommand ? Omit<C, "clientActionId"> : never) : never;
 
 function run(tournamentId: string, command: CommandInput, by: Account = owner) {
-  return commands.runOrganizerCommand(tournamentId, by.id, { ...command, clientActionId: `pub-${stamp}-${++counter}` } as OrganizerCommand);
+  return commands.runOrganizerCommand(tournamentId, by.id, { ...command, clientActionId: `pub-${stamp}-${++counter}` });
 }
 
 async function newTournament(by: Account = owner, settings: Record<string, unknown> = {}) {
@@ -380,7 +379,7 @@ describe("places et liste d'attente", () => {
     const view = (await import("../../src/lib/tournament/view")).buildView(
       (await (await import("../../src/lib/tournament/repository")).loadTournament(prisma, id))!,
       { userId: owner.id, deviceTokenHash: null },
-    ) as TournamentView;
+    );
     assert.equal(view.players.find((player) => player.name === "W3")?.waitlistPosition, 1);
   });
 

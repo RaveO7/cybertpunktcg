@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 
 const STEPS = [
   ["typecheck", "npx tsc --noEmit"],
-  ["lint", "npx eslint --quiet"],
+  ["lint", "npx eslint --max-warnings 0"],
   ["tests unitaires", "npx vitest run --project unit"],
 ];
 
@@ -22,7 +22,7 @@ function run([name, command]) {
 
 const results = await Promise.all(STEPS.map(run));
 for (const { name, code, seconds } of results) console.log(`${code === 0 ? "✓" : "✗"} ${name} (${seconds} s)`);
-for (const { name, code, output } of results.filter((result) => result.code !== 0)) {
+for (const { name, output } of results.filter((result) => result.code !== 0)) {
   console.log(`\n── ${name} ──\n${output.trim().split("\n").slice(-60).join("\n")}`);
 }
 process.exit(results.some((result) => result.code !== 0) ? 1 : 0);

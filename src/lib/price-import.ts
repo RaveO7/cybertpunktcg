@@ -58,7 +58,7 @@ export type ImportPricesResult =
 type Ctx = { prisma: PrismaClient; cacheDir: string; log: (message: string) => void };
 
 export async function importPrices(prisma: PrismaClient, options: ImportPricesOptions): Promise<ImportPricesResult> {
-  const ctx: Ctx = { prisma, cacheDir: options.cacheDir, log: options.log ?? console.log };
+  const ctx: Ctx = { prisma, cacheDir: options.cacheDir, log: options.log ?? console.info };
   const files = options.files ?? (await resolveFiles(ctx, options.offline ?? false));
   let products;
   let trends;

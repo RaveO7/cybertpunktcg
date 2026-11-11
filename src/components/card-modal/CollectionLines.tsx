@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { intlLocale, type Locale } from "@/i18n/config";
+import { intlLocale } from "@/i18n/config";
 import { useNumberFormat } from "@/i18n/number-format";
 import {
   conditionDot,
@@ -50,7 +50,7 @@ export function LineEditor({
 }) {
   const fmt = useNumberFormat();
   const t = useTranslations();
-  const locale = useLocale() as Locale;
+  const locale = useLocale();
   // Quantité saisie mais pas encore envoyée : affichée tout de suite, envoyée en un seul PATCH
   // une fois les clics terminés. null = on affiche la valeur de la collection.
   const [pendingQty, setPendingQty] = useState<number | null>(null);
