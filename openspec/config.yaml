@@ -1,5 +1,17 @@
 schema: spec-driven
 
+context: |
+  Rédiger tous les artefacts en français.
+  Interface en 5 langues (fr de référence, en, de, es, it) : tout texte visible passe par next-intl.
+  Mobile (application installée, hors-ligne) et desktop : les designs couvrent les deux.
+  Base SQLite en local, Postgres en production : pas de fonctionnalité propre à un seul des deux.
+  Tests : jamais contre la base de production ; tout ce qu'un test crée est supprimé, même en cas d'échec.
+
+rules:
+  tasks:
+    - Chaque tâche indique comment elle est vérifiée (test, typecheck, capture desktop + mobile).
+    - Inclure les tâches de traduction (5 langues) et de test dès qu'elles s'appliquent.
+
 # Project context (optional)
 # Add only constraints that should guide OpenSpec artifacts and workflows.
 # Include constraints an agent cannot infer by reading the code.
