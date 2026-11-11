@@ -161,5 +161,3 @@ export const PRICE_SOURCES = [
   { code: "other", name: "Autre" },
 ] as const;
 
-export const PAGE_SIZE = 200;
-
