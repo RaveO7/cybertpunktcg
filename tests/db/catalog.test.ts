@@ -41,26 +41,16 @@ describe("catalogue importé", () => {
     assert.ok(catalog.printings.length >= 600);
   });
 
-  it("aucun prix cloné vers le FR ni les retail sans marché propre", async () => {
+  it("aucun prix cloné vers le FR", async () => {
     const catalog = await loadCatalog();
     const frLeaks = catalog.printings.filter(
       (printing) => printing.setCode.endsWith("-fr") && printing.marketPrice != null,
     );
     // FR printings only get prices from a dedicated match, never from EN cloning.
     // Currently Cardmarket singles have no FR expansion mapping, so FR should be unpriced.
+    // Retail sets are priced only from their own Cardmarket expansions: the beta/retail
+    // no-shared-productId guarantee is checked against the price guide in cardmarket.test.ts.
     assert.equal(frLeaks.length, 0, "French printings must not inherit English Cardmarket prices");
-    const boxRetailPriced = catalog.printings.filter(
-      (printing) => printing.setCode === "boxtoppersretail" && printing.marketPrice != null,
-    );
-    assert.equal(boxRetailPriced.length, 0, "box toppers retail must stay unpriced with current CM data");
-    const welcomeRetailPriced = catalog.printings.filter(
-      (printing) => printing.setCode === "welcometonightcityretail" && printing.marketPrice != null,
-    );
-    assert.equal(
-      welcomeRetailPriced.length,
-      0,
-      "welcome retail must stay unpriced while Cardmarket only lists the beta expansion",
-    );
     const finishes = new Set(catalog.printings.map((printing) => printing.officialFinish).filter(Boolean));
     assert.equal(finishes.size, 0);
   });

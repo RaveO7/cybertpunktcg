@@ -177,6 +177,33 @@ describe("lecture du catalogue produits", () => {
   });
 });
 
+describe("matchCardmarketPrices : jumeaux beta / retail", () => {
+  it("deux extensions sans nom aux mêmes cartes : la plus ancienne au beta, la suivante au retail, même si le retail local a moins d'impressions", () => {
+    const names = ["Alpha", "Bravo", "Charlie"];
+    const products = [10, 20].flatMap((idExpansion) =>
+      names.map((name, index) => ({ idProduct: idExpansion + index, name, expansionName: null, idExpansion, number: null })),
+    );
+    const trends = new Map(products.map((product) => [product.idProduct, product.idProduct]));
+    // Le beta a une impression de plus (variante) : l'écart de taille ne doit pas tout attribuer au beta.
+    const printings = [
+      ...names.map((name, index) => ({ id: `beta-${index}`, setCode: "wnc-beta", collectorNumber: String(index + 1), name })),
+      { id: "beta-extra", setCode: "wnc-beta", collectorNumber: "99", name: "Alpha" },
+      ...names.map((name, index) => ({ id: `retail-${index}`, setCode: "wnc-retail", collectorNumber: String(index + 1), name })),
+    ];
+    const report = matchCardmarketPrices(products, trends, [], printings);
+    const setOf = (printingId: string) => printings.find((printing) => printing.id === printingId)?.setCode;
+
+    assert.deepEqual(
+      report.expansions.map((expansion) => expansion.setCode),
+      ["wnc-beta", "wnc-retail"],
+    );
+    assert.equal(report.matchedProducts, report.assignments.length, "aucun produit compté deux fois");
+    for (const assignment of report.assignments) {
+      assert.equal(setOf(assignment.printingId), assignment.productId >= 20 ? "wnc-retail" : "wnc-beta");
+    }
+  });
+});
+
 describe("matchCardmarketPrices : cas limites", () => {
   const sets = [{ code: "zset", name: "Zeta Set" }];
 

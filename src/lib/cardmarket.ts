@@ -440,6 +440,14 @@ function classifyGroup(
   );
   const best = ranked[0];
   if (!best) return { label: null, tied: [] as string[] };
+  // Jumeaux beta / retail aux mêmes cartes : égalité même si leurs nombres d'impressions diffèrent (variantes),
+  // pour que deux extensions Cardmarket se répartissent entre eux au lieu d'aller toutes deux au beta.
+  const sameCards = ranked
+    .filter((candidate) => candidate.intersection === best.intersection && candidate.precision === best.precision)
+    .map((candidate) => candidate.code);
+  if (sameCards.length === 2 && sameCards.some((code) => /beta/i.test(code)) && sameCards.some((code) => /retail/i.test(code))) {
+    return { label: null, tied: sameCards };
+  }
   const tied = ranked
     .filter(
       (candidate) =>
