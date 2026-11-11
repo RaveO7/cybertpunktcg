@@ -1,4 +1,3 @@
-import type { Viewport } from "next";
 import type { ReactNode } from "react";
 import { Chakra_Petch, Geist, Geist_Mono } from "next/font/google";
 import { getMessages, getTimeZone } from "next-intl/server";
@@ -34,18 +33,6 @@ const chakraPetch = Chakra_Petch({
 });
 
 export const fontVariables = `${geistSans.variable} ${geistMono.variable} ${chakraPetch.variable}`;
-
-export const siteViewport: Viewport = {
-  // Couleur des barres du navigateur et du système : celle du thème de l'app, pas celle du téléphone.
-  // Sombre par défaut ; themeBootScript puis applyTheme() la corrigent pour le thème clair.
-  themeColor: THEME_CHROME_COLORS.dark,
-  width: "device-width",
-  initialScale: 1,
-  // Plein écran sur iPhone (encoche, barre d'accueil) : les marges viennent de env(safe-area-inset-*).
-  viewportFit: "cover",
-  // Android : le clavier réduit la mise en page au lieu de recouvrir les formulaires.
-  interactiveWidget: "resizes-content",
-};
 
 const themeBootScript = `(function(){var theme="dark";try{var raw=localStorage.getItem(${JSON.stringify(PREFERENCES_STORAGE_KEY)});if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.theme==="light")theme="light";}}catch(e){}var root=document.documentElement;root.setAttribute("data-theme",theme);root.style.colorScheme=theme;try{var colors=${JSON.stringify(THEME_CHROME_COLORS)};var metas=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<metas.length;i++)metas[i].parentNode.removeChild(metas[i]);var meta=document.createElement("meta");meta.setAttribute("name","theme-color");meta.setAttribute("content",colors[theme]);document.head.appendChild(meta);}catch(e){}})();`;
 
