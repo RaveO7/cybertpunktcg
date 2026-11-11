@@ -10,21 +10,41 @@
       "PowerShell(*sync-local-to-prod*)",
       "PowerShell(*export-local-to-postgres*)"
     ],
-    "deny": ["Read(./.env.local)"]
+    "allow": [
+      "Bash(npm run import:prices*)",
+      "Bash(npm run import:cards*)",
+      "Bash(npm run db:push*)",
+      "Bash(npm run db:seed*)",
+      "Bash(node scripts/prisma.mjs *)"
+    ],
+    "deny": [
+      "Read(./.env.local)"
+    ]
+  },
+  "worktree": {
+    "baseRef": "head"
   },
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "Bash|PowerShell",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-local-db.mjs\"", "timeout": 15 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-local-db.mjs\"",
+            "timeout": 15
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/typecheck-on-stop.mjs\"", "timeout": 180 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/typecheck-on-stop.mjs\"",
+            "timeout": 180
+          }
         ]
       }
     ]

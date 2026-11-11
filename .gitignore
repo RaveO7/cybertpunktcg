@@ -69,3 +69,6 @@ __pycache__/
 
 # miniatures générées au build (scripts/generate-thumbnails.ts)
 /public/card-images/thumb/
+
+# worktrees des sessions et agents Claude Code en parallèle
+/.claude/worktrees/
