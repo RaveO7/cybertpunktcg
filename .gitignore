@@ -64,9 +64,6 @@ next-env.d.ts
 __pycache__/
 *.pyc
 
-# skills : copie locale (symlinks) de .agents/skills, source suivie par skills-lock.json
-/.claude/skills/
-
 # miniatures générées au build (scripts/generate-thumbnails.ts)
 /public/card-images/thumb/
 
