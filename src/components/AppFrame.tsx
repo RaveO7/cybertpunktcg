@@ -32,7 +32,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   // Le didacticiel occupe toute la hauteur : pas de pied de page.
   // Écran de démarrage d'une page réservée aux comptes (voir RequireUser) : pas de pied de page, qui serait
   // seul en bas de l'écran puis repoussé par le contenu à son arrivée (décalage de mise en page).
-  const awaitingSession = !isPublicPage && session === "unknown" && !error;
+  const awaitingSession = !isPublicPage && (session === "unknown" || session === "guest") && !error;
   const showFooter = !pathname.startsWith("/comment-jouer") && !awaitingSession;
   const content = isPublicPage ? children : <RequireUser>{children}</RequireUser>;
   return (
