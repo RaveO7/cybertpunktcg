@@ -64,6 +64,7 @@ export function CardTile({
   favorite = false,
   favoriteReady = false,
   onToggleFavorite,
+  imageSizes,
 }: {
   printing: PrintingDTO;
   card: CardDTO | undefined;
@@ -78,6 +79,8 @@ export function CardTile({
   favorite?: boolean;
   favoriteReady?: boolean;
   onToggleFavorite?: () => void;
+  /** Largeur affichée de l'image (attribut sizes), pour charger la miniature juste assez grande. */
+  imageSizes?: string;
 }) {
   const t = useTranslations();
   const { name, subname } = nameParts(card, printing);
@@ -90,11 +93,11 @@ export function CardTile({
       {printing.imagePath ? (
         <>
           <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-            <CardImage src={printing.imagePath} alt="" role="presentation" draggable={false} className="card-ambilight" />
+            <CardImage src={printing.imagePath} sizes={imageSizes} alt="" role="presentation" draggable={false} className="card-ambilight" />
           </div>
           <div className="card-ambilight-spill z-[1]" aria-hidden>
             <div className="relative h-full">
-              <CardImage src={printing.imagePath} alt="" role="presentation" draggable={false} className="card-ambilight" />
+              <CardImage src={printing.imagePath} sizes={imageSizes} alt="" role="presentation" draggable={false} className="card-ambilight" />
             </div>
           </div>
         </>
@@ -113,6 +116,7 @@ export function CardTile({
             {printing.imagePath ? (
               <CardImage
                 src={printing.imagePath}
+                sizes={imageSizes}
                 alt=""
                 draggable={false}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"

@@ -7,6 +7,21 @@ import type { ExampleCard } from "@/lib/rules/examples";
 import { CardImage } from "@/components/CardImage";
 import { LIFT_SCALE, liftRect, placeZoom, zoomSize, type Rect } from "@/components/card-lift";
 
+/** Largeur maximale (px) de chaque taille de carte (classes et --dm-* de globals.css) : attribut sizes. */
+const CARD_MAX_WIDTH = {
+  xs: 48,
+  sm: 64,
+  md: 96,
+  lg: 112,
+  "fluid-xs": 96,
+  "fluid-sm": 128,
+  "fluid-md": 160,
+  "fluid-lg": 168,
+  "fluid-hand": 208,
+  "fluid-rival": 184,
+  "fluid-pile": 60,
+} as const;
+
 export function GameCard({
   card,
   size = "md",
@@ -53,6 +68,8 @@ export function GameCard({
                 : size === "sm"
                   ? "w-14 sm:w-16"
                   : "w-11 sm:w-12";
+
+  const imageSizes = `${CARD_MAX_WIDTH[size]}px`;
 
   // Carte « soulevée » (survol souris ou appui long) : copie agrandie dans un calque au-dessus du plateau,
   // que les conteneurs du plateau (overflow: hidden) ne peuvent pas rogner.
@@ -160,6 +177,7 @@ export function GameCard({
         ) : (
           <CardImage
             src={card.imagePath}
+            sizes={imageSizes}
             alt=""
             className="aspect-card w-full object-cover"
             draggable={false}
@@ -182,6 +200,7 @@ export function GameCard({
         <div data-equipped={inPlace ? "" : undefined} className="pointer-events-none absolute -right-2 -top-3 w-[55%] rotate-12">
           <CardImage
             src={equipped.imagePath}
+            sizes={`${Math.ceil(CARD_MAX_WIDTH[size] * 0.55)}px`}
             alt=""
             className="aspect-card w-full border border-cyan/50 object-cover shadow-md"
             draggable={false}

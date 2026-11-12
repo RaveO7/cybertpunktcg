@@ -15,6 +15,7 @@ import { initialShopDirectory } from "@/components/public-site/shop-pages";
 import { initialTournamentDirectory } from "@/components/public-site/tournament-pages";
 import { ShopDirectory } from "@/components/shops/ShopDirectory";
 import { JsonLd } from "@/components/site/JsonLd";
+import { thumbnailSrcSet } from "@/lib/card-image";
 import { loadPublicCards } from "@/lib/seo/catalog-data";
 import { cardLabels } from "@/lib/seo/card-labels";
 import { homeCopy } from "@/lib/seo/metadata";
@@ -89,6 +90,7 @@ export async function Landing({ locale }: { locale: Locale }) {
     name: card.name,
     href: localizedPath("card", locale, { slug: card.slug }),
     thumb: card.thumb!,
+    srcSet: thumbnailSrcSet(card.image),
     alt: tCard("imageAlt", { name: card.name }),
     kind: [labels.type(card.cardType), labels.color(card.color)].filter(Boolean).join(" · "),
     color: card.color,

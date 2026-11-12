@@ -113,7 +113,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (url.pathname.startsWith("/card-images/")) {
-    event.respondWith(cacheFirst(request, IMAGES_CACHE));
+    event.respondWith(cardImage(request, url));
     return;
   }
   if (url.pathname.startsWith("/api/")) {
@@ -136,6 +136,21 @@ async function cacheFirst(request, cacheName) {
   const response = await fetch(request);
   if (response.ok && !response.redirected) await cache.put(request, response.clone()).catch(() => undefined);
   return response;
+}
+
+/**
+ * Hors ligne, une miniature d'une autre largeur (thumb/<largeur>/, srcset) absente du cache est
+ * remplacée par celle téléchargée pour le mode hors-ligne (thumb/, cf. offlineImageUrls).
+ */
+async function cardImage(request, url) {
+  try {
+    return await cacheFirst(request, IMAGES_CACHE);
+  } catch (error) {
+    const fallback = url.pathname.replace(/^\/card-images\/thumb\/\d+\//, "/card-images/thumb/");
+    const cached = fallback !== url.pathname ? await caches.open(IMAGES_CACHE).then((cache) => cache.match(fallback)) : undefined;
+    if (cached) return cached;
+    throw error;
+  }
 }
 
 async function networkFirst(request, cacheName, options = {}) {
