@@ -11,6 +11,7 @@ Demande : $ARGUMENTS
 npx tsx scripts/perf-audit.ts --label "<libellé court : ce qui a changé>"
 ```
 
+- Une seule mesure à la fois sur la machine (verrou commun à tous les worktrees) : une mesure lancée pendant une autre attend sa fin, sinon les deux se partagent processeur et réseau et les chiffres sont faux.
 - Durée : ~15 min complet (13 pages × 2 profils × 3 visites + Lighthouse). Lancer en arrière-plan (`run_in_background`).
 - Preview protégée (Vercel Authentication) : `VERCEL_AUTOMATION_BYPASS_SECRET=<secret>` (secret « Protection Bypass for Automation » du projet, `vercel api /v9/projects/<id>` → `protectionBypass`).
 - Options : `--url https://<preview>.vercel.app` · `--runs 5` (plus stable) · `--only accueil,catalogue` · `--no-lighthouse` (rapide) · `--public-only` (sans compte).
