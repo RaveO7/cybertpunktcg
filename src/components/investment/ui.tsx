@@ -11,6 +11,7 @@ export function SummaryStat({
   value,
   delta,
   deltaAmount,
+  deltaPlaceholder,
   tone,
   aside,
   detail,
@@ -19,6 +20,8 @@ export function SummaryStat({
   value: string;
   delta?: PriceMovement;
   deltaAmount?: number | null;
+  /** Variation en cours de chargement : place gardée pour un badge de ce montant (pas de décalage à l'arrivée). */
+  deltaPlaceholder?: number;
   tone?: "gain" | "loss";
   /** À côté de la valeur (ex. % de rendement). */
   aside?: ReactNode;
@@ -32,7 +35,13 @@ export function SummaryStat({
         <p className={`text-xl sm:text-2xl ${tone === "gain" ? "text-gain" : tone === "loss" ? "text-danger" : "text-foreground"}`}>
           {value}
         </p>
-        {delta && deltaAmount != null ? <TrendBadge delta={delta} amount={deltaAmount} /> : null}
+        {delta && deltaAmount != null ? (
+          <TrendBadge delta={delta} amount={deltaAmount} />
+        ) : deltaPlaceholder != null ? (
+          <span aria-hidden="true" className="invisible">
+            <TrendBadge delta="down" amount={-deltaPlaceholder} />
+          </span>
+        ) : null}
         {aside}
       </div>
       {detail ? <p className="mt-1 text-xs text-muted">{detail}</p> : null}

@@ -695,11 +695,17 @@ function Field({
   );
 }
 
-/** Squelette des réglages : titre, compte, puis les sections. */
+/**
+ * Squelette des réglages : titre, compte, puis les sections. Au moins la hauteur de l'écran, comme les
+ * réglages : le pied de page reste dessous et n'est pas repoussé à leur arrivée.
+ */
 function SettingsSkeleton() {
   const t = useTranslations();
   return (
-    <ScreenSkeleton label={t("settings.loading")} className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
+    <ScreenSkeleton
+      label={t("settings.loading")}
+      className="mx-auto flex min-h-[100cqh] w-full max-w-lg shrink-0 flex-col gap-6 px-4 py-8"
+    >
       <div className="flex flex-col gap-2">
         <SkeletonBlock className="h-3 w-24" />
         <SkeletonBlock className="h-9 w-48" />
