@@ -8,6 +8,8 @@
 //   npx tsx scripts/perf-audit.ts --compare docs/perf/history/A.json docs/perf/history/B.json
 // Pages privées : compte de test lu dans EMAIL_USER_TEST / EMAIL_PASSWORD_TEST (.env.local). La session ouverte
 // est fermée à la fin, même en cas d'échec. Rien n'est écrit en base hormis cette session.
+// Preview protégée (Vercel Authentication) : secret « Protection Bypass for Automation » du projet dans
+// VERCEL_AUTOMATION_BYPASS_SECRET.
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -30,6 +32,8 @@ import {
 
 const DEFAULT_URL = "https://cybertpunktcg.vercel.app";
 const SESSION_COOKIE = "cptcg_session";
+const BYPASS_SECRET = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const BYPASS_HEADERS: Record<string, string> = BYPASS_SECRET ? { "x-vercel-protection-bypass": BYPASS_SECRET } : {};
 const LIGHTHOUSE_DIR = path.join("test-results", "perf-lighthouse");
 
 const PROFILES: Record<ProfileName, BrowserContextOptions> = {
@@ -60,7 +64,7 @@ async function login(baseUrl: string): Promise<Cookie> {
   }
   const response = await fetch(`${baseUrl}/api/auth/login`, {
     method: "POST",
-    headers: { "content-type": "application/json", origin: baseUrl },
+    headers: { "content-type": "application/json", origin: baseUrl, ...BYPASS_HEADERS },
     body: JSON.stringify({ email, password }),
   });
   if (!response.ok) throw new Error(`Connexion du compte de test refusée : HTTP ${response.status}`);
@@ -80,10 +84,32 @@ async function login(baseUrl: string): Promise<Cookie> {
   };
 }
 
+/** Cookie de contournement de la protection Vercel, posé dans chaque navigateur (pages et Lighthouse). */
+async function bypassCookie(baseUrl: string): Promise<Cookie | null> {
+  if (!BYPASS_SECRET) return null;
+  const response = await fetch(baseUrl, {
+    headers: { ...BYPASS_HEADERS, "x-vercel-set-bypass-cookie": "true" },
+    redirect: "manual",
+  });
+  const line = response.headers.getSetCookie().find((cookie) => cookie.startsWith("_vercel_jwt="));
+  if (!line) throw new Error(`Cookie de contournement Vercel absent (HTTP ${response.status}) : secret invalide ?`);
+  const { hostname } = new URL(baseUrl);
+  return {
+    name: "_vercel_jwt",
+    value: line.slice("_vercel_jwt=".length).split(";")[0],
+    domain: hostname,
+    path: "/",
+    expires: -1,
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax",
+  };
+}
+
 async function logout(baseUrl: string, session: Cookie) {
   const response = await fetch(`${baseUrl}/api/auth/logout`, {
     method: "POST",
-    headers: { cookie: `${session.name}=${session.value}`, origin: baseUrl },
+    headers: { cookie: `${session.name}=${session.value}`, origin: baseUrl, ...BYPASS_HEADERS },
   });
   if (!response.ok) console.error(`⚠ Déconnexion du compte de test : HTTP ${response.status}`);
 }
@@ -124,13 +150,14 @@ async function audit() {
   const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
   const outFile = path.join(HISTORY_DIR, `${stamp}.json`);
 
+  const bypass = await bypassCookie(baseUrl);
   const session = pages.some((page) => page.auth) ? await login(baseUrl) : null;
   const browser = await chromium.launch();
   const results: Record<string, PageResult> = {};
   try {
     for (const page of pages) {
       const url = `${baseUrl}${page.path}`;
-      const cookies = page.auth && session ? [session] : [];
+      const cookies = [...(bypass ? [bypass] : []), ...(page.auth && session ? [session] : [])];
       results[page.id] = { path: page.path, auth: page.auth, profiles: {} };
       for (const [profile, device] of Object.entries(PROFILES) as [ProfileName, BrowserContextOptions][]) {
         const measures: PageMeasure[] = [];
