@@ -43,8 +43,11 @@ async function startChrome(cookies: Cookie[]) {
     "--no-first-run",
     "about:blank",
   ]);
-  const stop = () => {
+  const exited = new Promise((resolve) => chrome.once("exit", resolve));
+  // Profil supprimé une fois Chrome fermé : sous Windows, ses fichiers restent verrouillés jusque-là (EBUSY).
+  const stop = async () => {
     chrome.kill();
+    await exited;
     rmSync(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   };
   try {
@@ -62,7 +65,7 @@ async function startChrome(cookies: Cookie[]) {
       }
     }
   } catch (error) {
-    stop();
+    await stop();
     throw error;
   }
 }
@@ -93,7 +96,7 @@ export async function runLighthouse(
       ...(formFactor === "desktop" ? ["--preset=desktop"] : []),
     ]);
   } finally {
-    stopChrome();
+    await stopChrome();
   }
 
   const { runtimeError, categories, audits } = reportSchema.parse(
