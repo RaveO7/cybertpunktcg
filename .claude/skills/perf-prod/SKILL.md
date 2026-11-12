@@ -12,6 +12,7 @@ npx tsx scripts/perf-audit.ts --label "<libellé court : ce qui a changé>"
 ```
 
 - Durée : ~15 min complet (13 pages × 2 profils × 3 visites + Lighthouse). Lancer en arrière-plan (`run_in_background`).
+- Preview protégée (Vercel Authentication) : `VERCEL_AUTOMATION_BYPASS_SECRET=<secret>` (secret « Protection Bypass for Automation » du projet, `vercel api /v9/projects/<id>` → `protectionBypass`).
 - Options : `--url https://<preview>.vercel.app` · `--runs 5` (plus stable) · `--only accueil,catalogue` · `--no-lighthouse` (rapide) · `--public-only` (sans compte).
 - Pages et identifiants : `scripts/perf/pages.ts`. Ne pas renommer ni retirer une page (comparaison perdue) ; en ajouter est sans risque.
 - Pages privées : compte de test `EMAIL_USER_TEST` / `EMAIL_PASSWORD_TEST` dans `.env.local`. Le script ouvre une session et la ferme à la fin, même en cas d'échec ; il ne fait que des lectures.
