@@ -22,7 +22,7 @@
     ]
   },
   "worktree": {
-    "baseRef": "head"
+    "baseRef": "fresh"
   },
   "hooks": {
     "PreToolUse": [
