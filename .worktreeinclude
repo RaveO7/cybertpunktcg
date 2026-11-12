@@ -1,2 +1,7 @@
+# Fichiers non suivis copiés depuis le dossier principal dans chaque nouveau worktree
+# (Claude Code pour `claude -w`, et hook ~/.claude/hooks/worktree-prep.mjs pour EnterWorktree).
 .env
+.env.local
+.vercel
+# Copie de la base SQLite locale : les essais dans un worktree ne touchent pas celle du dossier principal.
 data/collection.db
