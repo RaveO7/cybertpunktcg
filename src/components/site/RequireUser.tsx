@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect } from "react";
 import { useCollection } from "@/components/CollectionProvider";
 import { AppSplash } from "@/components/site/AppSplash";
 
@@ -16,9 +17,13 @@ const AuthScreen = dynamic(() => import("@/components/AuthScreen").then((module)
  * écran gère ensuite le chargement de ses données.
  */
 export function RequireUser({ children }: { children: React.ReactNode }) {
-  const { session, error } = useCollection();
+  const { session, error, requireSession } = useCollection();
+  // Sans session mémorisée, seule une page réservée aux comptes interroge le serveur (cookie présent ?).
+  useEffect(() => {
+    if (session === "guest") requireSession();
+  }, [session, requireSession]);
   if (session === "signed-out") return <AuthScreen />;
-  if (session === "unknown") {
+  if (session === "unknown" || session === "guest") {
     if (!error) return <AppSplash />;
     return (
       <div className="flex flex-1 items-center justify-center text-sm opacity-70" role="alert">
