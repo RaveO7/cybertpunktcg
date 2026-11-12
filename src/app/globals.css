@@ -1764,13 +1764,6 @@ html {
     0 30px 60px -20px rgba(0, 0, 0, 0.9);
 }
 /* Vrai dos du jeu : recouvre le dos HUD de secours quand l'image est présente. */
-.card-dialog-back-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 .card-dialog-back-mark {
   font-family: var(--font-chakra-petch), sans-serif;
   font-size: clamp(2.5rem, 9vw, 4.5rem);
