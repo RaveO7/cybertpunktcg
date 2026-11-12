@@ -37,10 +37,11 @@ export type ImportSummary = { created: number; updated: number; skipped: number 
 const LOCAL_USER_KEY = "cptcg-user-id";
 
 /**
- * Statut de la session, indépendant du chargement des données (`ready`) : « unknown » tant que rien
- * n'est mémorisé ni vérifié, « signed-out » seulement après un refus du serveur (401) ou la déconnexion.
+ * Statut de la session, indépendant du chargement des données (`ready`) : « unknown » avant la lecture
+ * de l'appareil, « guest » sans session mémorisée tant que le serveur n'a pas été interrogé (pages
+ * publiques), « signed-out » seulement après un refus du serveur (401) ou la déconnexion.
  */
-export type SessionStatus = "unknown" | "signed-in" | "signed-out";
+export type SessionStatus = "unknown" | "guest" | "signed-in" | "signed-out";
 
 /** Données des écrans les plus visités, chargées au repos pour qu'ils s'ouvrent sans attente. */
 const WARM_REQUESTS: [url: string, schema: SchemaName][] = [
@@ -113,6 +114,8 @@ type CollectionContextValue = {
   importLines: (input: { mode: "add" | "set"; lines: ImportLine[] }) => Promise<ImportSummary>;
   patchLine: (id: string, input: PatchInput) => Promise<void>;
   deleteLine: (id: string) => Promise<void>;
+  /** Page réservée aux comptes : vérifie la session auprès du serveur même sans session mémorisée. */
+  requireSession: () => void;
   /** Modifications faites hors ligne, pas encore envoyées au serveur. */
   pendingCount: number;
   /** Lignes visées par une modification en attente. */
@@ -159,6 +162,9 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   const syncErrors = useMemo(() => allSyncErrors.filter((entry) => entry.userId === userId), [allSyncErrors, userId]);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  // Vérification de la session (GET /api/collection) : seulement avec une session mémorisée ou sur une
+  // page réservée aux comptes. Un visiteur des pages publiques n'envoie aucune requête vouée au 401.
+  const [verifySession, setVerifySession] = useState(false);
   const errors = useTranslations("errors.request");
   const requestError = useApiErrorMessage();
   // Lu au moment de l'échec, dans la langue courante, sans relancer le chargement initial.
@@ -282,25 +288,30 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     const remembered = readSessionUser(browserStorage());
     rememberedUser.current = remembered;
     bootRequests.current ??= takeBootRequests();
-    if (!remembered) return;
-    // Session vérifiée et données déjà là (schémas compris) : tableau de bord affiché directement, sans
-    // écran intermédiaire.
-    const { collection, catalog: bootCatalog } = bootRequests.current?.done ?? {};
-    const schemas = responseSchemasIfLoaded();
-    const bootCollection = collection && schemas && collectionBody(schemas, collection);
-    if (bootCollection && bootCatalog) {
-      bootApplied.current = true;
-      rememberSession(bootCollection.user);
-      setCatalog(bootCatalog);
-      setItems(bootCollection.items);
-      setReady(true);
+    if (remembered) {
+      // Session vérifiée et données déjà là (schémas compris) : tableau de bord affiché directement, sans
+      // écran intermédiaire.
+      const { collection, catalog: bootCatalog } = bootRequests.current?.done ?? {};
+      const schemas = responseSchemasIfLoaded();
+      const bootCollection = collection && schemas && collectionBody(schemas, collection);
+      if (bootCollection && bootCatalog) {
+        bootApplied.current = true;
+        rememberSession(bootCollection.user);
+        setCatalog(bootCatalog);
+        setItems(bootCollection.items);
+        setReady(true);
+        return;
+      }
+      setUser(remembered);
+      setSession("signed-in");
       return;
     }
-    setUser(remembered);
-    setSession("signed-in");
+    setSession("guest");
   }, []);
 
   useEffect(() => {
+    // Sans session mémorisée, attend qu'une page réservée aux comptes le demande (requireSession).
+    if (!rememberedUser.current && !verifySession) return;
     let cancelled = false;
     // Données du serveur arrivées (ou session refusée) : la copie gardée sur l'appareil ne s'affiche plus.
     let settled = false;
@@ -367,7 +378,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [verifySession]);
 
   /** Nom de la carte visée par une opération, pour les messages d'échec. */
   function cardName(op: QueuedOp) {
@@ -647,6 +658,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       syncing,
       syncErrors,
       dismissSyncError: (id) => setSyncErrors((list) => list.filter((entry) => entry.id !== id)),
+      requireSession: () => setVerifySession(true),
     }),
     // Les fonctions ferment sur user ; session, ready, catalog et items sont l'état public.
     // eslint-disable-next-line react-hooks/exhaustive-deps

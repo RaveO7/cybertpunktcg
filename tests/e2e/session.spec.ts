@@ -36,6 +36,27 @@ test.describe("connexion par l'écran", () => {
     await expect(passwordField(tab)).toHaveCount(0);
     await tab.close();
   });
+
+  test("un visiteur n'interroge pas sa session sur les pages publiques", async ({ page }) => {
+    const collectionCalls: string[] = [];
+    page.on("request", (request) => {
+      if (new URL(request.url()).pathname === "/api/collection") collectionCalls.push(page.url());
+    });
+
+    await page.goto("/fr/cartes");
+    const cardHref = await page.locator('a[href^="/fr/cartes/"]').first().getAttribute("href");
+    for (const path of ["/fr", "/fr/cartes", cardHref ?? "", "/fr/connexion", "/fr/cgu"]) {
+      expect(path).not.toBe("");
+      await page.goto(path);
+      await settle(page);
+    }
+    expect(collectionCalls).toEqual([]);
+
+    // Page réservée aux comptes : la session y est vérifiée (cookie absent → écran de connexion).
+    await page.goto("/fr/decks");
+    await expect(passwordField(page)).toBeVisible();
+    expect(collectionCalls).toHaveLength(1);
+  });
 });
 
 test("une session supprimée en base renvoie à l'écran de connexion", async ({ page, account }) => {
