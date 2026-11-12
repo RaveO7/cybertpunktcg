@@ -23,13 +23,17 @@ export function sizedThumbnailPath(thumb: string, width: number): string {
 }
 
 /**
- * srcset des miniatures d'une image locale de carte, à associer à un `sizes` juste ; avec
- * `originalWidth`, l'image d'origine termine la liste (grands affichages). undefined sans miniature.
+ * srcset des miniatures d'une image locale de carte, à associer à un `sizes` juste. Sans
+ * `originalWidth`, plafonné à THUMB_WIDTH : un écran très dense ne charge pas plus lourd qu'avant
+ * le srcset. Avec, les miniatures plus larges puis l'image d'origine terminent la liste (fiche, qui
+ * chargeait l'original). undefined sans miniature.
  */
 export function thumbnailSrcSet(src: string | null | undefined, originalWidth?: number): string | undefined {
   const thumb = thumbnailPath(src);
   if (!thumb || !src) return undefined;
-  const widths = [...THUMB_EXTRA_WIDTHS, THUMB_WIDTH].sort((a, b) => a - b);
+  const widths = [...THUMB_EXTRA_WIDTHS, THUMB_WIDTH]
+    .filter((width) => originalWidth || width <= THUMB_WIDTH)
+    .sort((a, b) => a - b);
   const entries = widths.map((width) => `${sizedThumbnailPath(thumb, width)} ${width}w`);
   if (originalWidth) entries.push(`${src} ${originalWidth}w`);
   return entries.join(", ");

@@ -147,18 +147,19 @@ describe("thumbnailPath", () => {
 });
 
 describe("thumbnailSrcSet", () => {
-  it("liste toutes les largeurs dans l'ordre croissant, THUMB_WIDTH à la racine de thumb/", () => {
+  const entry = (width: number) =>
+    `${width === THUMB_WIDTH ? "/card-images/thumb" : `/card-images/thumb/${width}`}/abc.webp ${width}w`;
+
+  it("sans image d'origine : largeurs croissantes plafonnées à THUMB_WIDTH (pas plus lourd qu'une miniature)", () => {
     const entries = thumbnailSrcSet("/card-images/abc.png")!.split(", ");
-    const widths = [...THUMB_EXTRA_WIDTHS, THUMB_WIDTH].sort((a, b) => a - b);
-    assert.deepEqual(
-      entries,
-      widths.map((width) => `${width === THUMB_WIDTH ? "/card-images/thumb" : `/card-images/thumb/${width}`}/abc.webp ${width}w`),
-    );
+    const widths = [...THUMB_EXTRA_WIDTHS, THUMB_WIDTH].filter((width) => width <= THUMB_WIDTH).sort((a, b) => a - b);
+    assert.deepEqual(entries, widths.map(entry));
   });
 
-  it("ajoute l'image d'origine en dernier si sa largeur est donnée", () => {
-    const entries = thumbnailSrcSet("/card-images/abc.webp", 733)!.split(", ");
-    assert.equal(entries.at(-1), "/card-images/abc.webp 733w");
+  it("avec la largeur de l'image d'origine : toutes les miniatures puis l'original en dernier", () => {
+    const entries = thumbnailSrcSet("/card-images/abc.png", 733)!.split(", ");
+    const widths = [...THUMB_EXTRA_WIDTHS, THUMB_WIDTH].sort((a, b) => a - b);
+    assert.deepEqual(entries, [...widths.map(entry), "/card-images/abc.png 733w"]);
   });
 
   it("aucun srcset sans miniature", () => {
