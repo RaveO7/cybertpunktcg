@@ -62,7 +62,12 @@ async function startChrome(cookies: Cookie[]) {
   const stop = async () => {
     chrome.kill();
     await exited;
-    rmSync(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    try {
+      rmSync(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    } catch (error) {
+      // Profil temporaire encore verrouillé par Windows : la mesure reste valable, le dossier sera nettoyé plus tard.
+      console.warn(`⚠ Profil Chrome non supprimé (${profileDir}) : ${String(error)}`);
+    }
   };
   try {
     for (let attempt = 0; ; attempt += 1) {
