@@ -62,7 +62,7 @@ function assertSameShape(a: unknown, b: unknown, path: string): void {
   if (a && typeof a === "object") {
     assert.ok(b && typeof b === "object", `${path} : objet attendu`);
     const ka = Object.keys(a).sort();
-    const kb = Object.keys(b as object).sort();
+    const kb = Object.keys(b).sort();
     assert.deepEqual(ka, kb, `${path} : clés différentes`);
     for (const k of ka) {
       const va: unknown = (a as Record<string, unknown>)[k];

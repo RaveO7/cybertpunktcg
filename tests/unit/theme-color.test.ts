@@ -4,14 +4,8 @@
  */
 import assert from "node:assert/strict";
 import { afterEach, describe, it, vi } from "vitest";
+import { siteViewport } from "../../src/components/site/viewport";
 import { THEME_CHROME_COLORS, applyTheme, syncThemeColorMeta } from "../../src/lib/preferences";
-
-vi.mock("next/font/google", () => {
-  const font = () => ({ variable: "", className: "" });
-  return { Geist: font, Geist_Mono: font, Chakra_Petch: font };
-});
-vi.mock("@vercel/analytics/next", () => ({ Analytics: () => null }));
-vi.mock("@vercel/speed-insights/next", () => ({ SpeedInsights: () => null }));
 
 /** Juste ce qu'il faut de DOM pour les balises `<meta>` du `<head>`. */
 class FakeElement {
@@ -129,8 +123,7 @@ describe("applyTheme", () => {
 });
 
 describe("siteViewport", () => {
-  it("annonce une seule couleur sombre, sans variante prefers-color-scheme", async () => {
-    const { siteViewport } = await import("../../src/components/site/SiteShell");
+  it("annonce une seule couleur sombre, sans variante prefers-color-scheme", () => {
     assert.equal(siteViewport.themeColor, "#07080d");
   });
 });

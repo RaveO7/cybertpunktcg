@@ -10,13 +10,14 @@ import type { MessageKey } from "@/i18n/translator";
 import { AddressField } from "@/components/geo/AddressField";
 import { formatStart } from "@/components/public/format";
 import { VerifiedBadge } from "@/components/public/TournamentCard";
+import { fetchCached } from "@/components/data-cache";
 import { buttonClass, dangerClass, inputClass, panelClass, primaryClass, Tag } from "@/components/tournament/ui";
+import { api } from "@/lib/client/api";
+import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
 import type { Place } from "@/lib/geo/location";
 import type { OwnedShop, ShopSocial } from "@/lib/shops/shops";
 
 const SOCIAL_KINDS = ["instagram", "facebook", "discord", "x", "youtube", "twitch", "tiktok", "autre"] as const;
-
-type Attached = { id: string; name: string; status: string; visibility: string; startsAt: string | null; timeZone: string | null };
 
 type Form = {
   name: string;
@@ -46,13 +47,6 @@ function formOf(shop: OwnedShop): Form {
   };
 }
 
-async function request<T>(url: string, init: RequestInit): Promise<T> {
-  const response = await fetch(url, init);
-  const body = (await response.json().catch(() => ({}))) as T & { error?: string };
-  if (!response.ok) throw new Error(body.error || "error");
-  return body;
-}
-
 export function ShopManager() {
   const t = useTranslations();
   const [shops, setShops] = useState<OwnedShop[] | null>(null);
@@ -62,7 +56,7 @@ export function ShopManager() {
 
   const load = useCallback(async () => {
     try {
-      const body = await request<{ shops: OwnedShop[]; isAdmin: boolean }>("/api/shops/mine", { cache: "no-store" });
+      const body = await fetchCached("/api/shops/mine", { schema: "ownedShopsSchema" });
       setShops(body.shops);
       setIsAdmin(body.isAdmin);
     } catch {
@@ -107,11 +101,7 @@ export function ShopManager() {
           initial={EMPTY}
           onCancel={() => setCreating(false)}
           onSubmit={async (form) => {
-            await request("/api/shops", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ ...payload(form), slug: undefined }),
-            });
+            await api("/api/shops", { body: { ...payload(form), slug: undefined } });
             setCreating(false);
             await load();
           }}
@@ -142,13 +132,14 @@ function payload(form: Form) {
 function ShopEditor({ shop, onChange }: { shop: OwnedShop; onChange: () => Promise<void> }) {
   const t = useTranslations();
   const locale = useLocale();
+  const requestError = useApiErrorMessage();
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
-  const [attached, setAttached] = useState<Attached[] | null>(null);
+  const [attached, setAttached] = useState<{ id: string; name: string; status: string; visibility: string; startsAt: string | null; timeZone: string | null }[] | null>(null);
 
   const loadAttached = useCallback(async () => {
     try {
-      const body = await request<{ tournaments: Attached[] }>(`/api/shops/${shop.slug}`, { cache: "no-store" });
+      const body = await api(`/api/shops/${shop.slug}`, { schema: "attachedTournamentsSchema", cache: "no-store" });
       setAttached(body.tournaments);
     } catch {
       setAttached([]);
@@ -167,12 +158,12 @@ function ShopEditor({ shop, onChange }: { shop: OwnedShop; onChange: () => Promi
       if (done) setMessage({ tone: "ok", text: done });
       await onChange();
     } catch (error) {
-      setMessage({ tone: "error", text: error instanceof Error ? error.message : t("tournaments.failed") });
+      setMessage({ tone: "error", text: requestError(error, t("tournaments.failed")) });
     }
   }
 
   async function uploadLogo(file: File) {
-    await act(() => request(`/api/shops/${shop.slug}/logo`, { method: "PUT", body: file, headers: { "content-type": file.type || "application/octet-stream" } }), t("shops.saved"));
+    await act(() => api(`/api/shops/${shop.slug}/logo`, { method: "PUT", body: file }), t("shops.saved"));
   }
 
   const statusTone = shop.status === "verified" ? "yellow" : shop.status === "rejected" ? "danger" : "muted";
@@ -223,7 +214,7 @@ function ShopEditor({ shop, onChange }: { shop: OwnedShop; onChange: () => Promi
             />
           </label>
           {shop.logoUrl ? (
-            <button type="button" className={buttonClass} onClick={() => void act(() => request(`/api/shops/${shop.slug}/logo`, { method: "DELETE" }))}>
+            <button type="button" className={buttonClass} onClick={() => void act(() => api(`/api/shops/${shop.slug}/logo`, { method: "DELETE" }))}>
               {t("shops.removeLogo")}
             </button>
           ) : null}
@@ -238,11 +229,7 @@ function ShopEditor({ shop, onChange }: { shop: OwnedShop; onChange: () => Promi
           submitLabel={shop.status === "rejected" ? t("shops.resubmit") : undefined}
           onCancel={() => setEditing(false)}
           onSubmit={async (form) => {
-            await request(`/api/shops/${shop.slug}`, {
-              method: "PATCH",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ ...payload(form), resubmit: shop.status === "rejected" }),
-            });
+            await api(`/api/shops/${shop.slug}`, { method: "PATCH", body: { ...payload(form), resubmit: shop.status === "rejected" } });
             setEditing(false);
             setMessage({ tone: "ok", text: t("shops.saved") });
             await onChange();
@@ -257,7 +244,7 @@ function ShopEditor({ shop, onChange }: { shop: OwnedShop; onChange: () => Promi
             type="button"
             className={dangerClass}
             onClick={() => {
-              if (window.confirm(t("shops.confirmDelete"))) void act(() => request(`/api/shops/${shop.slug}`, { method: "DELETE" }));
+              if (window.confirm(t("shops.confirmDelete"))) void act(() => api(`/api/shops/${shop.slug}`, { method: "DELETE" }));
             }}
           >
             {t("shops.delete")}
@@ -283,7 +270,7 @@ function ShopEditor({ shop, onChange }: { shop: OwnedShop; onChange: () => Promi
               className={buttonClass}
               onClick={() =>
                 void act(async () => {
-                  await request(`/api/shops/${shop.slug}/tournaments/${row.id}`, { method: "DELETE" });
+                  await api(`/api/shops/${shop.slug}/tournaments/${row.id}`, { method: "DELETE" });
                   await loadAttached();
                 })
               }
@@ -313,6 +300,7 @@ function ShopForm({
   onCancel: () => void;
 }) {
   const t = useTranslations();
+  const requestError = useApiErrorMessage();
   const [form, setForm] = useState<Form>(initial);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -332,7 +320,7 @@ function ShopForm({
     try {
       await onSubmit(form);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t("tournaments.failed"));
+      setError(requestError(reason, t("tournaments.failed")));
     } finally {
       setPending(false);
     }

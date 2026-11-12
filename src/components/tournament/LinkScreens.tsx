@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ApiError, postJson } from "./hooks";
+import { api } from "@/lib/client/api";
+import { useTournamentErrorMessage } from "./hooks";
 import { panelClass, primaryClass } from "./ui";
 import { useRouter } from "@/i18n/navigation";
 
 function useLinkAction() {
-  const t = useTranslations();
+  const errorMessage = useTournamentErrorMessage();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   async function run<T>(action: () => Promise<T>, then: (result: T) => void) {
@@ -16,7 +17,7 @@ function useLinkAction() {
     try {
       then(await action());
     } catch (error) {
-      setMessage(error instanceof ApiError && error.status === 0 ? t("tournaments.offline") : error instanceof Error ? error.message : t("tournaments.failed"));
+      setMessage(errorMessage(error));
       setPending(false);
     }
   }
@@ -41,7 +42,7 @@ export function ClaimScreen({ token, error }: { token: string; error: string | n
         disabled={pending}
         onClick={() =>
           void run(
-            () => postJson<{ code: string }>("/api/t/claim", { token }),
+            () => api("/api/t/claim", { body: { token }, schema: "tournamentCodeSchema" }),
             (result) => router.replace({ pathname: "/t/[code]", params: { code: result.code } }),
           )
         }
@@ -67,7 +68,7 @@ export function InviteScreen({ token, error }: { token: string; error: string | 
         disabled={pending}
         onClick={() =>
           void run(
-            () => postJson<{ tournamentId: string }>(`/api/tournaments/invite/${encodeURIComponent(token)}`, {}),
+            () => api(`/api/tournaments/invite/${encodeURIComponent(token)}`, { body: {}, schema: "organizerInviteSchema" }),
             (result) => router.replace({ pathname: "/tournois/[id]", params: { id: result.tournamentId } }),
           )
         }

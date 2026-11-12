@@ -10,10 +10,17 @@ import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
 import type { OrganizerCommand } from "../../src/lib/api-schemas";
 import type { Place } from "../../src/lib/geo/location";
+import {
+  adminShopsSchema,
+  directoryFacetsSchema,
+  ownedShopResponseSchema,
+  ownedShopsSchema,
+  publicDirectorySchema,
+  shopDirectorySchema,
+} from "../../src/lib/api-responses";
 import type { OwnedShop } from "../../src/lib/shops/shops";
 import type { DirectoryResult } from "../../src/lib/tournament/directory";
 import type { PublicTournamentDetail } from "../../src/lib/tournament/public-view";
-import type { TournamentView } from "../../src/lib/tournament/view";
 import { rejectsWith } from "../helpers/api-text";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
@@ -36,6 +43,7 @@ let routes: {
   publicJoin: typeof import("../../src/app/api/tournaments/public/[id]/join/route");
   calendar: typeof import("../../src/app/api/tournaments/public/[id]/calendar/route");
   shops: typeof import("../../src/app/api/shops/route");
+  mine: typeof import("../../src/app/api/shops/mine/route");
   shop: typeof import("../../src/app/api/shops/[slug]/route");
   logo: typeof import("../../src/app/api/shops/[slug]/logo/route");
   detach: typeof import("../../src/app/api/shops/[slug]/tournaments/[id]/route");
@@ -76,7 +84,7 @@ const session = (account: Account) => `${sessionCookie}=${encodeURIComponent(acc
 type CommandInput = OrganizerCommand extends infer C ? (C extends OrganizerCommand ? Omit<C, "clientActionId"> : never) : never;
 
 function run(tournamentId: string, command: CommandInput, by: Account = owner) {
-  return commands.runOrganizerCommand(tournamentId, by.id, { ...command, clientActionId: `pub-${stamp}-${++counter}` } as OrganizerCommand);
+  return commands.runOrganizerCommand(tournamentId, by.id, { ...command, clientActionId: `pub-${stamp}-${++counter}` });
 }
 
 async function newTournament(by: Account = owner, settings: Record<string, unknown> = {}) {
@@ -112,17 +120,23 @@ async function statuses(tournamentId: string) {
 
 async function createShopFor(account: Account, name: string, place: Place = LYON) {
   const response = await routes.shops.POST(request("/api/shops", [session(account)], { method: "POST", body: JSON.stringify({ name, place }) }));
-  return json<{ shop: OwnedShop }>(response);
+  const created = await json<{ shop: OwnedShop }>(response);
+  if (created.status === 201) ownedShopResponseSchema.parse(created.body);
+  return created;
 }
 
 async function review(shopId: string, body: unknown, by: Account = admin) {
-  return json<{ shop: OwnedShop }>(
+  const reviewed = await json<{ shop: OwnedShop }>(
     await routes.review.POST(request(`/api/admin/shops/${shopId}/review`, [session(by)], { method: "POST", body: JSON.stringify(body) }), params({ id: shopId })),
   );
+  if (reviewed.status === 200) ownedShopResponseSchema.parse(reviewed.body);
+  return reviewed;
 }
 
 async function directory(query: string) {
   const res = await json<DirectoryResult>(await routes.publicList.GET(request(`/api/tournaments/public?${query}`, [])));
+  // Chaque page de l'annuaire renvoyée au fil des scénarios doit passer le schéma lu par l'écran.
+  if (res.status === 200) publicDirectorySchema.parse(res.body);
   return { ...res, ids: res.body.tournaments?.map((row) => row.id).filter((id) => tournamentIds.includes(id)) ?? [] };
 }
 
@@ -140,6 +154,7 @@ beforeAll(async () => {
     publicJoin: await import("../../src/app/api/tournaments/public/[id]/join/route"),
     calendar: await import("../../src/app/api/tournaments/public/[id]/calendar/route"),
     shops: await import("../../src/app/api/shops/route"),
+    mine: await import("../../src/app/api/shops/mine/route"),
     shop: await import("../../src/app/api/shops/[slug]/route"),
     logo: await import("../../src/app/api/shops/[slug]/logo/route"),
     detach: await import("../../src/app/api/shops/[slug]/tournaments/[id]/route"),
@@ -380,7 +395,7 @@ describe("places et liste d'attente", () => {
     const view = (await import("../../src/lib/tournament/view")).buildView(
       (await (await import("../../src/lib/tournament/repository")).loadTournament(prisma, id))!,
       { userId: owner.id, deviceTokenHash: null },
-    ) as TournamentView;
+    );
     assert.equal(view.players.find((player) => player.name === "W3")?.waitlistPosition, 1);
   });
 
@@ -495,6 +510,10 @@ describe("boutiques", () => {
   it("vérification : validation, badge, modification d'adresse → nouvelle vérification", async () => {
     const pending = await json<{ shops: OwnedShop[] }>(await routes.adminList.GET(request("/api/admin/shops?status=pending", [session(admin)])));
     assert.ok(pending.body.shops.some((candidate) => candidate.id === shop.id));
+    adminShopsSchema.parse(pending.body);
+    // Réponses lues par les écrans « Mes boutiques » et l'annuaire : conformes à leur schéma.
+    ownedShopsSchema.parse(await (await routes.mine.GET(request("/api/shops/mine", [session(manager)]))).json());
+    shopDirectorySchema.parse(await (await routes.shops.GET(request("/api/shops", []))).json());
     const verified = await review(shop.id, { decision: "verify" });
     assert.equal(verified.status, 200);
     assert.equal(verified.body.shop.verified, true);
@@ -652,6 +671,7 @@ describe("annuaire des tournois", () => {
     const res = await json<{ countries: string[]; regions: string[]; cities: { name: string }[] }>(
       await routes.facets.GET(request("/api/tournaments/public/facets?country=BE", [])),
     );
+    directoryFacetsSchema.parse(res.body);
     assert.ok(res.body.countries.includes("BE") && res.body.countries.includes("FR"));
     assert.deepEqual(res.body.regions, ["Bruxelles-Capitale"]);
     assert.ok(res.body.cities.every((city) => city.name === "Bruxelles"));

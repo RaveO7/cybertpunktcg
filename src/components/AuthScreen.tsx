@@ -7,6 +7,7 @@ import { useDirectoryHref } from "@/components/site/useDirectoryHref";
 import { getPathname, Link } from "@/i18n/navigation";
 import type { MessageKey } from "@/i18n/translator";
 import { useCollection } from "@/components/CollectionProvider";
+import { fetchCached } from "@/components/data-cache";
 
 const LOCAL_USER_KEY = "cptcg-user-id";
 
@@ -96,13 +97,11 @@ export function AuthScreen({
     }
 
     let cancelled = false;
-    void fetch("/api/auth/oauth", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((body: { google?: boolean; apple?: boolean }) => {
-        if (!cancelled) {
-          setOauth({ google: Boolean(body.google), apple: Boolean(body.apple) });
-        }
+    void fetchCached("/api/auth/oauth", { schema: "oauthProvidersSchema" })
+      .then((providers) => {
+        if (!cancelled) setOauth(providers);
       })
+      // Fournisseurs inconnus : les boutons Google et Apple restent masqués, l'e-mail reste proposé.
       .catch(() => undefined);
     return () => {
       cancelled = true;

@@ -65,6 +65,7 @@ export const pathnames = {
   "/comment-jouer": "/comment-jouer",
   "/compte/boutique": "/compte/boutique",
   "/connexion": "/connexion",
+  "/deck/[token]": "/deck/[token]",
   "/decks": "/decks",
   "/investissement": "/investissement",
   "/parametres": "/parametres",

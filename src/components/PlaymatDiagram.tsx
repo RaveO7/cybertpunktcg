@@ -216,7 +216,7 @@ export function PlaymatDiagram({
             ) : null}
             {ZONE_CARDS[active]?.length ? (
               <p className="border-t border-line pt-3 text-xs text-muted">
-                {ZONE_CARDS[active]!
+                {ZONE_CARDS[active]
                   .map((key) => exampleNote(key))
                   .join(" Â· ")}
               </p>

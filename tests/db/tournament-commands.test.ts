@@ -31,7 +31,7 @@ let actionCounter = 0;
 type CommandInput = OrganizerCommand extends infer C ? (C extends OrganizerCommand ? Omit<C, "clientActionId"> : never) : never;
 
 function run(tournamentId: string, userId: string, command: CommandInput, clientActionId = `act-${stamp}-${++actionCounter}`) {
-  return commands.runOrganizerCommand(tournamentId, userId, { ...command, clientActionId } as OrganizerCommand, {
+  return commands.runOrganizerCommand(tournamentId, userId, { ...command, clientActionId }, {
     rng: random.seededRng(actionCounter),
   });
 }

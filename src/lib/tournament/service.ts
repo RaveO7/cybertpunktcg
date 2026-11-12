@@ -21,14 +21,9 @@ import { cutEligible, cutSize, firstCutRound, nextCutRound, selectCut, type CutD
 import { roundDurationSeconds } from "./clock";
 
 export type TournamentStatus = "inscriptions" | "suisse" | "top_cut" | "termine" | "annule";
-export type RoundStatus = "draft" | "published" | "running" | "closed";
 
 /** Qualifiés du top cut, figés à la fin des rondes suisses (taille et têtes de série). */
 export type CutState = { size: number; seeds: string[] };
-
-export function tournamentStatus(t: FullTournament) {
-  return t.status as TournamentStatus;
-}
 
 export function isReadOnly(t: FullTournament) {
   return t.status === "termine" || t.status === "annule";

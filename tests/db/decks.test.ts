@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
+import { decksSchema } from "../../src/lib/api-responses";
 import type { DeckDTO } from "../../src/lib/types";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
@@ -50,7 +51,7 @@ async function patch(token: string, id: string, body: unknown) {
 async function list(token: string) {
   const response = await routes.list.GET(request("/api/decks", token));
   assert.equal(response.status, 200);
-  return ((await response.json()) as { decks: DeckDTO[] }).decks;
+  return decksSchema.parse(await response.json()).decks;
 }
 
 beforeAll(async () => {
@@ -141,7 +142,7 @@ describe.sequential("decks (copie)", () => {
     });
     assert.equal(full.status, 200);
     assert.equal(full.body.deck?.name, "Rouge");
-    const quantities = Object.fromEntries(full.body.deck!.cards.map((card) => [card.cardId, card.quantity]));
+    const quantities = Object.fromEntries(full.body.deck.cards.map((card) => [card.cardId, card.quantity]));
     assert.deepEqual(quantities, { [C.legend]: 1, [C.unit]: 4 });
     // Le plus récemment modifié en premier.
     assert.deepEqual((await list(owner.token)).map((deck) => deck.name), ["Rouge", "Nouveau deck"]);

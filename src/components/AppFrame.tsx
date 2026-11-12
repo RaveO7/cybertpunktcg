@@ -13,11 +13,14 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   // Chemin interne (segments français, sans préfixe de langue) : mêmes règles dans toutes les langues.
   const pathname = useInternalPathname();
   const isSharedView = pathname.startsWith("/classeur/");
+  // Deck partagé (/deck/…) : lisible sans compte, comme le classeur partagé.
+  const isSharedDeck = pathname.startsWith("/deck/");
   // Pages joueur d'un tournoi (/t/…), pages publiques bilingues (accueil, catalogue, tutoriel, tournois
   // publics, boutiques), connexion et pages légales : ouvertes aux invités sans compte. L'accueil
   // protège lui-même le tableau de bord des utilisateurs connectés.
   const isPublicPage =
     isSharedView ||
+    isSharedDeck ||
     pathname.startsWith("/t/") ||
     publicRouteOfPath(pathname) !== null ||
     pathname === "/connexion" ||

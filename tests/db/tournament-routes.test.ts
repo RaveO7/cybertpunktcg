@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
+import { tournamentListSchema, tournamentViewSchema } from "../../src/lib/api-responses";
 import type { TournamentView } from "../../src/lib/tournament/view";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
@@ -63,7 +64,10 @@ async function action(account: { token: string } | null, id: string, body: Recor
 async function state(cookies: string[], id: string, rev?: number) {
   const url = `/api/tournaments/${id}/state${rev === undefined ? "" : `?rev=${rev}`}`;
   const response = await routes.state.GET(request(url, cookies), params({ id }));
-  return { status: response.status, body: (await response.json()) as TournamentView & { unchanged?: boolean } };
+  const body = (await response.json()) as TournamentView & { unchanged?: boolean };
+  // Chaque état complet renvoyé au fil des scénarios doit passer le schéma lu par les écrans.
+  if (response.status === 200 && !body.unchanged) tournamentViewSchema.parse(body);
+  return { status: response.status, body };
 }
 
 beforeAll(async () => {
@@ -112,7 +116,7 @@ describe("création et liste", () => {
     const created = await create(owner, { name: "Soirée vendredi" });
     assert.equal(created.status, 201);
     const response = await routes.list.GET(request("/api/tournaments", session(owner)));
-    const { tournaments } = (await response.json()) as { tournaments: { id: string; role: string }[] };
+    const { tournaments } = tournamentListSchema.parse(await response.json());
     assert.ok(tournaments.some((row) => row.id === created.body.tournament!.id && row.role === "owner"));
     assert.equal((await routes.list.GET(request("/api/tournaments", []))).status, 401);
   });

@@ -1,4 +1,5 @@
-// Import du guide de prix Cardmarket (prix tendance + historique quotidien + produits scellés).
+// Import du guide de prix Cardmarket (prix tendance + historique quotidien + produits scellés,
+// et prix bas / moyens du guide, sans historique).
 // Utilisé par le script local (scripts/import-prices.ts) et par le cron Vercel
 // (src/app/api/cron/import-prices/route.ts).
 import { gunzipSync } from "node:zlib";
@@ -6,10 +7,13 @@ import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { PrismaClient } from "@prisma/client";
 import {
+  GUIDE_DETAIL_KINDS,
   matchCardmarketPrices,
+  parseGuideDetailsFile,
   parsePriceFile,
   parsePriceGuideDate,
   parseProductFile,
+  type GuideDetails,
 } from "./cardmarket";
 import {
   parseSealedProductFile,
@@ -21,6 +25,8 @@ import {
   type SealedProduct,
 } from "./cardmarket-sealed";
 import { shiftUtcDay, utcDay, utcDayKey } from "./price-history";
+import { reportError } from "./monitoring";
+import type { PushReport } from "./push";
 import { evaluateWishlistAlerts } from "./wishlist";
 
 const DOWNLOAD_BASE = "https://downloads.s3.cardmarket.com/productCatalog";
@@ -52,16 +58,18 @@ export type ImportPricesResult =
 type Ctx = { prisma: PrismaClient; cacheDir: string; log: (message: string) => void };
 
 export async function importPrices(prisma: PrismaClient, options: ImportPricesOptions): Promise<ImportPricesResult> {
-  const ctx: Ctx = { prisma, cacheDir: options.cacheDir, log: options.log ?? console.log };
+  const ctx: Ctx = { prisma, cacheDir: options.cacheDir, log: options.log ?? console.info };
   const files = options.files ?? (await resolveFiles(ctx, options.offline ?? false));
   let products;
   let trends;
+  let guideDetails: Map<number, GuideDetails>;
   let sealedProducts: SealedProduct[] = [];
   let guideDate: Date | null;
   try {
     const [productText, priceText] = await Promise.all([readText(files.products), readText(files.prices)]);
     products = parseProductFile(productText);
     trends = parsePriceFile(priceText);
+    guideDetails = parseGuideDetailsFile(priceText);
     guideDate = parsePriceGuideDate(priceText);
     if (files.nonsingles) {
       sealedProducts = parseSealedProductFile(await readText(files.nonsingles));
@@ -180,6 +188,26 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
     }
   });
 
+  // Prix bas / moyens du guide, pour les impressions cotées : remplacés à chaque import, sans historique.
+  const detailRows = assignments.flatMap((assignment) => {
+    const details = guideDetails.get(assignment.productId);
+    if (!details) return [];
+    return GUIDE_DETAIL_KINDS.flatMap((kind) => {
+      const value = details[kind];
+      return value == null
+        ? []
+        : [{ printingId: assignment.printingId, sourceId: source.id, kind, amount: value.toFixed(2), currency: "EUR" }];
+    });
+  });
+  const detailChunks = [];
+  for (let index = 0; index < detailRows.length; index += 200) {
+    detailChunks.push(prisma.price.createMany({ data: detailRows.slice(index, index + 200) }));
+  }
+  await prisma.$transaction([
+    prisma.price.deleteMany({ where: { sourceId: source.id, kind: { in: [...GUIDE_DETAIL_KINDS] } } }),
+    ...detailChunks,
+  ]);
+
   const pricedPrintingIds = new Set(assignments.map((assignment) => assignment.printingId));
   const orphanedPrintingIds = existing
     .map((price) => price.printingId)
@@ -271,7 +299,17 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
   await prisma.priceSource.update({ where: { id: source.id }, data: { guideCreatedAt: guideDate } });
 
   // Nouveaux prix : signale les cartes souhaitées passées sous leur prix cible.
-  const wishlistAlerts = await evaluateWishlistAlerts(prisma);
+  const { triggeredItems, ...wishlistAlerts } = await evaluateWishlistAlerts(prisma);
+  // Notifications push des nouvelles alertes : un échec ne fait jamais échouer l'import.
+  let pushNotifications: PushReport | { error: true } | null = null;
+  try {
+    const { notifyPriceAlerts } = await import("./push");
+    pushNotifications = await notifyPriceAlerts(prisma, triggeredItems, { log: ctx.log });
+    if (pushNotifications.failed) await reportError("price-alerts-push", `${pushNotifications.failed} envoi(s) en échec`);
+  } catch (error) {
+    pushNotifications = { error: true };
+    await reportError("price-alerts-push", error);
+  }
 
   return {
     status: "imported",
@@ -286,6 +324,7 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
       sealedProducts: sealedUpsert.products,
       sealedPriced: sealedAssignments.length,
       printingsPriced: assignments.length,
+      guideDetailsWritten: detailRows.length,
       ambiguous: report.ambiguousProducts,
       unknownExpansion: report.unknownExpansionProducts,
       unknownExpansions: report.unknownExpansions,
@@ -294,6 +333,7 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
       snapshotsWritten,
       baselinesWritten,
       wishlistAlerts,
+      pushNotifications,
       expansions: report.expansions.map((entry) => ({
         expansion: entry.key,
         set: entry.setCode,

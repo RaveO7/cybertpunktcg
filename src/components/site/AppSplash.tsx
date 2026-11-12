@@ -11,6 +11,7 @@ export function AppSplash() {
   const t = useTranslations();
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#07080d]" role="status" aria-live="polite">
+      {/* eslint-disable-next-line @next/next/no-img-element -- splash affiché avant l'hydratation : icône du manifeste servie telle quelle, sans optimiseur. */}
       <img src="/icons/icon-512.png?v=2" alt="" className="w-[min(70vw,18rem)]" fetchPriority="high" draggable={false} />
       <span className="sr-only">{t("common.loading")}</span>
     </div>

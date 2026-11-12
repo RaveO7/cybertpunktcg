@@ -74,12 +74,12 @@ export async function updateDeck(userId: string, id: string, input: PatchInput) 
   const data: { name?: string; notes?: string | null; updatedAt: Date } = { updatedAt: new Date() };
   if (input.name !== undefined) data.name = input.name;
   if (input.notes !== undefined) data.notes = input.notes;
-  if (input.cards === undefined) return toDTO(await prisma.deck.update({ where: { id }, data, include }));
+  if (input.cards === undefined) return toDTO(await prisma.deck.update({ where: { id, userId }, data, include }));
   const cards = await resolveCards(input.cards);
   const [, , row] = await prisma.$transaction([
     prisma.deckCard.deleteMany({ where: { deckId: id } }),
     prisma.deckCard.createMany({ data: cards.map((card) => ({ deckId: id, ...card })) }),
-    prisma.deck.update({ where: { id }, data, include }),
+    prisma.deck.update({ where: { id, userId }, data, include }),
   ]);
   return toDTO(row);
 }

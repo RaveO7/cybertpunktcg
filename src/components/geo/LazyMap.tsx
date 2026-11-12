@@ -13,4 +13,4 @@ export function LazyMap(props: MapViewProps) {
   return <MapView {...props} />;
 }
 
-export type { MapItem, MapMarker } from "./MapView";
+export type { MapMarker } from "./MapView";

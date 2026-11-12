@@ -1,15 +1,13 @@
-import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
-import { InvestmentScreen } from "@/components/InvestmentScreen";
+import { InvestmentScreen, InvestmentSkeleton } from "@/components/InvestmentScreen";
 import { privateMetadata } from "@/lib/seo/metadata";
 
 // Page privée, derrière connexion ou ouverte par un lien à jeton : jamais indexée.
 export const metadata = privateMetadata;
 
-export default async function InvestmentPage() {
-  const t = await getTranslations();
+export default function InvestmentPage() {
   return (
-    <Suspense fallback={<p className="p-6 text-sm text-muted">{t("common.loading")}</p>}>
+    <Suspense fallback={<InvestmentSkeleton />}>
       <InvestmentScreen />
     </Suspense>
   );

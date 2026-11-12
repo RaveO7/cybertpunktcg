@@ -154,7 +154,7 @@ export function maxWeightMatching(edges: readonly WeightedEdge[], maxCardinality
       const nblists =
         blossombestedges[child] === null
           ? blossomLeaves(child).map((leaf) => neighbend[leaf].map((p) => Math.floor(p / 2)))
-          : [blossombestedges[child]!];
+          : [blossombestedges[child]];
       for (const nblist of nblists) {
         for (const edge of nblist) {
           let [i, j] = edges[edge];
@@ -170,7 +170,7 @@ export function maxWeightMatching(edges: readonly WeightedEdge[], maxCardinality
     }
     blossombestedges[b] = bestedgeto.filter((edge) => edge !== -1);
     bestedge[b] = -1;
-    for (const edge of blossombestedges[b]!) {
+    for (const edge of blossombestedges[b]) {
       if (bestedge[b] === -1 || slack(edge) < slack(bestedge[b])) bestedge[b] = edge;
     }
   };
@@ -273,7 +273,7 @@ export function maxWeightMatching(edges: readonly WeightedEdge[], maxCardinality
     }
     blossomchilds[b] = [...childs.slice(i), ...childs.slice(0, i)];
     blossomendps[b] = [...endps.slice(i), ...endps.slice(0, i)];
-    blossombase[b] = blossombase[blossomchilds[b]![0]];
+    blossombase[b] = blossombase[blossomchilds[b][0]];
   };
 
   const augmentMatching = (k: number) => {

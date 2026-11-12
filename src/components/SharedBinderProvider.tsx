@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { requestCatalog } from "@/lib/boot-requests";
+import { ApiError, api } from "@/lib/client/api";
 import type { CatalogDTO, CollectionItemDTO } from "@/lib/types";
 
 export type SharedBinderData = {
@@ -35,39 +37,19 @@ export function SharedBinderProvider({ token, children }: { token: string; child
       setReady(false);
       setError(null);
       try {
-        const [shareResponse, catalogResponse] = await Promise.all([
-          fetch(`/api/share/${encodeURIComponent(token)}`, { cache: "no-store" }),
-          fetch("/api/catalog", { cache: "no-cache" }),
+        // Catalogue : gros et versionné, lu sans schéma (cf. src/lib/api-responses.ts).
+        const [shared, catalog] = await Promise.all([
+          api(`/api/share/${encodeURIComponent(token)}`, { schema: "sharedBinderSchema", cache: "no-store" }),
+          requestCatalog(),
         ]);
         if (cancelled) return;
-        if (shareResponse.status === 404) {
-          setData(null);
-          setError("not_found");
-          setReady(true);
-          return;
-        }
-        if (!shareResponse.ok || !catalogResponse.ok) {
-          setData(null);
-          setError("load_failed");
-          setReady(true);
-          return;
-        }
-        const shareJson = (await shareResponse.json()) as {
-          owner: { displayName: string };
-          items: CollectionItemDTO[];
-        };
-        const catalogJson = (await catalogResponse.json()) as CatalogDTO;
-        setData({
-          ownerName: shareJson.owner.displayName,
-          items: shareJson.items,
-          catalog: catalogJson,
-          token,
-        });
+        if (!catalog) throw new Error("catalog");
+        setData({ ownerName: shared.owner.displayName, items: shared.items, catalog, token });
         setReady(true);
-      } catch {
+      } catch (caught) {
         if (!cancelled) {
           setData(null);
-          setError("load_failed");
+          setError(caught instanceof ApiError && caught.status === 404 ? "not_found" : "load_failed");
           setReady(true);
         }
       }
