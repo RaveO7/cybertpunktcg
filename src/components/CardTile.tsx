@@ -69,6 +69,7 @@ export function CardTile({
   onToggleFavorite,
   tabIndex,
   pressed,
+  priority = false,
 }: {
   printing: PrintingDTO;
   card: CardDTO | undefined;
@@ -87,6 +88,8 @@ export function CardTile({
   tabIndex?: number;
   /** Mode sélection : la carte est un bouton à bascule (cochée ou non). */
   pressed?: boolean;
+  /** Carte visible au chargement : image chargée tout de suite et en priorité. */
+  priority?: boolean;
 }) {
   const t = useTranslations();
   const { name, subname } = nameParts(card, printing);
@@ -127,7 +130,8 @@ export function CardTile({
                 alt=""
                 draggable={false}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                loading="lazy"
+                loading={priority ? "eager" : "lazy"}
+                fetchPriority={priority ? "high" : undefined}
                 decoding="async"
               />
             ) : (
