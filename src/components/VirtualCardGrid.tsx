@@ -72,6 +72,11 @@ export function cardIdsInBox(
   return ids;
 }
 
+/** Première rangée de la grille : visible sans défiler, ses images (dont celle du LCP) partent en priorité. */
+export function isPriorityCard(index: number, cols: number) {
+  return index < cols;
+}
+
 /** Official /cards sizing — only when filters are collapsed */
 function columnsOfficial(width: number) {
   if (width >= 1024) return 4;
@@ -305,6 +310,7 @@ export function VirtualCardGrid({
             {rowItems.map((printing, column) => (
               <CardTile
                 key={printing.id}
+                priority={isPriorityCard(start + column, cols)}
                 printing={printing}
                 card={cardsById.get(printing.cardId)}
                 ownedQty={ownership(printing.id)}
