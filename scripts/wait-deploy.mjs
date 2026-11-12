@@ -26,6 +26,8 @@ const inspect = vercel(["inspect", url, "--wait", "--timeout", "20m"]);
 const status = `${inspect.stdout}\n${inspect.stderr}`.match(/status\s+●\s+(\w+)/)?.[1] ?? "inconnu";
 console.log(`État : ${status}`);
 if (status !== "Ready") {
-  console.log(vercel(["inspect", url, "--logs"]).stdout?.split("\n").slice(-60).join("\n"));
+  // Vercel écrit les logs de build sur stderr.
+  const logs = vercel(["inspect", url, "--logs"]);
+  console.log(`${logs.stdout ?? ""}${logs.stderr ?? ""}`.split("\n").slice(-60).join("\n"));
   process.exit(1);
 }
