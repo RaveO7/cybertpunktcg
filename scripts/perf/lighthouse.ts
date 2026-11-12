@@ -5,6 +5,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { chromium, type Cookie } from "@playwright/test";
 import { z } from "zod";
+import { MEASURE_HEADERS } from "./measure";
 
 export type LighthouseScores = {
   performance: number;
@@ -93,6 +94,7 @@ export async function runLighthouse(
       `--output-path=${reportBase}`,
       "--locale=fr",
       "--quiet",
+      `--extra-headers=${JSON.stringify(MEASURE_HEADERS)}`,
       ...(formFactor === "desktop" ? ["--preset=desktop"] : []),
     ]);
   } finally {
