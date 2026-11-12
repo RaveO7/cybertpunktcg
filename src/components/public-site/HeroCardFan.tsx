@@ -45,8 +45,6 @@ const MAX_TILT = 14;
 /** Distribution des cartes à l'arrivée : écart entre deux cartes, et durée d'un vol. */
 const DEAL_STEP_MS = 120;
 const DEAL_MS = 900;
-/** Image du dos des cartes du jeu, montrée pendant le tour de la carte agrandie. */
-const CARD_BACK = "/card-images/card-back.webp";
 /** Filet si la fin de transition n'arrive pas (onglet masqué…) ; durée réelle : .card-dialog-* dans globals.css. */
 const CLOSE_FALLBACK_MS = 900;
 
@@ -130,8 +128,6 @@ export function HeroCardFan({ cards, labels }: { cards: FanCard[]; labels: FanLa
   }, [cards.length]);
 
   useEffect(() => {
-    // Précharge le dos de carte : il doit être prêt à mi-tour, dès la première ouverture.
-    new Image().src = CARD_BACK;
     return () => {
       if (frame.current !== null) cancelAnimationFrame(frame.current);
     };
@@ -403,19 +399,10 @@ function CardDialog({
                 {/* eslint-disable-next-line @next/next/no-img-element -- miniature déjà chargée par l'éventail */}
                 <img src={card.thumb} alt={card.alt} className="h-full w-full object-cover" />
               </div>
-              {/* Dos de carte, visible pendant le tour : le vrai dos du jeu (CARD_BACK), sinon un dos HUD. */}
+              {/* Dos de carte HUD (sans image), visible pendant le tour. */}
               <div className="card-dialog-back" aria-hidden="true">
                 <span className="card-dialog-back-mark">TCG</span>
                 <span className="card-dialog-back-sub">Tracker</span>
-                {/* eslint-disable-next-line @next/next/no-img-element -- image statique, masquée si absente */}
-                <img
-                  src={CARD_BACK}
-                  alt=""
-                  className="card-dialog-back-image"
-                  onError={(event) => {
-                    event.currentTarget.hidden = true;
-                  }}
-                />
               </div>
             </div>
           </div>
