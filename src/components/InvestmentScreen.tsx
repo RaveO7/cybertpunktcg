@@ -317,6 +317,7 @@ export function InvestmentScreen() {
           value={summary.pricedCopies > 0 ? fmt.money(summary.marketTotal) : "—"}
           delta={summary.marketDelta}
           deltaAmount={summary.marketDeltaAmount}
+          deltaPlaceholder={period.reference == null && !period.error ? summary.marketTotal : undefined}
           detail={
             chartRange === "all"
               ? t("investment.periodDetailAll")
@@ -430,13 +431,16 @@ export function InvestmentScreen() {
   );
 }
 
-/** Squelette de l'investissement : titre, quatre chiffres, courbe, filtres et tableau. */
+/**
+ * Squelette de l'investissement : titre, quatre chiffres, courbe, filtres et tableau. Au moins la hauteur
+ * de l'écran, comme le portefeuille : le pied de page reste dessous à son arrivée.
+ */
 export function InvestmentSkeleton() {
   const t = useTranslations();
   return (
     <ScreenSkeleton
       label={t("investment.loading")}
-      className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6"
+      className="mx-auto flex min-h-[100cqh] w-full min-w-0 max-w-[1600px] shrink-0 flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6"
     >
       <SkeletonBlock className="h-8 w-48 sm:h-10" />
       <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">

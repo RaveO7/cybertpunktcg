@@ -243,7 +243,7 @@ export function Header({ privatePage }: { privatePage: boolean }) {
   const { pathname, user, session, t, isSharedView, shareToken, showNav, links, activeMatch, markPending } = useNavigation();
   // Page réservée aux comptes, session pas encore connue (écran de démarrage par-dessus) : place du bouton
   // des paramètres gardée, sinon l'en-tête grandit à l'arrivée de la session et décale toute la page.
-  const awaitingSession = privatePage && session === "unknown";
+  const awaitingSession = privatePage && (session === "unknown" || session === "guest");
   // Visiteur sur une page publique (aussi au rendu serveur, pour les liens internes) : navigation publique.
   const showVisitorNav = !user && !isSharedView && !showNav && !awaitingSession && pathname !== "/connexion";
   // Page d'où l'on a ouvert les paramètres (URL complète, dans sa langue) : un second clic y ramène.
