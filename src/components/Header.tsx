@@ -63,7 +63,7 @@ function useNavigation() {
   const activeMatch = pending && pending.from === pathname ? pending.match : pathname;
   const markPending = (match: string) => setPending({ from: pathname, match });
 
-  return { pathname, user, t, isSharedView, shareToken, showNav, links, activeMatch, markPending };
+  return { pathname, user, session, t, isSharedView, shareToken, showNav, links, activeMatch, markPending };
 }
 
 /**
@@ -239,10 +239,13 @@ function VisitorNav() {
   );
 }
 
-export function Header() {
-  const { pathname, user, t, isSharedView, shareToken, showNav, links, activeMatch, markPending } = useNavigation();
+export function Header({ privatePage }: { privatePage: boolean }) {
+  const { pathname, user, session, t, isSharedView, shareToken, showNav, links, activeMatch, markPending } = useNavigation();
+  // Page réservée aux comptes, session pas encore connue (écran de démarrage par-dessus) : place du bouton
+  // des paramètres gardée, sinon l'en-tête grandit à l'arrivée de la session et décale toute la page.
+  const awaitingSession = privatePage && session === "unknown";
   // Visiteur sur une page publique (aussi au rendu serveur, pour les liens internes) : navigation publique.
-  const showVisitorNav = !user && !isSharedView && !showNav && pathname !== "/connexion";
+  const showVisitorNav = !user && !isSharedView && !showNav && !awaitingSession && pathname !== "/connexion";
   // Page d'où l'on a ouvert les paramètres (URL complète, dans sa langue) : un second clic y ramène.
   const [settingsReturn, setSettingsReturn] = useState<string | null>(null);
   const inSettings = pathname === "/parametres";
@@ -308,6 +311,8 @@ export function Header() {
               <SettingsIcon />
             </Link>
           )
+        ) : awaitingSession ? (
+          <span className={`${actionClass} invisible ml-auto sm:ml-0`} aria-hidden="true" />
         ) : null}
       </div>
       {user && !isSharedView ? <SyncErrors /> : null}

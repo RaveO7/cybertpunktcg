@@ -32,7 +32,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const content = isPublicPage ? children : <RequireUser>{children}</RequireUser>;
   return (
     <div className="relative flex h-dvh flex-col overflow-clip">
-      <Header />
+      <Header privatePage={!isPublicPage} />
       <OfflineBanner />
       <LegacyLocalePreference />
       <PreferredLanguageRedirect />
