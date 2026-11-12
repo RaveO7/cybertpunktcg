@@ -16,21 +16,18 @@ const PRELOADED_CARDS = 4;
 const HIGH_PRIORITY_CARDS = 2;
 
 export default async function CardsPage({ searchParams }: PageProps<"/[locale]/cards">) {
-  const t = await getTranslations();
+  // Attendu avant de rendre la page : un préchargement demandé plus tard (dans un Suspense) n'arrive
+  // plus dans le <head> du HTML mais dans les données React, lues seulement une fois le JavaScript chargé.
+  const [t] = await Promise.all([getTranslations(), preloadFirstCards(searchParams)]);
   return (
-    <>
-      <Suspense fallback={null}>
-        <PreloadFirstCards searchParams={searchParams} />
-      </Suspense>
-      <Suspense fallback={<p className="p-6 text-sm text-muted">{t("cards.loading")}</p>}>
-        <CardsExplorer />
-      </Suspense>
-    </>
+    <Suspense fallback={<p className="p-6 text-sm text-muted">{t("cards.loading")}</p>}>
+      <CardsExplorer />
+    </Suspense>
   );
 }
 
 /** Précharge dès le HTML les images des premières cartes (image LCP de la page). */
-async function PreloadFirstCards({ searchParams }: Pick<PageProps<"/[locale]/cards">, "searchParams">) {
+async function preloadFirstCards(searchParams: PageProps<"/[locale]/cards">["searchParams"]) {
   const [query, cookieStore, catalog] = await Promise.all([searchParams, cookies(), loadCatalogCached()]);
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
@@ -40,5 +37,4 @@ async function PreloadFirstCards({ searchParams }: Pick<PageProps<"/[locale]/car
   firstGridImages(catalog, params, view, PRELOADED_CARDS).forEach((href, index) => {
     preload(href, { as: "image", fetchPriority: index < HIGH_PRIORITY_CARDS ? "high" : "auto" });
   });
-  return null;
 }
