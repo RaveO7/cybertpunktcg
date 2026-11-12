@@ -11,7 +11,7 @@ Demande : $ARGUMENTS
 npx tsx scripts/perf-audit.ts --label "<libellé court : ce qui a changé>"
 ```
 
-- Durée : ~15 min complet (13 pages × 2 profils × 3 visites + Lighthouse). Lancer en arrière-plan (`run_in_background`).
+- Durée : ~30 min complet (13 pages × 2 profils × 3 visites + 3 passages Lighthouse). Lancer en arrière-plan (`run_in_background`).
 - Preview protégée (Vercel Authentication) : `VERCEL_AUTOMATION_BYPASS_SECRET=<secret>` (secret « Protection Bypass for Automation » du projet, `vercel api /v9/projects/<id>` → `protectionBypass`).
 - Options : `--url https://<preview>.vercel.app` · `--runs 5` (plus stable) · `--only accueil,catalogue` · `--no-lighthouse` (rapide) · `--public-only` (sans compte).
 - Pages et identifiants : `scripts/perf/pages.ts`. Ne pas renommer ni retirer une page (comparaison perdue) ; en ajouter est sans risque.
@@ -21,8 +21,8 @@ npx tsx scripts/perf-audit.ts --label "<libellé court : ce qui a changé>"
 
 - Tableau par profil (mobile, desktop), écart à la mesure précédente : flèche = sens de la variation (`▲` hausse, `▼` baisse), `✓` mieux, `✗` moins bien ; pas de flèche sous le bruit (100 ms, 2 points Lighthouse, 3 % de poids).
 - Colonnes : `TTFB` premier octet · `LCP` plus grand élément affiché · `Visuel` dernière image visible reçue (la page « a l'air finie ») · `Complet` dernière ressource reçue, réseau calme 1 s · `CLS` décalage de mise en page · `Ko` poids transféré · `Req` requêtes · `LH` scores Lighthouse sur 100.
-- Temps Playwright = réseau réel de la machine (médiane de N visites à froid) : comparer des mesures faites depuis la même connexion. Lighthouse simule réseau et processeur : comparable partout, mais ±3 points d'une fois à l'autre.
-- Rapports Lighthouse détaillés : `test-results/perf-lighthouse/<page>-<profil>.report.html` (dernière mesure seulement, non versionnés).
+- Temps Playwright = réseau réel de la machine (médiane de N visites à froid) : comparer des mesures faites depuis la même connexion. Lighthouse simule réseau et processeur : médiane de N passages (`--runs`), un passage où Lighthouse plante est écarté (signalé « ⚠ … passage écarté ») et remplacé, 2 essais en plus au maximum. Garder le même `--runs` d'une mesure à l'autre pour comparer.
+- Rapports Lighthouse détaillés : `test-results/perf-lighthouse/<page>-<profil>.report.html` = passage médian ; chaque passage dans `<page>-<profil>-<n>.report.html` (dernière mesure seulement, non versionnés).
 - Comparer deux mesures quelconques : `npx tsx scripts/perf-audit.ts --compare docs/perf/history/<avant>.json docs/perf/history/<après>.json`.
 
 ## Rendre compte
