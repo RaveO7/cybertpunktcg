@@ -3,29 +3,19 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCachedJson } from "@/components/data-cache";
+import { api } from "@/lib/client/api";
 import { Link, useRouter } from "@/i18n/navigation";
 import { intlLocale } from "@/i18n/config";
 import { normalizeTournamentCode } from "@/lib/tournament/code";
-import { ApiError, postJson } from "./hooks";
+import { useTournamentErrorMessage } from "./hooks";
 import { inputClass, panelClass, primaryClass, Tag } from "./ui";
-
-type TournamentRow = {
-  id: string;
-  code: string;
-  name: string;
-  status: "inscriptions" | "suisse" | "top_cut" | "termine" | "annule";
-  format: "boutique" | "competitif";
-  createdAt: string;
-  role: "owner" | "co" | null;
-  playerCount: number;
-};
 
 export function TournamentsScreen() {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
   // Dernière liste connue affichée aussitôt, rechargée à chaque visite.
-  const list = useCachedJson<{ tournaments: TournamentRow[] }>("/api/tournaments");
+  const list = useCachedJson("/api/tournaments", "tournamentListSchema");
   const rows = list.data?.tournaments ?? null;
   const loadError = list.error;
   const [name, setName] = useState("");
@@ -34,20 +24,20 @@ export function TournamentsScreen() {
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const errorMessage = useTournamentErrorMessage();
 
   async function create(event: React.FormEvent) {
     event.preventDefault();
     setPending(true);
     setMessage(null);
     try {
-      const { tournament } = await postJson<{ tournament: { id: string } }>("/api/tournaments", {
-        name: name.trim() || t("tournaments.defaultName"),
-        format,
-        matchType,
+      const { tournament } = await api("/api/tournaments", {
+        body: { name: name.trim() || t("tournaments.defaultName"), format, matchType },
+        schema: "createdTournamentSchema",
       });
       router.push({ pathname: "/tournois/[id]", params: { id: tournament.id } });
     } catch (error) {
-      setMessage(error instanceof ApiError && error.status === 0 ? t("tournaments.offline") : error instanceof Error ? error.message : t("tournaments.failed"));
+      setMessage(errorMessage(error));
       setPending(false);
     }
   }

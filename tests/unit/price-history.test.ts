@@ -9,6 +9,79 @@ import {
   utcDayKey,
 } from "../../src/lib/price-history";
 
+describe("extendPortfolioHistory : date et prix d'achat", () => {
+  it("compte les exemplaires à partir de leur date d'achat, avec l'investi et le P&L du jour", () => {
+    const owned = [
+      { printingId: "a", quantity: 2, fromDay: null, cost: 1 },
+      { printingId: "b", quantity: 1, fromDay: "2026-03-02", cost: 5 },
+      { printingId: "c", quantity: 1, fromDay: "2026-03-02", cost: null },
+    ];
+    const snapshots = [
+      { printingId: "a", day: "2026-03-01", amount: 2 },
+      { printingId: "b", day: "2026-03-01", amount: 4 },
+      { printingId: "c", day: "2026-03-01", amount: 3 },
+      { printingId: "b", day: "2026-03-03", amount: 6 },
+    ];
+    const { points } = extendPortfolioHistory(owned, new Map(), snapshots);
+    assert.deepEqual(points, [
+      // b et c pas encore achetés.
+      { day: "2026-03-01", marketTotal: 4, pricedCopies: 2, invested: 2, profit: 2 },
+      { day: "2026-03-03", marketTotal: 13, pricedCopies: 4, invested: 7, profit: 3 },
+    ]);
+  });
+
+  it("valueBeforePurchase : valeur sur tout l'historique, investi à 0 et sans P&L avant l'achat", () => {
+    const owned = [
+      { printingId: "b", quantity: 2, fromDay: "2026-03-02", cost: 5 },
+      { printingId: "c", quantity: 1, fromDay: "2026-03-03", cost: null },
+    ];
+    const snapshots = [
+      { printingId: "b", day: "2026-03-01", amount: 4 },
+      { printingId: "c", day: "2026-03-01", amount: 3 },
+      { printingId: "b", day: "2026-03-02", amount: 6 },
+      { printingId: "b", day: "2026-03-03", amount: 7 },
+    ];
+    const { points } = extendPortfolioHistory(owned, new Map(), snapshots, { valueBeforePurchase: true });
+    assert.deepEqual(points, [
+      // Rien d'acheté : la valeur, et la ligne « Investi » à 0 comme pour le portefeuille.
+      { day: "2026-03-01", marketTotal: 11, pricedCopies: 3, invested: 0, profit: null },
+      { day: "2026-03-02", marketTotal: 15, pricedCopies: 3, invested: 10, profit: 2 },
+      // c acheté sans prix : compté dans la valeur, pas dans l'investi ni le P&L.
+      { day: "2026-03-03", marketTotal: 17, pricedCopies: 3, invested: 10, profit: 4 },
+    ]);
+    // Sans l'option : la courbe commence à l'achat.
+    assert.equal(extendPortfolioHistory(owned, new Map(), snapshots).points[0].day, "2026-03-02");
+  });
+
+  it("portefeuille : investi à 0 et sans P&L avant le premier achat avec prix (la ligne couvre toute la courbe)", () => {
+    const { points } = extendPortfolioHistory(
+      [
+        { printingId: "a", quantity: 1, fromDay: null, cost: null },
+        { printingId: "b", quantity: 1, fromDay: "2026-03-02", cost: 5 },
+      ],
+      new Map(),
+      [
+        { printingId: "a", day: "2026-03-01", amount: 2 },
+        { printingId: "b", day: "2026-03-01", amount: 4 },
+        { printingId: "a", day: "2026-03-02", amount: 3 },
+      ],
+    );
+    assert.deepEqual(points, [
+      { day: "2026-03-01", marketTotal: 2, pricedCopies: 1, invested: 0, profit: null },
+      { day: "2026-03-02", marketTotal: 7, pricedCopies: 2, invested: 5, profit: -1 },
+    ]);
+  });
+
+  it("sans aucun prix d'achat : ni investi ni P&L dans les points", () => {
+    const { points } = extendPortfolioHistory(
+      [{ printingId: "a", quantity: 1 }],
+      new Map(),
+      [{ printingId: "a", day: "2026-03-01", amount: 2 }],
+    );
+    assert.deepEqual(points, [{ day: "2026-03-01", marketTotal: 2, pricedCopies: 1 }]);
+  });
+});
+
 describe("utcDay / utcDayKey", () => {
   const originalTz = process.env.TZ;
   afterEach(() => {

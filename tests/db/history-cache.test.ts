@@ -130,6 +130,40 @@ async function reference(userId: string, filter: Filter = {}): Promise<Point[]> 
   return points;
 }
 
+/**
+ * Prix de référence naïfs : dernier prix > 0 au plus tard le début de la période ; sinon le prix
+ * précédent Cardmarket si la carte n'a qu'un jour coté ; sinon son plus ancien prix.
+ */
+async function referencePrices(userId: string, days: number | null) {
+  const items = await prisma.collectionItem.findMany({ where: { userId, quantity: { gt: 0 } } });
+  const ids = [...new Set(items.map((item) => item.printingId))];
+  const snaps = (await prisma.priceSnapshot.findMany({ where: { printingId: { in: ids }, kind: "trend", sourceId } }))
+    .map((row) => ({ printingId: row.printingId, day: priceHistory.utcDayKey(row.day), amount: Number(row.amount) }))
+    .filter((row) => row.amount > 0)
+    .sort((a, b) => a.day.localeCompare(b.day));
+  const lastDay = snaps.at(-1)?.day ?? day(0);
+  const start = days == null ? null : priceHistory.utcDayKey(priceHistory.shiftUtcDay(lastDay, -days));
+  const prices: Record<string, number> = {};
+  for (const id of ids) {
+    const own = snaps.filter((row) => row.printingId === id);
+    const before = start == null ? undefined : own.filter((row) => row.day <= start).at(-1);
+    if (before) {
+      prices[id] = before.amount;
+      continue;
+    }
+    if (own.length <= 1) {
+      const price = await prisma.price.findFirst({ where: { printingId: id, kind: "trend", sourceId } });
+      const previous = Number(price?.previousAmount ?? Number.NaN);
+      if (Number.isFinite(previous) && previous > 0) {
+        prices[id] = previous;
+        continue;
+      }
+    }
+    if (own[0]) prices[id] = own[0].amount;
+  }
+  return { day: start, prices };
+}
+
 const cacheRow = (userId: string, scope = "*|*") =>
   prisma.portfolioHistoryCache.findUnique({ where: { userId_scope: { userId, scope } } });
 const load = (userId: string, filter: Filter = {}) => history.loadPortfolioPriceHistory({ userId, ...filter });
@@ -339,8 +373,61 @@ describe.sequential("cache de la courbe de portefeuille", () => {
 
   it("collection vide", async () => {
     const U5 = await makeUser("u5", []);
-    assert.deepEqual(await load(U5), { points: [], days: 0 });
+    assert.deepEqual(await load(U5), { points: [], days: 0, purchases: [] });
     assert.equal(await cacheRow(U5), null);
+  });
+
+  it("date et prix d'achat : exemplaires comptés à partir de l'achat, investi, P&L et achats listés", async () => {
+    const U8 = await makeUser("u8-achats", []);
+    // P1 sans date (possédé depuis toujours) à 1 € ; P2 ×2 acheté à J-5 à 10 € pièce.
+    await prisma.collectionItem.create({
+      data: { userId: U8, printingId: P1, conditionId: nmId, quantity: 1, purchasePrice: "1", purchaseCurrency: "EUR" },
+    });
+    const bought = await prisma.collectionItem.create({
+      data: {
+        userId: U8,
+        printingId: P2,
+        conditionId: nmId,
+        quantity: 2,
+        purchasePrice: "10",
+        purchaseCurrency: "EUR",
+        purchasedAt: priceHistory.utcDay(day(5)),
+      },
+    });
+    const first = await load(U8);
+    const at = (points: typeof first.points, ago: number) => points.find((point) => point.day === day(ago));
+    // J-9 : seul P1 (1 €) est possédé.
+    assert.deepEqual(at(first.points, 9), { day: day(9), marketTotal: 1, pricedCopies: 1, invested: 1, profit: 0 });
+    // J-5 : P1 à 2 € (J-6) + 2 × P2 à 12 €.
+    assert.deepEqual(at(first.points, 5), { day: day(5), marketTotal: 26, pricedCopies: 3, invested: 21, profit: 5 });
+    assert.deepEqual(first.purchases, [
+      { day: day(5), printingId: P2, quantity: 2, unitPrice: 10, currency: "EUR" },
+    ]);
+    // Le cache rend la même courbe.
+    assert.deepEqual((await load(U8)).points, first.points);
+
+    // Changer la date d'achat invalide le cache.
+    await prisma.collectionItem.update({ where: { id: bought.id }, data: { purchasedAt: priceHistory.utcDay(day(2)) } });
+    const moved = await load(U8);
+    assert.equal(at(moved.points, 5)?.pricedCopies, 1);
+    assert.equal(at(moved.points, 2)?.invested, 21);
+    assert.equal(moved.purchases[0].day, day(2));
+  });
+
+  it("prix de référence d'une période = référence naïve (prix à 0 ignoré, un seul jour, jamais coté)", async () => {
+    // P1, P2 (un prix à 0 à J-3), P3 (coté à partir de J-4), P4 jamais coté, P5 un seul jour + prix précédent.
+    const U9 = await makeUser("u9-reference", tracked.map((printingId) => ({ printingId, quantity: 1 })));
+    for (const days of [null, 0, 1, 2, 3, 4, 5, 7, 9, 30, 365]) {
+      assert.deepEqual(
+        await history.loadReferencePrices({ userId: U9, days }),
+        await referencePrices(U9, days),
+        `durée ${days} : prix de référence différents de la référence`,
+      );
+    }
+    const { prices } = await history.loadReferencePrices({ userId: U9, days: 3 });
+    assert.equal(prices[P2], 12, "un prix à 0 ne doit pas servir de référence (comme pour la courbe)");
+    assert.equal(prices[P5], 3.5, "un seul jour d'historique : prix précédent Cardmarket");
+    assert.equal(prices[P4], undefined, "une carte jamais cotée n'a pas de référence");
   });
 
   it("caches supprimés avec le compte", async () => {

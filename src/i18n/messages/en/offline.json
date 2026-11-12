@@ -1,5 +1,5 @@
 {
-  "banner": "Offline: read-only. Changes will be possible once you are back online.",
+  "banner": "Offline: collection changes are kept on this device and sent once you are back online. Everything else is read-only.",
   "title": "Offline mode",
   "hint": "The catalog and your collection stay available without a connection (store, tournament). Download card images to see them offline too.",
   "download": "Download images ({n})",
@@ -15,5 +15,14 @@
     "title": "Offline",
     "body": "This page has not been saved on this device yet.",
     "home": "Back to home"
+  },
+  "sync": {
+    "pending": "{n, plural, one {# pending change} other {# pending changes}}",
+    "syncing": "Syncing…",
+    "pendingLine": "Pending",
+    "rejected": "“{card}”: change cancelled. {reason}",
+    "rejectedUnknown": "Change cancelled. {reason}",
+    "dismiss": "Close",
+    "logoutConfirm": "{n, plural, one {# change has not been sent yet and will be lost.} other {# changes have not been sent yet and will be lost.}} Log out anyway?"
   }
 }

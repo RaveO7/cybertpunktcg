@@ -9,8 +9,12 @@ import {
   FRENCH_SET_NAME,
   FRENCH_SOURCE_SET_CODE,
   isSealedSetCode,
+  isSetList,
+  joinSetList,
   MAIN_SET_CODE,
   matchesSetFilter,
+  parseSetList,
+  parseSortKey,
   RARITY_ORDER,
   RELEASED_SET_ID,
   TYPE_ORDER,
@@ -164,6 +168,10 @@ export function setForLanguage(
   printings: Pick<PrintingDTO, "setCode">[],
 ) {
   if (!language || set === ALL_SETS_ID) return null;
+  if (isSetList(set)) {
+    const mapped = joinSetList(parseSetList(set).map((code) => setForLanguage(code, language, printings) ?? code));
+    return mapped === set ? null : mapped;
+  }
   const codes = new Set(printings.map((printing) => printing.setCode));
   if (language === "fr") {
     if (isEnglishWelcome(set)) return codes.has(FRENCH_SOURCE_SET_CODE) ? FRENCH_SOURCE_SET_CODE : null;
@@ -184,7 +192,11 @@ export function languageOptions(
   set: string,
   printings: Pick<PrintingDTO, "setCode" | "language">[],
   facetLanguages: string[],
-) {
+): string[] {
+  if (isSetList(set)) {
+    const merged = parseSetList(set).flatMap((code) => languageOptions(code, printings, facetLanguages));
+    return [...new Set(merged)];
+  }
   const codes = new Set(printings.map((printing) => printing.setCode));
   const options = new Set(facetLanguages);
   if (isEnglishWelcome(set) || set === FRENCH_SOURCE_SET_CODE || set === FRENCH_SET_ID) {
@@ -206,7 +218,16 @@ export function languageOptions(
 }
 
 export function alignReleasedFilters(filters: Filters, partial?: Partial<Filters>): Filters {
-  const rawSet = filters.set;
+  const list = parseSetList(filters.set).filter((code) => !isSealedSetCode(code));
+  if (list.length > 1) {
+    // Codes bruts du catalogue : la langue suit les extensions cochées (toutes FR, toutes EN, ou les deux).
+    const set = joinSetList(list);
+    if (!partial?.set) return { ...filters, set };
+    const french = list.filter((code) => code.endsWith("-fr")).length;
+    const language = french === list.length ? "fr" : french === 0 ? "en" : "";
+    return { ...filters, set, language };
+  }
+  const rawSet = list.length === 1 ? list[0] : filters.set;
   let set = normalizeSetCode(rawSet);
   let language = filters.language;
   if ((rawSet === RELEASED_SET_ID || rawSet === BOTH_LANGUAGES_SET_ID) && language === "fr") {
@@ -328,36 +349,171 @@ export function numberMatches(collectorNumber: string, token: string) {
   return compactCard.includes(query.replace(/\s+/g, ""));
 }
 
-function haystack(card: CardDTO, printing: PrintingDTO) {
-  return normalizeText(
-    [
-      card.canonicalName,
-      card.name,
-      card.subname,
-      printing.localizedName,
-      printing.setName,
-      printing.setCode,
-      card.rulesText,
-      printing.printedRulesText,
-    ]
-      .filter(Boolean)
-      .join(" "),
-  );
+/** Texte normalisé d'un tirage (ou d'une carte), découpé une seule fois pour la recherche. */
+export type SearchEntry = {
+  /** Variantes du nom (nom canonique, nom + sous-titre, nom localisé), normalisées. */
+  names: string[];
+  nameText: string;
+  nameWords: string[];
+  /** Extension, tags… : correspondance exacte seulement. */
+  otherText: string;
+  /** Texte de règles : correspondance exacte seulement. */
+  rulesText: string;
+  collectorNumber: string | null;
+};
+
+function searchEntry(
+  names: (string | null | undefined)[],
+  other: (string | null | undefined)[],
+  rules: (string | null | undefined)[],
+  collectorNumber: string | null,
+): SearchEntry {
+  const normalizedNames = [...new Set(names.filter(Boolean).map((name) => normalizeText(name!)).filter(Boolean))];
+  const nameText = normalizedNames.join(" ");
+  return {
+    names: normalizedNames,
+    nameText,
+    nameWords: [...new Set(nameText.split(" ").filter(Boolean))],
+    otherText: normalizeText(other.filter(Boolean).join(" ")),
+    rulesText: normalizeText(rules.filter(Boolean).join(" ")),
+    collectorNumber,
+  };
 }
 
-function tokenMatches(card: CardDTO, printing: PrintingDTO, token: string) {
-  const trimmed = token.trim();
-  if (!trimmed) return true;
-  if (/^(?:β|b)?\d+[a-z]*$/i.test(trimmed)) {
-    return numberMatches(printing.collectorNumber, trimmed);
+// Le catalogue garde les mêmes objets d'un rendu à l'autre : l'index est construit une fois par tirage.
+const printingEntries = new WeakMap<PrintingDTO, SearchEntry>();
+const cardEntries = new WeakMap<CardDTO, SearchEntry>();
+
+export function printingSearchEntry(card: CardDTO, printing: PrintingDTO) {
+  let entry = printingEntries.get(printing);
+  if (!entry) {
+    entry = searchEntry(
+      [card.canonicalName, card.name, card.subname ? `${card.name} ${card.subname}` : null, printing.localizedName],
+      [printing.setName, printing.setCode],
+      [card.rulesText, printing.printedRulesText],
+      printing.collectorNumber,
+    );
+    printingEntries.set(printing, entry);
   }
-  return haystack(card, printing).includes(normalizeText(trimmed));
+  return entry;
+}
+
+/** Carte sans tirage (navigateur des decks) : tags et mots-clés en correspondance exacte. */
+export function cardSearchEntry(card: CardDTO) {
+  let entry = cardEntries.get(card);
+  if (!entry) {
+    entry = searchEntry(
+      [card.canonicalName, card.name, card.subname ? `${card.name} ${card.subname}` : null],
+      [...card.tags, ...card.keywords],
+      [card.rulesText],
+      null,
+    );
+    cardEntries.set(card, entry);
+  }
+  return entry;
+}
+
+/**
+ * Distance de Damerau-Levenshtein (transpositions de lettres voisines), bornée :
+ * renvoie max + 1 dès que la distance dépasse max.
+ */
+export function boundedEditDistance(a: string, b: string, max: number) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  if (a === b) return 0;
+  let before = new Array<number>(b.length + 1).fill(0);
+  let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  let current = new Array<number>(b.length + 1).fill(0);
+  for (let i = 1; i <= a.length; i += 1) {
+    current[0] = i;
+    let rowMin = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let value = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        value = Math.min(value, before[j - 2] + 1);
+      }
+      current[j] = value;
+      if (value < rowMin) rowMin = value;
+    }
+    if (rowMin > max) return max + 1;
+    [before, previous, current] = [previous, current, before];
+  }
+  return previous[b.length];
+}
+
+/** Fautes tolérées : aucune sous 5 caractères, 1 jusqu'à 8, 2 à partir de 9. */
+function typoTolerance(word: string) {
+  if (word.length < 5) return 0;
+  return word.length >= 9 ? 2 : 1;
+}
+
+function approximateNameMatch(entry: SearchEntry, word: string) {
+  const max = typoTolerance(word);
+  if (max === 0 || word.includes(" ")) return false;
+  return entry.nameWords.some((nameWord) => boundedEditDistance(word, nameWord, max) <= max);
+}
+
+function isNumberToken(token: string) {
+  return /^(?:β|b)?\d+[a-z]*$/i.test(token);
+}
+
+/** Paliers de pertinence de searchScore. */
+export const SEARCH_SCORE = { exactName: 5, namePrefix: 4, inName: 3, approximate: 2, rules: 1 } as const;
+
+/**
+ * Pertinence d'une entrée pour la saisie : null si un mot ne correspond pas,
+ * sinon 5 nom identique, 4 nom qui commence par la saisie, 3 tous les mots dans le nom,
+ * 2 correspondance approchée, 1 texte de règles (ou extension, tags) seulement.
+ * Un mot qui ressemble à un numéro est comparé au numéro du tirage et n'influe pas sur le palier.
+ */
+export function searchScore(entry: SearchEntry, query: string): number | null {
+  const tokens = query.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return SEARCH_SCORE.exactName;
+  let approximate = false;
+  let outsideName = false;
+  const words: string[] = [];
+  for (const token of tokens) {
+    if (isNumberToken(token)) {
+      if (entry.collectorNumber == null || !numberMatches(entry.collectorNumber, token)) return null;
+      continue;
+    }
+    const word = normalizeText(token);
+    if (!word) continue;
+    words.push(word);
+    if (entry.nameText.includes(word)) continue;
+    if (approximateNameMatch(entry, word)) {
+      approximate = true;
+      continue;
+    }
+    if (entry.otherText.includes(word) || entry.rulesText.includes(word)) {
+      outsideName = true;
+      continue;
+    }
+    return null;
+  }
+  if (outsideName) return SEARCH_SCORE.rules;
+  if (approximate) return SEARCH_SCORE.approximate;
+  if (words.length === 0) return SEARCH_SCORE.inName;
+  const phrase = words.join(" ");
+  if (entry.names.includes(phrase)) return SEARCH_SCORE.exactName;
+  if (entry.names.some((name) => name.startsWith(phrase))) return SEARCH_SCORE.namePrefix;
+  return SEARCH_SCORE.inName;
 }
 
 export function matchesSearch(card: CardDTO, printing: PrintingDTO, query: string) {
-  const tokens = query.trim().split(/\s+/).filter(Boolean);
-  if (tokens.length === 0) return true;
-  return tokens.every((token) => tokenMatches(card, printing, token));
+  if (!query.trim()) return true;
+  return searchScore(printingSearchEntry(card, printing), query) !== null;
+}
+
+/** Classe par pertinence décroissante ; Array.prototype.sort est stable, l'ordre reçu départage. */
+export function rankBySearch<T>(list: T[], query: string, entryOf: (value: T) => SearchEntry | null) {
+  if (!query.trim()) return list;
+  const scores = new Map<T, number>();
+  for (const value of list) {
+    const entry = entryOf(value);
+    scores.set(value, entry ? (searchScore(entry, query) ?? 0) : 0);
+  }
+  return [...list].sort((a, b) => scores.get(b)! - scores.get(a)!);
 }
 
 function matchesCollection(owned: Ownership, filter: CollectionFilter) {
@@ -419,15 +575,38 @@ function marketAmount(printing: PrintingDTO) {
   return Number.isFinite(amount) ? amount : null;
 }
 
-function compareMarketPrice(a: PrintingDTO, b: PrintingDTO, direction: 1 | -1) {
-  const priceA = marketAmount(a);
-  const priceB = marketAmount(b);
-  if (priceA == null && priceB == null) return compareNumber(a, b);
-  if (priceA == null) return 1;
-  if (priceB == null) return -1;
-  const diff = (priceA - priceB) * direction;
+/** Valeurs absentes en fin de liste dans les deux sens ; égalités départagées par le numéro. */
+function compareValues(a: PrintingDTO, b: PrintingDTO, valueA: number | null, valueB: number | null, direction: 1 | -1) {
+  if (valueA == null && valueB == null) return compareNumber(a, b);
+  if (valueA == null) return 1;
+  if (valueB == null) return -1;
+  const diff = (valueA - valueB) * direction;
   if (diff !== 0) return diff;
   return compareNumber(a, b);
+}
+
+/** Tris sur une caractéristique de jeu de la carte : [caractéristique, sens]. */
+const CARD_STAT_SORTS: Partial<Record<SortKey, ["cost" | "power" | "ram", 1 | -1]>> = {
+  "play-cost-asc": ["cost", 1],
+  "play-cost-desc": ["cost", -1],
+  "power-asc": ["power", 1],
+  "power-desc": ["power", -1],
+  "ram-asc": ["ram", 1],
+  "ram-desc": ["ram", -1],
+};
+
+/**
+ * Cartes de la liste dont le numéro de collection est entre ceux des deux cartes, bornes incluses et dans
+ * n'importe quel ordre ; même ordre que le tri par numéro (#001 à #005a ne prend pas #005b).
+ */
+export function collectorRangeIds(list: PrintingDTO[], anchorId: string, endId: string) {
+  const anchor = list.find((printing) => printing.id === anchorId);
+  const end = list.find((printing) => printing.id === endId);
+  if (!anchor || !end) return [];
+  const [low, high] = compareNumber(anchor, end) <= 0 ? [anchor, end] : [end, anchor];
+  return list
+    .filter((printing) => compareNumber(printing, low) >= 0 && compareNumber(printing, high) <= 0)
+    .map((printing) => printing.id);
 }
 
 function emptyCard(id: string): CardDTO {
@@ -457,6 +636,23 @@ export function sortPrintings(
   agg: Map<string, Ownership>,
   sets: Map<string, SetDTO>,
   sort: SortKey,
+  /** Saisie en cours et tri par défaut de l'écran : avec ce tri, les résultats sont classés par pertinence. */
+  search?: { q: string; defaultSort: SortKey },
+) {
+  const sorted = sortPrintingsBy(printings, cards, agg, sets, sort);
+  if (!search || sort !== search.defaultSort) return sorted;
+  return rankBySearch(sorted, search.q, (printing) => {
+    const card = cards.get(printing.cardId);
+    return card ? printingSearchEntry(card, printing) : null;
+  });
+}
+
+function sortPrintingsBy(
+  printings: PrintingDTO[],
+  cards: Map<string, CardDTO>,
+  agg: Map<string, Ownership>,
+  sets: Map<string, SetDTO>,
+  sort: SortKey,
 ) {
   const list = [...printings];
   list.sort((a, b) => {
@@ -469,8 +665,13 @@ export function sortPrintings(
     }
     if (sort === "number-asc") return compareNumber(a, b);
     if (sort === "number-desc") return compareNumber(b, a);
-    if (sort === "cost-asc" || sort === "cost-desc") {
-      return compareMarketPrice(a, b, sort === "cost-asc" ? 1 : -1);
+    if (sort === "price-asc" || sort === "price-desc") {
+      return compareValues(a, b, marketAmount(a), marketAmount(b), sort === "price-asc" ? 1 : -1);
+    }
+    const stat = CARD_STAT_SORTS[sort];
+    if (stat) {
+      const [key, direction] = stat;
+      return compareValues(a, b, cards.get(a.cardId)?.[key] ?? null, cards.get(b.cardId)?.[key] ?? null, direction);
     }
     if (sort === "qty-asc" || sort === "qty-desc") {
       const diff = ownershipOf(a.id, agg).qty - ownershipOf(b.id, agg).qty;
@@ -507,6 +708,7 @@ export function filterPrintings(
   checklist = releasedChecklist(printings, filters.set),
 ) {
   const allowed = checklist ? new Set(checklist.map((printing) => printing.id)) : null;
+  const setList = isSetList(filters.set) ? new Set(parseSetList(filters.set)) : null;
   const source = checklist ?? printings;
   return source.filter((printing) => {
     const card = cards.get(printing.cardId);
@@ -516,6 +718,8 @@ export function filterPrintings(
       if (filters.language && printing.language !== filters.language) return false;
     } else if (filters.set === ALL_SETS_ID) {
       if (isSealedSetCode(printing.setCode)) return false;
+    } else if (setList) {
+      if (!setList.has(printing.setCode)) return false;
     } else if (filters.set && printing.setCode !== filters.set) {
       return false;
     }
@@ -657,6 +861,16 @@ export function printingTitle(card: CardDTO | undefined, printing: PrintingDTO) 
   return printing.localizedName || card?.canonicalName || card?.name || "Carte";
 }
 
+/** Autres éditions d'une carte (fiche carte), par extension puis par numéro. */
+export function siblingPrintings(printings: PrintingDTO[], printing: Pick<PrintingDTO, "id" | "cardId">) {
+  return printings
+    .filter((entry) => entry.cardId === printing.cardId && entry.id !== printing.id)
+    .sort(
+      (a, b) =>
+        frenchOrder.compare(a.setName, b.setName) || frenchNumericOrder.compare(a.collectorNumber, b.collectorNumber),
+    );
+}
+
 /** Prefers official printed rules in the UI locale, falling back to the current printing / English card text. */
 export function resolveRulesText(
   card: CardDTO,
@@ -715,6 +929,20 @@ export function printingsPriceTotal(printings: PrintingDTO[]) {
   return { total, unpriced };
 }
 
+/** Prix d'une sélection { printingId: copies } ; `unpriced` compte les exemplaires sans prix. */
+export function selectionPriceTotal(printings: PrintingDTO[], selection: Record<string, number>) {
+  let total = 0;
+  let unpriced = 0;
+  for (const printing of printings) {
+    const quantity = selection[printing.id] ?? 0;
+    if (quantity <= 0) continue;
+    const amount = marketAmount(printing);
+    if (amount == null || amount <= 0) unpriced += quantity;
+    else total += amount * quantity;
+  }
+  return { total, unpriced };
+}
+
 export function marketValue(printings: PrintingDTO[], agg: Map<string, Ownership>) {
   let total = 0;
   let previousTotal = 0;
@@ -748,13 +976,22 @@ export function marketValue(printings: PrintingDTO[], agg: Map<string, Ownership
   };
 }
 
+/** Moins d'un demi-centime : le montant s'affiche « 0,00 » et compte pour nul (ni gain, ni perte, ni variation). */
+export const MONEY_EPSILON = 0.005;
+
+/** Signe d'un montant en euros : 0 quand il s'arrondit à zéro centime. */
+export function amountSign(value: number): -1 | 0 | 1 {
+  if (Math.abs(value) < MONEY_EPSILON) return 0;
+  return value > 0 ? 1 : -1;
+}
+
 export type PriceMovement = "up" | "down" | "flat" | "none";
 
 export function priceMovement(current: number | null, previous: number | null): PriceMovement {
   if (current == null || previous == null || !Number.isFinite(current) || !Number.isFinite(previous)) return "none";
-  const delta = current - previous;
-  if (Math.abs(delta) < 0.005) return "flat";
-  return delta > 0 ? "up" : "down";
+  const sign = amountSign(current - previous);
+  if (sign === 0) return "flat";
+  return sign > 0 ? "up" : "down";
 }
 
 /** Vrai quand le prix du marché est au niveau du prix cible de la liste de souhaits ou en dessous. */
@@ -784,8 +1021,43 @@ export type InvestmentLine = {
   purchaseUnit: number | null;
   purchaseCurrency: string | null;
   purchaseTotal: number | null;
+  /** Date d'achat « AAAA-MM-JJ », null = inconnue. */
+  purchasedAt: string | null;
   profit: number | null;
+  /** Base du P&L (P&L = marché − base) : prix d'achat total. */
+  profitBasis: number | null;
   marketDelta: PriceMovement;
+};
+
+/** Achats d'une même carte (même édition) regroupés : une ligne du portefeuille. */
+export type InvestmentPosition = {
+  printingId: string;
+  cardId: string;
+  title: string;
+  setCode: string;
+  setName: string;
+  collectorNumber: string;
+  language: string;
+  rarity: string | null;
+  imagePath: string | null;
+  quantity: number;
+  /** États distincts des achats, dans l'ordre des achats. */
+  conditionCodes: string[];
+  marketUnit: number | null;
+  previousMarketUnit: number | null;
+  marketTotal: number | null;
+  marketDelta: PriceMovement;
+  /** Somme des prix d'achat ; null si aucun prix ou si les devises diffèrent. */
+  purchaseTotal: number | null;
+  purchaseCurrency: string | null;
+  /** Prix de revient unitaire : prix moyen payé par exemplaire. */
+  purchaseUnit: number | null;
+  profit: number | null;
+  profitBasis: number | null;
+  /** Exemplaires comptés dans le P&L (ceux qui ont un prix d'achat en EUR). */
+  profitQuantity: number;
+  /** Achats, du plus ancien au plus récent ; ceux sans date à la fin. */
+  lines: InvestmentLine[];
 };
 
 export type SetInvestment = {
@@ -801,6 +1073,8 @@ export type SetInvestment = {
   investedEur: number;
   investedLines: number;
   profitEur: number | null;
+  /** Base du P&L (prix d'achat des lignes qui en ont un) : sert au % affiché. */
+  profitBasis: number | null;
   profitLines: number;
 };
 
@@ -811,6 +1085,8 @@ export type InvestmentSummary = {
   marketDeltaAmount: number | null;
   investedEur: number;
   profitEur: number | null;
+  /** Prix d'achat des exemplaires comptés dans le P&L (base du % de rendement). */
+  profitBasis: number | null;
   copies: number;
   pricedCopies: number;
   trackedProfitCopies: number;
@@ -862,7 +1138,9 @@ export function buildInvestmentLines(
       purchaseUnit,
       purchaseCurrency,
       purchaseTotal,
+      purchasedAt: item.purchasedAt ?? null,
       profit,
+      profitBasis: profit == null ? null : purchaseTotal,
       marketDelta: priceMovement(marketUnit, previousMarketUnit),
     });
   }
@@ -875,38 +1153,89 @@ export function buildInvestmentLines(
 }
 
 /**
- * Ramène chaque ligne à une période : la variation marché part du prix de référence
- * au début de la période, et le P&L aussi — sauf pour une ligne ajoutée pendant la
- * période, dont le P&L reste calculé depuis son prix d'achat. Seules les lignes avec
- * un prix d'achat ont un P&L.
- * `startDay` nul = toute la période (P&L d'achat inchangé).
+ * Ramène la variation du marché à une période : elle part du prix de référence au début
+ * de la période (sans prix de référence : pas de variation). Le P&L ne dépend pas de la
+ * période : il reste calculé depuis le prix d'achat.
  */
 export function applyInvestmentPeriod(
   lines: InvestmentLine[],
   referencePrices: Readonly<Record<string, number>>,
-  startDay: string | null,
-  addedAtById: ReadonlyMap<string, string>,
 ): InvestmentLine[] {
   return lines.map((line) => {
     const reference = referencePrices[line.printingId];
     const previousMarketUnit = reference != null && Number.isFinite(reference) ? reference : null;
-    let profit = line.profit;
-    // Pas de prix d'achat (EUR) = pas de P&L, quelle que soit la période.
-    if (startDay != null && line.profit != null) {
-      const addedDay = addedAtById.get(line.itemId)?.slice(0, 10);
-      const addedDuringPeriod = addedDay != null && addedDay > startDay;
-      if (!addedDuringPeriod) {
-        profit =
-          line.marketUnit == null || previousMarketUnit == null
-            ? null
-            : (line.marketUnit - previousMarketUnit) * line.quantity;
-      }
-    }
     return {
       ...line,
       previousMarketUnit,
-      profit,
       marketDelta: priceMovement(line.marketUnit, previousMarketUnit),
+    };
+  });
+}
+
+/**
+ * Regroupe les achats par carte (même édition) : une position par carte, dans l'ordre des lignes.
+ * Le P&L ne compte que les achats qui en ont un ; le prix d'achat total, que si une seule devise.
+ */
+export function groupInvestmentPositions(lines: InvestmentLine[]): InvestmentPosition[] {
+  const byPrinting = new Map<string, InvestmentLine[]>();
+  for (const line of lines) {
+    const group = byPrinting.get(line.printingId);
+    if (group) group.push(line);
+    else byPrinting.set(line.printingId, [line]);
+  }
+  return [...byPrinting.values()].map((group) => {
+    const sorted = [...group].sort(
+      (left, right) =>
+        (left.purchasedAt == null ? 1 : 0) - (right.purchasedAt == null ? 1 : 0) ||
+        (left.purchasedAt ?? "").localeCompare(right.purchasedAt ?? "") ||
+        left.itemId.localeCompare(right.itemId),
+    );
+    const first = sorted[0];
+    const currencies = new Set(sorted.filter((line) => line.purchaseTotal != null).map((line) => line.purchaseCurrency));
+    const purchaseCurrency = currencies.size === 1 ? [...currencies][0] : null;
+    let quantity = 0;
+    let purchaseTotal = 0;
+    let purchasedQuantity = 0;
+    let profit = 0;
+    let profitBasis = 0;
+    let profitQuantity = 0;
+    for (const line of sorted) {
+      quantity += line.quantity;
+      if (purchaseCurrency != null && line.purchaseTotal != null) {
+        purchaseTotal += line.purchaseTotal;
+        purchasedQuantity += line.quantity;
+      }
+      if (line.profit != null) {
+        profit += line.profit;
+        profitBasis += line.profitBasis ?? 0;
+        profitQuantity += line.quantity;
+      }
+    }
+    // Même carte : même prix de marché et même prix de référence pour tous les achats.
+    const marketUnit = first.marketUnit;
+    return {
+      printingId: first.printingId,
+      cardId: first.cardId,
+      title: first.title,
+      setCode: first.setCode,
+      setName: first.setName,
+      collectorNumber: first.collectorNumber,
+      language: first.language,
+      rarity: first.rarity,
+      imagePath: first.imagePath,
+      quantity,
+      conditionCodes: [...new Set(sorted.map((line) => line.conditionCode))],
+      marketUnit,
+      previousMarketUnit: first.previousMarketUnit,
+      marketTotal: marketUnit == null ? null : marketUnit * quantity,
+      marketDelta: first.marketDelta,
+      purchaseTotal: purchasedQuantity > 0 ? purchaseTotal : null,
+      purchaseCurrency: purchasedQuantity > 0 ? purchaseCurrency : null,
+      purchaseUnit: purchasedQuantity > 0 ? purchaseTotal / purchasedQuantity : null,
+      profit: profitQuantity > 0 ? profit : null,
+      profitBasis: profitQuantity > 0 ? profitBasis : null,
+      profitQuantity,
+      lines: sorted,
     };
   });
 }
@@ -917,6 +1246,7 @@ export function summarizeInvestment(lines: InvestmentLine[]): InvestmentSummary 
   let compared = false;
   let investedEur = 0;
   let profitEur = 0;
+  let profitBasis = 0;
   let hasProfit = false;
   let copies = 0;
   let pricedCopies = 0;
@@ -938,6 +1268,7 @@ export function summarizeInvestment(lines: InvestmentLine[]): InvestmentSummary 
     }
     if (line.profit != null) {
       profitEur += line.profit;
+      profitBasis += line.profitBasis ?? 0;
       hasProfit = true;
       trackedProfitCopies += line.quantity;
     }
@@ -950,6 +1281,7 @@ export function summarizeInvestment(lines: InvestmentLine[]): InvestmentSummary 
     marketDeltaAmount: previous == null ? null : marketTotal - previous,
     investedEur,
     profitEur: hasProfit ? profitEur : null,
+    profitBasis: hasProfit ? profitBasis : null,
     copies,
     pricedCopies,
     trackedProfitCopies,
@@ -975,6 +1307,7 @@ export function investmentBySet(lines: InvestmentLine[], sets: SetDTO[]): SetInv
       investedEur: 0,
       investedLines: 0,
       profitEur: null,
+      profitBasis: null,
       profitLines: 0,
       compared: false,
       previousAcc: 0,
@@ -996,6 +1329,7 @@ export function investmentBySet(lines: InvestmentLine[], sets: SetDTO[]): SetInv
         investedEur: 0,
         investedLines: 0,
         profitEur: null,
+        profitBasis: null,
         profitLines: 0,
         compared: false,
         previousAcc: 0,
@@ -1020,6 +1354,7 @@ export function investmentBySet(lines: InvestmentLine[], sets: SetDTO[]): SetInv
     }
     if (line.profit != null) {
       entry.profitEur = (entry.profitEur ?? 0) + line.profit;
+      entry.profitBasis = (entry.profitBasis ?? 0) + (line.profitBasis ?? 0);
       entry.profitLines += 1;
     }
   }
@@ -1040,6 +1375,7 @@ export function investmentBySet(lines: InvestmentLine[], sets: SetDTO[]): SetInv
         investedEur: entry.investedEur,
         investedLines: entry.investedLines,
         profitEur: entry.profitEur,
+        profitBasis: entry.profitBasis,
         profitLines: entry.profitLines,
       };
     })
@@ -1059,9 +1395,9 @@ export function filterInvestmentLines(
   return lines.filter((line) => {
     if (!matchesSetFilter(line.setCode, filters.set)) return false;
     if (filters.language && line.language !== filters.language) return false;
-    if (filters.performance === "profit" && !(line.profit != null && line.profit > 0.004)) return false;
-    if (filters.performance === "loss" && !(line.profit != null && line.profit < -0.004)) return false;
-    if (filters.performance === "flat" && !(line.profit != null && Math.abs(line.profit) <= 0.004)) return false;
+    if (filters.performance === "profit" && !(line.profit != null && amountSign(line.profit) > 0)) return false;
+    if (filters.performance === "loss" && !(line.profit != null && amountSign(line.profit) < 0)) return false;
+    if (filters.performance === "flat" && !(line.profit != null && amountSign(line.profit) === 0)) return false;
     if (filters.performance === "unknown" && line.profit != null) return false;
     if (filters.performance === "rising" && line.marketDelta !== "up") return false;
     if (filters.performance === "falling" && line.marketDelta !== "down") return false;
@@ -1125,7 +1461,6 @@ export function parseFilters(
       .filter(Boolean);
   const textList = (key: string) => splitList(params.get(key) ?? "");
   const collection = params.get("collection");
-  const sort = params.get("sort");
   const eddiable = params.get("eddiable");
   const page = Number(params.get("page") ?? "1");
   const language = languageFromParams(params, base);
@@ -1155,28 +1490,10 @@ export function parseFilters(
         ? collection
         : base.collection,
     condition: params.get("condition") ?? "",
-    sort: isSortKey(sort) ? sort : base.sort,
+    sort: parseSortKey(params.get("sort")) ?? base.sort,
     page: Number.isFinite(page) && page > 0 ? Math.floor(page) : 1,
     printingId: params.get("printing"),
   };
-}
-
-function isSortKey(value: string | null): value is SortKey {
-  return (
-    value === "default" ||
-    value === "number-asc" ||
-    value === "number-desc" ||
-    value === "cost-asc" ||
-    value === "cost-desc" ||
-    value === "qty-asc" ||
-    value === "qty-desc" ||
-    value === "name-asc" ||
-    value === "name-desc" ||
-    value === "rarity" ||
-    value === "set" ||
-    value === "owned-first" ||
-    value === "missing-first"
-  );
 }
 
 export function serializeFilters(

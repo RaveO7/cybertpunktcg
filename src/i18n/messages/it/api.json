@@ -34,6 +34,7 @@
   "collection": {
     "invalidQuantity": "Quantità non valida.",
     "invalidPrice": "Prezzo non valido.",
+    "invalidPurchaseDate": "Data d’acquisto non valida.",
     "invalidNotes": "Note non valide.",
     "tooManyCards": "Troppe carte in una volta.",
     "nothingToAdd": "Nessuna carta da aggiungere.",

@@ -9,6 +9,9 @@ export { isLocale } from "@/i18n/config";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
+/** Taille d'une carte (format 63×88) sur l'image de partage. */
+export const OG_CARD = { width: 180, height: 251 };
+
 const COLORS = { background: "#07080d", yellow: "#f5e642", cyan: "#3ee0ff", text: "#e8eef7", muted: "#93a0b4", line: "#1f2633" };
 
 /** Mise en cache CDN : l'image change rarement, une heure de retard est acceptable. */
@@ -19,12 +22,15 @@ export function ogImage({
   title,
   lines = [],
   logo = null,
+  cards = [],
 }: {
   eyebrow: string;
   title: string;
   lines?: string[];
   /** Image en data URI (PNG), affichée à droite. */
   logo?: string | null;
+  /** Images de cartes en data URI (PNG), côte à côte à droite (Legends d'un deck). */
+  cards?: string[];
 }) {
   return new ImageResponse(
     (
@@ -54,6 +60,14 @@ export function ogImage({
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element -- rendu par Satori, pas par le navigateur
             <img src={logo} alt="" width={220} height={220} style={{ border: `2px solid ${COLORS.line}` }} />
+          ) : null}
+          {cards.length > 0 ? (
+            <div style={{ display: "flex", gap: 16 }}>
+              {cards.map((card, index) => (
+                // eslint-disable-next-line @next/next/no-img-element -- rendu par Satori, pas par le navigateur
+                <img key={index} src={card} alt="" width={OG_CARD.width} height={OG_CARD.height} style={{ borderRadius: 10 }} />
+              ))}
+            </div>
           ) : null}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 28, color: COLORS.muted }}>

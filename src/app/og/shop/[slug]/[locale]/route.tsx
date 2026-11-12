@@ -1,8 +1,7 @@
 import sharp from "sharp";
-import { prisma } from "@/lib/prisma";
 import { translatorFor } from "@/i18n/server";
 import { isLocale, ogImage } from "@/lib/seo/og-image";
-import { findPublicShop } from "@/lib/shops/shops";
+import { findPublicShop, readShopLogo } from "@/lib/shops/shops";
 
 /** Image de partage d'une boutique : nom, ville et logo (converti en PNG pour le moteur de rendu). */
 export async function GET(_request: Request, { params }: RouteContext<"/og/shop/[slug]/[locale]">) {
@@ -10,11 +9,11 @@ export async function GET(_request: Request, { params }: RouteContext<"/og/shop/
   if (!isLocale(locale)) return new Response("Not found", { status: 404 });
   const shop = await findPublicShop(slug);
   if (!shop) return new Response("Not found", { status: 404 });
-  const row = await prisma.shop.findUnique({ where: { id: shop.id }, select: { logo: true } });
+  const bytes = await readShopLogo(slug);
   let logo: string | null = null;
-  if (row?.logo) {
+  if (bytes) {
     try {
-      const png = await sharp(Buffer.from(row.logo)).resize(220, 220).png().toBuffer();
+      const png = await sharp(Buffer.from(bytes)).resize(220, 220).png().toBuffer();
       logo = `data:image/png;base64,${png.toString("base64")}`;
     } catch {
       logo = null;

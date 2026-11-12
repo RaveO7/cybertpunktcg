@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { getLocale } from "next-intl/server";
-import { SiteShell, siteViewport } from "@/components/site/SiteShell";
+import { SiteShell } from "@/components/site/SiteShell";
+import { siteViewport } from "@/components/site/viewport";
 import { LOCALES } from "@/i18n/config";
 import { routing } from "@/i18n/routing";
 import { rootMetadata } from "@/lib/seo/metadata";

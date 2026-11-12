@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { AddressField } from "@/components/geo/AddressField";
+import { fetchCached } from "@/components/data-cache";
 import { browserTimeZone, fromLocalInput, toLocalInput } from "@/components/public/format";
 import { TOURNAMENT_CURRENCIES } from "@/lib/tournament/listing";
 import type { Place } from "@/lib/geo/location";
@@ -53,8 +54,7 @@ export function PublicationPanel({ view, run }: { view: TournamentView; run: Run
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/shops/mine", { cache: "no-store" })
-      .then(async (response) => (response.ok ? ((await response.json()) as { shops: OwnedShop[] }) : { shops: [] }))
+    fetchCached("/api/shops/mine", { schema: "ownedShopsSchema" })
       .then((body) => {
         if (!cancelled) setShops(body.shops);
       })

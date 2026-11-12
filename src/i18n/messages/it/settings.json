@@ -83,5 +83,16 @@
   "deleteCancel": "Annulla",
   "deleting": "Eliminazione…",
   "deleteFailed": "Impossibile eliminare l’account.",
-  "loading": "Caricamento…"
+  "loading": "Caricamento…",
+  "pushTitle": "Notifiche degli avvisi di prezzo",
+  "pushHint": "Ricevi una notifica su questo dispositivo quando una carta della tua lista dei desideri raggiunge il prezzo obiettivo, anche con l’app chiusa.",
+  "pushEnable": "Attiva su questo dispositivo",
+  "pushDisable": "Disattiva su questo dispositivo",
+  "pushEnabled": "Notifiche attive su questo dispositivo.",
+  "pushDisabled": "Notifiche disattivate su questo dispositivo.",
+  "pushBusy": "Un momento…",
+  "pushDenied": "Le notifiche sono bloccate per questo sito. Consentile nelle impostazioni del browser (icona a sinistra dell’indirizzo), poi riprova.",
+  "pushUnsupported": "Questo browser non supporta le notifiche push.",
+  "pushInstallIos": "Su iPhone e iPad, aggiungi prima l’app alla schermata Home (Condividi → Aggiungi alla schermata Home), poi aprila dalla sua icona per attivare le notifiche.",
+  "pushFailed": "Impossibile modificare le notifiche. Riprova."
 }

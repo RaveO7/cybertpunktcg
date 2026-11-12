@@ -36,8 +36,8 @@ function gigsStolen(power: number): number {
 
 /** Power d'une carte en jeu, Gear équipé compris. */
 function powerOf(card: BoardCard): number {
-  const base = (cardOf(card.ref).power ?? 0) as number;
-  const gear = card.equipped ? ((cardOf(card.equipped).power ?? 0) as number) : 0;
+  const base = (cardOf(card.ref).power ?? 0);
+  const gear = card.equipped ? ((cardOf(card.equipped).power ?? 0)) : 0;
   return base + gear;
 }
 
@@ -57,7 +57,7 @@ function actionFor(expect: ExpectAction): Parameters<typeof matchesExpect>[1] {
     case "target-rival":
       return { type: "target-rival", ref: expect.ref ?? "unitJackie" };
     default:
-      return { type: expect.kind } as Parameters<typeof matchesExpect>[1];
+      return { type: expect.kind };
   }
 }
 

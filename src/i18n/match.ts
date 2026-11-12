@@ -74,17 +74,6 @@ export function matchRoute(pathname: string): MatchedRoute | null {
   return best;
 }
 
-/**
- * Route d'un chemin interne préfixé par sa langue (« /de/cartes/x », URL réécrite par le proxy), ou
- * null. Les dossiers de src/app/[locale] portent les segments français.
- */
-export function matchInternalPath(pathname: string): MatchedRoute | null {
-  const { locale, rest, prefixed } = splitLocale(pathname);
-  if (!prefixed) return null;
-  const french = matchRoute(rest);
-  return french && french.locale === DEFAULT_LOCALE ? { ...french, locale } : null;
-}
-
 /** Chemin interne d'une route (segments français, sans préfixe) : « /cartes/[slug] » → « /cartes/x ». */
 export function internalPath(route: AppPathname, params: RouteParams = {}): string {
   return (route as string).replace(/\[(\w+)\]/g, (_, name: string) => encodeURIComponent(params[name] ?? ""));

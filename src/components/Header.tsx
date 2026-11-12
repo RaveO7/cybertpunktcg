@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useBrowseSelection } from "@/components/BrowseSelection";
 import { useCollection } from "@/components/CollectionProvider";
 import { chooseLocale } from "@/i18n/choose-locale";
-import { LANGUAGES, type Locale } from "@/i18n/config";
+import { LANGUAGES } from "@/i18n/config";
 import { Link, useRouter, type Href } from "@/i18n/navigation";
 import { useInternalPathname } from "@/i18n/useInternalPathname";
 import { isInHorizontalScroller } from "@/lib/swipe";
@@ -63,7 +63,7 @@ function useNavigation() {
   const activeMatch = pending && pending.from === pathname ? pending.match : pathname;
   const markPending = (match: string) => setPending({ from: pathname, match });
 
-  return { pathname, user, t, isSharedView, shareToken, showNav, links, activeMatch, markPending };
+  return { pathname, user, session, t, isSharedView, shareToken, showNav, links, activeMatch, markPending };
 }
 
 /**
@@ -73,7 +73,7 @@ function useNavigation() {
  */
 function LanguageSelect() {
   const t = useTranslations();
-  const current = useLocale() as Locale;
+  const current = useLocale();
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -239,10 +239,13 @@ function VisitorNav() {
   );
 }
 
-export function Header() {
-  const { pathname, user, t, isSharedView, shareToken, showNav, links, activeMatch, markPending } = useNavigation();
+export function Header({ privatePage }: { privatePage: boolean }) {
+  const { pathname, user, session, t, isSharedView, shareToken, showNav, links, activeMatch, markPending } = useNavigation();
+  // Page réservée aux comptes, session pas encore connue (écran de démarrage par-dessus) : place du bouton
+  // des paramètres gardée, sinon l'en-tête grandit à l'arrivée de la session et décale toute la page.
+  const awaitingSession = privatePage && session === "unknown";
   // Visiteur sur une page publique (aussi au rendu serveur, pour les liens internes) : navigation publique.
-  const showVisitorNav = !user && !isSharedView && !showNav && pathname !== "/connexion";
+  const showVisitorNav = !user && !isSharedView && !showNav && !awaitingSession && pathname !== "/connexion";
   // Page d'où l'on a ouvert les paramètres (URL complète, dans sa langue) : un second clic y ramène.
   const [settingsReturn, setSettingsReturn] = useState<string | null>(null);
   const inSettings = pathname === "/parametres";
@@ -282,6 +285,7 @@ export function Header() {
         ) : showVisitorNav ? (
           <VisitorNav />
         ) : null}
+        {user && !isSharedView ? <SyncStatus /> : null}
         {user && !isSharedView ? (
           inSettings && settingsReturn ? (
             <NextLink
@@ -307,9 +311,58 @@ export function Header() {
               <SettingsIcon />
             </Link>
           )
+        ) : awaitingSession ? (
+          <span className={`${actionClass} invisible ml-auto sm:ml-0`} aria-hidden="true" />
         ) : null}
       </div>
+      {user && !isSharedView ? <SyncErrors /> : null}
     </header>
+  );
+}
+
+/** Modifications de la collection faites hors ligne et pas encore envoyées. */
+function SyncStatus() {
+  const { pendingCount, syncing } = useCollection();
+  const t = useTranslations();
+  return (
+    <span role="status" className={pendingCount ? "flex shrink-0 items-center gap-1.5 text-xs text-yellow" : "sr-only"}>
+      {pendingCount ? (
+        <>
+          <span className={`size-2 shrink-0 bg-yellow ${syncing ? "motion-safe:animate-pulse" : ""}`} aria-hidden="true" />
+          <span>{t("offline.sync.pending", { n: pendingCount })}</span>
+          {syncing ? <span className="text-muted">· {t("offline.sync.syncing")}</span> : null}
+        </>
+      ) : null}
+    </span>
+  );
+}
+
+/** Modifications refusées par le serveur pendant la synchronisation, avec le nom de la carte. */
+function SyncErrors() {
+  const { syncErrors, dismissSyncError } = useCollection();
+  const t = useTranslations();
+  if (!syncErrors.length) return null;
+  return (
+    <ul role="alert" className="mx-auto flex max-w-[1600px] flex-col gap-1 px-4 pb-2">
+      {syncErrors.map((entry) => (
+        <li key={entry.id} className="flex items-start gap-3 border border-danger/60 px-3 py-2 text-sm text-danger">
+          <span className="min-w-0 flex-1">
+            {entry.kind === "corrupted"
+              ? entry.message
+              : entry.card
+                ? t("offline.sync.rejected", { card: entry.card, reason: entry.message })
+                : t("offline.sync.rejectedUnknown", { reason: entry.message })}
+          </span>
+          <button
+            type="button"
+            className="shrink-0 text-xs text-muted underline hover:text-foreground"
+            onClick={() => dismissSyncError(entry.id)}
+          >
+            {t("offline.sync.dismiss")}
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -334,6 +387,8 @@ export function BottomNav() {
     <nav
       className="pb-safe px-safe relative z-30 shrink-0 border-t border-line bg-background/95 backdrop-blur sm:hidden"
       aria-label={t("common.sections")}
+      // Reste utilisable sous une fenêtre ouverte : changer de section la ferme sans passer par la croix.
+      data-modal-keep=""
     >
       <ul className="flex h-[3.75rem]">
         {links.map((link) => {

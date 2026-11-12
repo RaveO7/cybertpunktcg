@@ -13,6 +13,7 @@ import { countryName } from "@/components/geo/countries";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
 import { localizedPath } from "@/i18n/paths";
 import { buttonClass, inputClass, panelClass } from "@/components/tournament/ui";
+import { api, isAbort } from "@/lib/client/api";
 import type { DirectoryFacets, DirectoryResult } from "@/lib/tournament/directory";
 import { isPeriod, PERIODS, type Period } from "@/lib/tournament/periods";
 import { apiParams, cleanParams, PAGE_KEYS, type DirectoryParams } from "./directory-params";
@@ -67,19 +68,18 @@ export function PublicDirectory({
       return;
     }
     const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
+    const loadDirectory = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/tournaments/public?${apiQuery}`, { signal: controller.signal, cache: "no-store" });
-        if (!response.ok) throw new Error("directory");
-        setResult((await response.json()) as DirectoryResult);
+        setResult(await api(`/api/tournaments/public?${apiQuery}`, { schema: "publicDirectorySchema", signal: controller.signal, cache: "no-store" }));
         setError(false);
       } catch (reason) {
-        if ((reason as Error).name !== "AbortError") setError(true);
+        if (!isAbort(reason)) setError(true);
       } finally {
         setLoading(false);
       }
-    }, 0);
+    };
+    const timer = window.setTimeout(() => void loadDirectory(), 0);
     return () => {
       controller.abort();
       window.clearTimeout(timer);
@@ -89,11 +89,9 @@ export function PublicDirectory({
   useEffect(() => {
     const controller = new AbortController();
     const qs = new URLSearchParams({ ...(params.country ? { country: params.country } : {}), ...(params.region ? { region: params.region } : {}) });
-    fetch(`/api/tournaments/public/facets?${qs}`, { signal: controller.signal })
-      .then(async (response) => (response.ok ? ((await response.json()) as DirectoryFacets) : null))
-      .then((body) => {
-        if (body) setFacets(body);
-      })
+    api(`/api/tournaments/public/facets?${qs}`, { schema: "directoryFacetsSchema", signal: controller.signal })
+      .then(setFacets)
+      // Filtres de lieu indisponibles : les listes de pays, régions et villes restent vides, l'annuaire reste utilisable.
       .catch(() => undefined);
     return () => controller.abort();
   }, [params.country, params.region]);

@@ -83,5 +83,16 @@
   "deleteCancel": "Cancel",
   "deleting": "Deleting…",
   "deleteFailed": "Could not delete the account.",
-  "loading": "Loading…"
+  "loading": "Loading…",
+  "pushTitle": "Price alert notifications",
+  "pushHint": "Get a notification on this device when a card on your wishlist reaches your target price, even when the app is closed.",
+  "pushEnable": "Turn on for this device",
+  "pushDisable": "Turn off for this device",
+  "pushEnabled": "Notifications are on for this device.",
+  "pushDisabled": "Notifications are off for this device.",
+  "pushBusy": "One moment…",
+  "pushDenied": "Notifications are blocked for this site. Allow them in your browser settings (icon left of the address), then try again.",
+  "pushUnsupported": "This browser does not support push notifications.",
+  "pushInstallIos": "On iPhone and iPad, first add the app to your Home Screen (Share → Add to Home Screen), then open it from its icon to turn on notifications.",
+  "pushFailed": "Could not change notifications. Please try again."
 }
