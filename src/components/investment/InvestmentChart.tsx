@@ -17,11 +17,28 @@ function chartRangeOptions(t: Translator): { value: ChartRange; label: string }[
   ];
 }
 
+/**
+ * Même gabarit que PriceChart avec des données (cadre, en-tête valeur et variation, légende, courbe, aide au
+ * zoom) : le graphique arrivé ne repousse pas la suite de la page.
+ */
 function ChartLoading() {
   const t = useTranslations();
   return (
-    <ScreenSkeleton label={t("investment.chartLoading")}>
+    <ScreenSkeleton label={t("investment.chartLoading")} className="border border-line bg-panel p-4 sm:p-5">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="basis-full sm:basis-auto">
+          <SkeletonBlock className="h-[15px] w-40" />
+          <SkeletonBlock className="mt-2.5 h-[18px] w-28" />
+          <SkeletonBlock className="mt-2.5 h-4 w-36" />
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <SkeletonBlock className="h-7 w-28" />
+          <SkeletonBlock className="h-4 w-16" />
+        </div>
+      </div>
+      <SkeletonBlock className="-mt-3 mb-3 h-4 w-48" />
       <SkeletonBlock className="h-[280px]" />
+      <SkeletonBlock className="mt-3 h-4 w-64 max-w-full pointer-coarse:h-8" />
     </ScreenSkeleton>
   );
 }

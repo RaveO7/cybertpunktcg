@@ -159,7 +159,8 @@ export function PriceChart({ points: allPoints, label, emptyHint, height, compac
   const activeCoord = hover != null && geometry ? geometry.coords[hover] : null;
   const lastCoord = geometry ? geometry.coords[geometry.coords.length - 1] : null;
   // Pendant une sélection, l'en-tête donne la variation de la période sélectionnée.
-  const period = selection ? periodDelta(points.slice(selection.from, selection.to + 1)) : geometry;
+  // Variation connue dès le premier rendu (largeur pas encore mesurée) : le badge ne change pas de taille ensuite.
+  const period = selection ? periodDelta(points.slice(selection.from, selection.to + 1)) : (geometry ?? periodDelta(points));
   const periodLength = selection ? selection.to - selection.from + 1 : points.length;
   const delta = period?.delta ?? 0;
   const trend = amountSign(delta) > 0 ? "up" : amountSign(delta) < 0 ? "down" : "flat";

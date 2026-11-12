@@ -317,6 +317,7 @@ export function InvestmentScreen() {
           value={summary.pricedCopies > 0 ? fmt.money(summary.marketTotal) : "—"}
           delta={summary.marketDelta}
           deltaAmount={summary.marketDeltaAmount}
+          deltaPlaceholder={period.reference == null && !period.error ? summary.marketTotal : undefined}
           detail={
             chartRange === "all"
               ? t("investment.periodDetailAll")
