@@ -1,5 +1,6 @@
 "use client";
 
+import { useCollection } from "@/components/CollectionProvider";
 import { BottomNav, Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { OfflineBanner } from "@/components/OfflineSupport";
@@ -12,6 +13,7 @@ import { useInternalPathname } from "@/i18n/useInternalPathname";
 export function AppFrame({ children }: { children: React.ReactNode }) {
   // Chemin interne (segments français, sans préfixe de langue) : mêmes règles dans toutes les langues.
   const pathname = useInternalPathname();
+  const { session, error } = useCollection();
   const isSharedView = pathname.startsWith("/classeur/");
   // Deck partagé (/deck/…) : lisible sans compte, comme le classeur partagé.
   const isSharedDeck = pathname.startsWith("/deck/");
@@ -28,7 +30,10 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     // Fonctionnalité pas encore publiée : la page répond 404, inutile de passer par la connexion.
     (pathname === "/souhaits" && !WISHLIST_ENABLED);
   // Le didacticiel occupe toute la hauteur : pas de pied de page.
-  const showFooter = !pathname.startsWith("/comment-jouer");
+  // Écran de démarrage d'une page réservée aux comptes (voir RequireUser) : pas de pied de page, qui serait
+  // seul en bas de l'écran puis repoussé par le contenu à son arrivée (décalage de mise en page).
+  const awaitingSession = !isPublicPage && session === "unknown" && !error;
+  const showFooter = !pathname.startsWith("/comment-jouer") && !awaitingSession;
   const content = isPublicPage ? children : <RequireUser>{children}</RequireUser>;
   return (
     <div className="relative flex h-dvh flex-col overflow-clip">
