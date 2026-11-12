@@ -6,6 +6,7 @@ import {
   PREFERENCES_STORAGE_KEY,
   applyTheme,
   readStoredPreferences,
+  writeCardsViewCookie,
   writeStoredPreferences,
   type UserPreferences,
 } from "@/lib/preferences";
@@ -60,6 +61,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     applyTheme(prefs.theme);
   }, [prefs.theme]);
+
+  // Tri et filtre recopiés dans un cookie (aussi pour les préférences enregistrées avant ce cookie).
+  useEffect(() => {
+    writeCardsViewCookie({ sort: prefs.sort, collection: prefs.collection });
+  }, [prefs.sort, prefs.collection]);
 
   function setPrefs(partial: Partial<UserPreferences>) {
     // Effets de bord hors de la fonction de mise à jour : React l'exécute pendant le rendu, et
