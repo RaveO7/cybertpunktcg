@@ -289,7 +289,7 @@ export function Header() {
               className={`${actionClass} ml-auto border-yellow bg-yellow text-black hover:border-yellow hover:text-black sm:ml-0`}
               aria-label={t("common.settings")}
               title={t("common.settings")}
-              aria-pressed
+              aria-current="page"
             >
               <SettingsIcon />
             </NextLink>
@@ -302,7 +302,7 @@ export function Header() {
               className={`${actionClass} ml-auto sm:ml-0 ${inSettings ? "border-yellow bg-yellow text-black hover:border-yellow hover:text-black" : ""}`}
               aria-label={t("common.settings")}
               title={t("common.settings")}
-              aria-pressed={inSettings}
+              aria-current={inSettings ? "page" : undefined}
             >
               <SettingsIcon />
             </Link>
