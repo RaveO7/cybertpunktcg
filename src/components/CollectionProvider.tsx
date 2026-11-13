@@ -319,12 +319,14 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     async function load() {
       if (bootApplied.current) return;
       const remembered = rememberedUser.current;
-      // Compte probablement connecté : le catalogue (public) part en même temps que la collection, et la
-      // dernière copie gardée par le service worker s'affiche aussitôt, remplacée dès la réponse du serveur.
-      // Les deux requêtes sont en général déjà parties depuis le <head> (boot-requests).
+      // Le catalogue (public, servi par le CDN) part en même temps que la collection, même sans session
+      // mémorisée (première visite sur l'appareil) : l'attendre après la vérification de session retardait
+      // l'affichage de la grille. Session refusée : il est simplement ignoré.
+      // Compte mémorisé : la dernière copie gardée par le service worker s'affiche aussitôt, remplacée dès la
+      // réponse du serveur ; les deux requêtes sont en général déjà parties depuis le <head> (boot-requests).
       const boot = bootRequests.current;
-      const catalogRequest = boot?.catalog ?? (remembered ? requestCatalog() : undefined);
-      catalogRequest?.catch(() => undefined);
+      const catalogRequest = boot?.catalog ?? requestCatalog();
+      catalogRequest.catch(() => undefined);
       if (remembered) {
         void readSavedCollection(remembered.id).then((saved) => {
           if (!saved || settled || cancelled) return;
@@ -349,7 +351,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         let body = collectionBody(schemas, collection);
         if (!body) throw new Error("collection");
         rememberSession(body.user);
-        const freshCatalog = await (catalogRequest ?? requestCatalog());
+        const freshCatalog = await catalogRequest;
         if (!freshCatalog) throw new Error("catalog");
         // Collection modifiée sur la copie gardée pendant le chargement : relue pour inclure ces modifications.
         if (edits.current !== editsAtStart) {
