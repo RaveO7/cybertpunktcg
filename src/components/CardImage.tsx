@@ -3,14 +3,20 @@
 import { useEffect, useRef, useState, type ImgHTMLAttributes } from "react";
 import { thumbnailPath, thumbnailSrcSet } from "@/lib/card-image";
 
-type Props = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & { src: string };
+type Props = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & {
+  src: string;
+  /** Largeur de l'image d'origine : l'ajoute au srcset, pour un affichage plus large que les miniatures. */
+  originalWidth?: number;
+};
 
 /**
  * Affiche la miniature pré-générée d'une carte et repasse sur l'image d'origine
  * si la miniature est absente ou ne se charge pas. Avec `sizes` (largeur affichée), le navigateur
  * choisit la largeur de miniature qui suffit (srcset).
+ * Composant client : rendu dans une page serveur, il n'ajoute pas d'indice de préchargement au flux RSC,
+ * donc le préchargement d'un lien vers cette page ne télécharge pas l'image (le HTML de la page la précharge).
  */
-export function CardImage({ src, sizes, onError, ...props }: Props) {
+export function CardImage({ src, sizes, originalWidth, onError, ...props }: Props) {
   const thumb = thumbnailPath(src);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const ref = useRef<HTMLImageElement>(null);
@@ -28,7 +34,7 @@ export function CardImage({ src, sizes, onError, ...props }: Props) {
       ref={ref}
       {...props}
       // srcset et sizes avant src : sinon Safari peut télécharger src en plus de la bonne largeur.
-      srcSet={useThumb && sizes ? thumbnailSrcSet(src) : undefined}
+      srcSet={useThumb && sizes ? thumbnailSrcSet(src, originalWidth) : undefined}
       sizes={useThumb ? sizes : undefined}
       src={useThumb ? thumb : src}
       onError={(event) => {

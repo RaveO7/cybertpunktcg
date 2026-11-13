@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Fragment, type ReactNode } from "react";
+import { CardImage } from "@/components/CardImage";
 import { TrackCardLink } from "@/components/public-site/TrackCardLink";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { JsonLd } from "@/components/site/JsonLd";
@@ -111,11 +112,10 @@ function CardTile({
       >
         <div className="relative aspect-card overflow-hidden bg-overlay scanlines scanbeam">
           {card.thumb ? (
-            // eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées (aucune optimisation Vercel)
-            <img
-              srcSet={srcSet}
+            // Composant client : préchargée depuis une autre page, cette page ne télécharge pas ses tuiles.
+            <CardImage
+              src={card.image ?? card.thumb}
               sizes={sizes}
-              src={card.thumb}
               alt={alt}
               width={THUMB.width}
               height={THUMB.height}
@@ -276,9 +276,9 @@ export async function CardPage({ locale, slug }: { locale: Locale; slug: string 
       <article className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-5">
         <div className="grid gap-6 md:grid-cols-[minmax(0,320px)_1fr]">
           {card.image ? (
-            // eslint-disable-next-line @next/next/no-img-element -- image locale déjà optimisée (WebP), miniatures en srcset
-            <img
-              srcSet={thumbnailSrcSet(card.image, IMAGE.width)}
+            // Composant client : préchargée depuis une autre page, cette page ne télécharge pas son image.
+            <CardImage
+              originalWidth={IMAGE.width}
               sizes={CARD_IMAGE_SIZES}
               src={card.image}
               alt={t("imageAlt", { name: card.name })}
