@@ -91,7 +91,7 @@ describe("tournoi complet", () => {
 
     const rng = random.seededRng(2077);
     const run = (command: CommandInput) =>
-      commands.runOrganizerCommand(tournamentId!, owner, { ...command, clientActionId: `flow-${stamp}-${++counter}` } as OrganizerCommand, {
+      commands.runOrganizerCommand(tournamentId!, owner, { ...command, clientActionId: `flow-${stamp}-${++counter}` }, {
         rng,
       });
     const load = async () => (await repo.loadTournament(prisma, tournamentId!))!;

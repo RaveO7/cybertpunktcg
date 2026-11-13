@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
@@ -10,7 +10,12 @@ import { QuickAddSheet } from "@/components/QuickAddSheet";
 import { useCollection } from "@/components/CollectionProvider";
 import { useWishlist } from "@/components/WishlistProvider";
 import { FilterPanel } from "@/components/FilterPanel";
-import { cardIdsInBox, VirtualCardGrid, type CardGridLayout } from "@/components/VirtualCardGrid";
+import { VirtualCardGrid } from "@/components/VirtualCardGrid";
+import { SelectionBar } from "@/components/cards-explorer/SelectionBar";
+import { useMarqueeSelection } from "@/components/cards-explorer/use-marquee-selection";
+import { useKeyboardSelection } from "@/components/cards-explorer/use-keyboard-selection";
+import { useModal } from "@/components/use-modal";
+
 import {
   aggregateCollection,
   alignReleasedFilters,
@@ -18,13 +23,16 @@ import {
   languageOptions,
   setForLanguage,
   buildFacets,
+  collectorRangeIds,
   defaultFilters,
   filterPrintings,
   ownershipOf,
   printingsPriceTotal,
+  selectionPriceTotal,
   parseFilters,
   sealedBrowseFilters,
   serializeFilters,
+  siblingPrintings,
   sortPrintings,
 } from "@/lib/logic";
 import {
@@ -33,6 +41,7 @@ import {
   FRENCH_SOURCE_SET_CODE,
   isSealedSetCode,
   MAIN_SET_CODE,
+  parseSetList,
 } from "@/lib/reference-data";
 import type { CatalogDTO, CollectionItemDTO, Filters, PrintingDTO } from "@/lib/types";
 import { usePreferences } from "@/components/PreferencesProvider";
@@ -40,40 +49,17 @@ import { conditionOptionLabel } from "@/lib/condition-label";
 import type { Translator } from "@/i18n/translator";
 import { filterDefaultsFrom } from "@/lib/preferences";
 
-function collectorRank(value: string) {
-  const beta = /^β/i.test(value) ? 1 : 0;
-  const body = value.replace(/^β/i, "");
-  const match = body.match(/^0*(\d+)(.*)$/i);
-  return {
-    beta,
-    number: match ? Number(match[1]) : Number.MAX_SAFE_INTEGER,
-    suffix: (match?.[2] ?? "").toLowerCase(),
-  };
-}
-
-function compareCollector(left: ReturnType<typeof collectorRank>, right: ReturnType<typeof collectorRank>) {
-  if (left.beta !== right.beta) return left.beta - right.beta;
-  if (left.number !== right.number) return left.number - right.number;
-  if (left.suffix === right.suffix) return 0;
-  return left.suffix < right.suffix ? -1 : 1;
-}
-
-function collectorRangeIds(list: PrintingDTO[], anchorId: string, endId: string) {
-  const anchor = list.find((printing) => printing.id === anchorId);
-  const end = list.find((printing) => printing.id === endId);
-  if (!anchor || !end) return [];
-  const start = collectorRank(anchor.collectorNumber);
-  const finish = collectorRank(end.collectorNumber);
-  const low = compareCollector(start, finish) <= 0 ? start : finish;
-  const high = compareCollector(start, finish) <= 0 ? finish : start;
-  const beta = start.beta === finish.beta ? start.beta : null;
-  return list
-    .filter((printing) => {
-      const rank = collectorRank(printing.collectorNumber);
-      if (beta !== null && rank.beta !== beta) return false;
-      return compareCollector(rank, low) >= 0 && compareCollector(rank, high) <= 0;
-    })
-    .map((printing) => printing.id);
+/** Mêmes critères de liste : seule la fiche ouverte (`printingId`) peut différer. */
+function sameListFilters(a: Filters, b: Filters) {
+  return (Object.keys(a) as (keyof Filters)[]).every((key) => {
+    if (key === "printingId") return true;
+    const left = a[key];
+    const right = b[key];
+    if (Array.isArray(left) && Array.isArray(right)) {
+      return left.length === right.length && left.every((value, index) => value === right[index]);
+    }
+    return left === right;
+  });
 }
 
 function resolveOpenedPrinting(printings: PrintingDTO[], printingId: string | null) {
@@ -102,7 +88,10 @@ function sortFields(t: Translator): SortField[] {
   return [
     { id: "default", label: t("cards.sortDefault"), keys: { asc: "default" } },
     { id: "number", label: t("cards.sortFieldNumber"), keys: { asc: "number-asc", desc: "number-desc" } },
-    { id: "cost", label: t("cards.sortFieldCost"), keys: { asc: "cost-asc", desc: "cost-desc" } },
+    { id: "price", label: t("cards.sortFieldPrice"), keys: { asc: "price-asc", desc: "price-desc" } },
+    { id: "play-cost", label: t("filters.cost"), keys: { asc: "play-cost-asc", desc: "play-cost-desc" } },
+    { id: "power", label: t("filters.power"), keys: { asc: "power-asc", desc: "power-desc" } },
+    { id: "ram", label: t("filters.ram"), keys: { asc: "ram-asc", desc: "ram-desc" } },
     { id: "qty", label: t("cards.sortFieldQty"), keys: { asc: "qty-asc", desc: "qty-desc" } },
     { id: "name", label: t("cards.sortFieldName"), keys: { asc: "name-asc", desc: "name-desc" } },
     { id: "owned", label: t("cards.sortFieldOwned"), keys: { asc: "missing-first", desc: "owned-first" } },
@@ -141,6 +130,7 @@ export function CardsExplorer({
     saveBatch,
     patchLine,
     deleteLine,
+    pendingIds,
   } = useCollection();
   const catalog = catalogProp ?? collectionCatalog;
   const items = itemsProp ?? collectionItems;
@@ -149,7 +139,11 @@ export function CardsExplorer({
   const { setCardsLocation } = useBrowseSelection();
   const t = useTranslations();
   const { prefs } = usePreferences();
-  const filterDefaults = useMemo(() => filterDefaultsFrom(prefs), [prefs.collection, prefs.sort]);
+  const { sort: prefSort, collection: prefCollection } = prefs;
+  const filterDefaults = useMemo(
+    () => filterDefaultsFrom({ sort: prefSort, collection: prefCollection }),
+    [prefSort, prefCollection],
+  );
   const SORT_FIELDS = sortFields(t);
   const [filters, setFilters] = useState<Filters>(() => parseFilters(searchParams, true, filterDefaultsFrom(prefs)));
   const [filtersVisibility, setFiltersVisibility] = useState<"auto" | "open" | "closed">(prefs.filtersPanel);
@@ -160,23 +154,16 @@ export function CardsExplorer({
   const [addCondition, setAddCondition] = useState(prefs.condition);
   const [draft, setDraft] = useState<Record<string, number>>({});
   const [rangeAnchor, setRangeAnchor] = useState<string | null>(null);
-  const [marquee, setMarquee] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [adding, setAdding] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   // Carte touchée en mode ajout : feuille pour choisir quantité, état, langue et version.
   const [quickAddId, setQuickAddId] = useState<string | null>(null);
-  const ctrlHandled = useRef(false);
-  const ctrlDown = useRef(false);
-  const draftRef = useRef(draft);
-  const gridLayoutRef = useRef<CardGridLayout | null>(null);
-  const filteredRef = useRef<PrintingDTO[]>([]);
   const urlSyncRef = useRef(searchParams.toString());
+  // Dernière recherche envoyée à l'onglet Cartes.
+  const cardsLocationRef = useRef<string | null>(null);
   // Ouvrir une carte ajoute une entrée d'historique : le bouton retour (Android, geste iOS) la ferme.
   const pushUrlRef = useRef(false);
   const openedWithPushRef = useRef(false);
-  useEffect(() => {
-    draftRef.current = draft;
-  }, [draft]);
   // État par défaut du mode ajout modifié dans les réglages : on suit, pendant le rendu.
   const [syncedAddCondition, setSyncedAddCondition] = useState(prefs.condition);
   if (prefs.condition !== syncedAddCondition) {
@@ -199,6 +186,12 @@ export function CardsExplorer({
   const cardsById = useMemo(() => new Map(catalog?.cards.map((card) => [card.id, card]) ?? []), [catalog]);
   const setsByCode = useMemo(() => new Map(catalog?.sets.map((set) => [set.code, set]) ?? []), [catalog]);
   const activeFilters = useMemo(() => alignReleasedFilters(filters), [filters]);
+  // Critères de la liste, inchangés quand on passe d'une fiche à l'autre : la grille et le filtrage
+  // du catalogue ne sont pas recalculés à chaque carte (navigation au clavier touche maintenue).
+  const [listFilters, setListFilters] = useState(activeFilters);
+  if (listFilters !== activeFilters && !sameListFilters(listFilters, activeFilters)) {
+    setListFilters(activeFilters);
+  }
   // Each printing keeps its own ownership: a beta copy must not mark the retail card as owned.
   const agg = useMemo(() => aggregateCollection(items), [items]);
 
@@ -210,7 +203,16 @@ export function CardsExplorer({
     const nextUrl = query ? `${base}?${query}` : base;
     urlSyncRef.current = query;
     if (syncBrowseSelection) {
-      setCardsLocation({ set: activeFilters.set, language: activeFilters.language }, query);
+      // L'onglet Cartes reprend la recherche, pas la fiche ouverte : parcourir les fiches (flèches)
+      // ne met pas à jour le contexte à chaque carte (setState en cascade depuis cet effet).
+      const location = new URLSearchParams(params);
+      location.delete("printing");
+      const locationQuery = location.toString();
+      const key = `${activeFilters.set}|${activeFilters.language}|${locationQuery}`;
+      if (cardsLocationRef.current !== key) {
+        cardsLocationRef.current = key;
+        setCardsLocation({ set: activeFilters.set, language: activeFilters.language }, locationQuery);
+      }
     }
     const currentUrl = `${window.location.pathname}${window.location.search}`;
     const push = pushUrlRef.current;
@@ -227,14 +229,11 @@ export function CardsExplorer({
     }
   }, [activeFilters, filterDefaults, setCardsLocation, syncBrowseSelection]);
 
-  useEffect(() => {
-    if (!filtersDrawer) return;
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setFiltersDrawer(false);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [filtersDrawer]);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  useModal(drawerRef, { open: filtersDrawer, onClose: () => setFiltersDrawer(false) });
+  const leaveRef = useRef<HTMLDivElement>(null);
+  const stayRef = useRef<HTMLButtonElement>(null);
+  useModal(leaveRef, { open: leaveConfirm && !readOnly, onClose: () => setLeaveConfirm(false), initialFocus: stayRef });
   const setPrintings = useMemo(() => {
     if (!catalog) return [];
     if (activeFilters.set === ALL_SETS_ID) {
@@ -242,7 +241,8 @@ export function CardsExplorer({
     }
     const checklist = browseChecklist(catalog.printings, activeFilters.set);
     if (checklist) return checklist;
-    return catalog.printings.filter((printing) => printing.setCode === activeFilters.set);
+    const codes = new Set(parseSetList(activeFilters.set));
+    return catalog.printings.filter((printing) => codes.has(printing.setCode));
   }, [activeFilters.set, catalog]);
   const facets = useMemo(() => {
     if (!catalog) return null;
@@ -268,254 +268,51 @@ export function CardsExplorer({
       });
   }, [catalog]);
 
+  // La saisie s'affiche tout de suite ; le filtrage du catalogue suit sans bloquer la frappe.
+  const deferredQuery = useDeferredValue(listFilters.q);
   const filtered = useMemo(() => {
     if (!catalog) return [];
+    const searchFilters = deferredQuery === listFilters.q ? listFilters : { ...listFilters, q: deferredQuery };
     const matched = filterPrintings(
       catalog.printings,
       cardsById,
       agg,
-      activeFilters,
-      browseChecklist(catalog.printings, activeFilters.set),
+      searchFilters,
+      browseChecklist(catalog.printings, searchFilters.set),
     );
-    return sortPrintings(matched, cardsById, agg, setsByCode, activeFilters.sort);
-  }, [catalog, cardsById, agg, activeFilters, setsByCode]);
+    return sortPrintings(matched, cardsById, agg, setsByCode, searchFilters.sort, {
+      q: searchFilters.q,
+      defaultSort: filterDefaults.sort,
+    });
+  }, [catalog, cardsById, agg, listFilters, deferredQuery, setsByCode, filterDefaults.sort]);
 
-  const missingPrice = useMemo(
-    () => (activeFilters.collection === "missing" && catalog?.hasPrices ? printingsPriceTotal(filtered) : null),
-    [activeFilters.collection, catalog?.hasPrices, filtered],
+  // Prix de la liste filtrée : toujours en mode normal, et pour les cartes manquantes même en mode ajout.
+  const missingList = activeFilters.collection === "missing";
+  const listPrice = useMemo(
+    () => ((missingList || !effectiveAddMode) && catalog?.hasPrices ? printingsPriceTotal(filtered) : null),
+    [missingList, effectiveAddMode, catalog?.hasPrices, filtered],
   );
 
-  useEffect(() => {
-    filteredRef.current = filtered;
-  }, [filtered]);
+  const { marquee, setMarquee, ctrlHandledRef, ctrlDownRef, gridLayoutRef } = useMarqueeSelection(
+    effectiveAddMode,
+    draft,
+    filtered,
+    setDraft,
+  );
 
-  useEffect(() => {
-    if (!effectiveAddMode) return;
-    const drag = {
-      startX: 0,
-      startY: 0,
-      pointerX: 0,
-      pointerY: 0,
-      moved: false,
-      // Défilement au début du glisser : le point de départ reste accroché aux cartes.
-      scrollStart: 0,
-      base: {} as Record<string, number>,
-    };
-    let active = false;
-    let scrollFrame = 0;
-
-    const isCtrl = (event: MouseEvent | PointerEvent) =>
-      event.ctrlKey || event.metaKey || event.getModifierState("Control") || ctrlDown.current;
-
-    const scrollParent = () => {
-      const grid = document.querySelector("[data-card-grid]");
-      if (!(grid instanceof HTMLElement)) return null;
-      let current = grid.parentElement;
-      while (current) {
-        const { overflowY } = getComputedStyle(current);
-        if (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") return current;
-        current = current.parentElement;
-      }
-      return null;
-    };
-
-    const scrollOffset = () => {
-      const scroller = scrollParent();
-      return scroller ? scroller.scrollTop : window.scrollY;
-    };
-
-    // Viewport coordinates — AppFrame scrolls <main>, not the window.
-    // Le départ suit le contenu : après défilement il peut sortir de l'écran.
-    const pageBox = () => {
-      const x = drag.pointerX;
-      const y = drag.pointerY;
-      const startY = drag.startY - (scrollOffset() - drag.scrollStart);
-      const left = Math.min(drag.startX, x);
-      const top = Math.min(startY, y);
-      const right = Math.max(drag.startX, x);
-      const bottom = Math.max(startY, y);
-      return { left, top, right, bottom };
-    };
-
-    const cardsInside = (box: { left: number; top: number; right: number; bottom: number }) => {
-      const layout = gridLayoutRef.current;
-      const grid = document.querySelector("[data-card-grid]");
-      if (layout && grid) {
-        // Origine relue ici : l'écouteur de scroll qui la met à jour peut passer après nous.
-        const rect = grid.getBoundingClientRect();
-        return cardIdsInBox(filteredRef.current, { ...layout, originX: rect.left, originY: rect.top }, box);
-      }
-      if (layout) return cardIdsInBox(filteredRef.current, layout, box);
-      const ids: string[] = [];
-      document.querySelectorAll("[data-card-id]").forEach((node) => {
-        const rect = node.getBoundingClientRect();
-        const hits =
-          rect.left < box.right &&
-          rect.right > box.left &&
-          rect.top < box.bottom &&
-          rect.bottom > box.top;
-        if (!hits) return;
-        const id = node.getAttribute("data-card-id");
-        if (id) ids.push(id);
-      });
-      return ids;
-    };
-
-    const applySelection = () => {
-      const box = pageBox();
-      setMarquee({
-        left: box.left,
-        top: box.top,
-        width: box.right - box.left,
-        height: box.bottom - box.top,
-      });
-      const inside = cardsInside(box);
-      // Inverse chaque carte couverte par rapport à l'état au début du glisser.
-      setDraft(() => {
-        const next = { ...drag.base };
-        for (const id of inside) {
-          if (drag.base[id]) delete next[id];
-          else next[id] = 1;
-        }
-        return next;
-      });
-    };
-
-    const edgeScroll = () => {
-      const margin = 88;
-      let delta = 0;
-      if (drag.pointerY < margin) delta = -Math.ceil((margin - drag.pointerY) / 2 + 6);
-      else if (drag.pointerY > window.innerHeight - margin) delta = Math.ceil((drag.pointerY - (window.innerHeight - margin)) / 2 + 6);
-      if (delta === 0) return false;
-      const scroller = scrollParent();
-      if (scroller) scroller.scrollBy(0, delta);
-      else window.scrollBy(0, delta);
-      return true;
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Control" || event.key === "Meta") ctrlDown.current = true;
-    };
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "Control" || event.key === "Meta") ctrlDown.current = false;
-    };
-    const onBlur = () => {
-      ctrlDown.current = false;
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0 || !isCtrl(event)) return;
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (!target.closest("[data-card-grid]") && !target.closest("[data-card-id]")) {
-        // Espaces autour des cartes : compteur, marges latérales, gouttière avec les filtres.
-        // N'importe où dans <main> (pied de page compris), hors contrôles interactifs.
-        const main = document.querySelector("[data-card-zone]")?.closest("main");
-        if (!main || !main.contains(target)) return;
-        if (target.closest("a, button, input, select, textarea, label, summary, [role='button'], [contenteditable]")) return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      active = true;
-      drag.startX = event.clientX;
-      drag.startY = event.clientY;
-      drag.pointerX = event.clientX;
-      drag.pointerY = event.clientY;
-      drag.moved = false;
-      drag.scrollStart = scrollOffset();
-      drag.base = { ...draftRef.current };
-      ctrlHandled.current = true;
-      const tick = () => {
-        if (!active) return;
-        if (drag.moved && edgeScroll()) applySelection();
-        scrollFrame = window.requestAnimationFrame(tick);
-      };
-      scrollFrame = window.requestAnimationFrame(tick);
-    };
-    const onPointerMove = (event: PointerEvent) => {
-      if (!active) return;
-      drag.pointerX = event.clientX;
-      drag.pointerY = event.clientY;
-      const box = pageBox();
-      if (box.right - box.left > 4 || box.bottom - box.top > 4) drag.moved = true;
-      if (!drag.moved) return;
-      event.preventDefault();
-      applySelection();
-    };
-    const onPointerUp = (event: PointerEvent) => {
-      if (!active) return;
-      active = false;
-      window.cancelAnimationFrame(scrollFrame);
-      setMarquee(null);
-      if (!drag.moved) {
-        const target = document.elementFromPoint(event.clientX, event.clientY);
-        const card = target instanceof Element ? target.closest("[data-card-id]") : null;
-        const id = card?.getAttribute("data-card-id");
-        if (id) {
-          setDraft((current) => {
-            const next = { ...current };
-            if (next[id]) delete next[id];
-            else next[id] = 1;
-            return next;
-          });
-        }
-      }
-      ctrlHandled.current = true;
-    };
-    // Molette ou défilement tactile pendant le glisser : le rectangle s'étend avec la page.
-    const onScroll = () => {
-      if (active && drag.moved) applySelection();
-    };
-    const onClick = (event: MouseEvent) => {
-      if (!ctrlHandled.current && !isCtrl(event)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      ctrlHandled.current = false;
-    };
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("pointerdown", onPointerDown, true);
-    window.addEventListener("pointermove", onPointerMove, true);
-    window.addEventListener("pointerup", onPointerUp, true);
-    window.addEventListener("click", onClick, true);
-    window.addEventListener("scroll", onScroll, true);
-    return () => {
-      window.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("pointerdown", onPointerDown, true);
-      window.removeEventListener("pointermove", onPointerMove, true);
-      window.removeEventListener("pointerup", onPointerUp, true);
-      window.removeEventListener("click", onClick, true);
-      window.cancelAnimationFrame(scrollFrame);
-    };
-  }, [effectiveAddMode]);
-
-  // Curseur en croix dans <main> sous le bas de l'encart d'aide : voir main[data-add-mode] dans globals.css.
-  useEffect(() => {
-    if (!effectiveAddMode) return;
-    const main = document.querySelector("main");
-    if (!main) return;
-    let pointerY: number | null = null;
-    const refresh = () => {
-      if (pointerY === null) return;
-      const help = document.querySelector("[data-add-help]");
-      const below = !help || pointerY > help.getBoundingClientRect().bottom;
-      main.toggleAttribute("data-add-mode", below);
-    };
-    const onMove = (event: PointerEvent) => {
-      pointerY = event.clientY;
-      refresh();
-    };
-    main.addEventListener("pointermove", onMove);
-    main.addEventListener("scroll", refresh, { passive: true });
-    return () => {
-      main.removeEventListener("pointermove", onMove);
-      main.removeEventListener("scroll", refresh);
-      main.removeAttribute("data-add-mode");
-    };
-  }, [effectiveAddMode]);
+  const keyboard = useKeyboardSelection({
+    items: filtered,
+    draft,
+    setDraft,
+    layoutRef: gridLayoutRef,
+    canSelect: !readOnly,
+    onStart: () => {
+      if (addMode) return;
+      setAddMode(true);
+      setAddError(null);
+      update({ printingId: null });
+    },
+  });
 
   useEffect(() => {
     if (!effectiveAddMode) return;
@@ -547,6 +344,97 @@ export function CardsExplorer({
     selectedIndex >= 0 && selectedIndex < filtered.length - 1
       ? filtered[selectedIndex + 1]?.id ?? null
       : null;
+  // Images des cartes voisines, préchargées pour que la navigation affiche l'illustration sans attendre.
+  // Triées par distance : les plus proches d'abord (clics rapides sur « suivante »).
+  const neighborImages = Array.from({ length: 16 }, (_, index) => (index % 2 ? 1 : -1) * (Math.floor(index / 2) + 1))
+    .map((offset) => (selectedIndex >= 0 ? filtered[selectedIndex + offset]?.imagePath : null))
+    .filter((src): src is string => Boolean(src));
+  // Grille mémorisée : passer d'une fiche à l'autre ne la redessine pas (elle est sous la fiche).
+  // Les gestionnaires passent par une ref pour rester à jour sans invalider la mémoïsation.
+  const gridHandlers = {
+    onCardClick: handleCardClick,
+    onCardContextMenu: (event: React.MouseEvent, printingId: string) => {
+      if (!effectiveAddMode) return;
+      event.preventDefault();
+      removeFromSelection(printingId);
+    },
+    onQueue: queueCard,
+    onUnqueue: unqueueCard,
+    onToggleFavorite: toggleFavorite,
+    onTileFocus: keyboard.onTileFocus,
+    onGridKeyDown: keyboard.onKeyDown,
+    onGridKeyUp: keyboard.onKeyUp,
+    onFiltersChange: update,
+    onFiltersReset: () => update(defaultFilters(true, filterDefaults)),
+    onFiltersClose: closeFilters,
+  };
+  const gridHandlersRef = useRef(gridHandlers);
+  useLayoutEffect(() => {
+    gridHandlersRef.current = gridHandlers;
+  });
+  const filtersCollapsed = filtersVisibility === "closed";
+  const grid = useMemo(
+    () => (
+      <VirtualCardGrid
+        items={filtered}
+        cardsById={cardsById}
+        ownership={(printingId) => ownershipOf(printingId, agg).qty}
+        draft={draft}
+        rangeAnchor={rangeAnchor}
+        addMode={effectiveAddMode}
+        filtersCollapsed={filtersCollapsed}
+        layoutRef={gridLayoutRef}
+        onCardClick={(event, printingId) => gridHandlersRef.current.onCardClick(event, printingId)}
+        onCardContextMenu={(event, printingId) => gridHandlersRef.current.onCardContextMenu(event, printingId)}
+        onQueue={(printingId) => gridHandlersRef.current.onQueue(printingId)}
+        onUnqueue={(printingId) => gridHandlersRef.current.onUnqueue(printingId)}
+        isFavorite={(printingId) => favoriteIds.has(printingId)}
+        favoritesReady={wishlist.ready}
+        onToggleFavorite={readOnly ? undefined : (printingId) => gridHandlersRef.current.onToggleFavorite(printingId)}
+        focusIndex={keyboard.focusIndex}
+        focusRequest={keyboard.focusRequest}
+        selecting={keyboard.selecting}
+        onTileFocus={(event) => gridHandlersRef.current.onTileFocus(event)}
+        onGridKeyDown={(event) => gridHandlersRef.current.onGridKeyDown(event)}
+        onGridKeyUp={(event) => gridHandlersRef.current.onGridKeyUp(event)}
+      />
+    ),
+    [
+      filtered,
+      cardsById,
+      agg,
+      draft,
+      rangeAnchor,
+      effectiveAddMode,
+      filtersCollapsed,
+      gridLayoutRef,
+      favoriteIds,
+      wishlist.ready,
+      readOnly,
+      keyboard.focusIndex,
+      keyboard.focusRequest,
+      keyboard.selecting,
+    ],
+  );
+
+  // Colonne de filtres : même principe, elle ne dépend pas de la fiche ouverte.
+  const conditions = catalog?.conditions;
+  const filterPanel = useMemo(
+    () =>
+      facets && conditions ? (
+        <FilterPanel
+          filters={listFilters}
+          facets={facets}
+          sets={setChoices}
+          conditions={conditions}
+          onChange={(partial) => gridHandlersRef.current.onFiltersChange(partial)}
+          onReset={() => gridHandlersRef.current.onFiltersReset()}
+          onClose={() => gridHandlersRef.current.onFiltersClose()}
+        />
+      ) : null,
+    [listFilters, facets, setChoices, conditions],
+  );
+
   // The modal lists each printing separately, beta and retail included.
   const ownedIds = useMemo(
     () => new Set(items.filter((item) => item.quantity > 0).map((item) => item.printingId)),
@@ -672,11 +560,16 @@ export function CardsExplorer({
       openPrinting(printingId);
       return;
     }
-    if (ctrlHandled.current || event.ctrlKey || event.metaKey || event.getModifierState("Control") || ctrlDown.current) {
+    if (keyboard.selecting && !ctrlHandledRef.current) {
       event.preventDefault();
-      if (!ctrlHandled.current) toggleCard(printingId);
-      ctrlHandled.current = false;
-      ctrlDown.current = event.ctrlKey || event.metaKey || event.getModifierState("Control");
+      toggleCard(printingId);
+      return;
+    }
+    if (ctrlHandledRef.current || event.ctrlKey || event.metaKey || event.getModifierState("Control") || ctrlDownRef.current) {
+      event.preventDefault();
+      if (!ctrlHandledRef.current) toggleCard(printingId);
+      ctrlHandledRef.current = false;
+      ctrlDownRef.current = event.ctrlKey || event.metaKey || event.getModifierState("Control");
       return;
     }
     const alt = event.altKey || event.getModifierState("Alt");
@@ -724,6 +617,7 @@ export function CardsExplorer({
   }
 
   function exitAddMode() {
+    keyboard.stop();
     setAddMode(false);
     setLeaveConfirm(false);
     setAddError(null);
@@ -743,6 +637,10 @@ export function CardsExplorer({
 
   const draftCards = Object.keys(draft).length;
   const draftCopies = Object.values(draft).reduce((sum, quantity) => sum + quantity, 0);
+  const selectionPrice = useMemo(
+    () => (draftCopies > 0 && catalog?.hasPrices ? selectionPriceTotal(catalog.printings, draft) : null),
+    [catalog, draft, draftCopies],
+  );
 
   async function commitDraft() {
     const lines = Object.entries(draft).map(([printingId, quantity]) => ({ printingId, quantity }));
@@ -780,6 +678,7 @@ export function CardsExplorer({
       }`}
     >
       <div
+        ref={drawerRef}
         className={`${
           filtersDrawer
             ? "fixed inset-0 z-50 bg-black/70 lg:static lg:z-auto lg:bg-transparent"
@@ -796,15 +695,7 @@ export function CardsExplorer({
           aria-label={filtersDrawer ? t("cards.filters") : undefined}
         >
           <div className="scrollbar-hud min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 lg:overflow-visible lg:p-0">
-            <FilterPanel
-              filters={activeFilters}
-              facets={facets}
-              sets={setChoices}
-              conditions={catalog.conditions}
-              onChange={update}
-              onReset={() => update(defaultFilters(true, filterDefaults))}
-              onClose={closeFilters}
-            />
+            {filterPanel}
           </div>
           <div className="pb-safe shrink-0 border-t border-line bg-panel lg:hidden">
             <div className="p-3">
@@ -909,6 +800,9 @@ export function CardsExplorer({
             </button>
           ) : null}
         </div>
+        <p className="sr-only" aria-live="polite">
+          {keyboard.selecting ? t("cards.selectedCount", { n: draftCards }) : ""}
+        </p>
         {effectiveAddMode ? (
           <div data-add-help="" className="mb-3 flex flex-col gap-3 border border-yellow/50 bg-panel p-3">
             <p className="text-sm text-muted pointer-coarse:hidden">{t("cards.addModeHelp")}</p>
@@ -954,38 +848,25 @@ export function CardsExplorer({
               ? t("cards.noCards")
               : t("cards.cardCount", { count: fmt.int(filtered.length), noun: t("common.cards", { n: filtered.length }) })}
           </p>
-          {missingPrice && filtered.length > 0 ? (
+          {listPrice && filtered.length > 0 ? (
             <p className="font-mono text-yellow">
-              {missingPrice.unpriced > 0
-                ? t("cards.missingTotalPartial", { total: fmt.money(missingPrice.total), unpriced: fmt.int(missingPrice.unpriced) })
-                : t("cards.missingTotal", { total: fmt.money(missingPrice.total) })}
+              {listPrice.unpriced > 0
+                ? t(missingList ? "cards.missingTotalPartial" : "cards.listTotalPartial", { total: fmt.money(listPrice.total), unpriced: fmt.int(listPrice.unpriced) })
+                : t(missingList ? "cards.missingTotal" : "cards.listTotal", { total: fmt.money(listPrice.total) })}
+            </p>
+          ) : null}
+          {selectionPrice ? (
+            <p className="font-mono text-cyan" aria-live="polite">
+              {selectionPrice.unpriced > 0
+                ? t("cards.selectionTotalPartial", { total: fmt.money(selectionPrice.total), unpriced: fmt.int(selectionPrice.unpriced) })
+                : t("cards.selectionTotal", { total: fmt.money(selectionPrice.total) })}
             </p>
           ) : null}
         </div>
         {filtered.length === 0 ? (
           <p className="border border-line px-4 py-10 text-center text-sm text-muted">{t("cards.noMatch")}</p>
         ) : (
-          <VirtualCardGrid
-            items={filtered}
-            cardsById={cardsById}
-            ownership={(printingId) => ownershipOf(printingId, agg).qty}
-            draft={draft}
-            rangeAnchor={rangeAnchor}
-            addMode={effectiveAddMode}
-            filtersCollapsed={filtersVisibility === "closed"}
-            layoutRef={gridLayoutRef}
-            onCardClick={handleCardClick}
-            onCardContextMenu={(event, printingId) => {
-              if (!effectiveAddMode) return;
-              event.preventDefault();
-              removeFromSelection(printingId);
-            }}
-            onQueue={queueCard}
-            onUnqueue={unqueueCard}
-            isFavorite={(printingId) => favoriteIds.has(printingId)}
-            favoritesReady={wishlist.ready}
-            onToggleFavorite={readOnly ? undefined : toggleFavorite}
-          />
+          grid
         )}
         </div>
       </div>
@@ -993,13 +874,7 @@ export function CardsExplorer({
         <CardModal
           printing={selected}
           card={selectedCard}
-          siblings={catalog.printings
-            .filter((printing) => printing.cardId === selected.cardId && printing.id !== selected.id)
-            .sort(
-              (a, b) =>
-                a.setName.localeCompare(b.setName, "fr") ||
-                a.collectorNumber.localeCompare(b.collectorNumber, "fr", { numeric: true }),
-            )}
+          siblings={siblingPrintings(catalog.printings, selected)}
           items={items.filter((item) => item.printingId === selected.id)}
           conditions={catalog.conditions}
           ownedIds={ownedIds}
@@ -1007,6 +882,7 @@ export function CardsExplorer({
           onClose={closePrinting}
           prevId={prevId}
           nextId={nextId}
+          preloadImages={neighborImages}
           onFilterArtist={(artist) =>
             update({ artists: [artist], set: ALL_SETS_ID, printingId: null, page: 1 })
           }
@@ -1017,6 +893,7 @@ export function CardsExplorer({
           onSave={readOnly ? undefined : (input) => saveLine({ ...input, printingId: selected.id, mode: "add" })}
           onPatch={readOnly ? undefined : patchLine}
           onDelete={readOnly ? undefined : deleteLine}
+          pendingIds={readOnly ? undefined : pendingIds}
         />
       ) : null}
       {quickAddPrinting && catalog ? (
@@ -1035,6 +912,7 @@ export function CardsExplorer({
       ) : null}
       {leaveConfirm && !readOnly ? (
         <div
+          ref={leaveRef}
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4"
           role="dialog"
           aria-modal="true"
@@ -1048,7 +926,7 @@ export function CardsExplorer({
               {t("cards.leaveBody", { count: fmt.int(draftCards), noun: t("common.cards", { n: draftCards }) })}
             </p>
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" className="h-10 border border-line px-4 text-sm" onClick={() => setLeaveConfirm(false)}>
+              <button ref={stayRef} type="button" className="h-10 border border-line px-4 text-sm" onClick={() => setLeaveConfirm(false)}>
                 {t("cards.stay")}
               </button>
               <button type="button" className="h-10 bg-yellow px-4 text-sm font-semibold text-black" onClick={exitAddMode}>
@@ -1065,40 +943,16 @@ export function CardsExplorer({
         />
       ) : null}
       {effectiveAddMode ? (
-        <div className="fixed inset-x-0 bottom-[var(--app-bottom-nav)] z-30 border-t border-yellow/60 bg-background/95 px-4 pt-3 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--app-bottom-nav)))] backdrop-blur">
-          <div
-            className={`mx-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${
-              filtersVisibility === "closed" ? "max-w-[80rem]" : "max-w-[1600px]"
-            }`}
-          >
-            <div>
-              <p className="font-medium">
-                {draftCopies === 0
-                  ? t("cards.noneSelected")
-                  : t("cards.selectionSummary", { copies: fmt.int(draftCopies), copyNoun: t("common.copies", { n: draftCopies }), cards: fmt.int(draftCards), cardNoun: t("common.cards", { n: draftCards }) })}
-              </p>
-              {addError ? <p className="text-sm text-danger">{addError}</p> : null}
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="h-11 shrink-0 whitespace-nowrap border border-line px-3 text-sm disabled:opacity-40 sm:px-4"
-                onClick={clearSelection}
-                disabled={(draftCards === 0 && !rangeAnchor) || adding}
-              >
-                {t("cards.cancelSelection")}
-              </button>
-              <button
-                type="button"
-                className="h-11 min-w-0 flex-1 truncate bg-yellow px-3 text-sm font-semibold text-black disabled:opacity-50 sm:flex-none sm:px-4 sm:text-base"
-                disabled={draftCards === 0 || adding}
-                onClick={() => void commitDraft()}
-              >
-                {adding ? t("cards.adding") : t("cards.addSelection")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <SelectionBar
+          filtersVisibility={filtersVisibility}
+          draftCopies={draftCopies}
+          draftCards={draftCards}
+          addError={addError}
+          rangeAnchor={rangeAnchor}
+          adding={adding}
+          onClear={clearSelection}
+          onCommit={commitDraft}
+        />
       ) : null}
     </div>
   );

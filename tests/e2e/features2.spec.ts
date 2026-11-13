@@ -22,6 +22,8 @@ async function ready(page: Page, path: string) {
   await page.goto(path);
   await settle(page);
   await expect(page.getByText("Chargement…")).toHaveCount(0, { timeout: 30_000 });
+  // Écrans du compte : squelette jusqu'à l'arrivée des données.
+  await expect(page.locator("main [aria-busy=true]")).toHaveCount(0, { timeout: 30_000 });
 }
 
 /** Autre téléphone : contexte neuf, connecté au compte donné (ou visiteur). */
@@ -150,6 +152,7 @@ test("préférences : tri par défaut et filtres du catalogue", async ({ page, a
 test.describe("visiteur", () => {
   test.use({ signedIn: false });
   test("liste de souhaits désactivée : 404 directe, sans écran de connexion", async ({ page, account }) => {
+    test.skip(process.env.NEXT_PUBLIC_WISHLIST_ENABLED === "1", "liste de souhaits affichée pour ce run (playwright.config.ts)");
     void account;
     await ready(page, "/fr/souhaits");
     await expect(page.getByText("Page introuvable")).toBeVisible();

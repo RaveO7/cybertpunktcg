@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useCollection } from "@/components/CollectionProvider";
+import { fetchCached } from "@/components/data-cache";
+import { ApiError, api } from "@/lib/client/api";
 import type { MatchResult } from "@/lib/tournament/scores";
 import type { MatchView, RoundView, TournamentView } from "@/lib/tournament/view";
-import { ApiError, postJson, useServerNow, useTournamentState } from "./hooks";
+import { useServerNow, useTournamentErrorMessage, useTournamentState } from "./hooks";
 import { Centered } from "./TournamentConsole";
 import {
   buttonClass,
@@ -30,16 +32,14 @@ function useResolvedTournament(code: string) {
   const [error, setError] = useState<"notFound" | "failed" | "limited" | null>(null);
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/t/${encodeURIComponent(code)}`, { cache: "no-store" })
-      .then(async (response) => {
-        if (response.status === 404) throw new Error("notFound");
-        if (response.status === 429) throw new Error("limited");
-        if (!response.ok) throw new Error("failed");
-        const body = (await response.json()) as TournamentView;
+    fetchCached(`/api/t/${encodeURIComponent(code)}`, { schema: "tournamentViewSchema" })
+      .then((body) => {
         if (!cancelled) setInitial(body);
       })
-      .catch((reason: Error) => {
-        if (!cancelled) setError(reason.message === "notFound" || reason.message === "limited" ? reason.message : "failed");
+      .catch((reason: unknown) => {
+        if (cancelled) return;
+        const status = reason instanceof ApiError ? reason.status : 0;
+        setError(status === 404 ? "notFound" : status === 429 ? "limited" : "failed");
       });
     return () => {
       cancelled = true;
@@ -92,16 +92,17 @@ function JoinForm({ code, view, onJoined }: { code: string; view: TournamentView
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const errorMessage = useTournamentErrorMessage();
   const open = view.tournament.registrationOpen && (view.tournament.status === "inscriptions" || view.tournament.status === "suisse");
 
   async function join(withAccount: boolean) {
     setPending(true);
     setMessage(null);
     try {
-      await postJson(`/api/t/${encodeURIComponent(code)}/join`, withAccount && !name.trim() ? {} : { name: name.trim() });
+      await api(`/api/t/${encodeURIComponent(code)}/join`, { body: withAccount && !name.trim() ? {} : { name: name.trim() } });
       await onJoined();
     } catch (error) {
-      setMessage(error instanceof ApiError && error.status === 0 ? t("tournaments.offline") : error instanceof Error ? error.message : t("tournaments.failed"));
+      setMessage(errorMessage(error));
     } finally {
       setPending(false);
     }
@@ -156,6 +157,7 @@ function PlayerHome({ view, now, refresh }: { view: TournamentView; now: Date; r
   const t = useTranslations();
   const me = view.me!;
   const [message, setMessage] = useState<string | null>(null);
+  const errorMessage = useTournamentErrorMessage();
   const [pending, setPending] = useState(false);
   const round = visibleRound(view);
   const match = round?.matches.find((candidate) => candidate.playerAId === me.id || candidate.playerBId === me.id) ?? null;
@@ -166,10 +168,10 @@ function PlayerHome({ view, now, refresh }: { view: TournamentView; now: Date; r
     setPending(true);
     setMessage(null);
     try {
-      await postJson(`/api/tournaments/${view.tournament.id}/player`, command);
+      await api(`/api/tournaments/${view.tournament.id}/player`, { body: command });
       await refresh();
     } catch (error) {
-      setMessage(error instanceof ApiError && error.status === 0 ? t("tournaments.offline") : error instanceof Error ? error.message : t("tournaments.failed"));
+      setMessage(errorMessage(error));
     } finally {
       setPending(false);
     }

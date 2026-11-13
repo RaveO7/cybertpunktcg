@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     // Seul /tmp est inscriptible sur Vercel.
     const result = await importPrices(prisma, { cacheDir: path.join(tmpdir(), "cardmarket") });
     if (result.status === "imported") revalidateTag(CATALOG_CACHE_TAG, "max");
-    console.log(JSON.stringify(result));
+    console.info(JSON.stringify(result));
     await recordJobSuccess(JOB_NAME);
     await checkPriceGuideFreshness();
     return NextResponse.json(result);

@@ -4,6 +4,9 @@
 // serveur pour le chrono, et file d'actions de l'organisateur (hors connexion comprise).
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
+import { ApiError, api } from "@/lib/client/api";
+import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
 import type { CommandResult } from "@/lib/tournament/commands";
 import { clockOffsetMs } from "@/lib/tournament/clock";
 import {
@@ -16,27 +19,11 @@ import type { TournamentView } from "@/lib/tournament/view";
 
 export const POLL_INTERVAL_MS = 5000;
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly details?: unknown,
-  ) {
-    super(message);
-  }
-}
-
-/** POST JSON ; status 0 = pas de réseau. */
-export async function postJson<T>(url: string, body: unknown): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-  } catch {
-    throw new ApiError("offline", 0);
-  }
-  const json = (await response.json().catch(() => ({}))) as T & { error?: string; details?: unknown };
-  if (!response.ok) throw new ApiError(json.error || "error", response.status, json.details);
-  return json;
+/** Message d'un échec sur les écrans de tournoi : leur propre message « hors ligne », « Échec » par défaut. */
+export function useTournamentErrorMessage() {
+  const t = useTranslations("tournaments");
+  const message = useApiErrorMessage({ offline: t("offline") });
+  return useCallback((error: unknown) => message(error, t("failed")), [message, t]);
 }
 
 type StateError = "notFound" | "failed" | null;
@@ -54,23 +41,18 @@ export function useTournamentState(tournamentId: string | null) {
       const known = !force && revision.current !== null ? `?rev=${revision.current}` : "";
       const sentAt = Date.now();
       try {
-        const response = await fetch(`/api/tournaments/${tournamentId}/state${known}`, { cache: "no-store" });
+        // Sondage : chaque requête doit réellement partir (pas de cache), elle mesure aussi l'horloge.
+        const body = await api(`/api/tournaments/${tournamentId}/state${known}`, { schema: "tournamentStateSchema", cache: "no-store" });
         const receivedAt = Date.now();
-        if (response.status === 404) {
-          setError("notFound");
-          return;
-        }
-        if (!response.ok) throw new Error("state");
-        const body = (await response.json()) as TournamentView & { unchanged?: boolean };
         setOffsetMs(clockOffsetMs(Date.parse(body.serverNow), sentAt, receivedAt));
-        if (!body.unchanged) {
+        if (!("unchanged" in body)) {
           revision.current = body.revision;
           setView(body);
         }
         setError(null);
-      } catch {
+      } catch (error) {
         // On garde la dernière vue connue : l'écran reste utilisable sans réseau.
-        setError("failed");
+        setError(error instanceof ApiError && error.status === 404 ? "notFound" : "failed");
       }
     },
     [tournamentId],
@@ -120,21 +102,20 @@ const NO_PENDING: QueuedCommand[] = [];
 export function useOrganizerActions(tournamentId: string, onChange: () => void | Promise<void>) {
   const queue = useMemo(() => {
     const send = async (item: QueuedCommand): Promise<SendOutcome> => {
-      let response: Response;
       try {
-        response = await fetch(`/api/tournaments/${tournamentId}/actions`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ...item.command, clientActionId: item.clientActionId }),
+        const result = await api(`/api/tournaments/${tournamentId}/actions`, {
+          body: { ...item.command, clientActionId: item.clientActionId },
+          schema: "commandResultSchema",
         });
-      } catch {
-        return { kind: "retry" };
+        return { kind: "ok", result };
+      } catch (error) {
+        if (!(error instanceof ApiError)) throw error;
+        // Réseau absent, session expirée ou serveur indisponible : on garde l'action pour plus tard.
+        if (error.kind === "offline" || error.kind === "session" || error.status >= 500) return { kind: "retry" };
+        // Action appliquée mais résultat illisible : pas un refus ; l'état du tournoi est relu ensuite.
+        if (error.kind === "invalid") return { kind: "ok", result: { ok: true } satisfies CommandResult };
+        return { kind: "rejected", status: error.status, error: error.message || "error", details: error.details };
       }
-      // Session expirée ou serveur indisponible : on garde l'action pour plus tard.
-      if (response.status === 401 || response.status >= 500) return { kind: "retry" };
-      const body = (await response.json().catch(() => ({}))) as { error?: string; details?: unknown };
-      if (!response.ok) return { kind: "rejected", status: response.status, error: body.error || "error", details: body.details };
-      return { kind: "ok", result: body };
     };
     return createOfflineQueue(tournamentId, send, typeof window === "undefined" ? null : browserStorage());
   }, [tournamentId]);
@@ -183,6 +164,7 @@ export function useOrganizerActions(tournamentId: string, onChange: () => void |
       const report = await flush(item.clientActionId);
       const outcome = report.outcomes.get(item.clientActionId);
       if (!outcome) return { status: "queued" };
+      // Résultat vérifié par `send` (commandResultSchema) ; la file le garde sans le typer.
       if (outcome.kind === "ok") return { status: "ok", result: outcome.result as CommandResult };
       if (outcome.kind === "rejected") return { status: "error", error: outcome.error, details: outcome.details };
       return { status: "queued" };

@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, it } from "vitest";
 import { DELETE as revokeRoute, GET as readShareRoute, POST as shareRoute } from "../../src/app/api/share/route";
 import { GET as publicRoute } from "../../src/app/api/share/[token]/route";
 import { SESSION_COOKIE, createSession, registerAccount } from "../../src/lib/auth";
+import { shareInfoSchema, sharedBinderSchema } from "../../src/lib/api-responses";
 import { prisma } from "../../src/lib/prisma";
 import {
   absoluteShareUrl,
@@ -63,7 +64,9 @@ async function createShare(token: string, body?: unknown) {
     request("/api/share", token, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) }),
   );
   assert.equal(response.status, 200, "création du lien");
-  return json<ShareBody>(response);
+  const share = await json<ShareBody>(response);
+  shareInfoSchema.parse(share);
+  return share;
 }
 
 afterAll(async () => {
@@ -155,6 +158,7 @@ describe.sequential("partage du classeur", () => {
     assert.equal(response.status, 200);
     const raw = await response.clone().text();
     const binder = await json<Binder>(response);
+    sharedBinderSchema.parse(binder);
     assert.deepEqual(binder.owner, { displayName: "Classeur proprio" }, "seul le nom affiché est public");
     assert.equal(binder.items.length, 1, "les lignes à 0 sont masquées");
     const [item] = binder.items;

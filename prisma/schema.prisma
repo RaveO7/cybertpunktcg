@@ -26,6 +26,9 @@ model User {
   collectionShare CollectionShare?
   portfolioHistory PortfolioHistoryCache[]
   wishlist      WishlistItem[]
+  sales         CollectionSale[]
+  sellAlerts    SellAlert[]
+  pushSubscriptions PushSubscription[]
   decks         Deck[]
   tournamentRoles   TournamentOrganizer[]
   tournamentPlayers TournamentPlayer[]
@@ -237,6 +240,8 @@ model Printing {
   prices            Price[]
   snapshots         PriceSnapshot[]
   wishlistItems     WishlistItem[]
+  sales             CollectionSale[]
+  sellAlerts        SellAlert[]
 
   @@unique([setId, collectorNumber, language])
   @@index([cardId])
@@ -251,9 +256,12 @@ model Condition {
   sortOrder Int
   isActive  Boolean          @default(true)
   items     CollectionItem[]
+  sales     CollectionSale[]
   prices    Price[]
 }
 
+/// Une ligne regroupe des exemplaires identiques : même carte, état, prix d'achat unitaire, date d'achat et notes
+/// (voir src/lib/collection-line.ts). Une même carte × état peut donc avoir plusieurs lignes.
 model CollectionItem {
   id               String    @id @default(cuid())
   userId           String
@@ -263,14 +271,16 @@ model CollectionItem {
   notes            String?
   purchasePrice    Decimal?
   purchaseCurrency String?
+  /// Date d'achat (jour UTC à minuit), null = inconnue. Sert au P&L et à la courbe d'investissement.
+  purchasedAt      DateTime?
   addedAt          DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   printing         Printing  @relation(fields: [printingId], references: [id], onDelete: Restrict)
   condition        Condition @relation(fields: [conditionId], references: [id], onDelete: Restrict)
 
-  @@unique([userId, printingId, conditionId])
   @@index([userId])
+  @@index([userId, printingId])
   @@index([printingId])
 }
 
@@ -295,6 +305,86 @@ model WishlistItem {
   @@index([printingId])
 }
 
+// CollectionSale, SellAlert et ExchangeRate : tables de la fonctionnalité ventes / alertes de revente /
+// devises, mise de côté sur la branche feature/investment-sales-alerts. Plus utilisées par le code, mais
+// gardées dans le schéma : elles existent en production (ExchangeRate contient des données) et les
+// retirer ferait échouer le `db push` du build.
+
+/// Vente d'exemplaires d'une ligne de la collection : ils quittent la collection et la vente garde leur
+/// prix de revient (copié de la ligne) pour la plus-value réalisée.
+model CollectionSale {
+  id               String    @id @default(cuid())
+  userId           String
+  printingId       String
+  conditionId      String
+  quantity         Int
+  /// Prix d'achat unitaire, devise, date d'achat, notes et date d'ajout de la ligne vendue.
+  purchasePrice    Decimal?
+  purchaseCurrency String?
+  purchasedAt      DateTime?
+  notes            String?
+  addedAt          DateTime
+  /// Prix de vente total des exemplaires vendus et frais de la vente (port, commission), dans `saleCurrency`.
+  salePrice        Decimal
+  saleCurrency     String    @default("EUR")
+  fees             Decimal   @default(0)
+  /// Jour de la vente (jour UTC à minuit) : les exemplaires sortent de la courbe ce jour-là.
+  soldAt           DateTime
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  printing         Printing  @relation(fields: [printingId], references: [id], onDelete: Restrict)
+  condition        Condition @relation(fields: [conditionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, soldAt])
+  @@index([printingId])
+}
+
+/// Alerte de revente d'une carte possédée : prix cible (EUR) comparé au prix tendance Cardmarket.
+/// `alertAt` est posé quand le prix atteint la cible ou la dépasse (cron quotidien des prix) et effacé
+/// quand il repasse en dessous ; `alertSeen` vaut false tant que l'utilisateur n'a pas vu l'alerte.
+model SellAlert {
+  id          String    @id @default(cuid())
+  userId      String
+  printingId  String
+  targetPrice Decimal
+  alertAt     DateTime?
+  alertPrice  Decimal?
+  alertSeen   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  printing    Printing  @relation(fields: [printingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, printingId])
+  @@index([printingId])
+}
+
+/// Taux de référence de la BCE : `rate` unités de `currency` pour 1 EUR, un par jour ouvré
+/// Sert à convertir en euros les achats et ventes en devise.
+model ExchangeRate {
+  currency String
+  day      DateTime
+  rate     Decimal
+
+  @@id([currency, day])
+}
+
+/// Abonnement Web Push d'un appareil (notifications d'alerte de prix). Un endpoint appartient au
+/// dernier compte qui l'a enregistré ; `locale` est la langue des notifications, choisie à l'activation.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  locale    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 /// Deck construit par l'utilisateur. Les cartes sont des identités de jeu (Card), pas des tirages :
 /// la possession compte tous les tirages de la carte. Un deck peut être incomplet ou illégal
 /// (brouillon) ; la validité est calculée à l'affichage (src/lib/deck.ts).
@@ -307,8 +397,18 @@ model Deck {
   updatedAt DateTime   @updatedAt
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   cards     DeckCard[]
+  share     DeckShare?
 
   @@index([userId])
+}
+
+/// Lien secret pour consulter un deck en lecture seule (sans compte). Un lien au plus par deck.
+model DeckShare {
+  id        String   @id @default(cuid())
+  deckId    String   @unique
+  token     String   @unique
+  createdAt DateTime @default(now())
+  deck      Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
 }
 
 model DeckCard {

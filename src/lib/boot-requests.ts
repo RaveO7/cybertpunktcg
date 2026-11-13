@@ -4,8 +4,9 @@
  * parallèle du JS, et leurs réponses sont lues dès leur arrivée. CollectionProvider reprend ces résultats
  * (déjà prêts le plus souvent : le tableau de bord s'affiche alors dès la fin de l'hydratation).
  */
+import type { ResponseSchemas } from "@/lib/client/api";
 import { SESSION_USER_KEY } from "@/lib/session-hint";
-import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
+import type { CatalogDTO } from "@/lib/types";
 
 const GLOBAL_KEY = "__cptcgBoot";
 
@@ -14,11 +15,23 @@ const GLOBAL_KEY = "__cptcgBoot";
 const CATALOG_INIT: RequestInit = { cache: "no-cache" };
 const COLLECTION_INIT: RequestInit = { cache: "no-store" };
 
-/** Réponse de GET /api/collection : le compte de la session avec ses lignes (`body` null si refusée). */
+/** Réponse de GET /api/collection, lue par `collectionBody` (`body` null si refusée). */
 export type CollectionResult = {
   status: number;
-  body: { user?: AuthUser; items?: CollectionItemDTO[] } | null;
+  body: unknown;
 };
+
+/**
+ * Compte de la session et ses lignes, vérifiés ; null si la réponse est refusée ou au format inattendu.
+ * `schemas` : cf. loadResponseSchemas (src/lib/client/api.ts).
+ */
+export function collectionBody(schemas: ResponseSchemas, result: CollectionResult) {
+  if (result.body === null) return null;
+  const parsed = schemas.collectionSessionSchema.safeParse(result.body);
+  if (parsed.success) return parsed.data;
+  console.error("Réponse au format inattendu", { url: "/api/collection", error: parsed.error });
+  return null;
+}
 
 export type BootRequests = {
   collection: Promise<CollectionResult>;
@@ -31,7 +44,7 @@ export type BootRequests = {
 export function requestCollection(): Promise<CollectionResult> {
   return fetch("/api/collection", COLLECTION_INIT).then(async (response) => ({
     status: response.status,
-    body: response.ok ? ((await response.json()) as CollectionResult["body"]) : null,
+    body: response.ok ? ((await response.json()) as unknown) : null,
   }));
 }
 

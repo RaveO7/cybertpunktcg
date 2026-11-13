@@ -7,6 +7,8 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { buttonClass, inputClass } from "@/components/tournament/ui";
+import { ApiError, api, isAbort } from "@/lib/client/api";
+import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
 import type { AddressSuggestion } from "@/lib/geo/geocode";
 import type { Place } from "@/lib/geo/location";
 import { countryOptions } from "./countries";
@@ -29,6 +31,7 @@ export function AddressField({
 }) {
   const t = useTranslations();
   const locale = useLocale();
+  const requestError = useApiErrorMessage();
   const listId = useId();
   const [editing, setEditing] = useState(value === null);
   const [country, setCountry] = useState(value?.country ?? "FR");
@@ -45,25 +48,25 @@ export function AddressField({
   useEffect(() => {
     if (!editing || country !== "FR" || query.trim().length < 3) return;
     const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
+    const suggest = async () => {
       try {
-        const response = await fetch(`/api/geocode/suggest?country=FR&q=${encodeURIComponent(query.trim())}`, { signal: controller.signal });
-        const body = (await response.json().catch(() => ({}))) as { suggestions?: AddressSuggestion[]; error?: string };
-        if (!response.ok) {
-          setMessage(body.error ?? t("geo.retry"));
-          return;
-        }
-        setMessage(body.suggestions?.length ? null : t("geo.noSuggestion"));
-        setSuggestions(body.suggestions ?? []);
-      } catch {
-        // Requête annulée par une frappe plus récente.
+        const body = await api(`/api/geocode/suggest?country=FR&q=${encodeURIComponent(query.trim())}`, {
+          schema: "addressSuggestionsSchema",
+          signal: controller.signal,
+        });
+        setMessage(body.suggestions.length ? null : t("geo.noSuggestion"));
+        setSuggestions(body.suggestions);
+      } catch (reason) {
+        // Requête annulée par une frappe plus récente : rien à afficher.
+        if (!isAbort(reason)) setMessage(requestError(reason, t("geo.retry")));
       }
-    }, 300);
+    };
+    const timer = window.setTimeout(() => void suggest(), 300);
     return () => {
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [query, country, editing, t]);
+  }, [query, country, editing, t, requestError]);
 
   function choose(place: Place) {
     onChange({ ...place, venueName: venueName.trim() || null });
@@ -78,19 +81,13 @@ export function AddressField({
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/geocode/resolve", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ country, street: street.trim(), postalCode: postalCode.trim() || undefined, city: city.trim() }),
+      const { place } = await api("/api/geocode/resolve", {
+        body: { country, street: street.trim(), postalCode: postalCode.trim() || undefined, city: city.trim() },
+        schema: "resolvedAddressSchema",
       });
-      const body = (await response.json().catch(() => ({}))) as { place?: AddressSuggestion; error?: string };
-      if (!response.ok || !body.place) {
-        setMessage(body.error ?? (response.status === 404 ? t("geo.notFound") : t("geo.retry")));
-        return;
-      }
-      choose(body.place);
-    } catch {
-      setMessage(t("geo.retry"));
+      choose(place);
+    } catch (reason) {
+      setMessage(requestError(reason, reason instanceof ApiError && reason.status === 404 ? t("geo.notFound") : t("geo.retry")));
     } finally {
       setBusy(false);
     }

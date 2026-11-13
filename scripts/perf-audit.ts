@@ -1,5 +1,5 @@
 // Mesure répétable du site en ligne : temps de chargement réels (Playwright, visites à froid, médiane de N),
-// scores Lighthouse (mobile + ordinateur) et anomalies visibles (erreurs console, requêtes en échec, images cassées).
+// scores Lighthouse (mobile + ordinateur, médiane de N passages, ceux où Lighthouse plante écartés) et anomalies visibles (erreurs console, requêtes en échec, images cassées).
 // Chaque mesure est enregistrée dans docs/perf/history/ et comparée à la précédente.
 //
 // Usage :
@@ -15,7 +15,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { chromium, devices, type BrowserContextOptions, type Cookie } from "@playwright/test";
-import { runLighthouse } from "./perf/lighthouse";
+import { runLighthouseMedian } from "./perf/lighthouse";
 import { acquireMeasureLock } from "./perf/lock";
 import { measurePage, type PageMeasure } from "./perf/measure";
 import { PERF_PAGES } from "./perf/pages";
@@ -148,11 +148,10 @@ async function audit() {
   const runs = Math.max(1, Number(args.runs));
   const only = args.only?.split(",");
   const pages = PERF_PAGES.filter((page) => (!only || only.includes(page.id)) && !(args["public-only"] && page.auth));
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-  const outFile = path.join(HISTORY_DIR, `${stamp}.json`);
-
   // Mesures de plusieurs sessions ou worktrees : l'une après l'autre, jamais en même temps.
   const releaseLock = await acquireMeasureLock();
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  const outFile = path.join(HISTORY_DIR, `${stamp}.json`);
   const bypass = await bypassCookie(baseUrl);
   const session = pages.some((page) => page.auth) ? await login(baseUrl) : null;
   const browser = await chromium.launch();
@@ -167,14 +166,14 @@ async function audit() {
         for (let run = 0; run < runs; run += 1) measures.push(await measurePage(browser, url, device, cookies));
         let lighthouse = null;
         if (!args["no-lighthouse"]) {
-          lighthouse = await runLighthouse(url, profile, path.join(LIGHTHOUSE_DIR, `${page.id}-${profile}`), cookies);
+          lighthouse = await runLighthouseMedian(url, profile, path.join(LIGHTHOUSE_DIR, `${page.id}-${profile}`), cookies, runs);
         }
         const merged = mergeRuns(measures);
         results[page.id].profiles[profile] = { ...merged, lighthouse };
         const { visualComplete, fullyLoaded } = merged.timings;
         console.log(
           `✓ ${page.id} ${profile} — visuel ${(visualComplete / 1000).toFixed(2)} s, complet ${(fullyLoaded / 1000).toFixed(2)} s` +
-            (lighthouse ? `, Lighthouse perf ${lighthouse.performance}` : ""),
+            (lighthouse ? `, Lighthouse perf ${lighthouse.performance} (médiane de ${lighthouse.runs})` : ", Lighthouse : aucun passage valide"),
         );
       }
     }

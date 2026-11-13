@@ -48,7 +48,7 @@ const session = (account: { token: string }) => `${sessionCookie}=${encodeURICom
 type CommandInput = OrganizerCommand extends infer C ? (C extends OrganizerCommand ? Omit<C, "clientActionId"> : never) : never;
 
 function run(tournamentId: string, command: CommandInput) {
-  return commands.runOrganizerCommand(tournamentId, owner.id, { ...command, clientActionId: `join-${stamp}-${++counter}` } as OrganizerCommand);
+  return commands.runOrganizerCommand(tournamentId, owner.id, { ...command, clientActionId: `join-${stamp}-${++counter}` });
 }
 
 async function newTournament(settings: Record<string, unknown> = {}) {

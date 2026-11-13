@@ -83,5 +83,16 @@
   "deleteCancel": "Cancelar",
   "deleting": "Eliminando…",
   "deleteFailed": "No se ha podido eliminar la cuenta.",
-  "loading": "Cargando…"
+  "loading": "Cargando…",
+  "pushTitle": "Notificaciones de alertas de precio",
+  "pushHint": "Recibe una notificación en este dispositivo cuando una carta de tu lista de deseos alcance tu precio objetivo, incluso con la aplicación cerrada.",
+  "pushEnable": "Activar en este dispositivo",
+  "pushDisable": "Desactivar en este dispositivo",
+  "pushEnabled": "Notificaciones activadas en este dispositivo.",
+  "pushDisabled": "Notificaciones desactivadas en este dispositivo.",
+  "pushBusy": "Un momento…",
+  "pushDenied": "Las notificaciones están bloqueadas para este sitio. Permítelas en los ajustes del navegador (icono a la izquierda de la dirección) y vuelve a intentarlo.",
+  "pushUnsupported": "Este navegador no admite notificaciones push.",
+  "pushInstallIos": "En iPhone y iPad, añade primero la aplicación a la pantalla de inicio (Compartir → Añadir a pantalla de inicio) y ábrela desde su icono para activar las notificaciones.",
+  "pushFailed": "No se pudieron cambiar las notificaciones. Inténtalo de nuevo."
 }

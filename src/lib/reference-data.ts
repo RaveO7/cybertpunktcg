@@ -57,6 +57,24 @@ export function isSealedSetCode(code: string) {
   return code.startsWith(SEALED_SET_PREFIX);
 }
 
+/**
+ * Plusieurs extensions de cartes peuvent être choisies à la fois : le filtre `set` les liste alors
+ * séparées par des virgules (« beta,retail »). Une seule extension garde son code tel quel.
+ */
+export function parseSetList(set: string) {
+  return [...new Set(set.split(",").map((code) => code.trim()).filter(Boolean))];
+}
+
+export function isSetList(set: string) {
+  return parseSetList(set).length > 1;
+}
+
+/** Aucune extension cochée revient à « toutes les extensions ». */
+export function joinSetList(codes: string[]) {
+  const unique = [...new Set(codes)];
+  return unique.length ? unique.join(",") : ALL_SETS_ID;
+}
+
 /** Filtres « groupe » de l'écran investissement : toutes les cartes ou tout le scellé. */
 export const CARDS_GROUP_FILTER = "group:cards";
 export const SEALED_GROUP_FILTER = "group:sealed";
@@ -93,6 +111,42 @@ export const RARITY_ORDER = [
   "Secret",
 ] as const;
 
+/** Tris de la liste des cartes : paramètre `sort` de l'URL et préférence « tri par défaut ». */
+export const SORT_KEYS = [
+  "default",
+  "number-asc",
+  "number-desc",
+  "price-asc",
+  "price-desc",
+  "play-cost-asc",
+  "play-cost-desc",
+  "power-asc",
+  "power-desc",
+  "ram-asc",
+  "ram-desc",
+  "qty-asc",
+  "qty-desc",
+  "name-asc",
+  "name-desc",
+  "rarity",
+  "set",
+  "owned-first",
+  "missing-first",
+] as const;
+
+// `cost-*` triait par prix avant l'arrivée du tri par coût de jeu : anciens liens et préférences enregistrées.
+const LEGACY_SORT_KEYS = new Map<string, (typeof SORT_KEYS)[number]>([
+  ["cost-asc", "price-asc"],
+  ["cost-desc", "price-desc"],
+]);
+
+/** Clé de tri connue (une ancienne clé est convertie), sinon `null`. */
+export function parseSortKey(value: unknown): (typeof SORT_KEYS)[number] | null {
+  if (typeof value !== "string") return null;
+  if ((SORT_KEYS as readonly string[]).includes(value)) return value as (typeof SORT_KEYS)[number];
+  return LEGACY_SORT_KEYS.get(value) ?? null;
+}
+
 export const CONDITIONS = [
   { code: "NM", name: "Near Mint", sortOrder: 0 },
   { code: "LP", name: "Lightly Played", sortOrder: 1 },
@@ -106,6 +160,4 @@ export const PRICE_SOURCES = [
   { code: "ebay", name: "eBay" },
   { code: "other", name: "Autre" },
 ] as const;
-
-export const PAGE_SIZE = 200;
 

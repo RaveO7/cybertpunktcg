@@ -237,5 +237,3 @@ export function createGeocoder(deps: GeocoderDeps) {
     },
   };
 }
-
-export type Geocoder = ReturnType<typeof createGeocoder>;
