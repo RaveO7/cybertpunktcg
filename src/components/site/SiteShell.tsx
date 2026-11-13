@@ -37,7 +37,7 @@ export const fontVariables = `${geistSans.variable} ${geistMono.variable} ${chak
 const themeBootScript = `(function(){var theme="dark";try{var raw=localStorage.getItem(${JSON.stringify(PREFERENCES_STORAGE_KEY)});if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.theme==="light")theme="light";}}catch(e){}var root=document.documentElement;root.setAttribute("data-theme",theme);root.style.colorScheme=theme;try{var colors=${JSON.stringify(THEME_CHROME_COLORS)};var metas=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<metas.length;i++)metas[i].parentNode.removeChild(metas[i]);var meta=document.createElement("meta");meta.setAttribute("name","theme-color");meta.setAttribute("content",colors[theme]);document.head.appendChild(meta);}catch(e){}})();`;
 
 /** Document HTML de toutes les pages, dans la langue de l'URL (/fr, /en, /de…). */
-export async function SiteShell({ lang, children }: { lang: Locale; children: ReactNode }) {
+export async function SiteShell({ lang, head, children }: { lang: Locale; head: ReactNode; children: ReactNode }) {
   const messages = pickBlocks((await getMessages()), CLIENT_BLOCKS);
   return (
     <html lang={lang} className={`${fontVariables} h-dvh overflow-hidden antialiased`} data-theme="dark" suppressHydrationWarning>
@@ -45,6 +45,8 @@ export async function SiteShell({ lang, children }: { lang: Locale; children: Re
       {/* eslint-disable-next-line @next/next/no-head-element */}
       <head>
         <BootScript html={BOOT_REQUESTS_SCRIPT + themeBootScript + REVEAL_BOOT_SCRIPT} />
+        {/* Préchargements propres à la page (route parallèle @preload), hors de RequireUser. */}
+        {head}
       </head>
       <body className="h-dvh overflow-clip">
         <IntlClientProvider locale={lang} messages={messages} timeZone={await getTimeZone()}>
