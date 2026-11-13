@@ -8,6 +8,7 @@ import { Fragment, type ReactNode } from "react";
 import { TrackCardLink } from "@/components/public-site/TrackCardLink";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { JsonLd } from "@/components/site/JsonLd";
+import { thumbnailSrcSet } from "@/lib/card-image";
 import { latestPriceDate, loadPublicCards } from "@/lib/seo/catalog-data";
 import { CARD_TYPES, cardLabels, type CardLabels } from "@/lib/seo/card-labels";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -19,6 +20,15 @@ import { translatorFor } from "@/i18n/server";
 
 const IMAGE = { width: 733, height: 1024 };
 const THUMB = { width: 400, height: 559 };
+
+// Largeur affichée des images (attribut sizes) : conteneur max-w-5xl (1024 px) en px-4, gap-3 (12 px).
+/** Grille du catalogue : 3 colonnes, 4 dès sm, 6 dès md. */
+const CATALOG_GRID_SIZES =
+  "(min-width: 1024px) 155px, (min-width: 768px) calc((100vw - 92px) / 6), (min-width: 640px) calc((100vw - 68px) / 4), calc((100vw - 56px) / 3)";
+/** Grille « même couleur » de la fiche : 3 colonnes, 6 dès sm. */
+const SAME_COLOR_GRID_SIZES = "(min-width: 1024px) 155px, (min-width: 640px) calc((100vw - 92px) / 6), calc((100vw - 56px) / 3)";
+/** Image de la fiche : 320 px au plus, toute la largeur moins px-4 en dessous. */
+const CARD_IMAGE_SIZES = "(min-width: 352px) 320px, calc(100vw - 32px)";
 
 const actionClass = "inline-flex h-11 items-center border border-cyan px-4 text-sm text-cyan hover:bg-cyan/10";
 
@@ -64,19 +74,33 @@ function cardFacts(card: PublicCard, labels: CardLabels, stat: { cost: (value: n
  * Tuile de carte reprenant celle de l'explorateur : halo aux couleurs de l'illustration, balayage et
  * zoom au survol (effets réservés à la souris, cf. globals.css).
  */
-function CardTile({ card, locale, alt, eager = false }: { card: PublicCard; locale: Locale; alt: string; eager?: boolean }) {
+function CardTile({
+  card,
+  locale,
+  alt,
+  sizes,
+  eager = false,
+}: {
+  card: PublicCard;
+  locale: Locale;
+  alt: string;
+  sizes: string;
+  eager?: boolean;
+}) {
+  // Halos et tuile partagent srcset et sizes : une seule image téléchargée.
+  const srcSet = thumbnailSrcSet(card.image);
   return (
     <li className="group relative">
       {card.thumb ? (
         <>
           <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
-            <img src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight" />
+            <img srcSet={srcSet} sizes={sizes} src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight" />
           </div>
           <div className="card-ambilight-spill z-[1]" aria-hidden="true">
             <div className="relative h-full">
               {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
-              <img src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight" />
+              <img srcSet={srcSet} sizes={sizes} src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight" />
             </div>
           </div>
         </>
@@ -89,6 +113,8 @@ function CardTile({ card, locale, alt, eager = false }: { card: PublicCard; loca
           {card.thumb ? (
             // eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées (aucune optimisation Vercel)
             <img
+              srcSet={srcSet}
+              sizes={sizes}
               src={card.thumb}
               alt={alt}
               width={THUMB.width}
@@ -174,6 +200,7 @@ export async function CatalogPage({ locale }: { locale: Locale }) {
                   card={card}
                   locale={locale}
                   alt={tCard("imageAlt", { name: card.name })}
+                  sizes={CATALOG_GRID_SIZES}
                   eager={groupIndex === 0 && index < 6}
                 />
               ))}
@@ -249,8 +276,10 @@ export async function CardPage({ locale, slug }: { locale: Locale; slug: string 
       <article className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-5">
         <div className="grid gap-6 md:grid-cols-[minmax(0,320px)_1fr]">
           {card.image ? (
-            // eslint-disable-next-line @next/next/no-img-element -- image locale déjà optimisée (WebP)
+            // eslint-disable-next-line @next/next/no-img-element -- image locale déjà optimisée (WebP), miniatures en srcset
             <img
+              srcSet={thumbnailSrcSet(card.image, IMAGE.width)}
+              sizes={CARD_IMAGE_SIZES}
               src={card.image}
               alt={t("imageAlt", { name: card.name })}
               width={IMAGE.width}
@@ -370,7 +399,13 @@ export async function CardPage({ locale, slug }: { locale: Locale; slug: string 
             <h2 className="font-display text-lg uppercase tracking-wide text-yellow">{t("sameColor", { color: card.color ?? "" })}</h2>
             <ul className="grid grid-cols-3 gap-3 sm:grid-cols-6">
               {sameColor.map((other) => (
-                <CardTile key={other.slug} card={other} locale={locale} alt={t("imageAlt", { name: other.name })} />
+                <CardTile
+                  key={other.slug}
+                  card={other}
+                  locale={locale}
+                  alt={t("imageAlt", { name: other.name })}
+                  sizes={SAME_COLOR_GRID_SIZES}
+                />
               ))}
             </ul>
           </section>

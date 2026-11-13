@@ -1,10 +1,12 @@
 import { execFile, spawn } from "node:child_process";
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { chromium, type Cookie } from "@playwright/test";
 import { z } from "zod";
+import { MEASURE_HEADERS } from "./measure";
 
 export type LighthouseScores = {
   performance: number;
@@ -28,7 +30,18 @@ const EXTRA_ATTEMPTS = 2;
 
 const run = promisify(execFile);
 const CLI = path.join("node_modules", "lighthouse", "cli", "index.js");
-const DEBUG_PORT = 9333;
+
+/** Port libre pour le débogage de Chrome : jamais celui d'un Chrome lancé par une autre mesure. */
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const { port } = server.address() as { port: number };
+      server.close(() => resolve(port));
+    });
+  });
+}
 
 const reportSchema = z.object({
   runtimeError: z.object({ message: z.string() }).optional(),
@@ -42,11 +55,12 @@ const reportSchema = z.object({
  * Sans sandbox, comme Playwright le lance : sinon, sous Windows, son service réseau plante au démarrage.
  */
 async function startChrome(cookies: Cookie[]) {
+  const port = await freePort();
   const profileDir = mkdtempSync(path.join(tmpdir(), "perf-lighthouse-"));
   const chrome = spawn(chromium.executablePath(), [
     "--headless=new",
     "--no-sandbox",
-    `--remote-debugging-port=${DEBUG_PORT}`,
+    `--remote-debugging-port=${port}`,
     `--user-data-dir=${profileDir}`,
     "--no-first-run",
     "about:blank",
@@ -56,17 +70,22 @@ async function startChrome(cookies: Cookie[]) {
   const stop = async () => {
     chrome.kill();
     await exited;
-    rmSync(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    try {
+      rmSync(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    } catch (error) {
+      // Profil temporaire encore verrouillé par Windows : la mesure reste valable, le dossier sera nettoyé plus tard.
+      console.warn(`⚠ Profil Chrome non supprimé (${profileDir}) : ${String(error)}`);
+    }
   };
   try {
     for (let attempt = 0; ; attempt += 1) {
       try {
         // Playwright pose les cookies puis se détache : deux pilotes en même temps se bloquent
         // (Network.enable timed out), et l'en-tête Cookie de Lighthouse est ignoré par fetch().
-        const browser = await chromium.connectOverCDP(`http://127.0.0.1:${DEBUG_PORT}`);
+        const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
         await browser.contexts()[0].addCookies(cookies);
         await browser.close();
-        return stop;
+        return { stop, port };
       } catch (error) {
         if (attempt >= 50) throw error;
         await new Promise((resolve) => setTimeout(resolve, 200));
@@ -90,17 +109,18 @@ export async function runLighthouse(
   cookies: Cookie[],
 ): Promise<LighthouseScores> {
   mkdirSync(path.dirname(reportBase), { recursive: true });
-  const stopChrome = await startChrome(cookies);
+  const { stop: stopChrome, port } = await startChrome(cookies);
   try {
     await run(process.execPath, [
       CLI,
       url,
-      `--port=${DEBUG_PORT}`,
+      `--port=${port}`,
       "--output=json",
       "--output=html",
       `--output-path=${reportBase}`,
       "--locale=fr",
       "--quiet",
+      `--extra-headers=${JSON.stringify(MEASURE_HEADERS)}`,
       ...(formFactor === "desktop" ? ["--preset=desktop"] : []),
     ]);
   } finally {
