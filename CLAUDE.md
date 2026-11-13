@@ -4,7 +4,11 @@
 
 ## Commandes de vérification
 
-- Vérification rapide (typecheck + lint + tests unitaires en parallèle, sortie courte) : `npm run check`
+- **Vérification automatique** : `npm run verify` ne lance que ce qui concerne les fichiers modifiés depuis `origin/main` (typecheck, lint de ces fichiers, Vitest liés, e2e choisis d'après les chemins sur Chrome desktop + Pixel), et rien si le code n'a pas changé depuis la dernière réussite. `--list` montre la sélection ; `--full` = lint et Vitest complets + e2e ciblés sur les 4 appareils.
+  - Hook de fin de tâche (`.claude/hooks/verify-on-stop.mjs`) : lancé dès que la session a modifié des fichiers du projet ; échec → corriger avant de terminer (3 essais max, puis le signaler).
+  - Hook avant `git push` (`.claude/hooks/verify-before-push.mjs`) : `verify --full`, push bloqué s'il échoue. Remplace la CI GitHub.
+  - Ne pas relancer ces vérifications à la main en plus des hooks. Reste à faire soi-même : essayer la tâche dans l'app locale et les captures si l'interface change.
+- Vérification rapide sans e2e (typecheck + lint + tests unitaires) : `npm run check`
 - Typecheck : `npm run typecheck` · Lint : `npm run lint`
 - Un fichier de test : `npx vitest run tests/unit/x.test.ts` · Suites : `npm run test:unit`, `npm run test:db` (base SQLite, en série)
 - Captures d'une page modifiée (desktop + mobile, compte de test créé puis supprimé) :
@@ -30,7 +34,8 @@ Tout test, script de vérification ou essai manuel qui crée quelque chose en ba
 - Attendre le déploiement d'un commit (logs affichés si le build échoue) : `node scripts/wait-deploy.mjs [HEAD|<sha>] [--prod]` — en arrière-plan, un build dure 3 à 10 min.
 - Test de fumée en lecture seule (12 pages publiques et connectées, desktop + mobile : statut, erreurs console, requêtes en échec, images cassées) : `node scripts/smoke-preview.mjs <url> [--pages /fr,/fr/cards] [--shots <dossier>]`. Production : `https://cybertpunktcg.vercel.app`.
 - Les previews sont protégées (Vercel Authentication) : les scripts lisent eux-mêmes la clé `automation-bypass` (`vercel api /v9/projects/<projectId>`) et l'envoient en en-tête `x-vercel-protection-bypass`.
-- La CI GitHub Actions ne démarre pas (compte GitHub bloqué pour facturation, 2026-11-12) : s'appuyer sur `npm run check` et la preview.
+- La CI GitHub Actions ne démarre pas (compte GitHub bloqué pour facturation, 2026-11-12) : le hook avant push (`verify --full`) et le test de la preview la remplacent ; ignorer le ✗ « check » de la PR.
+- Circuit : vérification locale (hooks) → push → test de **la tâche** sur la preview (le vrai site : base de prod, lecture seule) → fusion → en production, seulement `wait-deploy.mjs HEAD --prod` (« Ready ») et `smoke-preview.mjs https://cybertpunktcg.vercel.app --public-only`, pas de nouveau test complet.
 - **Les previews utilisent la base Postgres de production** : sur une preview, tests en lecture seule (compte de test `EMAIL_USER_TEST` de `.env.local`). Toute vérification qui écrit se fait en local.
 - Un build de production lance `db push` sur la base de prod : un changement de schéma destructeur fait échouer le build — me demander avant de fusionner une modification de `prisma/schema.prisma`.
 

@@ -5,3 +5,5 @@
 .vercel
 # Copie de la base SQLite locale : les essais dans un worktree ne touchent pas celle du dossier principal.
 data/collection.db
+# Guide de prix Cardmarket qui correspond à cette base (tests/db/cardmarket.test.ts compare les deux).
+data/cardmarket

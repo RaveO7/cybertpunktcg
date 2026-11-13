@@ -38,6 +38,11 @@
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-prisma-worktree.mjs\"",
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/verify-before-push.mjs\"",
+            "timeout": 2800
           }
         ]
       }
@@ -59,8 +64,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/typecheck-on-stop.mjs\"",
-            "timeout": 180
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/verify-on-stop.mjs\"",
+            "timeout": 1600
           }
         ]
       }

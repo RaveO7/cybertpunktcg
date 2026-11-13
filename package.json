@@ -10,6 +10,7 @@
     "lint": "eslint --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "check": "node scripts/check.mjs",
+    "verify": "node scripts/verify.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run --project unit",

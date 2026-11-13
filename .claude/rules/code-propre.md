@@ -25,4 +25,4 @@ Ces règles valent pour tout code écrit ou modifié. Le lint et le typecheck v�
 
 ## Avant de dire « fini »
 - Un comportement nouveau ou corrigé a son test (unitaire si pur, `tests/db` s'il touche la base).
-- `npm run check` vert, et les tests de la zone.
+- `npm run verify` vert : lancé tout seul par le hook de fin de tâche, rien à relancer à la main.
