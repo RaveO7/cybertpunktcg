@@ -1,0 +1,314 @@
+{
+  "version": 1,
+  "date": "2026-11-13T17:36:51.073Z",
+  "label": "prefetch images avant (production)",
+  "baseUrl": "https://cybertpunktcg-he3vtumt6-perfectpornproject.vercel.app",
+  "gitSha": "4a0a257",
+  "runs": 3,
+  "pages": {
+    "accueil": {
+      "path": "/fr",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 94.70000004768372,
+            "fcp": 436,
+            "lcp": 988,
+            "domContentLoaded": 423.7000000476837,
+            "load": 546.3999999761581,
+            "visualComplete": 988,
+            "fullyLoaded": 1040.5,
+            "cls": 0,
+            "requests": 55,
+            "totalKB": 1209,
+            "jsKB": 262,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 48,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 1171,
+            "lcp": 5740,
+            "tbt": 2695,
+            "cls": 0,
+            "speedIndex": 3675,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 70.70000004768372,
+            "fcp": 396,
+            "lcp": 884,
+            "domContentLoaded": 284.40000009536743,
+            "load": 523.2000000476837,
+            "visualComplete": 884,
+            "fullyLoaded": 957.2999999523163,
+            "cls": 0,
+            "requests": 55,
+            "totalKB": 634,
+            "jsKB": 262,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 97,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 334,
+            "lcp": 1281,
+            "tbt": 29,
+            "cls": 0,
+            "speedIndex": 750,
+            "runs": 3
+          }
+        }
+      }
+    },
+    "catalogue": {
+      "path": "/fr/cartes",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 69,
+            "fcp": 272,
+            "lcp": 272,
+            "domContentLoaded": 216.10000002384186,
+            "load": 405.39999997615814,
+            "visualComplete": 272,
+            "fullyLoaded": 894.8999999761581,
+            "cls": 0,
+            "requests": 60,
+            "totalKB": 1383,
+            "jsKB": 228,
+            "imageKB": 69
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 81,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 1387,
+            "lcp": 4237,
+            "tbt": 249,
+            "cls": 0,
+            "speedIndex": 1748,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 71.10000002384186,
+            "fcp": 292,
+            "lcp": 292,
+            "domContentLoaded": 340.1999999284744,
+            "load": 381,
+            "visualComplete": 351.2000000476837,
+            "fullyLoaded": 886.2000000476837,
+            "cls": 0,
+            "requests": 74,
+            "totalKB": 879,
+            "jsKB": 228,
+            "imageKB": 51
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 76,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 396,
+            "lcp": 1254,
+            "tbt": 491,
+            "cls": 0,
+            "speedIndex": 1320,
+            "runs": 3
+          }
+        }
+      }
+    },
+    "fiche-carte": {
+      "path": "/fr/cartes/adam-smasher-ender-of-legends",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 67,
+            "fcp": 268,
+            "lcp": 268,
+            "domContentLoaded": 217.60000002384186,
+            "load": 347.1999999284744,
+            "visualComplete": 268,
+            "fullyLoaded": 703.1000000238419,
+            "cls": 0,
+            "requests": 44,
+            "totalKB": 716,
+            "jsKB": 228,
+            "imageKB": 72
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 72,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 1236,
+            "lcp": 4542,
+            "tbt": 475,
+            "cls": 0,
+            "speedIndex": 2140,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 76.5,
+            "fcp": 328,
+            "lcp": 328,
+            "domContentLoaded": 298.39999997615814,
+            "load": 366.39999997615814,
+            "visualComplete": 328,
+            "fullyLoaded": 790.2000000476837,
+            "cls": 0,
+            "requests": 45,
+            "totalKB": 510,
+            "jsKB": 228,
+            "imageKB": 25
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 98,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 356,
+            "lcp": 1107,
+            "tbt": 36,
+            "cls": 0,
+            "speedIndex": 814,
+            "runs": 3
+          }
+        }
+      }
+    },
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 103.39999997615814,
+            "fcp": 416,
+            "lcp": 416,
+            "domContentLoaded": 376.1999999284744,
+            "load": 558.7999999523163,
+            "visualComplete": 440.39999997615814,
+            "fullyLoaded": 2046,
+            "cls": 0,
+            "requests": 79,
+            "totalKB": 1135,
+            "jsKB": 396,
+            "imageKB": 262
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 52,
+            "accessibility": 100,
+            "bestPractices": 93,
+            "seo": 66,
+            "fcp": 1255,
+            "lcp": 6337,
+            "tbt": 1223,
+            "cls": 0,
+            "speedIndex": 3823,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 93.89999997615814,
+            "fcp": 376,
+            "lcp": 716,
+            "domContentLoaded": 348.5,
+            "load": 459.7000000476837,
+            "visualComplete": 716,
+            "fullyLoaded": 958,
+            "cls": 0.085,
+            "requests": 82,
+            "totalKB": 1139,
+            "jsKB": 396,
+            "imageKB": 250
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 85,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 66,
+            "fcp": 356,
+            "lcp": 1483,
+            "tbt": 224,
+            "cls": 0.064,
+            "speedIndex": 1253,
+            "runs": 3
+          }
+        }
+      }
+    }
+  }
+}
