@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, type ImgHTMLAttributes } from "react";
-import { thumbnailPath } from "@/lib/card-image";
+import { thumbnailPath, thumbnailSrcSet } from "@/lib/card-image";
 
 type Props = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & { src: string };
 
 /**
  * Affiche la miniature pré-générée d'une carte et repasse sur l'image d'origine
- * si la miniature est absente ou ne se charge pas.
+ * si la miniature est absente ou ne se charge pas. Avec `sizes` (largeur affichée), le navigateur
+ * choisit la largeur de miniature qui suffit (srcset).
  */
-export function CardImage({ src, onError, ...props }: Props) {
+export function CardImage({ src, sizes, onError, ...props }: Props) {
   const thumb = thumbnailPath(src);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const ref = useRef<HTMLImageElement>(null);
@@ -26,6 +27,9 @@ export function CardImage({ src, onError, ...props }: Props) {
     <img
       ref={ref}
       {...props}
+      // srcset et sizes avant src : sinon Safari peut télécharger src en plus de la bonne largeur.
+      srcSet={useThumb && sizes ? thumbnailSrcSet(src) : undefined}
+      sizes={useThumb ? sizes : undefined}
       src={useThumb ? thumb : src}
       onError={(event) => {
         if (useThumb) setFailedSrc(src);

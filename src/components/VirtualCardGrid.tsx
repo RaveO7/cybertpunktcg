@@ -180,6 +180,8 @@ export function VirtualCardGrid({
   const colWidth = width > 0 ? (width - gap * (cols - 1)) / cols : 200;
   const rowHeight = Math.ceil(colWidth * (3.5 / 2.5) + META_HEIGHT + gapY);
   const rowCount = Math.ceil(items.length / cols) || 0;
+  // Image de la tuile : largeur de colonne moins la bordure de .hud-panel (1 px de chaque côté).
+  const imageSizes = `${Math.ceil(colWidth) - 2}px`;
 
   // After mount: ResizeObserver/setState must not race Suspense Placement.
   useEffect(() => {
@@ -326,6 +328,7 @@ export function VirtualCardGrid({
                 onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(printing.id) : undefined}
                 tabIndex={start + column === tabbable ? 0 : -1}
                 pressed={selecting ? (draft[printing.id] ?? 0) > 0 : undefined}
+                imageSizes={imageSizes}
               />
             ))}
             {rowItems.length < cols
