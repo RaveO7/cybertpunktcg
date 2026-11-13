@@ -1,0 +1,334 @@
+{
+  "version": 1,
+  "date": "2026-11-12T23:30:47.282Z",
+  "label": "avant taille images, série 1 (preview, machine seule)",
+  "baseUrl": "https://cybertpunktcg-oya2ejs2r-perfectpornproject.vercel.app",
+  "gitSha": "80646d3",
+  "runs": 3,
+  "pages": {
+    "accueil": {
+      "path": "/fr",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 87.19999998807907,
+            "fcp": 672,
+            "lcp": 1160,
+            "domContentLoaded": 620.6999999880791,
+            "load": 916.6000000238419,
+            "visualComplete": 1160,
+            "fullyLoaded": 1433.800000011921,
+            "cls": 0,
+            "requests": 55,
+            "totalKB": 1175,
+            "jsKB": 228,
+            "imageKB": 8
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 404 ()",
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "404 https://cybertpunktcg-oya2ejs2r-perfectpornproject.vercel.app/card-images/card-back.webp",
+              "401 https://cybertpunktcg-oya2ejs2r-perfectpornproject.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 57,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 1232,
+            "lcp": 7262,
+            "tbt": 786,
+            "cls": 0,
+            "speedIndex": 2605
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 71.5,
+            "fcp": 384,
+            "lcp": 912,
+            "domContentLoaded": 293.4000000357628,
+            "load": 587.3999999761581,
+            "visualComplete": 912,
+            "fullyLoaded": 912,
+            "cls": 0,
+            "requests": 56,
+            "totalKB": 1176,
+            "jsKB": 228,
+            "imageKB": 8
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 404 ()",
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "404 https://cybertpunktcg-oya2ejs2r-perfectpornproject.vercel.app/card-images/card-back.webp",
+              "401 https://cybertpunktcg-oya2ejs2r-perfectpornproject.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 96,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 331,
+            "lcp": 1343,
+            "tbt": 61,
+            "cls": 0,
+            "speedIndex": 739
+          }
+        }
+      }
+    },
+    "catalogue": {
+      "path": "/fr/cartes",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 73.10000002384186,
+            "fcp": 308,
+            "lcp": 308,
+            "domContentLoaded": 224,
+            "load": 403,
+            "visualComplete": 308,
+            "fullyLoaded": 785.5,
+            "cls": 0,
+            "requests": 56,
+            "totalKB": 1401,
+            "jsKB": 195,
+            "imageKB": 92
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg-oya2ejs2r-perfectpornproject.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 84,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 1237,
+            "lcp": 4220,
+            "tbt": 151,
+            "cls": 0,
+            "speedIndex": 1612
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 69.69999998807907,
+            "fcp": 296,
+            "lcp": 296,
+            "domContentLoaded": 253.80000001192093,
+            "load": 431.80000001192093,
+            "visualComplete": 329.5,
+            "fullyLoaded": 1106.199999988079,
+            "cls": 0,
+            "requests": 72,
+            "totalKB": 2160,
+            "jsKB": 195,
+            "imageKB": 186
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg-oya2ejs2r-perfectpornproject.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 97,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 415,
+            "lcp": 1302,
+            "tbt": 9,
+            "cls": 0,
+            "speedIndex": 739
+          }
+        }
+      }
+    },
+    "fiche-carte": {
+      "path": "/fr/cartes/adam-smasher-ender-of-legends",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 64.69999998807907,
+            "fcp": 296,
+            "lcp": 296,
+            "domContentLoaded": 263.19999998807907,
+            "load": 428.5999999642372,
+            "visualComplete": 296,
+            "fullyLoaded": 735.5,
+            "cls": 0,
+            "requests": 43,
+            "totalKB": 724,
+            "jsKB": 195,
+            "imageKB": 97
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg-oya2ejs2r-perfectpornproject.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 85,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 1240,
+            "lcp": 4169,
+            "tbt": 135,
+            "cls": 0,
+            "speedIndex": 1472
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 71.69999998807907,
+            "fcp": 348,
+            "lcp": 348,
+            "domContentLoaded": 305.5,
+            "load": 449.80000001192093,
+            "visualComplete": 348,
+            "fullyLoaded": 774.0999999642372,
+            "cls": 0,
+            "requests": 44,
+            "totalKB": 725,
+            "jsKB": 195,
+            "imageKB": 97
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg-oya2ejs2r-perfectpornproject.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 69,
+            "fcp": 346,
+            "lcp": 929,
+            "tbt": 13,
+            "cls": 0,
+            "speedIndex": 529
+          }
+        }
+      }
+    },
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 66.09999996423721,
+            "fcp": 224,
+            "lcp": 224,
+            "domContentLoaded": 191.30000001192093,
+            "load": 359.0999999642372,
+            "visualComplete": 668.6999999880791,
+            "fullyLoaded": 1278.699999988079,
+            "cls": 0,
+            "requests": 74,
+            "totalKB": 1036,
+            "jsKB": 348,
+            "imageKB": 394
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 73,
+            "accessibility": 94,
+            "bestPractices": 96,
+            "seo": 66,
+            "fcp": 1249,
+            "lcp": 5827,
+            "tbt": 275,
+            "cls": 0,
+            "speedIndex": 2535
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 73.19999998807907,
+            "fcp": 248,
+            "lcp": 712,
+            "domContentLoaded": 214.5,
+            "load": 394.69999998807907,
+            "visualComplete": 719.5,
+            "fullyLoaded": 961.8999999761581,
+            "cls": 0.088,
+            "requests": 86,
+            "totalKB": 1342,
+            "jsKB": 344,
+            "imageKB": 475
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 95,
+            "accessibility": 95,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 318,
+            "lcp": 1318,
+            "tbt": 14,
+            "cls": 0.067,
+            "speedIndex": 1008
+          }
+        }
+      }
+    }
+  }
+}

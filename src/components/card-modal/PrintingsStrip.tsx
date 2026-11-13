@@ -68,6 +68,7 @@ export function PrintingsStrip({
                 {entry.imagePath ? (
                   <CardImage
                     src={entry.imagePath}
+                    sizes="(min-width: 768px) 74px, 66px"
                     alt=""
                     loading="lazy"
                     className="aspect-[63/88] w-full bg-black object-cover"

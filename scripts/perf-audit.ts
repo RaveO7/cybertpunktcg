@@ -16,6 +16,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { chromium, devices, type BrowserContextOptions, type Cookie } from "@playwright/test";
 import { runLighthouseMedian } from "./perf/lighthouse";
+import { acquireMeasureLock } from "./perf/lock";
 import { measurePage, type PageMeasure } from "./perf/measure";
 import { PERF_PAGES } from "./perf/pages";
 import {
@@ -147,9 +148,10 @@ async function audit() {
   const runs = Math.max(1, Number(args.runs));
   const only = args.only?.split(",");
   const pages = PERF_PAGES.filter((page) => (!only || only.includes(page.id)) && !(args["public-only"] && page.auth));
-  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+  // Mesures de plusieurs sessions ou worktrees : l'une après l'autre, jamais en même temps.
+  const releaseLock = await acquireMeasureLock();
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   const outFile = path.join(HISTORY_DIR, `${stamp}.json`);
-
   const bypass = await bypassCookie(baseUrl);
   const session = pages.some((page) => page.auth) ? await login(baseUrl) : null;
   const browser = await chromium.launch();
@@ -178,6 +180,7 @@ async function audit() {
   } finally {
     await browser.close();
     if (session) await logout(baseUrl, session);
+    releaseLock();
   }
 
   const run: PerfRun = { version: 1, date: new Date().toISOString(), label: args.label, baseUrl, gitSha: gitSha(), runs, pages: results };

@@ -21,6 +21,8 @@ export type FanCard = {
   name: string;
   href: string;
   thumb: string;
+  /** Miniatures de plusieurs largeurs (thumbnailSrcSet), choisies selon FAN_CARD_SIZES / DIALOG_CARD_SIZES. */
+  srcSet?: string;
   alt: string;
   /** « Légende · Rouge » */
   kind: string;
@@ -45,6 +47,13 @@ const MAX_TILT = 14;
 /** Distribution des cartes à l'arrivée : écart entre deux cartes, et durée d'un vol. */
 const DEAL_STEP_MS = 120;
 const DEAL_MS = 900;
+/**
+ * Largeur affichée d'une carte de l'éventail (36 % de l'éventail) : éventail de 34rem au plus, colonne
+ * droite de la grille max-w-[1100px] (px-4, gap-12, 1.05fr/1fr) dès md, pleine largeur (px-3) en dessous.
+ */
+const FAN_CARD_SIZES = "(min-width: 1100px) 180px, (min-width: 768px) calc((100vw - 80px) * 0.176), min(196px, calc((100vw - 24px) * 0.36))";
+/** Largeur de la carte agrandie (.card-dialog-card) : 320 px dès md, sinon min(58vw, 230px). */
+const DIALOG_CARD_SIZES = "(min-width: 768px) 320px, min(58vw, 230px)";
 /** Filet si la fin de transition n'arrive pas (onglet masqué…) ; durée réelle : .card-dialog-* dans globals.css. */
 const CLOSE_FALLBACK_MS = 900;
 
@@ -226,7 +235,7 @@ export function HeroCardFan({ cards, labels }: { cards: FanCard[]; labels: FanLa
             return (
               <li key={card.slug} className="hero-fan-card" style={style} data-active={isActive || undefined}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la carte */}
-                <img src={card.thumb} alt="" aria-hidden="true" className="hero-fan-glow" />
+                <img srcSet={card.srcSet} sizes={FAN_CARD_SIZES} src={card.thumb} alt="" aria-hidden="true" className="hero-fan-glow" />
                 <Link
                   ref={(node) => {
                     faces.current[index] = node;
@@ -239,7 +248,17 @@ export function HeroCardFan({ cards, labels }: { cards: FanCard[]; labels: FanLa
                   onBlur={release}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées */}
-                  <img src={card.thumb} alt={card.alt} width={400} height={559} loading="eager" decoding="async" draggable={false} />
+                  <img
+                    srcSet={card.srcSet}
+                    sizes={FAN_CARD_SIZES}
+                    src={card.thumb}
+                    alt={card.alt}
+                    width={400}
+                    height={559}
+                    loading="eager"
+                    decoding="async"
+                    draggable={false}
+                  />
                   <span className="hero-fan-glare" aria-hidden="true" />
                 </Link>
               </li>
@@ -396,8 +415,12 @@ function CardDialog({
           <div ref={cardRef} className="card-dialog-card relative z-10 aspect-card w-[min(58vw,230px)] shrink-0 md:w-[320px]">
             <div className="card-dialog-flip">
               <div className="card-dialog-face">
-                {/* eslint-disable-next-line @next/next/no-img-element -- miniature déjà chargée par l'éventail */}
-                <img src={card.thumb} alt={card.alt} className="h-full w-full object-cover" />
+                {/* Miniature déjà chargée par l'éventail, sous celle à la taille de la carte agrandie : pas de
+                    face vide pendant que cette dernière se charge. */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées */}
+                <img srcSet={card.srcSet} sizes={FAN_CARD_SIZES} src={card.thumb} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                {/* eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées */}
+                <img srcSet={card.srcSet} sizes={DIALOG_CARD_SIZES} src={card.thumb} alt={card.alt} className="relative h-full w-full object-cover" />
               </div>
               {/* Dos de carte HUD (sans image), visible pendant le tour. */}
               <div className="card-dialog-back" aria-hidden="true">

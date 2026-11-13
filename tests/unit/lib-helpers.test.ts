@@ -10,7 +10,7 @@ import {
   rarityColor,
   rarityFill,
 } from "../../src/lib/rarity-color";
-import { CARD_IMAGES_PREFIX, THUMB_DIR, thumbnailPath } from "../../src/lib/card-image";
+import { CARD_IMAGES_PREFIX, THUMB_DIR, THUMB_EXTRA_WIDTHS, THUMB_WIDTH, thumbnailPath, thumbnailSrcSet } from "../../src/lib/card-image";
 import {
   ALL_SETS_ID,
   BETA_SET_CODE,
@@ -144,6 +144,28 @@ describe("thumbnailPath", () => {
   it("idempotence : la miniature d'une miniature n'existe pas", () => {
     const thumb = thumbnailPath("/card-images/x.jpg");
     assert.equal(thumbnailPath(thumb), null);
+  });
+});
+
+describe("thumbnailSrcSet", () => {
+  const entry = (width: number) =>
+    `${width === THUMB_WIDTH ? "/card-images/thumb" : `/card-images/thumb/${width}`}/abc.webp ${width}w`;
+
+  it("sans image d'origine : largeurs croissantes plafonnées à THUMB_WIDTH (pas plus lourd qu'une miniature)", () => {
+    const entries = thumbnailSrcSet("/card-images/abc.png")!.split(", ");
+    const widths = [...THUMB_EXTRA_WIDTHS, THUMB_WIDTH].filter((width) => width <= THUMB_WIDTH).sort((a, b) => a - b);
+    assert.deepEqual(entries, widths.map(entry));
+  });
+
+  it("avec la largeur de l'image d'origine : toutes les miniatures puis l'original en dernier", () => {
+    const entries = thumbnailSrcSet("/card-images/abc.png", 733)!.split(", ");
+    const widths = [...THUMB_EXTRA_WIDTHS, THUMB_WIDTH].sort((a, b) => a - b);
+    assert.deepEqual(entries, [...widths.map(entry), "/card-images/abc.png 733w"]);
+  });
+
+  it("aucun srcset sans miniature", () => {
+    assert.equal(thumbnailSrcSet(null), undefined);
+    assert.equal(thumbnailSrcSet("https://cdn.example.com/card-images/abc.png"), undefined);
   });
 });
 
