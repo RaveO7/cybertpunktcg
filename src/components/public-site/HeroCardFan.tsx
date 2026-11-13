@@ -14,6 +14,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { TrackCardLink } from "@/components/public-site/TrackCardLink";
+import { useModal } from "@/components/use-modal";
 
 export type FanCard = {
   slug: string;
@@ -46,8 +47,6 @@ const MAX_TILT = 14;
 /** Distribution des cartes à l'arrivée : écart entre deux cartes, et durée d'un vol. */
 const DEAL_STEP_MS = 120;
 const DEAL_MS = 900;
-/** Image du dos des cartes du jeu, montrée pendant le tour de la carte agrandie. */
-const CARD_BACK = "/card-images/card-back.webp";
 /**
  * Largeur affichée d'une carte de l'éventail (36 % de l'éventail) : éventail de 34rem au plus, colonne
  * droite de la grille max-w-[1100px] (px-4, gap-12, 1.05fr/1fr) dès md, pleine largeur (px-3) en dessous.
@@ -138,8 +137,6 @@ export function HeroCardFan({ cards, labels }: { cards: FanCard[]; labels: FanLa
   }, [cards.length]);
 
   useEffect(() => {
-    // Précharge le dos de carte : il doit être prêt à mi-tour, dès la première ouverture.
-    new Image().src = CARD_BACK;
     return () => {
       if (frame.current !== null) cancelAnimationFrame(frame.current);
     };
@@ -392,17 +389,9 @@ function CardDialog({
     window.setTimeout(finish, CLOSE_FALLBACK_MS);
   }, [onClosed, originOf]);
 
-  useEffect(() => {
-    closeRef.current?.focus({ preventScroll: true });
-    // Pas de blocage du défilement de la page : il ferait disparaître sa barre de défilement et
-    // décalerait l'éventail. La fiche couvre l'écran et retient son propre défilement
-    // (overscroll-contain).
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [close]);
+  // Voile compris (à côté de la fiche, dans le portail) : il doit rester cliquable pour fermer.
+  // Le défilement de la page est bloqué avec une marge à la place de la barre : l'éventail ne bouge pas.
+  useModal(rootRef, { onClose: close, initialFocus: closeRef });
 
   const stats = [
     { label: "COST", value: card.cost },
@@ -433,19 +422,10 @@ function CardDialog({
                 {/* eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées */}
                 <img srcSet={card.srcSet} sizes={DIALOG_CARD_SIZES} src={card.thumb} alt={card.alt} className="relative h-full w-full object-cover" />
               </div>
-              {/* Dos de carte, visible pendant le tour : le vrai dos du jeu (CARD_BACK), sinon un dos HUD. */}
+              {/* Dos de carte HUD (sans image), visible pendant le tour. */}
               <div className="card-dialog-back" aria-hidden="true">
                 <span className="card-dialog-back-mark">TCG</span>
                 <span className="card-dialog-back-sub">Tracker</span>
-                {/* eslint-disable-next-line @next/next/no-img-element -- image statique, masquée si absente */}
-                <img
-                  src={CARD_BACK}
-                  alt=""
-                  className="card-dialog-back-image"
-                  onError={(event) => {
-                    event.currentTarget.hidden = true;
-                  }}
-                />
               </div>
             </div>
           </div>

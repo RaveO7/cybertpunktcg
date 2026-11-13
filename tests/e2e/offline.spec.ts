@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { prisma } from "@/lib/prisma";
 import { expect, settle, snap, test } from "./fixtures";
 
@@ -58,4 +59,75 @@ test("hors-ligne : images téléchargées, écrans consultables sans réseau", a
   } finally {
     await context.setOffline(false);
   }
+});
+
+/** Service worker en place et écran des cartes gardé dans son cache. */
+async function cardsCachedOffline(page: Page) {
+  await page.goto("/fr/cards");
+  await settle(page);
+  await page.waitForFunction(() => navigator.serviceWorker?.controller != null, null, { timeout: 30_000 }).catch(async () => {
+    await page.reload();
+    await page.waitForFunction(() => navigator.serviceWorker?.controller != null, null, { timeout: 30_000 });
+  });
+  await page.reload();
+  await settle(page);
+  // La fiche est chargée à la demande : ouverte une fois en ligne pour que son code soit en cache.
+  await page.getByRole("button", { name: /^Adam Smasher/ }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Fermer", exact: true }).click();
+  await settle(page);
+}
+
+async function addFromModal(page: Page, name: RegExp, isMobile: boolean) {
+  await page.getByRole("button", { name }).first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: isMobile ? "Ajouter à ma collection" : "Ajouter", exact: true }).click();
+  const line = dialog.locator("li").filter({ hasText: "En attente" });
+  await expect(line).toBeVisible();
+  if (isMobile) await line.getByRole("button", { name: /^Modifier la ligne/ }).click();
+  return { dialog, line };
+}
+
+const pendingStatus = (page: Page) => page.getByRole("status").filter({ hasText: /modifications? en attente/ });
+
+test("hors ligne : ajout puis modification, ajout puis suppression, envoyés après rechargement et retour du réseau", async ({
+  page,
+  context,
+  account,
+  isMobile,
+}) => {
+  test.skip(!prodURL, "E2E_PROD_URL absent : serveur de production non lancé.");
+  await cardsCachedOffline(page);
+
+  await context.setOffline(true);
+  try {
+    // Ajout puis quantité passée de 1 à 3.
+    const added = await addFromModal(page, /^Adam Smasher/, isMobile);
+    await added.line.getByRole("button", { name: "Augmenter la quantité" }).click();
+    await added.line.getByRole("button", { name: "Augmenter la quantité" }).click();
+    await expect(added.line.getByRole("textbox", { name: "Quantité" })).toHaveValue("3");
+    await page.waitForTimeout(600);
+    await added.dialog.getByRole("button", { name: "Fermer", exact: true }).click();
+    // Ajout puis suppression : rien ne reste en attente pour cette carte.
+    const removed = await addFromModal(page, /^Royce/, isMobile);
+    await expect(pendingStatus(page)).toHaveText(/2 modifications en attente/);
+    await removed.line.getByRole("button", { name: "Retirer" }).click();
+    await expect(pendingStatus(page)).toHaveText(/1 modification en attente/);
+    await removed.dialog.getByRole("button", { name: "Fermer", exact: true }).click();
+
+    // Rechargement sans réseau : la modification est toujours affichée et en attente.
+    await page.reload();
+    await settle(page);
+    await expect(pendingStatus(page)).toHaveText(/1 modification en attente/);
+    await snap(page, "h-offline-en-attente");
+    expect(await prisma.collectionItem.count({ where: { userId: account.id } })).toBe(0);
+  } finally {
+    await context.setOffline(false);
+  }
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await expect(pendingStatus(page)).toHaveCount(0, { timeout: 30_000 });
+  await expect
+    .poll(() => prisma.collectionItem.findMany({ where: { userId: account.id }, select: { quantity: true } }))
+    .toEqual([{ quantity: 3 }]);
 });

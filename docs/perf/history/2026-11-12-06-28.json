@@ -1,0 +1,942 @@
+{
+  "version": 1,
+  "date": "2026-11-12T06:39:34.175Z",
+  "label": "référence initiale",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "80744b5",
+  "runs": 3,
+  "pages": {
+    "accueil": {
+      "path": "/fr",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 69.39999997615814,
+            "fcp": 712,
+            "lcp": 1152,
+            "domContentLoaded": 609.2000000476837,
+            "load": 731.1000000238419,
+            "visualComplete": 1152,
+            "fullyLoaded": 1255.2999999523163,
+            "cls": 0,
+            "requests": 58,
+            "totalKB": 1215,
+            "jsKB": 262,
+            "imageKB": 9
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 404 ()",
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "404 https://cybertpunktcg.vercel.app/card-images/card-back.webp",
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 73,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 100,
+            "fcp": 1226,
+            "lcp": 7076,
+            "tbt": 195,
+            "cls": 0,
+            "speedIndex": 1954
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 64.10000002384186,
+            "fcp": 372,
+            "lcp": 860,
+            "domContentLoaded": 291.69999998807907,
+            "load": 415,
+            "visualComplete": 860,
+            "fullyLoaded": 920,
+            "cls": 0,
+            "requests": 56,
+            "totalKB": 1214,
+            "jsKB": 262,
+            "imageKB": 9
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 404 ()",
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "404 https://cybertpunktcg.vercel.app/card-images/card-back.webp",
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 97,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 100,
+            "fcp": 314,
+            "lcp": 1294,
+            "tbt": 17,
+            "cls": 0,
+            "speedIndex": 608
+          }
+        }
+      }
+    },
+    "catalogue": {
+      "path": "/fr/cartes",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 67.39999997615814,
+            "fcp": 268,
+            "lcp": 268,
+            "domContentLoaded": 201.9000000357628,
+            "load": 324.30000001192093,
+            "visualComplete": 276,
+            "fullyLoaded": 795.3999999761581,
+            "cls": 0,
+            "requests": 58,
+            "totalKB": 1438,
+            "jsKB": 228,
+            "imageKB": 92
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 88,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 100,
+            "fcp": 1392,
+            "lcp": 3837,
+            "tbt": 99,
+            "cls": 0,
+            "speedIndex": 1701
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 64.60000002384186,
+            "fcp": 280,
+            "lcp": 280,
+            "domContentLoaded": 194.30000001192093,
+            "load": 330.60000002384186,
+            "visualComplete": 318.80000001192093,
+            "fullyLoaded": 948.4000000357628,
+            "cls": 0,
+            "requests": 72,
+            "totalKB": 2195,
+            "jsKB": 228,
+            "imageKB": 186
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 100,
+            "fcp": 364,
+            "lcp": 1035,
+            "tbt": 0,
+            "cls": 0,
+            "speedIndex": 667
+          }
+        }
+      }
+    },
+    "fiche-carte": {
+      "path": "/fr/cartes/adam-smasher-ender-of-legends",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 70.40000003576279,
+            "fcp": 308,
+            "lcp": 308,
+            "domContentLoaded": 203.10000002384186,
+            "load": 305.19999998807907,
+            "visualComplete": 308,
+            "fullyLoaded": 698.5,
+            "cls": 0,
+            "requests": 44,
+            "totalKB": 761,
+            "jsKB": 228,
+            "imageKB": 97
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 87,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 100,
+            "fcp": 1225,
+            "lcp": 3672,
+            "tbt": 189,
+            "cls": 0,
+            "speedIndex": 1424
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 70.5,
+            "fcp": 276,
+            "lcp": 276,
+            "domContentLoaded": 237.80000001192093,
+            "load": 290.5,
+            "visualComplete": 276,
+            "fullyLoaded": 691.5,
+            "cls": 0,
+            "requests": 45,
+            "totalKB": 762,
+            "jsKB": 228,
+            "imageKB": 97
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 100,
+            "fcp": 359,
+            "lcp": 750,
+            "tbt": 5,
+            "cls": 0,
+            "speedIndex": 628
+          }
+        }
+      }
+    },
+    "connexion": {
+      "path": "/fr/connexion",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 62.5,
+            "fcp": 204,
+            "lcp": 336,
+            "domContentLoaded": 167,
+            "load": 285.7999999523163,
+            "visualComplete": 336,
+            "fullyLoaded": 713.0999999642372,
+            "cls": 0,
+            "requests": 30,
+            "totalKB": 359,
+            "jsKB": 227,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/connexion",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 90,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 63,
+            "fcp": 1219,
+            "lcp": 3073,
+            "tbt": 215,
+            "cls": 0.036,
+            "speedIndex": 1219
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 73.59999996423721,
+            "fcp": 232,
+            "lcp": 360,
+            "domContentLoaded": 191.89999997615814,
+            "load": 304.9000000357628,
+            "visualComplete": 360,
+            "fullyLoaded": 715.3000000119209,
+            "cls": 0.011,
+            "requests": 46,
+            "totalKB": 607,
+            "jsKB": 228,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/connexion",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 63,
+            "fcp": 353,
+            "lcp": 740,
+            "tbt": 9,
+            "cls": 0.008,
+            "speedIndex": 407
+          }
+        }
+      }
+    },
+    "cgu": {
+      "path": "/fr/cgu",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 62.80000001192093,
+            "fcp": 240,
+            "lcp": 240,
+            "domContentLoaded": 167,
+            "load": 354.7999999523163,
+            "visualComplete": 240,
+            "fullyLoaded": 677.8999999761581,
+            "cls": 0,
+            "requests": 33,
+            "totalKB": 384,
+            "jsKB": 227,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cgu",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 93,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 100,
+            "fcp": 1229,
+            "lcp": 2779,
+            "tbt": 195,
+            "cls": 0,
+            "speedIndex": 1243
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 68.09999996423721,
+            "fcp": 240,
+            "lcp": 240,
+            "domContentLoaded": 179.19999998807907,
+            "load": 282.0999999642372,
+            "visualComplete": 240,
+            "fullyLoaded": 666.3000000119209,
+            "cls": 0,
+            "requests": 33,
+            "totalKB": 384,
+            "jsKB": 227,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cgu",
+            "consoleErrors": [
+              "Failed to load resource: the server responded with a status of 401 ()"
+            ],
+            "failedRequests": [
+              "401 https://cybertpunktcg.vercel.app/api/collection"
+            ],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 100,
+            "fcp": 308,
+            "lcp": 600,
+            "tbt": 12,
+            "cls": 0,
+            "speedIndex": 483
+          }
+        }
+      }
+    },
+    "accueil-connecte": {
+      "path": "/fr",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 63.40000003576279,
+            "fcp": 220,
+            "lcp": 220,
+            "domContentLoaded": 185.30000001192093,
+            "load": 270.60000002384186,
+            "visualComplete": 220,
+            "fullyLoaded": 790.4000000357628,
+            "cls": 0,
+            "requests": 69,
+            "totalKB": 704,
+            "jsKB": 398,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 91,
+            "accessibility": 95,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 1235,
+            "lcp": 3083,
+            "tbt": 184,
+            "cls": 0.005,
+            "speedIndex": 1932
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 69.09999996423721,
+            "fcp": 216,
+            "lcp": 216,
+            "domContentLoaded": 175.5999999642372,
+            "load": 281.80000001192093,
+            "visualComplete": 216,
+            "fullyLoaded": 750.8999999761581,
+            "cls": 0.019,
+            "requests": 82,
+            "totalKB": 922,
+            "jsKB": 395,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 94,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 359,
+            "lcp": 759,
+            "tbt": 0,
+            "cls": 0.026,
+            "speedIndex": 735
+          }
+        }
+      }
+    },
+    "tableau-de-bord": {
+      "path": "/fr/tableau-de-bord",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 68.69999998807907,
+            "fcp": 220,
+            "lcp": 220,
+            "domContentLoaded": 179.5999999642372,
+            "load": 288.19999998807907,
+            "visualComplete": 220,
+            "fullyLoaded": 793.1999999880791,
+            "cls": 0,
+            "requests": 70,
+            "totalKB": 705,
+            "jsKB": 398,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/tableau-de-bord",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 85,
+            "accessibility": 95,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 1284,
+            "lcp": 3784,
+            "tbt": 218,
+            "cls": 0,
+            "speedIndex": 2166
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 61.19999998807907,
+            "fcp": 232,
+            "lcp": 232,
+            "domContentLoaded": 206.19999998807907,
+            "load": 289.0999999642372,
+            "visualComplete": 232,
+            "fullyLoaded": 876.5999999642372,
+            "cls": 0.019,
+            "requests": 79,
+            "totalKB": 917,
+            "jsKB": 395,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/tableau-de-bord",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 94,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 356,
+            "lcp": 648,
+            "tbt": 12,
+            "cls": 0.012,
+            "speedIndex": 751
+          }
+        }
+      }
+    },
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 66.5,
+            "fcp": 268,
+            "lcp": 268,
+            "domContentLoaded": 178.19999998807907,
+            "load": 374,
+            "visualComplete": 655.1000000238419,
+            "fullyLoaded": 806.1000000238419,
+            "cls": 0,
+            "requests": 79,
+            "totalKB": 1097,
+            "jsKB": 398,
+            "imageKB": 394
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 89,
+            "accessibility": 95,
+            "bestPractices": 96,
+            "seo": 66,
+            "fcp": 1232,
+            "lcp": 3231,
+            "tbt": 200,
+            "cls": 0.005,
+            "speedIndex": 2419
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 66.69999998807907,
+            "fcp": 268,
+            "lcp": 660,
+            "domContentLoaded": 170.19999998807907,
+            "load": 328.89999997615814,
+            "visualComplete": 676.1999999880791,
+            "fullyLoaded": 884.7999999523163,
+            "cls": 0.088,
+            "requests": 91,
+            "totalKB": 1407,
+            "jsKB": 395,
+            "imageKB": 475
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 96,
+            "accessibility": 95,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 358,
+            "lcp": 1298,
+            "tbt": 0,
+            "cls": 0.067,
+            "speedIndex": 846
+          }
+        }
+      }
+    },
+    "decks": {
+      "path": "/fr/decks",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 60.69999998807907,
+            "fcp": 216,
+            "lcp": 216,
+            "domContentLoaded": 179.5,
+            "load": 269.89999997615814,
+            "visualComplete": 216,
+            "fullyLoaded": 935.8000000119209,
+            "cls": 0,
+            "requests": 68,
+            "totalKB": 703,
+            "jsKB": 398,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/decks",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 91,
+            "accessibility": 94,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 1238,
+            "lcp": 3094,
+            "tbt": 200,
+            "cls": 0,
+            "speedIndex": 1274
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 62.59999996423721,
+            "fcp": 220,
+            "lcp": 220,
+            "domContentLoaded": 178.5,
+            "load": 270.5999999642372,
+            "visualComplete": 220,
+            "fullyLoaded": 771.0999999642372,
+            "cls": 0.003,
+            "requests": 81,
+            "totalKB": 926,
+            "jsKB": 395,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/decks",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 94,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 359,
+            "lcp": 651,
+            "tbt": 18,
+            "cls": 0.003,
+            "speedIndex": 436
+          }
+        }
+      }
+    },
+    "investissement": {
+      "path": "/fr/investissement",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 63.89999997615814,
+            "fcp": 220,
+            "lcp": 220,
+            "domContentLoaded": 176.5,
+            "load": 277.2000000476837,
+            "visualComplete": 220,
+            "fullyLoaded": 864.3000000119209,
+            "cls": 0.049,
+            "requests": 70,
+            "totalKB": 711,
+            "jsKB": 404,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/investissement",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 82,
+            "accessibility": 95,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 1232,
+            "lcp": 3081,
+            "tbt": 464,
+            "cls": 0.046,
+            "speedIndex": 1811
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 66.19999998807907,
+            "fcp": 216,
+            "lcp": 216,
+            "domContentLoaded": 162.4000000357628,
+            "load": 274.69999998807907,
+            "visualComplete": 216,
+            "fullyLoaded": 871.5,
+            "cls": 0.204,
+            "requests": 83,
+            "totalKB": 934,
+            "jsKB": 401,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/investissement",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 74,
+            "accessibility": 95,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 351,
+            "lcp": 831,
+            "tbt": 68,
+            "cls": 0.98,
+            "speedIndex": 741
+          }
+        }
+      }
+    },
+    "tournois": {
+      "path": "/fr/tournois",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 69,
+            "fcp": 228,
+            "lcp": 228,
+            "domContentLoaded": 172.4000000357628,
+            "load": 272.2000000476837,
+            "visualComplete": 228,
+            "fullyLoaded": 868.2000000476837,
+            "cls": 0,
+            "requests": 75,
+            "totalKB": 716,
+            "jsKB": 405,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/tournois",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 90,
+            "accessibility": 94,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 1246,
+            "lcp": 3096,
+            "tbt": 215,
+            "cls": 0,
+            "speedIndex": 1362
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 65,
+            "fcp": 208,
+            "lcp": 208,
+            "domContentLoaded": 186,
+            "load": 256.60000002384186,
+            "visualComplete": 208,
+            "fullyLoaded": 784.5,
+            "cls": 0.04,
+            "requests": 86,
+            "totalKB": 918,
+            "jsKB": 402,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/tournois",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 94,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 357,
+            "lcp": 649,
+            "tbt": 9,
+            "cls": 0.003,
+            "speedIndex": 468
+          }
+        }
+      }
+    },
+    "parametres": {
+      "path": "/fr/parametres",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 62.90000003576279,
+            "fcp": 232,
+            "lcp": 232,
+            "domContentLoaded": 186,
+            "load": 285.2999999523163,
+            "visualComplete": 232,
+            "fullyLoaded": 759.0999999642372,
+            "cls": 0,
+            "requests": 64,
+            "totalKB": 696,
+            "jsKB": 395,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/parametres",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 86,
+            "accessibility": 95,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 1242,
+            "lcp": 3688,
+            "tbt": 208,
+            "cls": 0,
+            "speedIndex": 1389
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 63.5,
+            "fcp": 236,
+            "lcp": 236,
+            "domContentLoaded": 177.89999997615814,
+            "load": 272.0999999642372,
+            "visualComplete": 236,
+            "fullyLoaded": 737.1000000238419,
+            "cls": 0.088,
+            "requests": 74,
+            "totalKB": 895,
+            "jsKB": 395,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/parametres",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 75,
+            "accessibility": 95,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 351,
+            "lcp": 831,
+            "tbt": 10,
+            "cls": 0.944,
+            "speedIndex": 499
+          }
+        }
+      }
+    }
+  }
+}

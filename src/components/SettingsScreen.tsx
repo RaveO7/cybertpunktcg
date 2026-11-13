@@ -6,8 +6,13 @@ import { useNumberFormat } from "@/i18n/number-format";
 import type { Translator } from "@/i18n/translator";
 import { useCollection } from "@/components/CollectionProvider";
 import { useCachedJson } from "@/components/data-cache";
+import { api } from "@/lib/client/api";
+import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
+import type { ShareInfo } from "@/lib/api-responses";
 import { OfflineSection } from "@/components/OfflineSection";
 import { usePreferences } from "@/components/PreferencesProvider";
+import { PushSettingsSection } from "@/components/PushNotifications";
+import { ScreenSkeleton, SkeletonBlock } from "@/components/site/ScreenSkeleton";
 import { useRouter } from "@/i18n/navigation";
 import {
   CollectionCsvError,
@@ -23,22 +28,22 @@ import { CONDITIONS } from "@/lib/reference-data";
 import type { FiltersPanelMode, UserPreferences } from "@/lib/preferences";
 import type { CollectionFilter, SortKey } from "@/lib/types";
 
-type ShareState = {
-  active: boolean;
-  url?: string;
-  createdAt?: string;
-};
-
 const SHARE_URL = "/api/share";
-const NO_SHARE: ShareState = { active: false };
+const NO_SHARE: ShareInfo = { active: false };
 
 function sortOptions(t: Translator): { value: SortKey; label: string }[] {
   return [
     { value: "default", label: t("cards.sortDefault") },
     { value: "number-asc", label: t("cards.sortNumberAsc") },
     { value: "number-desc", label: t("cards.sortNumberDesc") },
-    { value: "cost-asc", label: t("cards.sortCostAsc") },
-    { value: "cost-desc", label: t("cards.sortCostDesc") },
+    { value: "price-asc", label: t("cards.sortPriceAsc") },
+    { value: "price-desc", label: t("cards.sortPriceDesc") },
+    { value: "play-cost-asc", label: t("cards.sortPlayCostAsc") },
+    { value: "play-cost-desc", label: t("cards.sortPlayCostDesc") },
+    { value: "power-asc", label: t("cards.sortPowerAsc") },
+    { value: "power-desc", label: t("cards.sortPowerDesc") },
+    { value: "ram-asc", label: t("cards.sortRamAsc") },
+    { value: "ram-desc", label: t("cards.sortRamDesc") },
     { value: "qty-asc", label: t("cards.sortQtyAsc") },
     { value: "qty-desc", label: t("cards.sortQtyDesc") },
     { value: "name-asc", label: t("cards.sortNameAsc") },
@@ -52,7 +57,7 @@ function sortOptions(t: Translator): { value: SortKey; label: string }[] {
 
 export function SettingsScreen() {
   const fmt = useNumberFormat();
-  const { user, ready, logout, deleteAccount, items, catalog, importLines } = useCollection();
+  const { user, ready, logout, deleteAccount, items, catalog, importLines, pendingCount } = useCollection();
   const router = useRouter();
   const t = useTranslations();
   const locale = useLocale();
@@ -61,11 +66,12 @@ export function SettingsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [exportNote, setExportNote] = useState<string | null>(null);
   // État du partage : copie en cache affichée aussitôt, rechargée à chaque visite.
-  const shareQuery = useCachedJson<ShareState>(user ? SHARE_URL : null);
+  const shareQuery = useCachedJson(user ? SHARE_URL : null, "shareInfoSchema");
   const share = shareQuery.data ?? (shareQuery.error ? NO_SHARE : null);
-  const setShare = (next: ShareState) => shareQuery.mutate(() => next);
+  const setShare = (next: ShareInfo) => shareQuery.mutate(() => next);
   const [shareBusy, setShareBusy] = useState(false);
   const [shareNote, setShareNote] = useState<string | null>(null);
+  const requestError = useApiErrorMessage();
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importMode, setImportMode] = useState<"add" | "set">("add");
   const [importBusy, setImportBusy] = useState(false);
@@ -89,6 +95,8 @@ export function SettingsScreen() {
   ];
 
   async function onLogout() {
+    // Modifications faites hors ligne pas encore envoyées : perdues à la déconnexion.
+    if (pendingCount > 0 && !window.confirm(t("offline.sync.logoutConfirm", { n: pendingCount }))) return;
     setPending(true);
     setError(null);
     try {
@@ -195,17 +203,10 @@ export function SettingsScreen() {
     setShareBusy(true);
     setShareNote(null);
     try {
-      const response = await fetch("/api/share", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ rotate }),
-      });
-      const body = (await response.json()) as ShareState & { error?: string };
-      if (!response.ok) throw new Error(body.error || t("settings.shareFailed"));
-      setShare(body);
+      setShare(await api(SHARE_URL, { body: { rotate }, schema: "shareInfoSchema" }));
       setShareNote(rotate ? t("settings.shareRotated") : t("settings.shareCreated"));
     } catch (caught) {
-      setShareNote(caught instanceof Error ? caught.message : t("settings.shareFailed"));
+      setShareNote(requestError(caught, t("settings.shareFailed")));
     } finally {
       setShareBusy(false);
     }
@@ -215,19 +216,18 @@ export function SettingsScreen() {
     setShareBusy(true);
     setShareNote(null);
     try {
-      const response = await fetch("/api/share", { method: "DELETE" });
-      if (!response.ok) throw new Error(t("settings.shareFailed"));
-      setShare({ active: false });
+      await api(SHARE_URL, { method: "DELETE" });
+      setShare(NO_SHARE);
       setShareNote(t("settings.shareRevoked"));
     } catch (caught) {
-      setShareNote(caught instanceof Error ? caught.message : t("settings.shareFailed"));
+      setShareNote(requestError(caught, t("settings.shareFailed")));
     } finally {
       setShareBusy(false);
     }
   }
 
   async function copyShareLink() {
-    if (!share?.url) return;
+    if (!share?.active) return;
     setShareNote(null);
     try {
       await navigator.clipboard.writeText(share.url);
@@ -238,12 +238,10 @@ export function SettingsScreen() {
   }
 
   function patchPref<K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) {
-    setPrefs({ [key]: value } as Partial<UserPreferences>);
+    setPrefs({ [key]: value });
   }
 
-  if (!ready) {
-    return <p className="p-6 text-muted">{t("settings.loading")}</p>;
-  }
+  if (!ready) return <SettingsSkeleton />;
 
   if (!user) return null;
 
@@ -425,6 +423,8 @@ export function SettingsScreen() {
           {t("settings.resetDefaults")}
         </button>
       </section>
+
+      <PushSettingsSection />
 
       <OfflineSection catalog={catalog} />
 
@@ -692,5 +692,31 @@ function Field({
         ))}
       </select>
     </label>
+  );
+}
+
+/**
+ * Squelette des réglages : titre, compte, puis les sections. Au moins la hauteur de l'écran, comme les
+ * réglages : le pied de page reste dessous et n'est pas repoussé à leur arrivée.
+ */
+function SettingsSkeleton() {
+  const t = useTranslations();
+  return (
+    <ScreenSkeleton
+      label={t("settings.loading")}
+      className="mx-auto flex min-h-[100cqh] w-full max-w-lg shrink-0 flex-col gap-6 px-4 py-8"
+    >
+      <div className="flex flex-col gap-2">
+        <SkeletonBlock className="h-3 w-24" />
+        <SkeletonBlock className="h-9 w-48" />
+        <SkeletonBlock className="h-4 w-full" />
+      </div>
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="flex flex-col gap-3 border-t border-line pt-6">
+          <SkeletonBlock className="h-3 w-28" />
+          <SkeletonBlock className="h-12 w-full" />
+        </div>
+      ))}
+    </ScreenSkeleton>
   );
 }

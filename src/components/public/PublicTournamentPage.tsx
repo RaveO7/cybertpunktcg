@@ -11,8 +11,9 @@ import { placeLabel } from "@/components/geo/AddressField";
 import { countryName } from "@/components/geo/countries";
 import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
 import { useDirectoryHref } from "@/components/site/useDirectoryHref";
-import { ApiError, postJson } from "@/components/tournament/hooks";
+import { useTournamentErrorMessage } from "@/components/tournament/hooks";
 import { buttonClass, inputClass, panelClass, primaryClass, Tag } from "@/components/tournament/ui";
+import { api } from "@/lib/client/api";
 import type { PublicTournamentDetail } from "@/lib/tournament/public-view";
 import { formatFee, formatStart } from "./format";
 import { SeatsTag, VerifiedBadge } from "./TournamentCard";
@@ -174,6 +175,7 @@ function PublicJoin({ tournament }: { tournament: PublicTournamentDetail }) {
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const errorMessage = useTournamentErrorMessage();
   const accountName = user && user.displayName !== DEFAULT_DISPLAY_NAME ? user.displayName : null;
   const full = tournament.seatsLeft === 0;
 
@@ -187,10 +189,10 @@ function PublicJoin({ tournament }: { tournament: PublicTournamentDetail }) {
     setMessage(null);
     try {
       const body = name.trim() ? { name: name.trim() } : {};
-      const result = await postJson<{ code: string }>(`/api/tournaments/public/${tournament.id}/join`, body);
+      const result = await api(`/api/tournaments/public/${tournament.id}/join`, { body, schema: "tournamentCodeSchema" });
       router.push({ pathname: "/t/[code]", params: { code: result.code } });
     } catch (error) {
-      setMessage(error instanceof ApiError && error.status === 0 ? t("tournaments.offline") : error instanceof Error ? error.message : t("tournaments.failed"));
+      setMessage(errorMessage(error));
       setPending(false);
     }
   }

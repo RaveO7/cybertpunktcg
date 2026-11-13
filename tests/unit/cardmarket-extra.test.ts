@@ -8,6 +8,8 @@ import { describe, it } from "vitest";
 import {
   languageMarketSetPairs,
   matchCardmarketPrices,
+  parseGuideDetails,
+  parseGuideDetailsFile,
   parsePriceFile,
   parsePriceGuideDate,
   parseProductFile,
@@ -69,6 +71,26 @@ describe("lecture du guide de prix", () => {
       [2, 1.2],
       [3, 4.44],
     ]);
+  });
+
+  it("prix du guide : low, avg, avg7, avg30 hors foil, seulement ceux renseignés (JSON et CSV)", () => {
+    const details = parseGuideDetails({
+      priceGuides: [
+        { idProduct: 1, trend: 2.5, low: 1, avg: 3.333, avg7: 2, avg30: 0, "low-foil": 9, "avg-foil": 9 },
+        { idProduct: 2, trend: 4, low: 0, avg: null },
+        { idProduct: 3, avg7: "1,5" },
+        { low: 1 },
+        "ligne invalide",
+      ],
+    });
+    assert.deepEqual([...details.entries()], [
+      [1, { low: 1, avg: 3.33, avg7: 2 }],
+      [3, { avg7: 1.5 }],
+    ]);
+    const csv = parseGuideDetailsFile(
+      'idProduct,Avg. Sell Price,Low Price,Trend Price,AVG1,AVG7,AVG30,Foil Low\n7,"2,50",1,3,,2.2,2.4,8\n',
+    );
+    assert.deepEqual([...csv.entries()], [[7, { low: 1, avg: 2.5, avg7: 2.2, avg30: 2.4 }]]);
   });
 
   it("arrondit au centime et accepte la virgule décimale et les espaces", () => {
@@ -152,6 +174,33 @@ describe("lecture du catalogue produits", () => {
   it("languageMarketSetPairs : uniquement les paires set / set-fr existantes", () => {
     assert.deepEqual(languageMarketSetPairs(["a", "a-fr", "b", "c-fr", "a"]), [["a", "a-fr"]]);
     assert.deepEqual(languageMarketSetPairs([]), []);
+  });
+});
+
+describe("matchCardmarketPrices : jumeaux beta / retail", () => {
+  it("deux extensions sans nom aux mêmes cartes : la plus ancienne au beta, la suivante au retail, même si le retail local a moins d'impressions", () => {
+    const names = ["Alpha", "Bravo", "Charlie"];
+    const products = [10, 20].flatMap((idExpansion) =>
+      names.map((name, index) => ({ idProduct: idExpansion + index, name, expansionName: null, idExpansion, number: null })),
+    );
+    const trends = new Map(products.map((product) => [product.idProduct, product.idProduct]));
+    // Le beta a une impression de plus (variante) : l'écart de taille ne doit pas tout attribuer au beta.
+    const printings = [
+      ...names.map((name, index) => ({ id: `beta-${index}`, setCode: "wnc-beta", collectorNumber: String(index + 1), name })),
+      { id: "beta-extra", setCode: "wnc-beta", collectorNumber: "99", name: "Alpha" },
+      ...names.map((name, index) => ({ id: `retail-${index}`, setCode: "wnc-retail", collectorNumber: String(index + 1), name })),
+    ];
+    const report = matchCardmarketPrices(products, trends, [], printings);
+    const setOf = (printingId: string) => printings.find((printing) => printing.id === printingId)?.setCode;
+
+    assert.deepEqual(
+      report.expansions.map((expansion) => expansion.setCode),
+      ["wnc-beta", "wnc-retail"],
+    );
+    assert.equal(report.matchedProducts, report.assignments.length, "aucun produit compté deux fois");
+    for (const assignment of report.assignments) {
+      assert.equal(setOf(assignment.printingId), assignment.productId >= 20 ? "wnc-retail" : "wnc-beta");
+    }
   });
 });
 

@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 import { POST as importRoute } from "../../src/app/api/collection/import/route";
 import { SESSION_COOKIE, createSession, registerAccount } from "../../src/lib/auth";
+import { collectionImportSchema } from "../../src/lib/api-responses";
 import { prisma } from "../../src/lib/prisma";
 
 type ImportResponse = { created: number; updated: number; skipped: number; items?: unknown[]; error?: string };
@@ -31,11 +32,12 @@ async function importOk(body: unknown) {
   const response = await post(body);
   const parsed = (await response.json()) as ImportResponse;
   assert.equal(response.status, 200, `import refusé : ${parsed.error}`);
+  collectionImportSchema.parse(parsed);
   return parsed;
 }
 
 const row = (printingId: string, conditionId = nmId) =>
-  prisma.collectionItem.findUnique({ where: { userId_printingId_conditionId: { userId, printingId, conditionId } } });
+  prisma.collectionItem.findFirst({ where: { userId, printingId, conditionId }, orderBy: { addedAt: "asc" } });
 
 beforeAll(async () => {
   const printings = await prisma.printing.findMany({
@@ -81,20 +83,43 @@ describe("import CSV", () => {
   it("crée, fusionne les doublons et ignore les lignes invalides", async () => {
     const result = await importOk({
       lines: [
-        { printingId: P1, conditionCode: "NM", quantity: 2, purchasePrice: "1,5" },
-        { printingId: P1, conditionCode: "NM", quantity: 3, notes: "classeur A" },
+        { printingId: P1, conditionCode: "NM", quantity: 2, purchasePrice: "1,5", notes: "classeur A" },
+        { printingId: P1, conditionCode: "NM", quantity: 3, purchasePrice: "1.50", notes: "classeur A" },
+        { printingId: P1, conditionCode: "NM", quantity: 1, purchasePrice: "2", notes: "classeur A" },
         { printingId: P2, conditionCode: "LP", quantity: 1 },
         { printingId: "inconnu", conditionCode: "NM", quantity: 1 },
         { printingId: P2, conditionCode: "ZZ", quantity: 1 },
       ],
     });
-    assert.deepEqual([result.created, result.updated, result.skipped], [2, 0, 2]);
-    assert.equal(result.items?.length, 2);
+    assert.deepEqual([result.created, result.updated, result.skipped], [3, 0, 2]);
+    assert.equal(result.items?.length, 3);
     const line = await row(P1);
-    assert.equal(line?.quantity, 5);
+    assert.equal(line?.quantity, 5, "même prix et mêmes notes : une seule ligne");
     assert.equal(line?.notes, "classeur A");
     assert.equal(line?.purchasePrice?.toString(), "1.5");
     assert.equal(line?.purchaseCurrency, "EUR");
+    const other = await prisma.collectionItem.findFirst({ where: { userId, printingId: P1, purchasePrice: 2 } });
+    assert.equal(other?.quantity, 1, "prix différent : nouvelle ligne");
+  });
+
+  it("des notes différentes de la ligne existante créent une autre ligne", async () => {
+    await importOk({ lines: [{ printingId: P1, conditionCode: "NM", quantity: 2, notes: "classeur A" }] });
+    const result = await importOk({
+      mode: "add",
+      lines: [
+        { printingId: P1, conditionCode: "NM", quantity: 1, notes: "classeur B" },
+        { printingId: P1, conditionCode: "NM", quantity: 4, notes: "classeur A" },
+      ],
+    });
+    assert.deepEqual([result.created, result.updated], [1, 1]);
+    const lines = await prisma.collectionItem.findMany({ where: { userId, printingId: P1 }, orderBy: { addedAt: "asc" } });
+    assert.deepEqual(
+      lines.map((line) => [line.notes, line.quantity]),
+      [
+        ["classeur A", 6],
+        ["classeur B", 1],
+      ],
+    );
   });
 
   it("« add » ajoute, « set » remplace, notes et prix absents conservés", async () => {

@@ -1,3 +1,7 @@
+import type { SORT_KEYS } from "./reference-data";
+
+export type { AuthUser, CollectionItemDTO, DeckDTO, WishlistItemDTO } from "./api-responses";
+
 export type CardDTO = {
   id: string;
   externalId: string;
@@ -35,6 +39,16 @@ export type PrintingDTO = {
   officialFinish: string | null;
   marketPrice: string | null;
   previousMarketPrice: string | null;
+  /** Autres prix du guide Cardmarket (absent si aucun n'est connu). */
+  priceGuide?: PriceGuideDTO;
+};
+
+/** Prix du guide Cardmarket hors tendance : plus bas, moyenne de vente, moyennes 7 et 30 jours. */
+export type PriceGuideDTO = {
+  low?: string;
+  avg?: string;
+  avg7?: string;
+  avg30?: string;
 };
 
 export type SetDTO = {
@@ -55,41 +69,6 @@ export type ConditionDTO = {
   sortOrder: number;
 };
 
-export type CollectionItemDTO = {
-  id: string;
-  printingId: string;
-  conditionCode: string;
-  conditionName: string;
-  quantity: number;
-  notes: string | null;
-  purchasePrice: string | null;
-  purchaseCurrency: string | null;
-  addedAt: string;
-};
-
-export type WishlistItemDTO = {
-  id: string;
-  printingId: string;
-  /** Prix cible en EUR (2 décimales), null = simple suivi sans alerte. */
-  targetPrice: string | null;
-  notes: string | null;
-  /** Date à laquelle le prix est passé sous la cible (null si la cible n'est pas atteinte). */
-  alertAt: string | null;
-  alertPrice: string | null;
-  alertSeen: boolean;
-  createdAt: string;
-};
-
-export type DeckDTO = {
-  id: string;
-  name: string;
-  notes: string | null;
-  /** Cartes de jeu (Card.id) et nombre d'exemplaires, Legends comprises. */
-  cards: { cardId: string; quantity: number }[];
-  createdAt: string;
-  updatedAt: string;
-};
-
 export type CatalogDTO = {
   sets: SetDTO[];
   conditions: ConditionDTO[];
@@ -100,20 +79,7 @@ export type CatalogDTO = {
 
 export type CollectionFilter = "all" | "owned" | "missing" | "duplicates";
 
-export type SortKey =
-  | "default"
-  | "number-asc"
-  | "number-desc"
-  | "cost-asc"
-  | "cost-desc"
-  | "qty-asc"
-  | "qty-desc"
-  | "name-asc"
-  | "name-desc"
-  | "rarity"
-  | "set"
-  | "owned-first"
-  | "missing-first";
+export type SortKey = (typeof SORT_KEYS)[number];
 
 export type Filters = {
   q: string;
@@ -149,12 +115,6 @@ export type Progress = {
   extraCopies: number;
   totalCopies: number;
   percent: number;
-};
-
-export type AuthUser = {
-  id: string;
-  email: string;
-  displayName: string;
 };
 
 export type Facets = {

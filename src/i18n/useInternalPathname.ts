@@ -1,13 +1,6 @@
 "use client";
 
 import { useSelectedLayoutSegments } from "next/navigation";
-import { internalPath, matchInternalPath, matchRoute, splitLocale } from "@/i18n/match";
-
-/** Chemin interne (segments français, sans préfixe de langue) d'une URL du site. */
-export function toInternalPathname(pathname: string): string {
-  const match = matchRoute(pathname) ?? matchInternalPath(pathname);
-  return match ? internalPath(match.route, match.params) : splitLocale(pathname).rest;
-}
 
 /**
  * Chemin interne de la page affichée, avec ses valeurs : « /de/karten/x » → « /cartes/x »,

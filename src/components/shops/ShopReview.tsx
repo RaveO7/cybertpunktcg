@@ -9,6 +9,8 @@ import { placeLabel } from "@/components/geo/AddressField";
 import { countryName } from "@/components/geo/countries";
 import { buttonClass, dangerClass, inputClass, panelClass, primaryClass } from "@/components/tournament/ui";
 import { intlLocale } from "@/i18n/config";
+import { ApiError, api } from "@/lib/client/api";
+import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
 import type { AdminShop, ShopStatus } from "@/lib/shops/shops";
 
 const TABS: ShopStatus[] = ["pending", "verified", "rejected"];
@@ -20,17 +22,13 @@ export function ShopReview() {
   const [state, setState] = useState<"ok" | "forbidden" | "failed">("ok");
 
   const load = useCallback(async () => {
-    const response = await fetch(`/api/admin/shops?status=${tab}`, { cache: "no-store" }).catch(() => null);
-    if (response?.status === 403 || response?.status === 401) {
-      setState("forbidden");
-      return;
+    try {
+      const body = await api(`/api/admin/shops?status=${tab}`, { schema: "adminShopsSchema", cache: "no-store" });
+      setState("ok");
+      setShops(body.shops);
+    } catch (error) {
+      setState(error instanceof ApiError && (error.status === 401 || error.status === 403) ? "forbidden" : "failed");
     }
-    if (!response?.ok) {
-      setState("failed");
-      return;
-    }
-    setState("ok");
-    setShops(((await response.json()) as { shops: AdminShop[] }).shops);
   }, [tab]);
 
   useEffect(() => {
@@ -72,6 +70,7 @@ export function ShopReview() {
 function ReviewCard({ shop, onDone }: { shop: AdminShop; onDone: () => Promise<void> }) {
   const t = useTranslations();
   const locale = useLocale();
+  const requestError = useApiErrorMessage();
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -79,16 +78,13 @@ function ReviewCard({ shop, onDone }: { shop: AdminShop; onDone: () => Promise<v
   async function decide(decision: "verify" | "reject" | "revoke") {
     setPending(true);
     setError(null);
-    const response = await fetch(`/api/admin/shops/${shop.id}/review`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ decision, note: note.trim() || undefined }),
-    }).catch(() => null);
-    const body = (await response?.json().catch(() => ({}))) as { error?: string } | undefined;
-    setPending(false);
-    if (!response?.ok) {
-      setError(body?.error ?? t("tournaments.failed"));
+    try {
+      await api(`/api/admin/shops/${shop.id}/review`, { body: { decision, note: note.trim() || undefined } });
+    } catch (failure) {
+      setError(requestError(failure, t("tournaments.failed")));
       return;
+    } finally {
+      setPending(false);
     }
     await onDone();
   }

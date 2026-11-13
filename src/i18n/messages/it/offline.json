@@ -1,5 +1,5 @@
 {
-  "banner": "Offline: sola consultazione. Le modifiche saranno possibili al ritorno della rete.",
+  "banner": "Offline: le modifiche alla collezione restano su questo dispositivo e vengono inviate al ritorno della rete. Il resto è in sola consultazione.",
   "title": "Modalità offline",
   "hint": "Il catalogo e la tua collezione restano consultabili senza rete (negozio, torneo). Scarica le immagini delle carte per vederle anche offline.",
   "download": "Scarica le immagini ({n})",
@@ -15,5 +15,14 @@
     "title": "Offline",
     "body": "Questa pagina non è ancora stata salvata su questo dispositivo.",
     "home": "Torna alla home"
+  },
+  "sync": {
+    "pending": "{n, plural, one {# modifica in sospeso} other {# modifiche in sospeso}}",
+    "syncing": "Sincronizzazione…",
+    "pendingLine": "In sospeso",
+    "rejected": "«{card}»: modifica annullata. {reason}",
+    "rejectedUnknown": "Modifica annullata. {reason}",
+    "dismiss": "Chiudi",
+    "logoutConfirm": "{n, plural, one {# modifica non è ancora stata inviata e andrà persa.} other {# modifiche non sono ancora state inviate e andranno perse.}} Uscire comunque?"
   }
 }

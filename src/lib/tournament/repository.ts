@@ -50,6 +50,17 @@ export async function loadTournamentByCode(db: Db, code: string): Promise<FullTo
   return row ? loadTournament(db, row.id) : null;
 }
 
+/** Id du tournoi de ce code (inscription par code), ou null. */
+export async function tournamentIdByCode(code: string) {
+  return (await prisma.tournament.findUnique({ where: { code }, select: { id: true } }))?.id ?? null;
+}
+
+/** Tournoi ouvert à l'inscription depuis sa fiche publique : id et code, ou null s'il n'est pas public. */
+export async function publicTournamentRef(id: string) {
+  const row = await prisma.tournament.findUnique({ where: { id }, select: { id: true, code: true, visibility: true } });
+  return row?.visibility === "public" ? { id: row.id, code: row.code } : null;
+}
+
 /** Sans owner (compte supprimé), le co-organisateur le plus ancien le devient (en mémoire). */
 function withEffectiveOwner(tournament: FullTournament): FullTournament {
   if (tournament.organizers.length === 0 || tournament.organizers.some((o) => o.role === "owner")) return tournament;

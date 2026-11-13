@@ -101,7 +101,7 @@ function demoDensityVars(state: MatchState, compact: boolean): CSSProperties {
   if (gigN >= 5) vars["--dm-gig"] = "clamp(1.45rem, 2.6vmin, 2rem)";
   else if (gigN >= 4) vars["--dm-gig"] = "clamp(1.65rem, 3vmin, 2.35rem)";
 
-  return vars as CSSProperties;
+  return vars;
 }
 
 type FxTone = "you" | "rival" | "info";

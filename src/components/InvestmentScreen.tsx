@@ -1,25 +1,43 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { intlLocale } from "@/i18n/config";
+import { Link } from "@/i18n/navigation";
 import { useNumberFormat } from "@/i18n/number-format";
-import { Link, type Href } from "@/i18n/navigation";
-import type { MessageKey, Translator } from "@/i18n/translator";
-import { PriceChart, type ChartPoint } from "@/components/PriceChart";
-import { TrendBadge, formatSignedMoney } from "@/components/TrendBadge";
+import type { ChartPurchase } from "@/components/PriceChart";
+import { CardModal } from "@/components/CardModal";
 import { useCollection } from "@/components/CollectionProvider";
-import { fetchCached, readCached } from "@/components/data-cache";
+import { attachPurchases, chartRangeStart, filterChartRange, type ChartRange } from "@/components/investment/chart-range";
+import { InvestmentChart, chartRangeLabel } from "@/components/investment/InvestmentChart";
+import { InvestmentFilters } from "@/components/investment/InvestmentFilters";
+import { LineTable } from "@/components/investment/LineTable";
+import { SetTable } from "@/components/investment/SetTable";
+import {
+  lineProfitPct,
+  sortPositionRows,
+  sortSetRows,
+  type LineSortKey,
+  type SetSortKey,
+  type SortState,
+} from "@/components/investment/sorting";
+import { SetChip, SummaryStat, profitClass } from "@/components/investment/ui";
+import { investmentViewParams, parseInvestmentView } from "@/components/investment/url-state";
+import { useInvestmentHistory, usePeriodReference } from "@/components/investment/use-investment-history";
+import { displayRows, useLineSelection } from "@/components/investment/use-line-selection";
+import { formatSignedPercent } from "@/components/TrendBadge";
+import { ScreenError, ScreenSkeleton, SkeletonBlock, SkeletonRows } from "@/components/site/ScreenSkeleton";
 import {
   applyInvestmentPeriod,
   buildInvestmentLines,
   filterInvestmentLines,
+  groupInvestmentPositions,
   investmentBySet,
+  printingTitle,
+  siblingPrintings,
   summarizeInvestment,
-  type InvestmentLine,
   type InvestmentPerformance,
-  type PriceMovement,
-  type SetInvestment,
 } from "@/lib/logic";
 import {
   CARDS_GROUP_FILTER,
@@ -27,158 +45,82 @@ import {
   partitionCatalogSets,
   SEALED_GROUP_FILTER,
 } from "@/lib/reference-data";
-import { CardImage } from "@/components/CardImage";
-
-type SortDir = "asc" | "desc";
-
-type SetSortKey = "set" | "copies" | "marketValue" | "marketVar" | "invested" | "purchasePnL";
-type LineSortKey = "card" | "set" | "qty" | "purchase" | "market" | "marketVar" | "purchasePnL";
-
-type SortState<K extends string> = { key: K; dir: SortDir };
-
-// Décale les extensions sous leur groupe dans le menu (les <option> ignorent le padding).
-const SET_OPTION_INDENT = "\u00a0\u00a0\u00a0";
-
-// Colonnes de droite : l’infobulle s’aligne à droite pour ne pas déborder de l’écran.
-const RIGHT_HINT_COLUMNS = new Set<string>(["marketVar", "invested", "purchasePnL"]);
-
-type ChartRange = "1d" | "1w" | "1m" | "1y" | "all";
-
-const CHART_RANGE_DAYS: Record<ChartRange, number | null> = { "1d": 1, "1w": 7, "1m": 30, "1y": 365, all: null };
-
-function chartRangeOptions(t: Translator): { value: ChartRange; label: string }[] {
-  return [
-    { value: "1d", label: t("investment.range1d") },
-    { value: "1w", label: t("investment.range1w") },
-    { value: "1m", label: t("investment.range1m") },
-    { value: "1y", label: t("investment.range1y") },
-    { value: "all", label: t("investment.rangeAll") },
-  ];
-}
-
-/** Premier jour de la fenêtre, compté depuis le dernier point connu (nul = tout l’historique). */
-function chartRangeStart(points: ChartPoint[], range: ChartRange) {
-  const days = CHART_RANGE_DAYS[range];
-  if (days == null) return null;
-  const last = new Date(`${points.length > 0 ? points[points.length - 1].day : new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
-  last.setUTCDate(last.getUTCDate() - days);
-  return last.toISOString().slice(0, 10);
-}
-
-/** Garde les points dont le jour est dans la fenêtre. */
-function filterChartRange(points: ChartPoint[], range: ChartRange) {
-  const cutoff = chartRangeStart(points, range);
-  if (cutoff == null) return points;
-  return points.filter((point) => point.day >= cutoff);
-}
-
-/** Colonnes monétaires / numériques : premier clic = décroissant (plus cher / plus fort d’abord). */
-const DESC_FIRST_COLUMNS = new Set<string>([
-  "copies",
-  "qty",
-  "marketValue",
-  "marketVar",
-  "invested",
-  "purchasePnL",
-  "purchase",
-  "market",
-]);
-
-function initialSortDir(columnKey: string): SortDir {
-  return DESC_FIRST_COLUMNS.has(columnKey) ? "desc" : "asc";
-}
-
-const SET_SORT_KEYS: SetSortKey[] = ["marketValue", "marketVar", "purchasePnL", "invested", "copies", "set"];
-const LINE_SORT_KEYS: LineSortKey[] = ["market", "marketVar", "purchasePnL", "purchase", "qty", "card", "set"];
-
-function setSortLabel(key: SetSortKey, t: Translator) {
-  const labels: Record<SetSortKey, string> = {
-    set: t("investment.set"),
-    copies: t("investment.copies"),
-    marketValue: t("investment.marketValue"),
-    marketVar: t("investment.marketVar"),
-    invested: t("investment.investedCol"),
-    purchasePnL: t("investment.purchasePnL"),
-  };
-  return labels[key];
-}
-
-function lineSortLabel(key: LineSortKey, t: Translator) {
-  const labels: Record<LineSortKey, string> = {
-    card: t("investment.card"),
-    set: t("investment.set"),
-    qty: t("investment.qty"),
-    purchase: t("investment.purchase"),
-    market: t("investment.market"),
-    marketVar: t("investment.marketVar"),
-    purchasePnL: t("investment.purchasePnL"),
-  };
-  return labels[key];
-}
-
-function languageParam(value: string | null) {
-  return value === "en" || value === "fr" ? value : "";
-}
-
-function performanceOptions(t: Translator): { value: InvestmentPerformance; label: string }[] {
-  return [
-    { value: "all", label: t("investment.perfAll") },
-    { value: "profit", label: t("investment.perfProfit") },
-    { value: "loss", label: t("investment.perfLoss") },
-    { value: "flat", label: t("investment.perfFlat") },
-    { value: "unknown", label: t("investment.perfUnknown") },
-    { value: "rising", label: t("investment.perfRising") },
-    { value: "falling", label: t("investment.perfFalling") },
-  ];
-}
 
 export function InvestmentScreen() {
   const fmt = useNumberFormat();
-  const { ready, error, catalog, items } = useCollection();
+  // Textes des tableaux triés dans l'ordre alphabétique de la langue de la page.
+  const locale = intlLocale(useLocale());
+  const { ready, error, retry, catalog, items, saveLine, patchLine, deleteLine, pendingIds } = useCollection();
   const t = useTranslations();
-  // Filtres initiaux passés par l'URL (ex. clic sur une extension du tableau de bord).
+  // Vue lue dans l'URL : lien du tableau de bord, rechargement, lien partagé. Elle y est réécrite à chaque changement.
   const searchParams = useSearchParams();
-  const [setFilter, setSetFilter] = useState(() => searchParams.get("set") || "all");
-  const [language, setLanguage] = useState(() => languageParam(searchParams.get("language")));
+  const [initialView] = useState(() => parseInvestmentView(searchParams));
+  const [setFilter, setSetFilter] = useState(initialView.set);
+  const [language, setLanguage] = useState(initialView.language);
   const searchKey = searchParams.toString();
-  const [syncedSearchKey, setSyncedSearchKey] = useState(searchKey);
-  if (searchKey !== syncedSearchKey) {
-    setSyncedSearchKey(searchKey);
-    setSetFilter(searchParams.get("set") || "all");
-    setLanguage(languageParam(searchParams.get("language")));
-  }
-  const [performance, setPerformance] = useState<InvestmentPerformance>("all");
-  const [query, setQuery] = useState("");
-  const [chartPoints, setChartPoints] = useState<ChartPoint[]>([]);
-  const [chartStatus, setChartStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [chartRange, setChartRange] = useState<ChartRange>("all");
-  // Après le premier chargement, le graphique reste affiché pendant les rechargements (pas de saut de mise en page).
-  const [chartLoaded, setChartLoaded] = useState(false);
-  const rangedChartPoints = useMemo(() => filterChartRange(chartPoints, chartRange), [chartPoints, chartRange]);
-  const periodStart = useMemo(() => chartRangeStart(chartPoints, chartRange), [chartPoints, chartRange]);
-  const [reference, setReference] = useState<{ day: string | null; prices: Record<string, number> } | null>(null);
-  const [setSort, setSetSort] = useState<SortState<SetSortKey> | null>(null);
-  const [lineSort, setLineSort] = useState<SortState<LineSortKey> | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const PERFORMANCE_OPTIONS = performanceOptions(t);
-  const effectiveSetSort = setSort ?? ({ key: "marketValue", dir: "desc" } as SortState<SetSortKey>);
-  const effectiveLineSort = lineSort ?? ({ key: "market", dir: "desc" } as SortState<LineSortKey>);
+  // Cartes dépliées dans le détail (printingId) : un achat par sous-ligne.
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  // Fiche carte ouverte en popup depuis le détail.
+  const [modalPrintingId, setModalPrintingId] = useState<string | null>(null);
+  // Carte passée par l'URL (bloc prix d'une fiche) : ses lignes sont sélectionnées une fois la collection chargée.
+  const [printingParam, setPrintingParam] = useState(() => searchParams.get("printing"));
+  const [performance, setPerformance] = useState<InvestmentPerformance>(initialView.performance);
+  const [query, setQuery] = useState(initialView.query);
+  const [chartRange, setChartRange] = useState<ChartRange>(initialView.range);
+  const period = usePeriodReference({ ready, catalog, items, range: chartRange });
+  const [setSort, setSetSort] = useState<SortState<SetSortKey> | null>(initialView.setSort);
+  const [lineSort, setLineSort] = useState<SortState<LineSortKey> | null>(initialView.lineSort);
+  const effectiveSetSort = useMemo(
+    () => setSort ?? ({ key: "marketValue", dir: "desc" } satisfies SortState<SetSortKey>),
+    [setSort],
+  );
+  const effectiveLineSort = useMemo(
+    () => lineSort ?? ({ key: "market", dir: "desc" } satisfies SortState<LineSortKey>),
+    [lineSort],
+  );
 
-  const filtersId = useId();
+  const viewKey = investmentViewParams({
+    set: setFilter,
+    language,
+    performance,
+    query,
+    range: chartRange,
+    lineSort,
+    setSort,
+  }).toString();
+  // URL écrites par la page que le routeur n'a pas encore renvoyées : les relire n'est pas une navigation.
+  const pendingUrlKeys = useRef<string[]>([]);
+  const seenSearchKey = useRef(searchKey);
+
+  // La vue suit dans l'URL (sans nouvelle entrée d'historique) : un rechargement la retrouve.
+  useEffect(() => {
+    if (viewKey === new URLSearchParams(window.location.search).toString()) return;
+    pendingUrlKeys.current.push(viewKey);
+    const base = window.location.pathname;
+    // Preserve Next history state so App Router does not ACTION_RESTORE.
+    window.history.replaceState(window.history.state, "", viewKey ? `${base}?${viewKey}` : base);
+  }, [viewKey]);
 
   const cardsById = useMemo(() => new Map(catalog?.cards.map((card) => [card.id, card]) ?? []), [catalog]);
+
+  const ownedIds = useMemo(
+    () => new Set(items.filter((item) => item.quantity > 0).map((item) => item.printingId)),
+    [items],
+  );
+  const modalPrinting = modalPrintingId ? catalog?.printings.find((printing) => printing.id === modalPrintingId) : undefined;
+  const modalCard = modalPrinting ? cardsById.get(modalPrinting.cardId) : undefined;
 
   const baseLines = useMemo(() => {
     if (!catalog) return [];
     return buildInvestmentLines(items, catalog.printings, cardsById);
   }, [cardsById, catalog, items]);
 
-  // Var. marché et P&L suivent la durée choisie, dès que les prix de référence sont chargés.
-  const allLines = useMemo(() => {
-    if (!reference || reference.day !== periodStart) return baseLines;
-    const addedAtById = new Map(items.map((item) => [item.id, item.addedAt]));
-    return applyInvestmentPeriod(baseLines, reference.prices, periodStart, addedAtById);
-  }, [baseLines, items, periodStart, reference]);
+  // Var. marché suit la durée choisie (le P&L, lui, part toujours du prix d'achat). Tant que les prix de
+  // référence de cette durée manquent (chargement, échec) : pas de variation, plutôt que celle d'une autre durée.
+  const allLines = useMemo(
+    () => applyInvestmentPeriod(baseLines, period.reference?.prices ?? {}),
+    [baseLines, period.reference],
+  );
 
   const filtered = useMemo(
     () =>
@@ -198,12 +140,83 @@ export function InvestmentScreen() {
     [allLines, language, performance, query],
   );
 
-  const summary = useMemo(() => summarizeInvestment(filtered), [filtered]);
+  const selection = useLineSelection(filtered);
+  const { selectedLines, select: selectItems, clear: clearSelection } = selection;
+  if (printingParam && ready) {
+    setPrintingParam(null);
+    selectItems(items.filter((item) => item.printingId === printingParam && item.quantity > 0).map((item) => item.id));
+  }
+
+  // Lien suivi vers cette page alors qu'elle est ouverte (fiche carte, menu) : la vue repart de l'URL.
+  useEffect(() => {
+    if (searchKey === seenSearchKey.current) return;
+    seenSearchKey.current = searchKey;
+    const pending = pendingUrlKeys.current;
+    const own = pending.indexOf(searchKey);
+    if (own >= 0) {
+      pending.splice(0, own + 1);
+      return;
+    }
+    pending.length = 0;
+    const params = new URLSearchParams(searchKey);
+    const view = parseInvestmentView(params);
+    setSetFilter(view.set);
+    setLanguage(view.language);
+    setPerformance(view.performance);
+    setQuery(view.query);
+    setChartRange(view.range);
+    setLineSort(view.lineSort);
+    setSetSort(view.setSort);
+    setPrintingParam(params.get("printing"));
+    clearSelection();
+    // Lien suivi depuis une fiche ouverte ici : elle se ferme sur la nouvelle sélection.
+    setModalPrintingId(null);
+  }, [clearSelection, searchKey]);
+
+  // La courbe porte sur les mêmes exemplaires que les chiffres : la sélection, sinon ceux du détail quand la
+  // recherche ou la performance le restreint (null : extension et langue seules, courbe en cache côté serveur).
+  // Clé stable : la courbe n'est rechargée que si la liste change vraiment.
+  const chartItemsKey = useMemo(() => {
+    const lines = selectedLines.length > 0 ? selectedLines : performance !== "all" || query.trim() ? filtered : null;
+    return lines == null ? null : [...new Set(lines.map((line) => line.itemId))].sort().join(",");
+  }, [filtered, performance, query, selectedLines]);
+  const history = useInvestmentHistory({ ready, catalog, items, set: setFilter, language, itemsKey: chartItemsKey });
+  // Premier jour de la durée : celui des prix de référence (même jour pour la courbe, les chiffres et les tableaux),
+  // en attendant compté depuis le dernier point de la courbe.
+  const periodStart = useMemo(
+    () => (period.reference ? period.reference.day : chartRangeStart(history.points, chartRange)),
+    [chartRange, history.points, period.reference],
+  );
+
+  // Achats datés affichés sur la courbe, avec le nom de la carte.
+  const rangedChartPoints = useMemo(() => {
+    const ranged = filterChartRange(history.points, chartRange);
+    if (!catalog || history.purchases.length === 0) return ranged;
+    const printingsById = new Map(catalog.printings.map((printing) => [printing.id, printing]));
+    const purchases: ChartPurchase[] = history.purchases.map((purchase) => {
+      const printing = printingsById.get(purchase.printingId);
+      const card = printing ? cardsById.get(printing.cardId) : undefined;
+      return {
+        day: purchase.day,
+        title: printing && card ? printingTitle(card, printing) : purchase.printingId,
+        quantity: purchase.quantity,
+        unitPrice: purchase.unitPrice,
+        currency: purchase.currency,
+      };
+    });
+    return attachPurchases(ranged, purchases, periodStart);
+  }, [cardsById, catalog, chartRange, history.points, history.purchases, periodStart]);
+
+  const summary = useMemo(
+    () => summarizeInvestment(selectedLines.length > 0 ? selectedLines : filtered),
+    [filtered, selectedLines],
+  );
+  const profitPct = lineProfitPct({ profit: summary.profitEur, profitBasis: summary.profitBasis });
   const bySet = useMemo(
     () => (catalog ? investmentBySet(filteredAnySet, catalog.sets) : []),
     [catalog, filteredAnySet],
   );
-  const sortedBySet = useMemo(() => sortSetRows(bySet, effectiveSetSort), [bySet, effectiveSetSort]);
+  const sortedBySet = useMemo(() => sortSetRows(bySet, effectiveSetSort, locale), [bySet, effectiveSetSort, locale]);
   const sortedCardSets = useMemo(
     () => sortedBySet.filter((row) => !isSealedSetCode(row.setCode)),
     [sortedBySet],
@@ -212,68 +225,19 @@ export function InvestmentScreen() {
     () => sortedBySet.filter((row) => isSealedSetCode(row.setCode)),
     [sortedBySet],
   );
-  const sortedLines = useMemo(() => sortLineRows(filtered, effectiveLineSort), [filtered, effectiveLineSort]);
+  // Une ligne par carte ; liste réduite à la sélection : seuls les achats sélectionnés restent.
+  const visiblePositions = useMemo(
+    () =>
+      sortPositionRows(groupInvestmentPositions(selection.collapsed ? selectedLines : filtered), effectiveLineSort, locale),
+    [effectiveLineSort, filtered, locale, selectedLines, selection.collapsed],
+  );
+  const rows = useMemo(() => displayRows(visiblePositions, expanded), [expanded, visiblePositions]);
   const setOptions = useMemo(() => {
     if (!catalog) return { cardSets: [], sealedSets: [] };
     const owned = new Set(allLines.map((line) => line.setCode));
     const ownedSets = catalog.sets.filter((set) => owned.has(set.code));
     return partitionCatalogSets(ownedSets);
   }, [allLines, catalog]);
-
-  useEffect(() => {
-    if (!ready || !catalog) return;
-    let cancelled = false;
-    async function loadHistory() {
-      const params = new URLSearchParams();
-      if (setFilter && setFilter !== "all") params.set("set", setFilter);
-      if (language) params.set("language", language);
-      const url = `/api/investment/history?${params}`;
-      type HistoryBody = { points?: { day: string; marketTotal: number }[] };
-      const show = (body: HistoryBody) => {
-        setChartPoints((body.points ?? []).map((point) => ({ day: point.day, value: point.marketTotal })));
-        setChartStatus("ready");
-        setChartLoaded(true);
-      };
-      // Dernière courbe connue pour ces filtres affichée aussitôt, puis mise à jour.
-      const cached = readCached<HistoryBody>(url);
-      if (cached) show(cached);
-      else setChartStatus("loading");
-      try {
-        const body = await fetchCached<HistoryBody>(url);
-        if (!cancelled) show(body);
-      } catch {
-        if (!cancelled && !cached) {
-          setChartPoints([]);
-          setChartStatus("error");
-        }
-      }
-    }
-    void loadHistory();
-    return () => {
-      cancelled = true;
-    };
-  }, [catalog, items, language, ready, setFilter]);
-
-  useEffect(() => {
-    if (!ready || !catalog || chartStatus !== "ready") return;
-    let cancelled = false;
-    async function loadReference() {
-      const url = `/api/investment/history?${new URLSearchParams({ referenceDay: periodStart ?? "" })}`;
-      type ReferenceBody = { prices?: Record<string, number> };
-      const cached = readCached<ReferenceBody>(url);
-      if (cached) setReference({ day: periodStart, prices: cached.prices ?? {} });
-      try {
-        const body = await fetchCached<ReferenceBody>(url);
-        if (!cancelled) setReference({ day: periodStart, prices: body.prices ?? {} });
-      } catch {
-        if (!cancelled && !cached) setReference(null);
-      }
-    }
-    void loadReference();
-    return () => {
-      cancelled = true;
-    };
-  }, [catalog, chartStatus, items, periodStart, ready]);
 
   const selectedSetLabel =
     setFilter === "all"
@@ -285,35 +249,61 @@ export function InvestmentScreen() {
           : (catalog?.sets.find((set) => set.code === setFilter)?.name ?? setFilter);
 
   // Re-cliquer l'extension sélectionnée la désélectionne (évite de remonter aux filtres sur mobile).
-  const toggleSet = (code: string) => setSetFilter((current) => (current === code ? "all" : code));
+  const toggleSet = (code: string) => {
+    setSetFilter((current) => (current === code ? "all" : code));
+    clearSelection();
+  };
+
+  function toggleExpanded(printingId: string) {
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (!next.delete(printingId)) next.add(printingId);
+      return next;
+    });
+  }
 
   const renderSetChip = () =>
     selectedSetLabel ? (
       <SetChip label={selectedSetLabel} ariaLabel={t("investment.clearSet", { set: selectedSetLabel })} onClear={() => setSetFilter("all")} />
     ) : null;
 
-  const activeFilterCount =
-    (setFilter !== "all" ? 1 : 0) + (language ? 1 : 0) + (performance !== "all" ? 1 : 0);
+  const renderItemChip = () => {
+    if (selectedLines.length === 0) return null;
+    // Compté en cartes : plusieurs achats d'une même carte = une ligne.
+    const cardCount = new Set(selectedLines.map((line) => line.printingId)).size;
+    const label =
+      cardCount === 1
+        ? selectedLines[0].title
+        : t("investment.selectedLines", { count: fmt.int(cardCount), n: cardCount });
+    return <SetChip label={label} ariaLabel={t("investment.clearSet", { set: label })} onClear={clearSelection} />;
+  };
 
-  const renderSearch = () => (
-    <input
-      value={query}
-      onChange={(event) => setQuery(event.target.value)}
-      placeholder={t("investment.searchPlaceholder")}
-      aria-label={t("investment.search")}
-      type="search"
-      enterKeyHint="search"
-      className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
-    />
-  );
-
-  if (error) return <p className="p-6 text-danger">{error}</p>;
-  if (!ready || !catalog) return <p className="p-6 text-muted">{t("investment.loading")}</p>;
-  if (catalog.printings.length === 0) {
+  if (error) {
     return (
-      <p className="p-6 text-sm text-muted">
-        {t("investment.emptyCatalog")} <code className="text-cyan">npm run import:cards</code>.
-      </p>
+      <div className="mx-auto w-full max-w-[1600px] px-3 py-4 sm:px-4 sm:py-6">
+        <ScreenError message={error} onRetry={retry} />
+      </div>
+    );
+  }
+  if (!ready || !catalog) return <InvestmentSkeleton />;
+  if (catalog.printings.length === 0) {
+    return <p className="p-6 text-sm text-muted">{t("investment.emptyCatalog")}</p>;
+  }
+  if (baseLines.length === 0) {
+    return (
+      <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6">
+        <h1 className="text-2xl text-yellow sm:text-4xl">{t("investment.eyebrow")}</h1>
+        <section className="flex max-w-xl flex-col items-start gap-3 border border-line bg-panel p-6">
+          <h2 className="text-lg">{t("investment.emptyCollectionTitle")}</h2>
+          <p className="text-sm leading-6 text-muted">{t("investment.emptyCollectionBody")}</p>
+          <Link
+            href="/cards"
+            className="inline-flex h-10 items-center bg-yellow px-4 text-sm font-semibold text-black hover:brightness-110"
+          >
+            {t("investment.addCards")}
+          </Link>
+        </section>
+      </div>
     );
   }
 
@@ -327,6 +317,12 @@ export function InvestmentScreen() {
           value={summary.pricedCopies > 0 ? fmt.money(summary.marketTotal) : "—"}
           delta={summary.marketDelta}
           deltaAmount={summary.marketDeltaAmount}
+          deltaPlaceholder={period.reference == null && !period.error ? summary.marketTotal : undefined}
+          detail={
+            chartRange === "all"
+              ? t("investment.periodDetailAll")
+              : t("investment.periodDetail", { range: chartRangeLabel(chartRange, t) })
+          }
         />
         <SummaryStat
           label={t("investment.invested")}
@@ -336,6 +332,21 @@ export function InvestmentScreen() {
           label={t("investment.pnl")}
           value={summary.profitEur == null ? "—" : fmt.money(summary.profitEur)}
           tone={summary.profitEur == null ? undefined : summary.profitEur >= 0 ? "gain" : "loss"}
+          aside={
+            profitPct == null ? null : (
+              <span className={`font-mono ${profitClass(summary.profitEur)}`}>{formatSignedPercent(fmt, profitPct)}</span>
+            )
+          }
+          // Le P&L ne compte que les exemplaires qui ont un prix d'achat (EUR) et un prix marché.
+          detail={
+            summary.profitEur == null
+              ? null
+              : t("investment.pnlBasis", {
+                  count: fmt.int(summary.trackedProfitCopies),
+                  total: fmt.int(summary.copies),
+                  n: summary.copies,
+                })
+          }
         />
         <SummaryStat
           label={t("investment.trackedCopies")}
@@ -343,820 +354,103 @@ export function InvestmentScreen() {
         />
       </section>
 
-      {!catalog.hasPrices ? (
-        <p className="text-sm text-muted">
-          {t("investment.noPrices")} <code className="text-cyan">npm run import:prices</code>.
-        </p>
-      ) : null}
+      {!catalog.hasPrices ? <p className="text-sm text-muted">{t("investment.noPrices")}</p> : null}
 
-      <section className="flex flex-col gap-3 border border-line bg-panel p-3">
-        {/* Mobile : recherche toujours visible, les autres filtres se déplient. */}
-        <div className="flex gap-2 md:hidden">
-          <div className="min-w-0 flex-1">{renderSearch()}</div>
-          <button
-            type="button"
-            aria-expanded={filtersOpen}
-            aria-controls={filtersId}
-            onClick={() => setFiltersOpen((open) => !open)}
-            className={`flex h-10 shrink-0 items-center gap-2 border px-3 text-sm ${
-              filtersOpen || activeFilterCount > 0 ? "border-cyan text-cyan" : "border-line text-muted"
-            }`}
-          >
-            {t("filters.title")}
-            {activeFilterCount > 0 ? (
-              <span className="grid h-5 min-w-5 place-items-center bg-cyan px-1 font-mono text-xs text-background">
-                {activeFilterCount}
-              </span>
-            ) : null}
-          </button>
-        </div>
-        <div
-          id={filtersId}
-          className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-3 sm:grid-cols-3 md:grid md:grid-cols-4`}
-        >
-          <label className="text-sm">
-            <span className="mb-1 block text-muted">{t("investment.set")}</span>
-            <select
-              className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
-              value={setFilter}
-              onChange={(event) => setSetFilter(event.target.value)}
-            >
-              <option value="all">{t("investment.allSets")}</option>
-              {setOptions.cardSets.length > 0 ? (
-                <>
-                  <option value={CARDS_GROUP_FILTER} className="font-semibold">
-                    {t("investment.groupCards")}
-                  </option>
-                  {setOptions.cardSets.map((set) => (
-                    <option key={set.code} value={set.code}>
-                      {SET_OPTION_INDENT}
-                      {set.name}
-                    </option>
-                  ))}
-                </>
-              ) : null}
-              {setOptions.sealedSets.length > 0 ? (
-                <>
-                  <option value={SEALED_GROUP_FILTER} className="font-semibold">
-                    {t("investment.groupSealed")}
-                  </option>
-                  {setOptions.sealedSets.map((set) => (
-                    <option key={set.code} value={set.code}>
-                      {SET_OPTION_INDENT}
-                      {set.name}
-                    </option>
-                  ))}
-                </>
-              ) : null}
-            </select>
-          </label>
-          <label className="text-sm">
-            <span className="mb-1 block text-muted">{t("investment.language")}</span>
-            <select
-              className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
-              value={language}
-              onChange={(event) => setLanguage(event.target.value)}
-            >
-              <option value="">{t("investment.allLanguages")}</option>
-              <option value="en">{t("common.english")}</option>
-              <option value="fr">{t("common.french")}</option>
-            </select>
-          </label>
-          <label className="text-sm">
-            <span className="mb-1 block text-muted">{t("investment.performance")}</span>
-            <select
-              className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
-              value={performance}
-              onChange={(event) => setPerformance(event.target.value as InvestmentPerformance)}
-            >
-              {PERFORMANCE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="hidden text-sm md:block">
-            <span className="mb-1 block text-muted">{t("investment.search")}</span>
-            {renderSearch()}
-          </label>
-        </div>
-      </section>
+      <InvestmentChart
+        chartRange={chartRange}
+        setChartRange={setChartRange}
+        chartStatus={history.status}
+        chartLoaded={history.loaded}
+        rangedChartPoints={rangedChartPoints}
+        onRetry={history.retry}
+        referenceError={period.error}
+        onRetryReference={period.retry}
+      />
 
-      <section className="flex flex-col gap-2">
-        <div role="group" aria-label={t("investment.range")} className="flex border border-line bg-panel sm:self-start">
-          {chartRangeOptions(t).map((option) => {
-            const active = option.value === chartRange;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setChartRange(option.value)}
-                className={`min-w-0 flex-1 border-l border-line px-1.5 py-2 text-xs whitespace-nowrap first:border-l-0 sm:flex-none sm:px-4 sm:text-sm ${
-                  active ? "bg-cyan/10 text-cyan" : "text-muted hover:text-cyan"
-                }`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-        {chartStatus === "loading" && !chartLoaded ? (
-          <p className="border border-line bg-panel px-4 py-8 text-sm text-muted">{t("investment.chartLoading")}</p>
-        ) : chartStatus === "error" ? (
-          <p className="border border-line bg-panel px-4 py-8 text-sm text-danger">{t("investment.chartError")}</p>
-        ) : (
-          <div
-            aria-busy={chartStatus === "loading"}
-            className={`transition-opacity duration-200 ${chartStatus === "loading" ? "opacity-50" : "opacity-100"}`}
-          >
-            <PriceChart
-              points={rangedChartPoints}
-              label={t("investment.chartLabel")}
-              emptyHint={t("investment.chartEmpty")}
-            />
-          </div>
-        )}
-      </section>
+      {/* Juste au-dessus des tableaux : les filtres agissent sur ce qui est affiché dessous. */}
+      <InvestmentFilters
+        setFilter={setFilter}
+        setSetFilter={setSetFilter}
+        language={language}
+        setLanguage={setLanguage}
+        performance={performance}
+        setPerformance={setPerformance}
+        query={query}
+        setQuery={setQuery}
+        setOptions={setOptions}
+      />
 
-      <section>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <h2 className="text-lg">{t("investment.bySet")}</h2>
-          {renderSetChip()}
-        </div>
-        {bySet.length === 0 ? (
-          <p className="border border-line bg-panel px-4 py-6 text-sm text-muted">{t("investment.emptyFiltered")}</p>
-        ) : (
+      <SetTable
+        bySet={bySet}
+        sortedCardSets={sortedCardSets}
+        sortedSealedSets={sortedSealedSets}
+        setFilter={setFilter}
+        toggleSet={toggleSet}
+        effectiveSetSort={effectiveSetSort}
+        setSetSort={setSetSort}
+        setChip={renderSetChip()}
+      />
+
+      <LineTable
+        filtered={filtered}
+        positions={visiblePositions}
+        effectiveLineSort={effectiveLineSort}
+        setLineSort={setLineSort}
+        expanded={expanded}
+        onToggleExpanded={toggleExpanded}
+        selectedItemIds={selection.selectedItemIds}
+        rangeAnchor={selection.rangeAnchor}
+        onRowClick={(event, rowKey, itemIds) => selection.onRowClick(event, rowKey, itemIds, rows)}
+        onRowToggle={selection.onRowToggle}
+        openCard={setModalPrintingId}
+        setChip={
           <>
-            <MobileSort
-              options={SET_SORT_KEYS.map((key) => ({ key, label: setSortLabel(key, t) }))}
-              sort={effectiveSetSort}
-              onSort={setSetSort}
-              t={t}
-            />
-            <ul className="border border-line bg-panel md:hidden">
-              {sortedCardSets.length > 0 && (sortedSealedSets.length > 0 || setFilter === CARDS_GROUP_FILTER) ? (
-                <GroupItem
-                  label={t("investment.groupCards")}
-                  active={setFilter === CARDS_GROUP_FILTER}
-                  onSelect={() => toggleSet(CARDS_GROUP_FILTER)}
-                />
-              ) : null}
-              {sortedCardSets.map((row) => (
-                <SetItem key={row.setCode} row={row} t={t} active={setFilter === row.setCode} onOpen={() => toggleSet(row.setCode)} />
-              ))}
-              {sortedSealedSets.length > 0 ? (
-                <GroupItem
-                  label={t("investment.groupSealed")}
-                  active={setFilter === SEALED_GROUP_FILTER}
-                  onSelect={() => toggleSet(SEALED_GROUP_FILTER)}
-                />
-              ) : null}
-              {sortedSealedSets.map((row) => (
-                <SetItem key={row.setCode} row={row} t={t} active={setFilter === row.setCode} onOpen={() => toggleSet(row.setCode)} />
-              ))}
-            </ul>
-            <div className="scrollbar-hud relative hidden overflow-x-auto overscroll-x-contain border border-line md:block">
-              <table className="w-full min-w-[40rem] text-left text-sm [&_td]:whitespace-nowrap [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:z-[1] [&_td:first-child]:bg-panel [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:z-[2] [&_th:first-child]:bg-panel-2">
-                <thead className="bg-panel-2 text-muted">
-                  <tr>
-                    <SortableTh
-                      label={t("investment.set")}
-                      columnKey="set"
-                      sort={setSort}
-                      onSort={setSetSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.copies")}
-                      columnKey="copies"
-                      sort={setSort}
-                      onSort={setSetSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.marketValue")}
-                      columnKey="marketValue"
-                      sort={setSort}
-                      onSort={setSetSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.marketVar")}
-                      columnKey="marketVar"
-                      sort={setSort}
-                      onSort={setSetSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.investedCol")}
-                      columnKey="invested"
-                      sort={setSort}
-                      onSort={setSetSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.purchasePnL")}
-                      columnKey="purchasePnL"
-                      sort={setSort}
-                      onSort={setSetSort}
-                      t={t}
-                    />
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedCardSets.length > 0 && (sortedSealedSets.length > 0 || setFilter === CARDS_GROUP_FILTER) ? (
-                    <GroupRow
-                      label={t("investment.groupCards")}
-                      active={setFilter === CARDS_GROUP_FILTER}
-                      onSelect={() => toggleSet(CARDS_GROUP_FILTER)}
-                    />
-                  ) : null}
-                  {sortedCardSets.map((row) => (
-                    <SetRow key={row.setCode} row={row} active={setFilter === row.setCode} onOpen={() => toggleSet(row.setCode)} />
-                  ))}
-                  {sortedSealedSets.length > 0 ? (
-                    <GroupRow
-                      label={t("investment.groupSealed")}
-                      active={setFilter === SEALED_GROUP_FILTER}
-                      onSelect={() => toggleSet(SEALED_GROUP_FILTER)}
-                    />
-                  ) : null}
-                  {sortedSealedSets.map((row) => (
-                    <SetRow key={row.setCode} row={row} active={setFilter === row.setCode} onOpen={() => toggleSet(row.setCode)} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {renderSetChip()}
+            {renderItemChip()}
           </>
-        )}
-      </section>
+        }
+      />
 
-      <section>
-        <div className="mb-1 flex flex-wrap items-center gap-2">
-          <h2 className="text-lg">{t("investment.detail")}</h2>
-          {renderSetChip()}
-        </div>
-        <p className="mb-3 text-xs text-muted sm:text-sm">
-          {t("investment.detailHint", { count: fmt.int(filtered.length), noun: t("common.lines", { n: filtered.length }) })}
-        </p>
-        {filtered.length === 0 ? (
-          <p className="border border-line bg-panel px-4 py-6 text-sm text-muted">{t("investment.noResults")}</p>
-        ) : (
-          <>
-            <MobileSort
-              options={LINE_SORT_KEYS.map((key) => ({ key, label: lineSortLabel(key, t) }))}
-              sort={effectiveLineSort}
-              onSort={setLineSort}
-              t={t}
-            />
-            <ul className="border border-line bg-panel md:hidden">
-              {sortedLines.map((line) => (
-                <LineItem key={line.itemId} line={line} t={t} />
-              ))}
-            </ul>
-            <div className="scrollbar-hud relative hidden overflow-x-auto overscroll-x-contain border border-line md:block">
-              <table className="w-full min-w-[46rem] text-left text-sm [&_td]:whitespace-nowrap [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:z-[1] [&_td:first-child]:bg-panel [&_td:first-child]:whitespace-normal [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:z-[2] [&_th:first-child]:bg-panel-2">
-                <thead className="bg-panel-2 text-muted">
-                  <tr>
-                    <SortableTh
-                      label={t("investment.card")}
-                      columnKey="card"
-                      sort={lineSort}
-                      onSort={setLineSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.set")}
-                      columnKey="set"
-                      sort={lineSort}
-                      onSort={setLineSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.qty")}
-                      columnKey="qty"
-                      sort={lineSort}
-                      onSort={setLineSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.purchase")}
-                      columnKey="purchase"
-                      sort={lineSort}
-                      onSort={setLineSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.market")}
-                      columnKey="market"
-                      sort={lineSort}
-                      onSort={setLineSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.marketVar")}
-                      columnKey="marketVar"
-                      sort={lineSort}
-                      onSort={setLineSort}
-                      t={t}
-                    />
-                    <SortableTh
-                      label={t("investment.purchasePnL")}
-                      columnKey="purchasePnL"
-                      sort={lineSort}
-                      onSort={setLineSort}
-                      t={t}
-                    />
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedLines.map((line) => (
-                    <LineRow key={line.itemId} line={line} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function SortableTh<K extends string>({
-  label,
-  columnKey,
-  sort,
-  onSort,
-  t,
-}: {
-  label: string;
-  columnKey: K;
-  sort: SortState<K> | null;
-  onSort: (next: SortState<K>) => void;
-  t: Translator;
-}) {
-  const active = sort != null && sort.key === columnKey;
-  const nextDir: SortDir = active ? (sort.dir === "asc" ? "desc" : "asc") : initialSortDir(columnKey);
-  const directionLabel = nextDir === "asc" ? t("investment.sortAsc") : t("investment.sortDesc");
-  const hintKey = `investment.colHints.${columnKey}` as MessageKey;
-  const hint = t.has(hintKey) ? t(hintKey) : undefined;
-  const hintId = useId();
-  const alignRight = RIGHT_HINT_COLUMNS.has(columnKey);
-
-  return (
-    <th
-      className={`group relative border-b-2 px-1 py-0 font-medium ${
-        active ? "border-cyan bg-cyan/10 text-cyan" : "border-transparent"
-      }`}
-      aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
-    >
-      <button
-        type="button"
-        className={`flex w-full items-center gap-1.5 px-2 py-2 text-left transition-colors hover:text-cyan ${
-          active ? "text-cyan" : "text-muted"
-        }`}
-        onClick={() => onSort({ key: columnKey, dir: nextDir })}
-        aria-label={t("investment.sortBy", { column: label, direction: directionLabel })}
-        aria-describedby={hint ? hintId : undefined}
-      >
-        <span className="min-w-0 flex-1">{label}</span>
-        <SortArrow active={active} dir={active ? sort.dir : null} />
-      </button>
-      {hint ? (
-        <span
-          id={hintId}
-          role="tooltip"
-          className={`pointer-events-none invisible absolute top-full z-20 mt-1.5 w-64 border border-cyan/50 bg-black/95 px-3 py-2 text-xs leading-relaxed font-normal normal-case tracking-normal text-foreground opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.55)] transition-opacity delay-150 duration-150 group-hover:visible group-hover:opacity-100 group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 ${
-            alignRight ? "right-0" : "left-0"
-          }`}
-        >
-          {hint}
-        </span>
-      ) : null}
-    </th>
-  );
-}
-
-function SortArrow({ active, dir }: { active: boolean; dir: SortDir | null }) {
-  if (!active || !dir) {
-    return (
-      <span className="inline-flex w-3 shrink-0 flex-col items-center gap-0.5 opacity-35" aria-hidden>
-        <span className="h-0 w-0 border-x-[3px] border-b-[4px] border-x-transparent border-b-current" />
-        <span className="h-0 w-0 border-x-[3px] border-t-[4px] border-x-transparent border-t-current" />
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex w-3 shrink-0 flex-col items-center" aria-hidden>
-      {dir === "asc" ? (
-        <span className="h-0 w-0 border-x-[4px] border-b-[5px] border-x-transparent border-b-current" />
-      ) : (
-        <span className="h-0 w-0 border-x-[4px] border-t-[5px] border-x-transparent border-t-current" />
-      )}
-    </span>
-  );
-}
-
-/** Tri des listes mobiles : les en-têtes de colonnes n'existent pas sous md. */
-function MobileSort<K extends string>({
-  options,
-  sort,
-  onSort,
-  t,
-}: {
-  options: { key: K; label: string }[];
-  sort: SortState<K>;
-  onSort: (next: SortState<K>) => void;
-  t: Translator;
-}) {
-  const nextDir: SortDir = sort.dir === "asc" ? "desc" : "asc";
-  return (
-    <div className="mb-2 flex items-center gap-2 text-sm md:hidden">
-      <label className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="shrink-0 text-muted">{t("investment.sortLabel")}</span>
-        <select
-          className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
-          value={sort.key}
-          onChange={(event) => {
-            const key = event.target.value as K;
-            onSort({ key, dir: initialSortDir(key) });
-          }}
-        >
-          {options.map((option) => (
-            <option key={option.key} value={option.key}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button
-        type="button"
-        className="grid h-10 w-10 shrink-0 place-items-center border border-line text-cyan hover:border-cyan"
-        aria-label={nextDir === "asc" ? t("investment.sortAsc") : t("investment.sortDesc")}
-        onClick={() => onSort({ key: sort.key, dir: nextDir })}
-      >
-        <SortArrow active dir={sort.dir} />
-      </button>
-    </div>
-  );
-}
-
-function sortSetRows(rows: SetInvestment[], sort: SortState<SetSortKey>) {
-  const list = [...rows];
-  list.sort((left, right) => {
-    let result = 0;
-    switch (sort.key) {
-      case "set":
-        result = directedText(left.setName, right.setName, sort.dir);
-        break;
-      case "copies":
-        result = directedNumber(left.copies, right.copies, sort.dir);
-        break;
-      case "marketValue":
-        result = directedNumber(left.marketTotal, right.marketTotal, sort.dir);
-        break;
-      case "marketVar":
-        result = directedNullableNumber(movingAmount(left.marketDeltaAmount), movingAmount(right.marketDeltaAmount), sort.dir);
-        break;
-      case "invested":
-        result = directedNumber(left.investedEur, right.investedEur, sort.dir);
-        break;
-      case "purchasePnL":
-        result = directedNullableNumber(left.profitEur, right.profitEur, sort.dir);
-        break;
-    }
-    if (result === 0) result = left.sortOrder - right.sortOrder || compareText(left.setName, right.setName);
-    return result;
-  });
-  return list;
-}
-
-function sortLineRows(rows: InvestmentLine[], sort: SortState<LineSortKey>) {
-  const list = [...rows];
-  list.sort((left, right) => {
-    let result = 0;
-    switch (sort.key) {
-      case "card":
-        result =
-          directedText(left.title, right.title, sort.dir) ||
-          directedText(left.collectorNumber, right.collectorNumber, sort.dir);
-        break;
-      case "set":
-        result =
-          directedText(left.setName, right.setName, sort.dir) ||
-          directedText(left.collectorNumber, right.collectorNumber, sort.dir);
-        break;
-      case "qty":
-        result = directedNumber(left.quantity, right.quantity, sort.dir);
-        break;
-      case "purchase":
-        result = directedNullableNumber(left.purchaseTotal, right.purchaseTotal, sort.dir);
-        break;
-      case "market":
-        // Toujours le prix Cardmarket actuel (marketUnit), pas previousMarketUnit.
-        result =
-          directedNullableNumber(left.marketUnit, right.marketUnit, sort.dir) ||
-          directedNullableNumber(left.marketTotal, right.marketTotal, sort.dir);
-        break;
-      case "marketVar":
-        result = directedNullableNumber(movingAmount(lineMarketDelta(left)), movingAmount(lineMarketDelta(right)), sort.dir);
-        break;
-      case "purchasePnL":
-        result = directedNullableNumber(left.profit, right.profit, sort.dir);
-        break;
-    }
-    if (result === 0) {
-      result =
-        compareText(left.setName, right.setName) ||
-        compareText(left.collectorNumber, right.collectorNumber) ||
-        compareText(left.itemId, right.itemId);
-    }
-    return result;
-  });
-  return list;
-}
-
-function lineMarketDelta(line: InvestmentLine) {
-  if (line.marketUnit == null || line.previousMarketUnit == null) return null;
-  return (line.marketUnit - line.previousMarketUnit) * line.quantity;
-}
-
-/** Variation nulle (« — ») : rangée avec les lignes sans variation, toujours en fin de liste. */
-function movingAmount(value: number | null) {
-  return value == null || Math.abs(value) < 0.005 ? null : value;
-}
-
-function compareText(left: string, right: string) {
-  return left.localeCompare(right, undefined, { sensitivity: "base", numeric: true });
-}
-
-function directedText(left: string, right: string, dir: SortDir) {
-  const result = compareText(left, right);
-  return dir === "asc" ? result : -result;
-}
-
-function directedNumber(left: number, right: number, dir: SortDir) {
-  const result = left - right;
-  return dir === "asc" ? result : -result;
-}
-
-/** Valeurs nulles toujours en fin de liste, quel que soit le sens. */
-function directedNullableNumber(left: number | null | undefined, right: number | null | undefined, dir: SortDir) {
-  const leftNull = left == null || !Number.isFinite(left);
-  const rightNull = right == null || !Number.isFinite(right);
-  if (leftNull && rightNull) return 0;
-  if (leftNull) return 1;
-  if (rightNull) return -1;
-  return directedNumber(left, right, dir);
-}
-
-function SummaryStat({
-  label,
-  value,
-  delta,
-  deltaAmount,
-  tone,
-}: {
-  label: string;
-  value: string;
-  delta?: PriceMovement;
-  deltaAmount?: number | null;
-  tone?: "gain" | "loss";
-}) {
-  return (
-    <div className="min-w-0 border border-line bg-panel px-3 py-3 sm:px-4">
-      <p className="text-[11px] tracking-[0.12em] text-muted uppercase sm:text-xs sm:tracking-[0.14em]">{label}</p>
-      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <p className={`text-xl sm:text-2xl ${tone === "gain" ? "text-gain" : tone === "loss" ? "text-danger" : "text-foreground"}`}>
-          {value}
-        </p>
-        {delta && deltaAmount != null ? <TrendBadge delta={delta} amount={deltaAmount} /> : null}
-      </div>
-    </div>
-  );
-}
-
-function GroupRow({ label, active, onSelect }: { label: string; active: boolean; onSelect: () => void }) {
-  return (
-    <tr className={`border-t border-line ${active ? "bg-cyan/10" : "bg-panel-2/60"}`}>
-      <td colSpan={6} className="static! bg-transparent! p-0">
-        <button
-          type="button"
-          aria-pressed={active}
-          className={`block w-full px-3 py-2 text-left text-xs tracking-wide hover:text-cyan ${
-            active ? "text-cyan" : "text-muted"
-          }`}
-          onClick={onSelect}
-        >
-          {label}
-        </button>
-      </td>
-    </tr>
-  );
-}
-
-function SetRow({ row, active, onOpen }: { row: SetInvestment; active: boolean; onOpen: () => void }) {
-  const fmt = useNumberFormat();
-  return (
-    <tr className={`border-t border-line ${active ? "bg-cyan/10" : "hover:bg-white/5"}`}>
-      <td className="p-0">
-        <button
-          type="button"
-          aria-pressed={active}
-          className={`block w-full px-3 py-2 text-left hover:text-cyan ${active ? "text-cyan" : ""}`}
-          onClick={onOpen}
-        >
-          {row.setName}
-        </button>
-      </td>
-      <td className="px-3 py-2 font-mono">
-        {fmt.int(row.pricedCopies)} / {fmt.int(row.copies)}
-      </td>
-      <td className="px-3 py-2 font-mono">{row.pricedCopies > 0 ? fmt.money(row.marketTotal) : "—"}</td>
-      <td className="px-3 py-2">
-        <TrendBadge delta={row.marketDelta} amount={row.marketDeltaAmount} />
-      </td>
-      <td className="px-3 py-2 font-mono">{row.investedLines > 0 ? fmt.money(row.investedEur) : "—"}</td>
-      <td className={`px-3 py-2 font-mono ${profitClass(row.profitEur)}`}>
-        {row.profitEur == null ? "—" : formatSignedMoney(fmt, row.profitEur)}
-      </td>
-    </tr>
-  );
-}
-
-function LineRow({ line }: { line: InvestmentLine }) {
-  const fmt = useNumberFormat();
-  const href = lineHref(line);
-  return (
-    <tr className="border-t border-line hover:bg-white/5">
-      <td className="p-0">
-        <Link href={href} className="flex w-44 items-center gap-3 px-3 py-2 hover:text-cyan sm:w-auto sm:min-w-56">
-          {line.imagePath ? (
-            <CardImage src={line.imagePath} alt="" className="h-12 w-9 bg-black object-contain" loading="lazy" />
-          ) : (
-            <div className="grid h-12 w-9 place-items-center bg-black text-[10px] text-muted">N/A</div>
-          )}
-          <span>
-            <span className="block font-mono text-xs text-muted">#{line.collectorNumber}</span>
-            <span className="block">{line.title}</span>
-            <span className="block text-xs text-muted">
-              {line.conditionCode}
-              {line.rarity ? ` · ${line.rarity}` : ""}
-            </span>
-          </span>
-        </Link>
-      </td>
-      <td className="px-3 py-2 text-muted">{line.setName}</td>
-      <td className="px-3 py-2 font-mono">×{line.quantity}</td>
-      <td className="px-3 py-2 font-mono">
-        {line.purchaseTotal == null
-          ? "—"
-          : fmt.money(line.purchaseTotal, line.purchaseCurrency || "EUR")}
-      </td>
-      <td className="px-3 py-2 font-mono">{line.marketTotal == null ? "—" : fmt.money(line.marketTotal)}</td>
-      <td className="px-3 py-2">
-        <TrendBadge
-          delta={line.marketDelta}
-          amount={lineMarketDelta(line)}
+      {modalPrinting && modalCard ? (
+        <CardModal
+          printing={modalPrinting}
+          card={modalCard}
+          siblings={siblingPrintings(catalog.printings, modalPrinting)}
+          items={items.filter((item) => item.printingId === modalPrinting.id)}
+          conditions={catalog.conditions}
+          ownedIds={ownedIds}
+          onOpen={setModalPrintingId}
+          onClose={() => setModalPrintingId(null)}
+          onSave={(input) => saveLine({ ...input, printingId: modalPrinting.id, mode: "add" })}
+          onPatch={patchLine}
+          onDelete={deleteLine}
+          pendingIds={pendingIds}
         />
-      </td>
-      <td className={`px-3 py-2 font-mono ${profitClass(line.profit)}`}>
-        {line.profit == null ? "—" : formatSignedMoney(fmt, line.profit)}
-      </td>
-    </tr>
-  );
-}
-
-function MobileStat({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
-  return (
-    <div className="flex min-w-0 items-baseline justify-between gap-2">
-      <dt className="truncate text-muted">{label}</dt>
-      <dd className={`shrink-0 font-mono ${className}`}>{children}</dd>
+      ) : null}
     </div>
   );
 }
 
-/** Filtre d'extension actif, retirable sur place. */
-function SetChip({ label, ariaLabel, onClear }: { label: string; ariaLabel: string; onClear: () => void }) {
+/**
+ * Squelette de l'investissement : titre, quatre chiffres, courbe, filtres et tableau. Au moins la hauteur
+ * de l'écran, comme le portefeuille : le pied de page reste dessous à son arrivée.
+ */
+export function InvestmentSkeleton() {
+  const t = useTranslations();
   return (
-    <button
-      type="button"
-      onClick={onClear}
-      aria-label={ariaLabel}
-      className="flex h-8 max-w-full min-w-0 items-center gap-2 border border-cyan bg-cyan/10 px-2.5 text-sm text-cyan hover:bg-cyan/20"
+    <ScreenSkeleton
+      label={t("investment.loading")}
+      className="mx-auto flex min-h-[100cqh] w-full min-w-0 max-w-[1600px] shrink-0 flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6"
     >
-      <span className="min-w-0 truncate">{label}</span>
-      <span aria-hidden className="shrink-0 text-base leading-none">
-        ×
-      </span>
-    </button>
+      <SkeletonBlock className="h-8 w-48 sm:h-10" />
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <SkeletonBlock key={index} className="h-20" />
+        ))}
+      </div>
+      <SkeletonBlock className="h-[280px]" />
+      <SkeletonBlock className="h-11 w-full max-w-2xl" />
+      <SkeletonRows rows={6} />
+    </ScreenSkeleton>
   );
-}
-
-function GroupItem({ label, active, onSelect }: { label: string; active: boolean; onSelect: () => void }) {
-  return (
-    <li className={`border-t border-line first:border-t-0 ${active ? "bg-cyan/10" : "bg-panel-2/60"}`}>
-      <button
-        type="button"
-        aria-pressed={active}
-        className={`block w-full px-3 py-2 text-left text-xs tracking-wide hover:text-cyan ${active ? "text-cyan" : "text-muted"}`}
-        onClick={onSelect}
-      >
-        {label}
-      </button>
-    </li>
-  );
-}
-
-function SetItem({ row, t, active, onOpen }: { row: SetInvestment; t: Translator; active: boolean; onOpen: () => void }) {
-  const fmt = useNumberFormat();
-  return (
-    <li className={`border-t border-line first:border-t-0 ${active ? "bg-cyan/10" : ""}`}>
-      <button type="button" aria-pressed={active} className="block w-full px-3 py-3 text-left hover:bg-white/5" onClick={onOpen}>
-        <span className="flex items-baseline justify-between gap-3">
-          <span className={`min-w-0 truncate ${active ? "text-cyan" : ""}`}>{row.setName}</span>
-          <span className="shrink-0 font-mono">{row.pricedCopies > 0 ? fmt.money(row.marketTotal) : "—"}</span>
-        </span>
-        <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-          <MobileStat label={t("investment.copies")}>
-            {fmt.int(row.pricedCopies)} / {fmt.int(row.copies)}
-          </MobileStat>
-          <MobileStat label={t("investment.marketVar")}>
-            <TrendBadge delta={row.marketDelta} amount={row.marketDeltaAmount} />
-          </MobileStat>
-          <MobileStat label={t("investment.investedCol")}>
-            {row.investedLines > 0 ? fmt.money(row.investedEur) : "—"}
-          </MobileStat>
-          <MobileStat label={t("investment.purchasePnL")} className={profitClass(row.profitEur)}>
-            {row.profitEur == null ? "—" : formatSignedMoney(fmt, row.profitEur)}
-          </MobileStat>
-        </dl>
-      </button>
-    </li>
-  );
-}
-
-function LineItem({ line, t }: { line: InvestmentLine; t: Translator }) {
-  const fmt = useNumberFormat();
-  return (
-    <li className="border-t border-line first:border-t-0">
-      <Link href={lineHref(line)} className="flex gap-3 px-3 py-3 hover:bg-white/5">
-        {line.imagePath ? (
-          <CardImage src={line.imagePath} alt="" className="h-16 w-12 shrink-0 bg-black object-contain" loading="lazy" />
-        ) : (
-          <div className="grid h-16 w-12 shrink-0 place-items-center bg-black text-[10px] text-muted">N/A</div>
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate">{line.title}</p>
-              <p className="truncate text-xs text-muted">
-                #{line.collectorNumber} · {line.conditionCode}
-                {line.rarity ? ` · ${line.rarity}` : ""}
-              </p>
-              <p className="truncate text-xs text-muted">{line.setName}</p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="font-mono">{line.marketTotal == null ? "—" : fmt.money(line.marketTotal)}</p>
-              <p className="text-xs">
-                <TrendBadge delta={line.marketDelta} amount={lineMarketDelta(line)} />
-              </p>
-            </div>
-          </div>
-          <dl className="mt-2 grid grid-cols-3 gap-x-3 text-xs">
-            <div className="min-w-0">
-              <dt className="text-muted">{t("investment.qty")}</dt>
-              <dd className="font-mono">×{line.quantity}</dd>
-            </div>
-            <div className="min-w-0">
-              <dt className="truncate text-muted">{t("investment.purchase")}</dt>
-              <dd className="truncate font-mono">
-                {line.purchaseTotal == null ? "—" : fmt.money(line.purchaseTotal, line.purchaseCurrency || "EUR")}
-              </dd>
-            </div>
-            <div className="min-w-0 text-right">
-              <dt className="truncate text-muted">{t("investment.purchasePnL")}</dt>
-              <dd className={`truncate font-mono ${profitClass(line.profit)}`}>
-                {line.profit == null ? "—" : formatSignedMoney(fmt, line.profit)}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </Link>
-    </li>
-  );
-}
-
-function lineHref(line: InvestmentLine): Href {
-  return { pathname: "/cards", query: { set: line.setCode, language: line.language, printing: line.printingId } };
-}
-
-function profitClass(value: number | null) {
-  if (value == null) return "text-muted";
-  if (value > 0.004) return "text-gain";
-  if (value < -0.004) return "text-danger";
-  return "text-muted";
 }

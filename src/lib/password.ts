@@ -11,7 +11,7 @@ function derive(password: string, salt: string) {
   return new Promise<Buffer>((resolve, reject) => {
     scrypt(password, salt, KEY_LENGTH, SCRYPT_OPTIONS, (error, key) => {
       if (error) reject(error);
-      else resolve(key as Buffer);
+      else resolve(key);
     });
   });
 }

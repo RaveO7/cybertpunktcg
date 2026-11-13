@@ -101,8 +101,6 @@ export function createOfflineQueue(
   };
 }
 
-export type OfflineQueue = ReturnType<typeof createOfflineQueue>;
-
 /** localStorage s'il est utilisable (navigation privée, données bloquées : null). */
 export function browserStorage(): QueueStorage | null {
   try {

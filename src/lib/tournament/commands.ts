@@ -18,7 +18,7 @@ import {
   resetResult,
   resultOf,
 } from "./match-state";
-import { moveBye, pairingWarnings, swapPlayers, type PairedMatch, type PairingWarning } from "./pairing";
+import { moveBye, pairingWarnings, swapPlayers, type PairedMatch, type PairingWarning, type TournamentFormat } from "./pairing";
 import { cryptoRng, type Rng } from "./random";
 import { saveMatchState, toMatchState, writeTournament, type FullTournament, type RoundRow, type Tx } from "./repository";
 import { sameResult, type Phase } from "./scores";
@@ -48,6 +48,7 @@ import {
   sideOf,
   startedSwissRounds,
   winnerId,
+  type TournamentStatus,
 } from "./service";
 import { nextSlot } from "./top-cut";
 import { createToken, hashToken } from "./tokens";
@@ -770,8 +771,8 @@ export async function listTournaments(userId: string) {
     id: row.id,
     code: row.code,
     name: row.name,
-    status: row.status,
-    format: row.format,
+    status: row.status as TournamentStatus,
+    format: row.format as TournamentFormat,
     createdAt: row.createdAt.toISOString(),
     role: (row.organizers[0]?.role ?? null) as "owner" | "co" | null,
     playerCount: row._count.players,

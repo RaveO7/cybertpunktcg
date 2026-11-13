@@ -1,12 +1,34 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { clearDataCache, prefetchCached } from "@/components/data-cache";
-import { mutationFetch, useRequestErrors } from "@/components/send-json";
+import type { MutationResult } from "@/lib/api-responses";
+import { ApiError, api, loadResponseSchemas, responseSchemasIfLoaded, type SchemaName } from "@/lib/client/api";
+import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
+import { matchRoute } from "@/i18n/match";
 import type { ImportLine } from "@/lib/collection-csv";
-import { type BootRequests, requestCatalog, requestCollection, takeBootRequests } from "@/lib/boot-requests";
+import { type BootRequests, collectionBody, requestCatalog, requestCollection, takeBootRequests } from "@/lib/boot-requests";
 import { readSavedCollection } from "@/lib/offline";
+import { matchLine, sameLine } from "@/lib/collection-line";
+import {
+  type NewOp,
+  type QueuedOp,
+  type QueueStore,
+  type SendResponse,
+  addOp,
+  applyOps,
+  clearQueue,
+  indexedDbQueueStore,
+  isTempId,
+  newTempId,
+  pendingLineIds,
+  readOps,
+  replayQueue,
+  requestFor,
+} from "@/lib/offline-queue";
+import { disablePush } from "@/lib/push-client";
 import { browserStorage, clearSessionUser, readSessionUser, writeSessionUser } from "@/lib/session-hint";
 import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
 
@@ -15,13 +37,31 @@ export type ImportSummary = { created: number; updated: number; skipped: number 
 const LOCAL_USER_KEY = "cptcg-user-id";
 
 /**
- * Statut de la session, indépendant du chargement des données (`ready`) : « unknown » tant que rien
- * n'est mémorisé ni vérifié, « signed-out » seulement après un refus du serveur (401) ou la déconnexion.
+ * Statut de la session, indépendant du chargement des données (`ready`) : « unknown » avant la lecture
+ * de l'appareil, « guest » sans session mémorisée tant que le serveur n'a pas été interrogé (pages
+ * publiques), « signed-out » seulement après un refus du serveur (401) ou la déconnexion.
  */
-export type SessionStatus = "unknown" | "signed-in" | "signed-out";
+export type SessionStatus = "unknown" | "guest" | "signed-in" | "signed-out";
 
 /** Données des écrans les plus visités, chargées au repos pour qu'ils s'ouvrent sans attente. */
-const WARM_URLS = ["/api/decks", "/api/tournaments", "/api/share", "/api/investment/history?"];
+const WARM_REQUESTS: [url: string, schema: SchemaName][] = [
+  ["/api/decks", "decksSchema"],
+  ["/api/tournaments", "tournamentListSchema"],
+  ["/api/share", "shareInfoSchema"],
+  ["/api/investment/history?", "portfolioHistoryResponseSchema"],
+];
+
+// Schémas demandés dès le chargement de ce module, en parallèle de l'hydratation : souvent déjà là quand
+// les réponses du démarrage (boot-requests) sont lues. Échec sans risque : chaque lecture relance le chargement.
+if (typeof window !== "undefined") loadResponseSchemas().catch(() => undefined);
+
+/** Délais avant de rejouer la file après une erreur temporaire (réseau, 5xx). */
+const RETRY_DELAYS_MS = [5_000, 30_000, 120_000];
+
+const NO_OPS: QueuedOp[] = [];
+
+/** Modification refusée par le serveur pendant la synchronisation. */
+export type SyncError = { id: string; userId: string; kind: "rejected" | "corrupted"; card: string | null; message: string };
 
 /** Lance `task` quand le navigateur est au repos ; renvoie de quoi l'annuler. */
 export function whenIdle(task: () => void) {
@@ -41,6 +81,7 @@ type SaveInput = {
   notes?: string | null;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;
+  purchasedAt?: string | null;
 };
 
 type PatchInput = {
@@ -49,18 +90,15 @@ type PatchInput = {
   notes?: string | null;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;
-};
-
-type MutationResult = {
-  item: CollectionItemDTO | null;
-  deletedId: string | null;
-  error?: string;
+  purchasedAt?: string | null;
 };
 
 type CollectionContextValue = {
   session: SessionStatus;
   ready: boolean;
   error: string | null;
+  /** Relance le chargement du catalogue et de la collection après une erreur. */
+  retry: () => void;
   user: AuthUser | null;
   catalog: CatalogDTO | null;
   items: CollectionItemDTO[];
@@ -76,6 +114,15 @@ type CollectionContextValue = {
   importLines: (input: { mode: "add" | "set"; lines: ImportLine[] }) => Promise<ImportSummary>;
   patchLine: (id: string, input: PatchInput) => Promise<void>;
   deleteLine: (id: string) => Promise<void>;
+  /** Page réservée aux comptes : vérifie la session auprès du serveur même sans session mémorisée. */
+  requireSession: () => void;
+  /** Modifications faites hors ligne, pas encore envoyées au serveur. */
+  pendingCount: number;
+  /** Lignes visées par une modification en attente. */
+  pendingIds: ReadonlySet<string>;
+  syncing: boolean;
+  syncErrors: SyncError[];
+  dismissSyncError: (id: string) => void;
 };
 
 const CollectionContext = createContext<CollectionContextValue | null>(null);
@@ -86,24 +133,47 @@ export function useCollection() {
   return value;
 }
 
-async function readJson<T>(response: Response): Promise<T> {
-  return (await response.json()) as T;
-}
-
 export function CollectionProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<SessionStatus>("unknown");
   const [catalog, setCatalog] = useState<CatalogDTO | null>(null);
-  const [items, setItems] = useState<CollectionItemDTO[]>([]);
+  // Collection du serveur (ou de la copie gardée) ; celle affichée y ajoute les modifications en attente.
+  const [serverItems, setItems] = useState<CollectionItemDTO[]>([]);
+  // File du compte qui l'a lue : un autre compte connecté ne la voit pas.
+  const [queued, setQueued] = useState<{ userId: string | null; ops: QueuedOp[] }>({ userId: null, ops: [] });
+  const userId = user?.id ?? null;
+  const ops = userId && queued.userId === userId ? queued.ops : NO_OPS;
+  const items = useMemo(() => applyOps(serverItems, ops, catalog?.conditions), [serverItems, ops, catalog]);
+  const pendingIds = useMemo(() => pendingLineIds(ops), [ops]);
   const itemsRef = useRef(items);
+  const serverItemsRef = useRef(serverItems);
+  const opsRef = useRef(ops);
+  const userRef = useRef(user);
+  const catalogRef = useRef(catalog);
   useEffect(() => {
     itemsRef.current = items;
-  }, [items]);
+    serverItemsRef.current = serverItems;
+    opsRef.current = ops;
+    userRef.current = user;
+    catalogRef.current = catalog;
+  }, [items, serverItems, ops, user, catalog]);
+  const [syncing, setSyncing] = useState(false);
+  const [allSyncErrors, setSyncErrors] = useState<SyncError[]>([]);
+  const syncErrors = useMemo(() => allSyncErrors.filter((entry) => entry.userId === userId), [allSyncErrors, userId]);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  const errors = useRequestErrors();
+  // Vérification de la session (GET /api/collection) : seulement avec une session mémorisée ou sur une
+  // page réservée aux comptes. Un visiteur des pages publiques n'envoie aucune requête vouée au 401.
+  const [verifySession, setVerifySession] = useState(false);
+  const errors = useTranslations("errors.request");
+  const requestError = useApiErrorMessage();
+  // Lu au moment de l'échec, dans la langue courante, sans relancer le chargement initial.
+  const loadFailedMessage = useEffectEvent(() => errors("loadCollection"));
   // Modifications locales de la collection : une réponse partie avant l'une d'elles est périmée.
   const edits = useRef(0);
+  const storeRef = useRef<QueueStore | null>(null);
+  const queueStore = () => (storeRef.current ??= indexedDbQueueStore());
+  const replayRef = useRef<() => Promise<void>>(async () => undefined);
 
   function editItems(update: (current: CollectionItemDTO[]) => CollectionItemDTO[]) {
     edits.current += 1;
@@ -139,31 +209,47 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     setReady(true);
   }
 
+  /** Échec d'une action du compte : session close si le serveur l'a refusée ; message traduit à afficher. */
+  function actionError(error: unknown, fallback: string) {
+    if (error instanceof ApiError && error.kind === "session") endSession();
+    return new Error(requestError(error, fallback));
+  }
+
   async function loadBoundData() {
-    const [freshCatalog, collection] = await Promise.all([requestCatalog(), requestCollection()]);
-    if (collection.status === 401) {
+    // Erreur réseau : même message qu'une erreur serveur, l'écran propose de réessayer.
+    // Échec traité plus bas comme une réponse illisible (message de chargement), après le test du 401.
+    const schemasRequest = loadResponseSchemas().catch(() => null);
+    const [freshCatalog, collection] = await Promise.all([requestCatalog(), requestCollection()]).catch(
+      () => [null, null] as const,
+    );
+    if (collection?.status === 401) {
       endSession();
       throw new Error(errors("sessionLost"));
     }
-    if (!freshCatalog || !collection.body?.items) {
+    const schemas = await schemasRequest;
+    const body = collection && schemas && collectionBody(schemas, collection);
+    if (!freshCatalog || !body) {
       setError(errors("loadCollection"));
       setReady(true);
       return;
     }
     setCatalog(freshCatalog);
-    setItems(collection.body.items);
+    setItems(body.items);
     setError(null);
     setReady(true);
+    // Collection chargée en ligne : les modifications en attente partent.
+    void replayRef.current();
   }
 
   async function openSession(path: string, body: Record<string, unknown>) {
-    const response = await fetch(path, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const result = await readJson<{ user?: AuthUser; error?: string }>(response);
-    if (!response.ok || !result.user) throw new Error(result.error || errors("loginFailed"));
+    let result: { user: AuthUser };
+    try {
+      result = await api(path, { body, schema: "authResponseSchema" });
+    } catch (error) {
+      // 401 à la connexion : identifiants refusés (message du serveur), pas une session expirée.
+      if (error instanceof ApiError && error.kind === "session") throw new Error(error.message || errors("loginFailed"));
+      throw new Error(requestError(error, errors("loginFailed")));
+    }
     rememberSession(result.user);
     await loadBoundData();
   }
@@ -178,7 +264,10 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     if (sessionKey === null) return;
     if (previousSession.current !== null && previousSession.current !== sessionKey) {
       clearDataCache();
-      router.refresh();
+      // Session perdue sur l'accueil : sans cookie, le proxy y servirait la présentation des visiteurs au
+      // lieu de l'écran de connexion du tableau de bord (RequireUser).
+      const lostOnHome = sessionKey === "" && matchRoute(window.location.pathname)?.route === "/";
+      if (!lostOnHome) router.refresh();
     }
     previousSession.current = sessionKey;
   }, [router, sessionKey]);
@@ -186,7 +275,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   // Compte connecté : données des autres écrans préchargées au repos.
   useEffect(() => {
     if (!sessionKey) return;
-    return whenIdle(() => WARM_URLS.forEach(prefetchCached));
+    return whenIdle(() => WARM_REQUESTS.forEach(([url, schema]) => prefetchCached(url, schema)));
   }, [sessionKey]);
 
   // Session mémorisée reprise avant le premier affichage : navigation et cadre du compte tout de suite.
@@ -199,22 +288,30 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     const remembered = readSessionUser(browserStorage());
     rememberedUser.current = remembered;
     bootRequests.current ??= takeBootRequests();
-    if (!remembered) return;
-    // Session vérifiée et données déjà là : tableau de bord affiché directement, sans écran intermédiaire.
-    const { collection, catalog: bootCatalog } = bootRequests.current?.done ?? {};
-    if (collection?.status === 200 && collection.body?.user && collection.body.items && bootCatalog) {
-      bootApplied.current = true;
-      rememberSession(collection.body.user);
-      setCatalog(bootCatalog);
-      setItems(collection.body.items);
-      setReady(true);
+    if (remembered) {
+      // Session vérifiée et données déjà là (schémas compris) : tableau de bord affiché directement, sans
+      // écran intermédiaire.
+      const { collection, catalog: bootCatalog } = bootRequests.current?.done ?? {};
+      const schemas = responseSchemasIfLoaded();
+      const bootCollection = collection && schemas && collectionBody(schemas, collection);
+      if (bootCollection && bootCatalog) {
+        bootApplied.current = true;
+        rememberSession(bootCollection.user);
+        setCatalog(bootCatalog);
+        setItems(bootCollection.items);
+        setReady(true);
+        return;
+      }
+      setUser(remembered);
+      setSession("signed-in");
       return;
     }
-    setUser(remembered);
-    setSession("signed-in");
+    setSession("guest");
   }, []);
 
   useEffect(() => {
+    // Sans session mémorisée, attend qu'une page réservée aux comptes le demande (requireSession).
+    if (!rememberedUser.current && !verifySession) return;
     let cancelled = false;
     // Données du serveur arrivées (ou session refusée) : la copie gardée sur l'appareil ne s'affiche plus.
     let settled = false;
@@ -240,35 +337,39 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       try {
         // Une seule requête vérifie la session et apporte la collection (401 : session absente ou expirée).
         let editsAtStart = edits.current;
-        let collection = await (boot?.collection ?? requestCollection());
+        const collection = await (boot?.collection ?? requestCollection());
         if (cancelled) return;
         if (collection.status === 401) {
           settled = true;
           endSession();
           return;
         }
-        if (!collection.body?.user || !collection.body.items) throw new Error("collection");
-        rememberSession(collection.body.user);
+        const schemas = await loadResponseSchemas();
+        if (cancelled) return;
+        let body = collectionBody(schemas, collection);
+        if (!body) throw new Error("collection");
+        rememberSession(body.user);
         const freshCatalog = await (catalogRequest ?? requestCatalog());
         if (!freshCatalog) throw new Error("catalog");
         // Collection modifiée sur la copie gardée pendant le chargement : relue pour inclure ces modifications.
         if (edits.current !== editsAtStart) {
           editsAtStart = edits.current;
-          collection = await requestCollection();
-          if (!collection.body?.items) throw new Error("collection");
+          body = collectionBody(schemas, await requestCollection());
+          if (!body) throw new Error("collection");
         }
         if (cancelled) return;
         settled = true;
         setCatalog(freshCatalog);
-        if (collection.body?.items && edits.current === editsAtStart) setItems(collection.body.items);
+        if (edits.current === editsAtStart) setItems(body.items);
         setError(null);
         setReady(true);
+        void replayRef.current();
       } catch {
         // Erreur réseau ou serveur : le statut de session ne change pas. La copie gardée reste affichée ;
         // sans elle, seul le message d'erreur s'affiche.
         if (!cancelled) {
           settled = true;
-          if (!savedShown) setError(errors("loadCollection"));
+          if (!savedShown) setError(loadFailedMessage());
           setReady(true);
         }
       }
@@ -277,24 +378,175 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     return () => {
       cancelled = true;
     };
+  }, [verifySession]);
+
+  /** Nom de la carte visée par une opération, pour les messages d'échec. */
+  function cardName(op: QueuedOp) {
+    const printingId =
+      op.kind === "save"
+        ? op.payload.printingId
+        : (serverItemsRef.current.find((item) => item.id === op.lineId) ?? itemsRef.current.find((item) => item.id === op.lineId))
+            ?.printingId;
+    const current = catalogRef.current;
+    const printing = current?.printings.find((candidate) => candidate.id === printingId);
+    if (!printing) return null;
+    return printing.localizedName ?? current?.cards.find((card) => card.id === printing.cardId)?.name ?? null;
+  }
+
+  /** Modification gardée sur l'appareil, appliquée tout de suite à la collection affichée. */
+  async function enqueue(userId: string, op: NewOp) {
+    const next = await addOp(queueStore(), userId, op);
+    setQueued({ userId, ops: next });
+  }
+
+  const replaying = useRef(false);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryStep = useRef(0);
+
+  /** Envoi d'une opération de la file : statut et corps, classés par replayQueue (protocole de la file). */
+  async function sendOp(op: QueuedOp): Promise<SendResponse> {
+    const { url, method, body } = requestFor(op);
+    try {
+      return { status: 200, body: await api(url, { method, body }) };
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error;
+      return { status: error.status, body: { error: error.message } };
+    }
+  }
+
+  /** Envoie la file du compte, une opération à la fois ; un seul onglet à la fois (verrou). */
+  async function replay() {
+    const current = userRef.current;
+    if (!current || replaying.current || !navigator.onLine) return;
+    if (retryTimer.current) clearTimeout(retryTimer.current);
+    retryTimer.current = null;
+    replaying.current = true;
+    let again = false;
+    try {
+      const store = queueStore();
+      // La file a pu changer dans un autre onglet.
+      const stored = readOps(await store.read(current.id)).ops;
+      if (userRef.current?.id !== current.id) return;
+      setQueued({ userId: current.id, ops: stored });
+      if (stored.length === 0) return;
+      setSyncing(true);
+      const run = () => replayQueue(store, current.id, sendOp);
+      const report = navigator.locks
+        ? await navigator.locks.request("cptcg-collection-queue", { ifAvailable: true }, (lock) => (lock ? run() : null))
+        : await run();
+      // Un autre onglet synchronise déjà.
+      if (!report || userRef.current?.id !== current.id) return;
+      const messages: SyncError[] = report.rejected.map(({ op, error }) => ({
+        id: `${op.userId}:${op.seq}`,
+        userId: current.id,
+        kind: "rejected",
+        card: cardName(op),
+        message: error || errors("saveFailed"),
+      }));
+      if (report.corrupted) {
+        messages.push({ id: `corrupted:${Date.now()}`, userId: current.id, kind: "corrupted", card: null, message: errors("syncCorrupted") });
+      }
+      for (const { result } of report.applied) applyResult(result);
+      // Réponse illisible : la collection affichée est relue sur le serveur en fin de passage (file vide).
+      if (report.unverified) console.error("Réponse au format inattendu", { url: "/api/collection", count: report.unverified });
+      setQueued({ userId: current.id, ops: report.remaining });
+      if (messages.length) setSyncErrors((list) => [...list, ...messages]);
+      if (report.stop === "auth") {
+        // Session expirée : la file reste sur l'appareil jusqu'à la reconnexion de ce compte.
+        endSession();
+        return;
+      }
+      if (report.stop === "retry") {
+        const delay = RETRY_DELAYS_MS[Math.min(retryStep.current, RETRY_DELAYS_MS.length - 1)];
+        retryStep.current += 1;
+        retryTimer.current = setTimeout(() => void replayRef.current(), delay);
+        return;
+      }
+      retryStep.current = 0;
+      // Modification ajoutée pendant la fin du passage : nouveau passage.
+      const added = readOps(await store.read(current.id)).ops;
+      if (added.length) {
+        setQueued({ userId: current.id, ops: added });
+        again = true;
+        return;
+      }
+      // File vide : la collection affichée reprend exactement celle du serveur.
+      const editsAtStart = edits.current;
+      const [fresh, schemas] = await Promise.all([requestCollection(), loadResponseSchemas()]).catch(
+        () => [null, null] as const,
+      );
+      const freshBody = fresh && schemas && collectionBody(schemas, fresh);
+      if (freshBody && edits.current === editsAtStart && opsRef.current.length === 0) setItems(freshBody.items);
+    } catch {
+      // IndexedDB ou réseau indisponible : nouvel essai au prochain déclencheur.
+    } finally {
+      replaying.current = false;
+      setSyncing(false);
+      if (again) void replayRef.current();
+    }
+  }
+  useEffect(() => {
+    replayRef.current = replay;
+  });
+
+  // File du compte connecté, relue sur l'appareil puis envoyée si le réseau est là. Un autre compte ne la voit pas.
+  useEffect(() => {
+    retryStep.current = 0;
+    if (!userId) return;
+    let cancelled = false;
+    void queueStore()
+      .read(userId)
+      .then((record) => {
+        if (cancelled) return;
+        setQueued({ userId, ops: readOps(record).ops });
+        void replayRef.current();
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Retour du réseau ou de l'onglet : la file repart.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void replayRef.current();
+    };
+    const onOnline = () => void replayRef.current();
+    window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onVisible);
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+    };
   }, []);
 
-  async function request(url: string, init: RequestInit) {
+  /**
+   * Modification d'une ligne. Hors ligne, sans réseau, ou derrière d'autres modifications en attente, elle
+   * part dans la file (l'ordre est gardé) au lieu d'échouer. « queued » : rien n'a été envoyé.
+   */
+  async function request(op: NewOp): Promise<"sent" | "queued"> {
     if (!user) throw new Error(errors("sessionExpired"));
-    const response = await mutationFetch(url, {
-      ...init,
-      headers: {
-        "content-type": "application/json",
-        ...(init.headers ?? {}),
-      },
-    }, errors);
-    const result = await readJson<MutationResult>(response);
-    if (response.status === 401) {
-      endSession();
-      throw new Error(errors("sessionExpired"));
+    if (!navigator.onLine || opsRef.current.length > 0 || isTempId(op.lineId)) {
+      await enqueue(user.id, op);
+      void replay();
+      return "queued";
     }
-    if (!response.ok) throw new Error(result.error || errors("saveFailed"));
+    const { url, method, body } = requestFor(op);
+    let result: MutationResult;
+    try {
+      result = await api(url, { method, body, schema: "mutationResultSchema" });
+    } catch (error) {
+      // Erreur réseau : la modification attend le retour du réseau.
+      if (error instanceof ApiError && error.kind === "offline") {
+        await enqueue(user.id, op);
+        return "queued";
+      }
+      throw actionError(error, errors("saveFailed"));
+    }
     applyResult(result);
+    return "sent";
   }
 
   const value = useMemo<CollectionContextValue>(
@@ -302,6 +554,12 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       session,
       ready,
       error,
+      retry: () => {
+        setError(null);
+        setReady(false);
+        // 401 : la session est close et l'écran de connexion s'affiche.
+        loadBoundData().catch(() => undefined);
+      },
       user,
       catalog,
       items,
@@ -317,68 +575,62 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
           localUserId: window.localStorage.getItem(LOCAL_USER_KEY),
         }),
       logout: async () => {
-        const response = await fetch("/api/auth/logout", { method: "POST" });
-        if (!response.ok) throw new Error(errors("logoutFailed"));
+        // Cet appareil ne doit plus recevoir les alertes de ce compte.
+        await disablePush();
+        await api("/api/auth/logout", { method: "POST" }).catch((error: unknown) => {
+          throw actionError(error, errors("logoutFailed"));
+        });
+        // Déconnexion voulue (confirmée par l'écran si la file n'est pas vide) : les modifications en attente sont perdues.
+        if (user) await clearQueue(queueStore(), user.id).catch(() => undefined);
         endSession();
         setError(null);
       },
       deleteAccount: async () => {
-        const response = await mutationFetch(
-          "/api/auth/account",
-          { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: true }) },
-          errors,
-        );
-        if (response.status === 401) {
-          endSession();
-          throw new Error(errors("sessionExpired"));
-        }
-        if (!response.ok) {
-          const result = await readJson<{ error?: string }>(response).catch(() => ({ error: undefined }));
-          throw new Error(result.error || errors("deleteAccountFailed"));
-        }
+        await api("/api/auth/account", { method: "DELETE", body: { confirm: true } }).catch((error: unknown) => {
+          throw actionError(error, errors("deleteAccountFailed"));
+        });
+        if (user) await clearQueue(queueStore(), user.id).catch(() => undefined);
         endSession();
         setError(null);
       },
-      saveLine: (input) => request("/api/collection", { method: "POST", body: JSON.stringify(input) }),
+      saveLine: async (input) => {
+        // Ligne identique déjà affichée (carte × état × prix × date × notes, comme la fusion faite par le serveur),
+        // sinon id temporaire.
+        const existing = matchLine(
+          itemsRef.current.filter((item) => item.printingId === input.printingId),
+          input,
+        );
+        await request({ kind: "save", lineId: existing?.id ?? newTempId(), payload: input });
+      },
       saveBatch: async (input) => {
         if (!user) throw new Error(errors("sessionExpired"));
-        const response = await mutationFetch(
-          "/api/collection/bulk",
-          { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) },
-          errors,
-        );
-        const result = await readJson<{ items?: CollectionItemDTO[]; error?: string }>(response);
-        if (response.status === 401) {
-          endSession();
-          throw new Error(errors("sessionExpired"));
-        }
-        if (!response.ok || !result.items) throw new Error(result.error || errors("addFailed"));
+        const result = await api("/api/collection/bulk", { body: input, schema: "collectionItemsSchema" }).catch((error: unknown) => {
+          throw actionError(error, errors("addFailed"));
+        });
         editItems((current) => {
-          const incoming = new Map(result.items?.map((item) => [item.id, item]) ?? []);
+          const incoming = new Map(result.items.map((item) => [item.id, item]));
           return [...current.filter((item) => !incoming.has(item.id)), ...incoming.values()];
         });
       },
       importLines: async (input) => {
         if (!user) throw new Error(errors("sessionExpired"));
-        const response = await mutationFetch(
-          "/api/collection/import",
-          { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) },
-          errors,
-        );
-        const result = await readJson<ImportSummary & { items?: CollectionItemDTO[]; error?: string }>(response);
-        if (response.status === 401) {
-          endSession();
-          throw new Error(errors("sessionExpired"));
-        }
-        if (!response.ok || !result.items) throw new Error(result.error || errors("importFailed"));
-        editItems(() => result.items ?? []);
+        const result = await api("/api/collection/import", { body: input, schema: "collectionImportSchema" }).catch((error: unknown) => {
+          throw actionError(error, errors("importFailed"));
+        });
+        editItems(() => result.items);
         return { created: result.created, updated: result.updated, skipped: result.skipped };
       },
       patchLine: async (id, input) => {
         // Mise à jour optimiste : l'interface reflète la modification sans attendre le serveur.
-        // Un changement d'état peut fusionner deux lignes, on laisse alors le serveur trancher.
-        const previous = itemsRef.current.find((item) => item.id === id);
-        const optimistic = previous && input.conditionCode === undefined;
+        // Une ligne devenue identique à une autre (état, prix, date, notes) fusionne : on laisse alors le serveur trancher.
+        // Copie du serveur seulement : une ligne créée hors ligne n'existe que dans la file.
+        const previous = serverItemsRef.current.find((item) => item.id === id);
+        const merges =
+          previous != null &&
+          serverItemsRef.current.some(
+            (item) => item.id !== id && item.printingId === previous.printingId && sameLine(item, { ...previous, ...input }),
+          );
+        const optimistic = previous && input.conditionCode === undefined && !merges;
         if (optimistic) {
           editItems((current) =>
             input.quantity != null && input.quantity <= 0
@@ -386,20 +638,31 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
               : current.map((item) => (item.id === id ? { ...item, ...input } : item)),
           );
         }
+        const restore = () => {
+          if (optimistic) editItems((current) => [...current.filter((item) => item.id !== id), previous]);
+        };
         try {
-          await request(`/api/collection/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+          const sent = await request({ kind: "patch", lineId: id, payload: input });
+          // En file : la modification s'affiche par la file, la copie du serveur reste celle du serveur.
+          if (sent === "queued") restore();
         } catch (error) {
-          if (optimistic) {
-            editItems((current) => [...current.filter((item) => item.id !== id), previous]);
-          }
+          restore();
           throw error;
         }
       },
-      deleteLine: (id) => request(`/api/collection/${id}`, { method: "DELETE" }),
+      deleteLine: async (id) => {
+        await request({ kind: "delete", lineId: id, payload: null });
+      },
+      pendingCount: ops.length,
+      pendingIds,
+      syncing,
+      syncErrors,
+      dismissSyncError: (id) => setSyncErrors((list) => list.filter((entry) => entry.id !== id)),
+      requireSession: () => setVerifySession(true),
     }),
     // Les fonctions ferment sur user ; session, ready, catalog et items sont l'état public.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [session, ready, error, user, catalog, items, errors],
+    [session, ready, error, user, catalog, items, ops, pendingIds, syncing, syncErrors, errors],
   );
 
   return <CollectionContext.Provider value={value}>{children}</CollectionContext.Provider>;
