@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "date": "2026-11-13T22:59:29.994Z",
+  "label": "préchargement",
+  "baseUrl": "https://cybertpunktcg-iplaazlv2-perfectpornproject.vercel.app",
+  "gitSha": "3a713fe",
+  "runs": 3,
+  "pages": {
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 63.5,
+            "fcp": 304,
+            "lcp": 304,
+            "domContentLoaded": 280.3000000715256,
+            "load": 386.3000000715256,
+            "visualComplete": 656.1000000238419,
+            "fullyLoaded": 1422.2000000476837,
+            "cls": 0,
+            "requests": 79,
+            "totalKB": 1135,
+            "jsKB": 396,
+            "imageKB": 330
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 63,
+            "accessibility": 100,
+            "bestPractices": 93,
+            "seo": 66,
+            "fcp": 1240,
+            "lcp": 6188,
+            "tbt": 562,
+            "cls": 0,
+            "speedIndex": 2916,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 66.20000004768372,
+            "fcp": 296,
+            "lcp": 660,
+            "domContentLoaded": 263.7000000476837,
+            "load": 379.7000000476837,
+            "visualComplete": 660,
+            "fullyLoaded": 866,
+            "cls": 0,
+            "requests": 83,
+            "totalKB": 1101,
+            "jsKB": 396,
+            "imageKB": 300
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 93,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 66,
+            "fcp": 358,
+            "lcp": 1558,
+            "tbt": 90,
+            "cls": 0,
+            "speedIndex": 1094,
+            "runs": 3
+          }
+        }
+      }
+    }
+  }
+}

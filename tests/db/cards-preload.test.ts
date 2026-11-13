@@ -8,7 +8,7 @@ import { firstGridImages } from "../../src/lib/cards-preload";
 import { loadCatalog } from "../../src/lib/catalog";
 import { alignReleasedFilters, browseChecklist, filterPrintings, parseFilters, sortPrintings } from "../../src/lib/logic";
 import { DEFAULT_PREFERENCES, parseCardsViewCookie } from "../../src/lib/preferences";
-import { thumbnailPath, thumbnailSrcSet } from "../../src/lib/card-image";
+import { thumbnailPath } from "../../src/lib/card-image";
 import { prisma } from "../../src/lib/prisma";
 import type { CatalogDTO } from "../../src/lib/types";
 import { assertFullCatalog } from "../helpers/catalog";
@@ -32,17 +32,13 @@ function gridOrder(params: URLSearchParams, view = defaults) {
 }
 
 const images = (list: ReturnType<typeof gridOrder>) =>
-  list.flatMap(({ imagePath }) =>
-    imagePath ? [{ href: thumbnailPath(imagePath) ?? imagePath, srcSet: thumbnailSrcSet(imagePath) }] : [],
-  );
+  list.flatMap((printing) => (printing.imagePath ? [thumbnailPath(printing.imagePath) ?? printing.imagePath] : []));
 
 describe("firstGridImages", () => {
   it("rend les 4 premières images de la grille par défaut, dans l'ordre", () => {
     const result = firstGridImages(catalog, new URLSearchParams(), defaults, 4);
     assert.equal(result.length, 4);
     assert.deepEqual(result, images(gridOrder(new URLSearchParams()).slice(0, 4)));
-    // Même srcset que la tuile : sans lui, le navigateur choisirait une autre largeur que celle préchargée.
-    assert.ok(result.every((image) => image.srcSet?.includes(`${image.href} 400w`)));
   });
 
   it("suit les paramètres de l'URL et le tri choisi", () => {

@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import type { CardDTO, PrintingDTO } from "@/lib/types";
 import { CardImage } from "@/components/CardImage";
-import { FIRST_ROW_IMAGE_SIZES } from "@/lib/card-image";
 import { toAmount } from "@/components/card-modal/shared";
 
 export function chipColor(color: string | null | undefined) {
@@ -102,9 +101,9 @@ export function CardTile({
   const chip = chipColor(card?.color);
   // Bouton prix en bas à droite, hors mode ajout (ses boutons ♥ et +1 occupent déjà ce coin).
   const showPrice = !addMode && (toAmount(printing.marketPrice) != null || printing.priceGuide != null);
-  // Carte prioritaire : même sizes que le préchargement du <head> (route @preload), sinon le navigateur
-  // choisirait une autre largeur et le préchargement serait perdu.
-  const sizes = priority ? FIRST_ROW_IMAGE_SIZES : imageSizes;
+  // Carte prioritaire : la miniature préchargée dans le <head> (route @preload), sans choix de largeur,
+  // sinon le navigateur en prendrait une autre et le préchargement serait perdu.
+  const sizes = priority ? undefined : imageSizes;
 
   return (
     <div className="group relative h-full">
