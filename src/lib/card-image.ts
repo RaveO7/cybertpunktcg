@@ -7,6 +7,16 @@ export const THUMB_WIDTH = 400;
 /** Autres largeurs, rangées dans thumb/<largeur>/ : le navigateur choisit dans le srcset celle qui suffit à l'affichage. */
 export const THUMB_EXTRA_WIDTHS = [160, 200, 240, 320, 560] as const;
 
+/**
+ * Largeur des images de la première rangée de la collection, sans la mesurer (filtres ouverts, réglage par
+ * défaut ; voir layoutFor de VirtualCardGrid et la grille de CardsExplorer). Partagée par le préchargement du
+ * <head> et les tuiles prioritaires : mêmes srcset et sizes, le navigateur choisit la même miniature et
+ * réutilise le préchargement.
+ */
+export const FIRST_ROW_IMAGE_SIZES =
+  "(min-width: 1360px) calc((min(100vw, 1600px) - 416px) / 4), (min-width: 1024px) calc((100vw - 390px) / 3), " +
+  "(min-width: 672px) calc((100vw - 86px) / 3), (min-width: 480px) calc((100vw - 56px) / 2), calc((100vw - 48px) / 2)";
+
 /** Chemin de la miniature d'une image locale de carte, ou null si l'image n'en a pas. */
 export function thumbnailPath(src: string | null | undefined): string | null {
   if (!src || !src.startsWith(CARD_IMAGES_PREFIX)) return null;
