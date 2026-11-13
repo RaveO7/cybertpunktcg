@@ -101,17 +101,20 @@ export function CardTile({
   const chip = chipColor(card?.color);
   // Bouton prix en bas à droite, hors mode ajout (ses boutons ♥ et +1 occupent déjà ce coin).
   const showPrice = !addMode && (toAmount(printing.marketPrice) != null || printing.priceGuide != null);
+  // Carte prioritaire : la miniature préchargée dans le <head> (route @preload), sans choix de largeur,
+  // sinon le navigateur en prendrait une autre et le préchargement serait perdu.
+  const sizes = priority ? undefined : imageSizes;
 
   return (
     <div className="group relative h-full">
       {printing.imagePath ? (
         <>
           <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-            <CardImage src={printing.imagePath} sizes={imageSizes} alt="" role="presentation" draggable={false} className="card-ambilight" />
+            <CardImage src={printing.imagePath} sizes={sizes} alt="" role="presentation" draggable={false} className="card-ambilight" />
           </div>
           <div className="card-ambilight-spill z-[1]" aria-hidden>
             <div className="relative h-full">
-              <CardImage src={printing.imagePath} sizes={imageSizes} alt="" role="presentation" draggable={false} className="card-ambilight" />
+              <CardImage src={printing.imagePath} sizes={sizes} alt="" role="presentation" draggable={false} className="card-ambilight" />
             </div>
           </div>
         </>
@@ -130,7 +133,7 @@ export function CardTile({
             {printing.imagePath ? (
               <CardImage
                 src={printing.imagePath}
-                sizes={imageSizes}
+                sizes={sizes}
                 alt=""
                 draggable={false}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
