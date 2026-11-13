@@ -103,6 +103,22 @@ export function writeStoredPreferences(prefs: UserPreferences) {
   }
 }
 
+/**
+ * Copie du tri et du filtre de collection : la page collection les lit côté serveur pour précharger
+ * les images des premières cartes (les préférences elles-mêmes restent dans le localStorage).
+ */
+export const CARDS_VIEW_COOKIE = "cptcg_cards_view";
+
+export function parseCardsViewCookie(value: string | undefined): Pick<UserPreferences, "sort" | "collection"> {
+  const [sort, collection] = (value ?? "").split("~");
+  const prefs = normalizePreferences({ sort, collection });
+  return { sort: prefs.sort, collection: prefs.collection };
+}
+
+export function writeCardsViewCookie(prefs: Pick<UserPreferences, "sort" | "collection">) {
+  document.cookie = `${CARDS_VIEW_COOKIE}=${prefs.sort}~${prefs.collection}; path=/; max-age=31536000; samesite=lax`;
+}
+
 export function filterDefaultsFrom(prefs: Pick<UserPreferences, "sort" | "collection">): Pick<UserPreferences, "sort" | "collection"> {
   return { sort: prefs.sort, collection: prefs.collection };
 }

@@ -19,8 +19,12 @@ export async function generateMetadata() {
   return rootMetadata(await getLocale());
 }
 
-export default async function RootLayout({ children, params }: LayoutProps<"/[locale]">) {
+export default async function RootLayout({ children, preload, params }: LayoutProps<"/[locale]">) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
-  return <SiteShell lang={locale}>{children}</SiteShell>;
+  return (
+    <SiteShell lang={locale} head={preload}>
+      {children}
+    </SiteShell>
+  );
 }
