@@ -11,6 +11,7 @@ Demande : $ARGUMENTS
 npx tsx scripts/perf-audit.ts --label "<libellé court : ce qui a changé>"
 ```
 
+- Une seule mesure à la fois sur la machine (verrou commun à tous les worktrees) : une mesure lancée pendant une autre attend sa fin, sinon les deux se partagent processeur et réseau et les chiffres sont faux.
 - Durée : ~30 min complet (13 pages × 2 profils × 3 visites + 3 passages Lighthouse). Lancer en arrière-plan (`run_in_background`).
 - Preview protégée (Vercel Authentication) : `VERCEL_AUTOMATION_BYPASS_SECRET=<secret>` (secret « Protection Bypass for Automation » du projet, `vercel api /v9/projects/<id>` → `protectionBypass`).
 - Options : `--url https://<preview>.vercel.app` · `--runs 5` (plus stable) · `--only accueil,catalogue` · `--no-lighthouse` (rapide) · `--public-only` (sans compte).
@@ -22,6 +23,7 @@ npx tsx scripts/perf-audit.ts --label "<libellé court : ce qui a changé>"
 - Tableau par profil (mobile, desktop), écart à la mesure précédente : flèche = sens de la variation (`▲` hausse, `▼` baisse), `✓` mieux, `✗` moins bien ; pas de flèche sous le bruit (100 ms, 2 points Lighthouse, 3 % de poids).
 - Colonnes : `TTFB` premier octet · `LCP` plus grand élément affiché · `Visuel` dernière image visible reçue (la page « a l'air finie ») · `Complet` dernière ressource reçue, réseau calme 1 s · `CLS` décalage de mise en page · `Ko` poids transféré · `Req` requêtes · `LH` scores Lighthouse sur 100.
 - Temps Playwright = réseau réel de la machine (médiane de N visites à froid) : comparer des mesures faites depuis la même connexion. Lighthouse simule réseau et processeur : médiane de N passages (`--runs`), un passage où Lighthouse plante est écarté (signalé « ⚠ … passage écarté ») et remplacé, 2 essais en plus au maximum. Garder le même `--runs` d'une mesure à l'autre pour comparer.
+- Avant/après d'une modification : mesurer les deux dans les mêmes conditions, l'une juste après l'autre, avec les mêmes options (`--only`, `--runs`), depuis la même connexion. Une preview contre la prod reste biaisée (cache CDN froid sur la preview, SEO ▼ car une preview est en noindex) : comparer de préférence deux previews (une de `main`, une de la branche). La barre d'outils Vercel des previews est désactivée par le script (en-tête `x-vercel-skip-toolbar`).
 - Rapports Lighthouse détaillés : `test-results/perf-lighthouse/<page>-<profil>.report.html` = passage médian ; chaque passage dans `<page>-<profil>-<n>.report.html` (dernière mesure seulement, non versionnés).
 - Comparer deux mesures quelconques : `npx tsx scripts/perf-audit.ts --compare docs/perf/history/<avant>.json docs/perf/history/<après>.json`.
 

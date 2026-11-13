@@ -88,6 +88,12 @@ function collectInPage() {
   };
 }
 
+/**
+ * En-têtes de toutes les visites (pages et Lighthouse). Sans la barre d'outils Vercel, qu'une preview
+ * injecte (vercel.live, ~60 Ko chargés en dernier) et pas la production : preview et prod comparables.
+ */
+export const MEASURE_HEADERS = { "x-vercel-skip-toolbar": "1" };
+
 /** Une visite à froid (contexte neuf, sans cache ni service worker) : temps de chargement et anomalies visibles. */
 export async function measurePage(
   browser: Browser,
@@ -95,7 +101,7 @@ export async function measurePage(
   device: BrowserContextOptions,
   cookies: Cookie[],
 ): Promise<PageMeasure> {
-  const context = await browser.newContext({ ...device, locale: "fr-FR", serviceWorkers: "block" });
+  const context = await browser.newContext({ ...device, locale: "fr-FR", serviceWorkers: "block", extraHTTPHeaders: MEASURE_HEADERS });
   try {
     await context.addCookies(cookies);
     // tsx (esbuild, keepNames) entoure les fonctions nommées d'un appel à `__name`, absent du navigateur.
