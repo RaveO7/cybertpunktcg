@@ -1289,11 +1289,33 @@ html {
   inset: -20% 0 100% 0;
 }
 
-/* Donne : chaque carte vole depuis le bas et se pose avec un léger rebond (délai par carte en JS). */
-.hero-fan[data-phase="dealing"] .hero-fan-card {
-  transition:
-    transform 0.9s cubic-bezier(0.18, 1.25, 0.4, 1),
-    opacity 0.25s ease;
+/*
+ * Donne, dès le premier affichage, sans JavaScript : chaque carte vole depuis le bas (--deal-*) et se
+ * pose avec un léger rebond à sa place dans l'éventail, une carte toutes les 120 ms ; un glitch marque
+ * la fin. « backwards » : position de départ pendant le délai, puis style normal (les transitions du
+ * survol reprennent la main). Glitch sans « backwards » : son état de départ décalerait l'éventail.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-fan-card {
+    animation:
+      hero-fan-deal 0.9s cubic-bezier(0.18, 1.25, 0.4, 1) backwards,
+      hero-fan-deal-in 0.25s ease backwards;
+    animation-delay: calc(250ms + var(--deal-i, 0) * 120ms);
+  }
+  .hero-fan-deal {
+    animation: cp-glitch-block 0.6s steps(1) 1;
+    animation-delay: calc(250ms + 900ms + (var(--deal-n, 1) - 1) * 120ms);
+  }
+}
+@keyframes hero-fan-deal {
+  from {
+    transform: translate(calc(-50% + var(--deal-x, 0%)), 130%) rotate(var(--deal-r, 0deg)) scale(0.7);
+  }
+}
+@keyframes hero-fan-deal-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .hero-fan-face {
@@ -1668,8 +1690,10 @@ html {
 }
 
 /*
- * Accueil, haut de page : apparition au chargement (data-intro), en CSS seul. Contrairement à
- * data-reveal, rien n'attend le script : le titre principal s'affiche dès le premier rendu (LCP).
+ * Accueil, haut de page : arrivée au chargement (data-intro), en CSS seul. Contrairement à
+ * data-reveal, rien n'attend le script, et le texte n'est jamais transparent : un élément d'opacité
+ * nulle n'est compté comme affiché (FCP, LCP) qu'au rendu suivant du thread principal, retardé par
+ * l'hydratation. Seul le glissé est animé.
  */
 @media (prefers-reduced-motion: no-preference) {
   [data-intro] {
@@ -1681,12 +1705,12 @@ html {
   }
 }
 @keyframes cp-intro-up {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: none; }
+  from { transform: translateY(24px); }
+  to { transform: none; }
 }
 @keyframes cp-intro-left {
-  from { opacity: 0; transform: translateX(-40px); }
-  to { opacity: 1; transform: none; }
+  from { transform: translateX(-40px); }
+  to { transform: none; }
 }
 
 /*
