@@ -1,13 +1,9 @@
 {
   "permissions": {
     "ask": [
-      "Bash(npm run db:sync-prod*)",
       "Bash(npm run db:export-postgres*)",
-      "Bash(*sync-local-to-prod*)",
       "Bash(*export-local-to-postgres*)",
-      "PowerShell(npm run db:sync-prod*)",
       "PowerShell(npm run db:export-postgres*)",
-      "PowerShell(*sync-local-to-prod*)",
       "PowerShell(*export-local-to-postgres*)"
     ],
     "allow": [
