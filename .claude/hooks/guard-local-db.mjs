@@ -2,7 +2,8 @@
 // (tests, scripts, serveur, Prisma…) si DATABASE_URL ne pointe pas vers une base SQLite locale.
 // Même résolution que scripts/prisma.mjs : variable d'environnement, sinon .env.
 // Les envois volontaires vers la prod (sync-local-to-prod, export-local-to-postgres) passent :
-// ils sont soumis à confirmation par les règles "ask" de .claude/settings.json.
+// sync-local-to-prod seulement via /sync-prod (simulation puis mon « ok »), export-local-to-postgres par la règle
+// "ask" de .claude/settings.json.
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
