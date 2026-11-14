@@ -1,0 +1,238 @@
+{
+  "version": 1,
+  "date": "2026-11-14T20:51:26.599Z",
+  "label": "DOM après (prod, paquets de 20)",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "06541e7",
+  "runs": 3,
+  "pages": {
+    "catalogue": {
+      "path": "/fr/cartes",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 72.20000000298023,
+            "fcp": 816,
+            "lcp": 816,
+            "domContentLoaded": 708.3000000044703,
+            "load": 877.3000000044703,
+            "visualComplete": 816,
+            "fullyLoaded": 1346.2000000029802,
+            "cls": 0,
+            "requests": 51,
+            "totalKB": 669,
+            "jsKB": 228,
+            "imageKB": 69
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 91,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 1386,
+            "lcp": 3302,
+            "tbt": 125,
+            "cls": 0,
+            "speedIndex": 1759,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 72.70000000298023,
+            "fcp": 260,
+            "lcp": 284,
+            "domContentLoaded": 210.20000000298023,
+            "load": 416.79999999701977,
+            "visualComplete": 309.20000000298023,
+            "fullyLoaded": 886.7000000029802,
+            "cls": 0,
+            "requests": 60,
+            "totalKB": 591,
+            "jsKB": 228,
+            "imageKB": 51
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 339,
+            "lcp": 702,
+            "tbt": 2,
+            "cls": 0,
+            "speedIndex": 613,
+            "runs": 3
+          }
+        }
+      }
+    },
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 72.10000000149012,
+            "fcp": 312,
+            "lcp": 312,
+            "domContentLoaded": 281.40000000596046,
+            "load": 481.29999999701977,
+            "visualComplete": 347.80000000447035,
+            "fullyLoaded": 1297.5,
+            "cls": 0,
+            "requests": 79,
+            "totalKB": 1114,
+            "jsKB": 396,
+            "imageKB": 262
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 80,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 66,
+            "fcp": 1091,
+            "lcp": 4120,
+            "tbt": 295,
+            "cls": 0,
+            "speedIndex": 2640,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 64.29999999701977,
+            "fcp": 376,
+            "lcp": 620,
+            "domContentLoaded": 255.70000000298023,
+            "load": 428.70000000298023,
+            "visualComplete": 620,
+            "fullyLoaded": 886.5,
+            "cls": 0,
+            "requests": 82,
+            "totalKB": 1139,
+            "jsKB": 396,
+            "imageKB": 250
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 98,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 319,
+            "lcp": 1155,
+            "tbt": 7,
+            "cls": 0,
+            "speedIndex": 867,
+            "runs": 3
+          }
+        }
+      }
+    },
+    "investissement": {
+      "path": "/fr/investissement",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 68.09999999403954,
+            "fcp": 212,
+            "lcp": 212,
+            "domContentLoaded": 180.89999999850988,
+            "load": 303.1000000014901,
+            "visualComplete": 212,
+            "fullyLoaded": 975.7999999970198,
+            "cls": 0,
+            "requests": 72,
+            "totalKB": 725,
+            "jsKB": 375,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/investissement",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 88,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 1088,
+            "lcp": 3085,
+            "tbt": 307,
+            "cls": 0,
+            "speedIndex": 1611,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 64.69999999552965,
+            "fcp": 208,
+            "lcp": 208,
+            "domContentLoaded": 192.39999999850988,
+            "load": 327.19999999552965,
+            "visualComplete": 208,
+            "fullyLoaded": 857.7000000029802,
+            "cls": 0,
+            "requests": 71,
+            "totalKB": 725,
+            "jsKB": 375,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/investissement",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 362,
+            "lcp": 642,
+            "tbt": 8,
+            "cls": 0,
+            "speedIndex": 677,
+            "runs": 3
+          }
+        }
+      }
+    }
+  }
+}
