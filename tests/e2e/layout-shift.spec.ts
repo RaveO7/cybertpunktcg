@@ -3,7 +3,8 @@ import { expect, settle, test } from "./fixtures";
 
 // En-tête d'une page réservée aux comptes : même hauteur avant et après l'arrivée de la session, sinon
 // toute la page (<main>) descend au chargement (CLS mesuré jusqu'à 0,98 par Lighthouse).
-for (const path of ["/fr/investissement", "/fr/parametres"]) {
+// « /fr » connecté : tableau de bord, servi à l'adresse de l'accueil mais réservé aux comptes (CLS 0,178).
+for (const path of ["/fr", "/fr/investissement", "/fr/parametres"]) {
   test(`l'en-tête ne change pas de hauteur au chargement de ${path}`, async ({ page, account }) => {
     expect(account.id).toBeTruthy();
     // Session vérifiée lentement : l'état « session inconnue » dure assez pour être rendu.
@@ -42,7 +43,7 @@ async function pricedPrintings() {
 
 // Chaque état de chargement rendu assez longtemps (session, courbe, prix de référence) : aucun ne doit
 // avoir une autre taille que le contenu qui le remplace. API layout-shift : Chromium seulement.
-for (const path of ["/fr/investissement", "/fr/parametres"]) {
+for (const path of ["/fr", "/fr/investissement", "/fr/parametres"]) {
   test(`aucun décalage de mise en page au chargement de ${path}`, async ({ page, account, browserName }) => {
     test.skip(browserName !== "chromium", "PerformanceObserver layout-shift : Chromium seulement.");
     const printingIds = await pricedPrintings();
