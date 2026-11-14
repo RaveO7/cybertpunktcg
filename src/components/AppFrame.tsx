@@ -1,5 +1,6 @@
 "use client";
 
+import { useSelectedLayoutSegments } from "next/navigation";
 import { useCollection } from "@/components/CollectionProvider";
 import { BottomNav, Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -29,15 +30,19 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     LEGAL_PATHS.includes(pathname) ||
     // Fonctionnalité pas encore publiée : la page répond 404, inutile de passer par la connexion.
     (pathname === "/souhaits" && !WISHLIST_ENABLED);
+  // Tableau de bord : servi à l'adresse de l'accueil (chemin interne « / », public), mais réservé aux comptes
+  // comme les autres pages privées. Il porte déjà son propre RequireUser.
+  const isDashboard = useSelectedLayoutSegments()[0] === "tableau-de-bord";
+  const privatePage = !isPublicPage || isDashboard;
   // Le didacticiel occupe toute la hauteur : pas de pied de page.
   // Écran de démarrage d'une page réservée aux comptes (voir RequireUser) : pas de pied de page, qui serait
   // seul en bas de l'écran puis repoussé par le contenu à son arrivée (décalage de mise en page).
-  const awaitingSession = !isPublicPage && (session === "unknown" || session === "guest") && !error;
+  const awaitingSession = privatePage && (session === "unknown" || session === "guest") && !error;
   const showFooter = !pathname.startsWith("/comment-jouer") && !awaitingSession;
   const content = isPublicPage ? children : <RequireUser>{children}</RequireUser>;
   return (
     <div className="relative flex h-dvh flex-col overflow-clip">
-      <Header privatePage={!isPublicPage} />
+      <Header privatePage={privatePage} />
       <OfflineBanner />
       <LegacyLocalePreference />
       <PreferredLanguageRedirect />
