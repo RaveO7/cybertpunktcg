@@ -35,8 +35,9 @@ test.describe("sans JavaScript", () => {
     // Dès le premier rendu : jamais d'opacité nulle sur le haut de page, même pendant son glissé.
     for (const selector of ["h1", "[data-glitch='hero-eyebrow']"]) expect(await effectiveOpacity(page, selector)).toBe(1);
     await expect(title(page)).toBeVisible();
-    // La donne est jouée sans script : chaque carte a son vol en cours (ou en attente de son tour).
-    const names = await fanCards(page).evaluateAll((cards) => cards.map((card) => card.getAnimations().map((animation) => (animation as CSSAnimation).animationName).join(",")));
+    // La donne est jouée sans script : chaque carte porte l'animation de vol (lue sur le style calculé,
+    // indépendamment du moment où le serveur de test, plus ou moins lent, livre la page).
+    const names = await fanCards(page).evaluateAll((cards) => cards.map((card) => getComputedStyle(card).animationName));
     expect(names).toHaveLength(5);
     for (const name of names) expect(name).toContain("hero-fan-deal");
     // Donne finie : cartes visibles, posées de gauche à droite dans le cadre de l'éventail.
@@ -60,12 +61,20 @@ test.describe("avec JavaScript", () => {
     page.on("response", (response) => {
       if (response.request().resourceType() === "script") scripts.push(response.text());
     });
-    await page.goto("/fr");
+    await page.goto("/fr", { waitUntil: "commit" });
     const hit = page.locator(".hero-fan-hit").nth(2);
+    const deal = page.locator(".hero-fan-deal");
+    await deal.waitFor({ state: "attached" });
     if (!isMobile) {
-      // Pendant la donne, le survol ne soulève pas la carte (script chargé ou non).
+      // Pendant la donne (figée le temps de la vérification, quelle que soit la vitesse du serveur), le
+      // survol ne soulève pas la carte, que le script soit déjà hydraté ou non.
+      await deal.evaluate((element) => element.getAnimations({ subtree: true }).forEach((animation) => animation.pause()));
+      await settle(page);
+      await hit.locator("a").hover();
+      await page.mouse.move(640, 300, { steps: 3 });
       await hit.locator("a").hover();
       await expect(hit).not.toHaveAttribute("data-active");
+      await deal.evaluate((element) => element.getAnimations({ subtree: true }).forEach((animation) => animation.play()));
     }
     await expect.poll(() => dealAnimations(page), { timeout: 10_000 }).toBe(0);
     await settle(page);
