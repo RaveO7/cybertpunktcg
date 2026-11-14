@@ -26,8 +26,12 @@ type RowClick = (event: MouseEvent, rowKey: string, itemIds: string[]) => void;
 /** Sélection d'une carte : tous ses achats, aucun, ou une partie. */
 type Selection = boolean | "mixed";
 
-/** Cartes rendues d'un coup ; les suivantes arrivent quand la fin de la liste approche. */
-const ROWS_PER_PAGE = 100;
+/**
+ * Cartes rendues d'un coup ; les suivantes arrivent quand la fin de la liste approche.
+ * 20 : plus d'un écran sur ordinateur comme sur téléphone, sans dépasser ~1 500 éléments DOM
+ * au chargement (une ligne en compte ~22 sur ordinateur, ~30 sur téléphone).
+ */
+const ROWS_PER_PAGE = 20;
 
 /**
  * Détail par carte (une ligne par carte, dépliable en un achat par sous-ligne) :
