@@ -8,7 +8,7 @@ description: Tout ce qui touche à Vercel pour ce projet — déploiements (prev
 Projet `perfectpornproject/cybertpunktcg`, déjà lié (`.vercel/project.json`). CLI installée et connectée (`vercel whoami`). Région `fra1` (`vercel.json`).
 
 ## Comment le projet se déploie
-- **Git** : chaque push de branche crée un **preview** (`cybertpunktcg-git-<branche>-perfectpornproject.vercel.app`) ; un merge sur `main` déploie la **production**. Ne pas déployer à la main sauf demande explicite.
+- **Git** : seules les branches `livraison/*` (train de livraison, niveau `complet`) créent un **preview** (`cybertpunktcg-git-<branche>-perfectpornproject.vercel.app`) ; les autres branches ne déploient rien (`git.deploymentEnabled` de `vercel.json`). Un merge sur `main` déploie la **production**, sauf s'il ne touche rien du site depuis le dernier déploiement réussi (`ignoreCommand` → `scripts/livraison-niveau.mjs --vercel`, statut CANCELED). Ne pas déployer à la main sauf demande explicite.
 - **Build** (`npm run build`) : `prisma generate` → `scripts/vercel-db-push.mjs` (en **production uniquement**, `db push` aligne Postgres sur `prisma/schema.prisma` ; un changement destructeur fait échouer le build sans rien toucher) → miniatures → `next build`.
 - **Cron** : `GET /api/cron/import-prices` chaque jour à 05:00 UTC, protégé par `CRON_SECRET` ; il invalide le cache `catalog`.
 

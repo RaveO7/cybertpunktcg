@@ -1,4 +1,6 @@
 {
   "regions": ["fra1"],
-  "crons": [{ "path": "/api/cron/import-prices", "schedule": "0 5 * * *" }]
+  "crons": [{ "path": "/api/cron/import-prices", "schedule": "0 5 * * *" }],
+  "ignoreCommand": "node scripts/livraison-niveau.mjs --vercel",
+  "git": { "deploymentEnabled": { "**": false, "main": true, "livraison/**": true } }
 }
