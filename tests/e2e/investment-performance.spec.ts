@@ -3,7 +3,7 @@ import { expect, settle, test } from "./fixtures";
 
 /**
  * Page Investissement, rendu allégé : une seule mise en page (liste ou tableau, l'autre n'est pas rendue)
- * et un détail affiché par paquets de 100 cartes. Les exemplaires créés appartiennent au compte du test,
+ * et un détail affiché par paquets de 20 cartes. Les exemplaires créés appartiennent au compte du test,
  * supprimé à la fin.
  */
 
@@ -25,11 +25,15 @@ test("une seule mise en page, détail affiché par paquets", async ({ page, acco
   await expect(bySet.locator(isMobile ? "table" : "ul")).toHaveCount(0);
 
   const rows = detail.locator(isMobile ? "ul > li" : "tbody > tr");
-  await expect(rows).toHaveCount(100);
-  const more = detail.getByRole("button", { name: "Afficher plus · 30 cartes restantes" });
-  await expect(more).toBeAttached();
-  // À l'approche du bas de la liste, la suite arrive d'elle-même.
+  await expect(rows).toHaveCount(20);
+  const more = detail.getByRole("button", { name: /^Afficher plus/ });
+  await expect(more).toHaveAccessibleName("Afficher plus · 110 cartes restantes");
+  // À l'approche du bas de la liste, la suite arrive d'elle-même, paquet par paquet.
   await more.scrollIntoViewIfNeeded();
-  await expect(rows).toHaveCount(130);
+  await expect(rows).toHaveCount(40);
+  await expect(async () => {
+    if ((await more.count()) > 0) await more.scrollIntoViewIfNeeded({ timeout: 1_000 });
+    await expect(rows).toHaveCount(130, { timeout: 1_000 });
+  }).toPass();
   await expect(more).toHaveCount(0);
 });
