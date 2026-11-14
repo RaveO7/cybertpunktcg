@@ -30,12 +30,13 @@ Tout test, script de vérification ou essai manuel qui crée quelque chose en ba
 
 ## Livraison (`/livrer`)
 
-- Chaque push de branche crée une preview Vercel ; la fusion dans `main` déploie la production.
+- Seules les branches `livraison/*` (créées par le train, niveau `complet`) ont une preview Vercel : les autres branches ne déploient rien (`git.deploymentEnabled` de `vercel.json`). La fusion dans `main` déploie la production, sauf si rien n'a changé côté site depuis le dernier déploiement (`ignoreCommand`).
+- Niveau de livraison selon les fichiers touchés : `node scripts/livraison-niveau.mjs origin/main HEAD [--branches b]` → `aucun` (docs, tests, outils, mesures : aucun build), `leger` (code de l'app : pas de preview, contrôle en prod), `complet` (branche `feat/`, schéma, API, auth, données, dépendances : preview testée). Motifs en tête du script.
 - Attendre le déploiement d'un commit (logs affichés si le build échoue) : `node scripts/wait-deploy.mjs [HEAD|<sha>] [--prod]` — en arrière-plan, un build dure 3 à 10 min.
 - Test de fumée en lecture seule (12 pages publiques et connectées, desktop + mobile : statut, erreurs console, requêtes en échec, images cassées) : `node scripts/smoke-preview.mjs <url> [--pages /fr,/fr/cards] [--shots <dossier>]`. Production : `https://cybertpunktcg.vercel.app`.
 - Les previews sont protégées (Vercel Authentication) : les scripts lisent eux-mêmes la clé `automation-bypass` (`vercel api /v9/projects/<projectId>`) et l'envoient en en-tête `x-vercel-protection-bypass`.
 - La CI GitHub Actions ne démarre pas (compte GitHub bloqué pour facturation, 2026-11-12) : le hook avant push (`verify --full`) et le test de la preview la remplacent ; ignorer le ✗ « check » de la PR.
-- Circuit : vérification locale (hooks) → push → test de **la tâche** sur la preview (le vrai site : base de prod, lecture seule) → fusion → en production, seulement `wait-deploy.mjs HEAD --prod` (« Ready ») et `smoke-preview.mjs https://cybertpunktcg.vercel.app --public-only`, pas de nouveau test complet.
+- Circuit `complet` : vérification locale (hooks) → push → test de **la tâche** sur la preview (le vrai site : base de prod, lecture seule) → fusion → en production, seulement `wait-deploy.mjs HEAD --prod` (« Ready ») et `smoke-preview.mjs https://cybertpunktcg.vercel.app --public-only`, pas de nouveau test complet. Circuit `leger` : push → fusion → `wait-deploy.mjs HEAD --prod` → fumée + test de la tâche en prod (lecture seule). Circuit `aucun` : push → fusion, rien à attendre.
 - **Les previews utilisent la base Postgres de production** : sur une preview, tests en lecture seule (compte de test `EMAIL_USER_TEST` de `.env.local`). Toute vérification qui écrit se fait en local.
 - Un build de production lance `db push` sur la base de prod : un changement de schéma destructeur fait échouer le build — me demander avant de fusionner une modification de `prisma/schema.prisma`.
 
