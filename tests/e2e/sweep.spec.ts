@@ -8,6 +8,10 @@ import { expect, settle, snap, test } from "./fixtures";
  * inconnu : elles doivent afficher un « introuvable » propre, pas planter.
  */
 
+// Une vingtaine de pages par test, 3 à 5 s chacune sur iPhone (WebKit) avec le serveur de dev : le
+// délai commun de 90 s ne suffit pas.
+test.describe.configure({ timeout: 180_000 });
+
 type Problem = string;
 
 function watch(page: Page) {
