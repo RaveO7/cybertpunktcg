@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "date": "2026-11-13T16:38:12.160Z",
+  "label": "Préchargement LCP collection AVANT (#17, prod)",
+  "baseUrl": "https://cybertpunktcg-i6t8hbdn2-perfectpornproject.vercel.app",
+  "gitSha": "9d3f01f",
+  "runs": 3,
+  "pages": {
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 85.40000009536743,
+            "fcp": 228,
+            "lcp": 228,
+            "domContentLoaded": 215.70000004768372,
+            "load": 434.3000000715256,
+            "visualComplete": 794.7000000476837,
+            "fullyLoaded": 1172.6000000238419,
+            "cls": 0,
+            "requests": 79,
+            "totalKB": 1113,
+            "jsKB": 395,
+            "imageKB": 394
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 68,
+            "accessibility": 100,
+            "bestPractices": 93,
+            "seo": 66,
+            "fcp": 1239,
+            "lcp": 3093,
+            "tbt": 1325,
+            "cls": 0,
+            "speedIndex": 3166,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 76.29999995231628,
+            "fcp": 240,
+            "lcp": 688,
+            "domContentLoaded": 196.29999995231628,
+            "load": 306.39999997615814,
+            "visualComplete": 696.6000000238419,
+            "fullyLoaded": 877.7000000476837,
+            "cls": 0.085,
+            "requests": 83,
+            "totalKB": 1082,
+            "jsKB": 395,
+            "imageKB": 347
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 73,
+            "accessibility": 100,
+            "bestPractices": 96,
+            "seo": 66,
+            "fcp": 368,
+            "lcp": 1191,
+            "tbt": 515,
+            "cls": 0.064,
+            "speedIndex": 1440,
+            "runs": 3
+          }
+        }
+      }
+    }
+  }
+}
