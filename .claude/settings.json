@@ -2,9 +2,11 @@
   "permissions": {
     "ask": [
       "Bash(npm run db:export-postgres*)",
-      "Bash(*export-local-to-postgres*)",
+      "Bash(npx tsx scripts/export-local-to-postgres*)",
+      "Bash(tsx scripts/export-local-to-postgres*)",
       "PowerShell(npm run db:export-postgres*)",
-      "PowerShell(*export-local-to-postgres*)"
+      "PowerShell(npx tsx scripts/export-local-to-postgres*)",
+      "PowerShell(tsx scripts/export-local-to-postgres*)"
     ],
     "allow": [
       "Bash(npm run import:prices*)",
