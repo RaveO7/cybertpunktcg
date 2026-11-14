@@ -44,9 +44,6 @@ export type FanLabels = {
 
 /** Inclinaison maximale (degrés) d'une carte sous le pointeur. */
 const MAX_TILT = 14;
-/** Distribution des cartes à l'arrivée : écart entre deux cartes, et durée d'un vol. */
-const DEAL_STEP_MS = 120;
-const DEAL_MS = 900;
 /**
  * Largeur affichée d'une carte de l'éventail (36 % de l'éventail) : éventail de 34rem au plus, colonne
  * droite de la grille max-w-[1100px] (px-4, gap-12, 1.05fr/1fr) dès md, pleine largeur (px-3) en dessous.
@@ -96,7 +93,9 @@ type Opened = { index: number; origin: Spot };
 /**
  * Éventail de Légendes de l'accueil.
  * - Arrivée : les cartes sont distribuées une à une depuis le bas, comme une donne, et se posent en
- *   éventail ; un glitch marque la fin de la donne.
+ *   éventail ; un glitch marque la fin de la donne. Donne en CSS (.hero-fan-card, .hero-fan-deal dans
+ *   globals.css), jouée dès le premier affichage sans attendre ce script : le serveur rend les cartes à
+ *   leur place, l'animation part de --deal-*.
  * - Survol ou focus : la carte se soulève et écarte ses voisines ; sous la souris elle s'incline avec
  *   un reflet holographique.
  * - Clic : la carte grandit depuis l'éventail jusqu'au centre de l'écran, et sa fiche se déploie depuis
@@ -105,36 +104,27 @@ type Opened = { index: number; origin: Spot };
  * Mouvement réduit : éventail ouvert d'emblée, fiche affichée sans animation.
  */
 export function HeroCardFan({ cards, labels }: { cards: FanCard[]; labels: FanLabels }) {
-  const [phase, setPhase] = useState<"stacked" | "dealing" | "open">("stacked");
+  const [phase, setPhase] = useState<"dealing" | "open">("dealing");
   const [active, setActive] = useState<number | null>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50 });
   const [opened, setOpened] = useState<Opened | null>(null);
   const frame = useRef<number | null>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const dealRef = useRef<HTMLDivElement>(null);
   const faces = useRef<(HTMLAnchorElement | null)[]>([]);
 
   useEffect(() => {
-    if (reducedMotion()) {
-      const id = window.setTimeout(() => setPhase("open"), 0);
-      return () => window.clearTimeout(id);
-    }
-    // Laisse le premier rendu (cartes hors champ) s'afficher, puis distribue.
-    const start = window.setTimeout(() => setPhase("dealing"), 250);
-    const end = window.setTimeout(
-      () => {
-        setPhase("open");
-        // La donne se termine sur un glitch (cf. .cp-glitch-block.is-glitching).
-        const list = listRef.current;
-        list?.classList.add("is-glitching");
-        window.setTimeout(() => list?.classList.remove("is-glitching"), 650);
-      },
-      250 + DEAL_MS + DEAL_STEP_MS * (cards.length - 1),
-    );
+    // Survol actif une fois la donne CSS finie, où qu'elle en soit à l'arrivée du script (aucune
+    // animation : déjà finie, ou mouvement réduit). Une animation annulée (élément retiré) compte
+    // aussi comme finie : allSettled.
+    const deal = dealRef.current?.getAnimations({ subtree: true }) ?? [];
+    let live = true;
+    void Promise.allSettled(deal.map((animation) => animation.finished)).then(() => {
+      if (live) setPhase("open");
+    });
     return () => {
-      window.clearTimeout(start);
-      window.clearTimeout(end);
+      live = false;
     };
-  }, [cards.length]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -201,70 +191,68 @@ export function HeroCardFan({ cards, labels }: { cards: FanCard[]; labels: FanLa
   return (
     <>
       <div className="relative mx-auto aspect-[4/3] w-full max-w-[34rem]">
-        <ul
-          ref={listRef}
-          className="hero-fan cp-glitch-block absolute inset-0"
-          aria-label={labels.list}
-          data-phase={phase}
-          data-glitch="hero-fan"
-        >
-          {cards.map((card, index) => {
-            const offset = index - middle;
-            const isActive = active === index;
-            const placed = phase !== "stacked";
-            // Survol : la carte active se décale vers l'extérieur de l'éventail (une carte de bord ne
-            // recouvre plus sa voisine) et ses voisines s'écartent d'elle.
-            const distance = active === null ? 0 : Math.abs(index - active);
-            const push = active === null ? 0 : isActive ? offset * 5 : Math.sign(index - active) * (distance === 1 ? 22 : 10);
-            const style = {
-              // Avant la donne : sous l'éventail, tournées, réduites et invisibles.
-              "--fan-x": placed ? `${offset * 32 + push}%` : `${offset * 8}%`,
-              "--fan-y": placed ? `${Math.abs(offset) * 3.5 - (isActive ? 9 : 0)}%` : "130%",
-              "--fan-r": placed ? `${angleOf(index)}deg` : `${offset * -18 - 24}deg`,
-              "--fan-s": placed ? (isActive ? 1.08 : 1) : 0.7,
-              "--tilt-x": isActive ? `${tilt.x}deg` : "0deg",
-              "--tilt-y": isActive ? `${tilt.y}deg` : "0deg",
-              "--glare-x": `${isActive ? tilt.glareX : 50}%`,
-              "--glare-y": `${isActive ? tilt.glareY : 50}%`,
-              opacity: placed ? 1 : 0,
-              zIndex: zIndexOf(index),
-              transitionDelay: phase === "dealing" ? `${index * DEAL_STEP_MS}ms` : "0ms",
-              // La carte ouverte en grand est masquée dans l'éventail.
-              visibility: opened?.index === index ? "hidden" : undefined,
-            } as CSSProperties;
-            return (
-              <li key={card.slug} className="hero-fan-card" style={style} data-active={isActive || undefined}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la carte */}
-                <img srcSet={card.srcSet} sizes={FAN_CARD_SIZES} src={card.thumb} alt="" aria-hidden="true" className="hero-fan-glow" />
-                <Link
-                  ref={(node) => {
-                    faces.current[index] = node;
-                  }}
-                  href={card.href}
-                  className="hero-fan-face"
-                  aria-haspopup="dialog"
-                  onClick={(event) => openCard(event, index)}
-                  onFocus={() => setActive(index)}
-                  onBlur={release}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées */}
-                  <img
-                    srcSet={card.srcSet}
-                    sizes={FAN_CARD_SIZES}
-                    src={card.thumb}
-                    alt={card.alt}
-                    width={400}
-                    height={559}
-                    loading="eager"
-                    decoding="async"
-                    draggable={false}
-                  />
-                  <span className="hero-fan-glare" aria-hidden="true" />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        {/* Enveloppe du glitch de fin de donne : sur la liste, il se rejouerait à chaque glitch de
+            GlitchDirector (la classe .is-glitching remplace puis rend son animation). */}
+        <div ref={dealRef} className="hero-fan-deal absolute inset-0" style={{ "--deal-n": cards.length } as CSSProperties}>
+          <ul className="hero-fan cp-glitch-block absolute inset-0" aria-label={labels.list} data-glitch="hero-fan">
+            {cards.map((card, index) => {
+              const offset = index - middle;
+              const isActive = active === index;
+              // Survol : la carte active se décale vers l'extérieur de l'éventail (une carte de bord ne
+              // recouvre plus sa voisine) et ses voisines s'écartent d'elle.
+              const distance = active === null ? 0 : Math.abs(index - active);
+              const push = active === null ? 0 : isActive ? offset * 5 : Math.sign(index - active) * (distance === 1 ? 22 : 10);
+              const style = {
+                "--fan-x": `${offset * 32 + push}%`,
+                "--fan-y": `${Math.abs(offset) * 3.5 - (isActive ? 9 : 0)}%`,
+                "--fan-r": `${angleOf(index)}deg`,
+                "--fan-s": isActive ? 1.08 : 1,
+                // Départ de la donne : sous l'éventail, tournée, réduite et invisible ; rang de distribution.
+                "--deal-x": `${offset * 8}%`,
+                "--deal-r": `${offset * -18 - 24}deg`,
+                "--deal-i": index,
+                "--tilt-x": isActive ? `${tilt.x}deg` : "0deg",
+                "--tilt-y": isActive ? `${tilt.y}deg` : "0deg",
+                "--glare-x": `${isActive ? tilt.glareX : 50}%`,
+                "--glare-y": `${isActive ? tilt.glareY : 50}%`,
+                zIndex: zIndexOf(index),
+                // La carte ouverte en grand est masquée dans l'éventail.
+                visibility: opened?.index === index ? "hidden" : undefined,
+              } as CSSProperties;
+              return (
+                <li key={card.slug} className="hero-fan-card" style={style} data-active={isActive || undefined}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la carte */}
+                  <img srcSet={card.srcSet} sizes={FAN_CARD_SIZES} src={card.thumb} alt="" aria-hidden="true" className="hero-fan-glow" />
+                  <Link
+                    ref={(node) => {
+                      faces.current[index] = node;
+                    }}
+                    href={card.href}
+                    className="hero-fan-face"
+                    aria-haspopup="dialog"
+                    onClick={(event) => openCard(event, index)}
+                    onFocus={() => setActive(index)}
+                    onBlur={release}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- miniatures pré-générées */}
+                    <img
+                      srcSet={card.srcSet}
+                      sizes={FAN_CARD_SIZES}
+                      src={card.thumb}
+                      alt={card.alt}
+                      width={400}
+                      height={559}
+                      loading="eager"
+                      decoding="async"
+                      draggable={false}
+                    />
+                    <span className="hero-fan-glare" aria-hidden="true" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
         {/* Zones de survol : la place de chaque carte au repos, qui ne bouge jamais ; seul leur ordre
             change (la carte active passe dessus, sa zone ne fait donc que grandir). Si le pointeur
             suivait les cartes animées, elles se déroberaient sous lui : la carte soulevée le quitte par

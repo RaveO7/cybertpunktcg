@@ -1,7 +1,5 @@
 "use client";
 
-import QRCode from "qrcode";
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Translator } from "@/i18n/translator";
 import { formatClock, remainingSeconds } from "@/lib/tournament/clock";
@@ -18,32 +16,6 @@ export const dangerClass =
 export const inputClass =
   "h-10 w-full min-w-0 border border-line bg-background px-3 text-sm outline-none focus:border-cyan";
 export const panelClass = "border border-line bg-panel p-3 sm:p-4";
-
-/** QR code (SVG) d'une URL : modules noirs sur fond blanc, pour un scan fiable. */
-export function QrCode({ value, label }: { value: string; label: string }) {
-  const [svg, setSvg] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    QRCode.toString(value, { type: "svg", margin: 2, errorCorrectionLevel: "M", color: { dark: "#000000", light: "#ffffff" } })
-      .then((markup) => {
-        if (!cancelled) setSvg(markup);
-      })
-      .catch(() => {
-        if (!cancelled) setSvg(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [value]);
-  return (
-    <div
-      role="img"
-      aria-label={label}
-      className="aspect-square w-full max-w-64 bg-white p-1 [&_svg]:h-full [&_svg]:w-full"
-      dangerouslySetInnerHTML={svg ? { __html: svg } : undefined}
-    />
-  );
-}
 
 export function absoluteUrl(path: string) {
   return typeof window === "undefined" ? path : new URL(path, window.location.origin).toString();

@@ -5,7 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { formatRoute } from "@/i18n/match";
 import type { PlayerView, TournamentView } from "@/lib/tournament/view";
 import type { RunCommand } from "./TournamentConsole";
-import { absoluteUrl, buttonClass, dangerClass, inputClass, panelClass, primaryClass, QrCode, Tag } from "./ui";
+import { QrCode } from "./QrCode";
+import { absoluteUrl, buttonClass, dangerClass, inputClass, panelClass, primaryClass, Tag } from "./ui";
 
 export function PlayersTab({ view, run }: { view: TournamentView; run: RunCommand }) {
   const t = useTranslations();
