@@ -155,7 +155,7 @@ describe("sitemap", () => {
       assert.deepEqual(legal.alternates?.languages, terms);
       assert.equal(legal.lastModified, undefined);
     }
-    for (const path of ["/fr/mentions-legales", "/en/legal-notice", "/de/impressum", "/fr/confidentialite", "/it/privacy"]) {
+    for (const path of ["/fr/mentions-legales", "/en/legal-notice", "/de/impressum", "/fr/confidentialite", "/it/privacy", "/fr/connexion", "/en/connexion"]) {
       assert.ok(byUrl.has(`${SITE}${path}`), path);
     }
 

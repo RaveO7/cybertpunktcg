@@ -43,7 +43,7 @@ export async function buildSitemap(now = new Date()): Promise<MetadataRoute.Site
     }),
   ]);
 
-  const staticPages: PublicRouteKey[] = ["home", "cards", "legalNotice", "terms", "privacy"];
+  const staticPages: PublicRouteKey[] = ["home", "cards", "legalNotice", "terms", "privacy", "login"];
   return [
     ...staticPages.flatMap((key) => localized(key)),
     ...cards
