@@ -6,10 +6,11 @@ import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Fragment, type ReactNode } from "react";
 import { CardImage } from "@/components/CardImage";
+import { CatalogCardTile, type TileCard } from "@/components/public-site/CatalogCardTile";
+import { CATALOG_BATCH, CatalogGrid } from "@/components/public-site/CatalogGrid";
 import { TrackCardLink } from "@/components/public-site/TrackCardLink";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { JsonLd } from "@/components/site/JsonLd";
-import { thumbnailSrcSet } from "@/lib/card-image";
 import { latestPriceDate, loadPublicCards } from "@/lib/seo/catalog-data";
 import { CARD_TYPES, cardLabels, type CardLabels } from "@/lib/seo/card-labels";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -20,7 +21,6 @@ import { localizedPath } from "@/i18n/paths";
 import { translatorFor } from "@/i18n/server";
 
 const IMAGE = { width: 733, height: 1024 };
-const THUMB = { width: 400, height: 559 };
 
 // Largeur affichée des images (attribut sizes) : conteneur max-w-5xl (1024 px) en px-4, gap-3 (12 px).
 /** Grille du catalogue : 3 colonnes, 4 dès sm, 6 dès md. */
@@ -71,64 +71,9 @@ function cardFacts(card: PublicCard, labels: CardLabels, stat: { cost: (value: n
   return [kind, ...stats].filter(Boolean).join(", ");
 }
 
-/**
- * Tuile de carte reprenant celle de l'explorateur : halo aux couleurs de l'illustration, balayage et
- * zoom au survol (effets réservés à la souris, cf. globals.css).
- */
-function CardTile({
-  card,
-  locale,
-  alt,
-  sizes,
-  eager = false,
-}: {
-  card: PublicCard;
-  locale: Locale;
-  alt: string;
-  sizes: string;
-  eager?: boolean;
-}) {
-  // Halos et tuile partagent srcset et sizes : une seule image téléchargée.
-  const srcSet = thumbnailSrcSet(card.image);
-  return (
-    <li className="group relative">
-      {card.thumb ? (
-        <>
-          <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
-            <img srcSet={srcSet} sizes={sizes} src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight" />
-          </div>
-          <div className="card-ambilight-spill z-[1]" aria-hidden="true">
-            <div className="relative h-full">
-              {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
-              <img srcSet={srcSet} sizes={sizes} src={card.thumb} alt="" loading="lazy" decoding="async" className="card-ambilight" />
-            </div>
-          </div>
-        </>
-      ) : null}
-      <Link
-        href={localizedPath("card", locale, { slug: card.slug })}
-        className="hud-panel relative z-0 flex h-full flex-col overflow-hidden transition-colors hover:border-cyan/70 focus-visible:border-cyan"
-      >
-        <div className="relative aspect-card overflow-hidden bg-overlay scanlines scanbeam">
-          {card.thumb ? (
-            // Composant client : préchargée depuis une autre page, cette page ne télécharge pas ses tuiles.
-            <CardImage
-              src={card.image ?? card.thumb}
-              sizes={sizes}
-              alt={alt}
-              width={THUMB.width}
-              height={THUMB.height}
-              loading={eager ? "eager" : "lazy"}
-              decoding="async"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : null}
-        </div>
-        <p className="truncate p-2 text-xs font-bold text-foreground">{card.name}</p>
-      </Link>
-    </li>
-  );
+/** Données de tuile d'une carte : le strict nécessaire, sérialisé vers la grille client. */
+function tileCard(card: PublicCard, locale: Locale, alt: string): TileCard {
+  return { slug: card.slug, name: card.name, href: localizedPath("card", locale, { slug: card.slug }), alt, image: card.image, thumb: card.thumb };
 }
 
 /** Ancre d'une section de type (« legendes », « units ») : nom au pluriel, sans accents. */
@@ -193,18 +138,12 @@ export async function CatalogPage({ locale }: { locale: Locale }) {
             <h2 className="font-display text-lg uppercase tracking-wide text-yellow">
               {group.label} <span className="font-mono text-sm text-muted">({group.cards.length})</span>
             </h2>
-            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-              {group.cards.map((card, index) => (
-                <CardTile
-                  key={card.slug}
-                  card={card}
-                  locale={locale}
-                  alt={tCard("imageAlt", { name: card.name })}
-                  sizes={CATALOG_GRID_SIZES}
-                  eager={groupIndex === 0 && index < 6}
-                />
-              ))}
-            </ul>
+            <CatalogGrid
+              cards={group.cards.map((card) => tileCard(card, locale, tCard("imageAlt", { name: card.name })))}
+              sizes={CATALOG_GRID_SIZES}
+              initial={groupIndex === 0 ? CATALOG_BATCH : 0}
+              eager={groupIndex === 0 ? 6 : 0}
+            />
           </section>
         ))}
       </div>
@@ -399,11 +338,9 @@ export async function CardPage({ locale, slug }: { locale: Locale; slug: string 
             <h2 className="font-display text-lg uppercase tracking-wide text-yellow">{t("sameColor", { color: card.color ?? "" })}</h2>
             <ul className="grid grid-cols-3 gap-3 sm:grid-cols-6">
               {sameColor.map((other) => (
-                <CardTile
+                <CatalogCardTile
                   key={other.slug}
-                  card={other}
-                  locale={locale}
-                  alt={t("imageAlt", { name: other.name })}
+                  card={tileCard(other, locale, t("imageAlt", { name: other.name }))}
                   sizes={SAME_COLOR_GRID_SIZES}
                 />
               ))}
