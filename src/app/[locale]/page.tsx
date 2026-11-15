@@ -2,8 +2,10 @@ import { getLocale } from "next-intl/server";
 import { Landing } from "@/components/public-site/Landing";
 import { homeCopy, pageMetadata } from "@/lib/seo/metadata";
 
-// Annuaires des tournois et des boutiques lus en base à chaque visite.
-export const dynamic = "force-dynamic";
+// Générée à l'avance (le bouton « retour » la restaure sans la recharger) et régénérée après chaque écriture
+// dans l'annuaire (src/lib/prisma.ts). Les annuaires sont redemandés par le navigateur à l'affichage ;
+// délai de secours pour les tournois qui commencent, sans écriture en base.
+export const revalidate = 300;
 
 export async function generateMetadata() {
   const locale = await getLocale();
