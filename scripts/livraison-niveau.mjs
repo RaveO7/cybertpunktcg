@@ -51,7 +51,6 @@ const COMPLET = [
   "src/lib/**/service.ts",
   "package.json",
   "package-lock.json",
-  "next.config.ts",
   "vercel.json",
   "scripts/prisma.mjs",
   "scripts/vercel-db-push.mjs",

@@ -18,6 +18,8 @@ describe("niveau de livraison", () => {
   it("passe en léger pour du code de l'app sans risque de données", () => {
     assert.equal(classer(["src/components/AppFrame.tsx", "tests/e2e/layout-shift.spec.ts"]), "leger");
     assert.equal(classer(["src/lib/card-image.ts"]), "leger");
+    // La production reconstruit de toute façon : une preview en plus ne ferait que doubler le temps.
+    assert.equal(classer(["next.config.ts"]), "leger");
   });
 
   it("exige la preview pour schéma, API, authentification, dépendances et fonctionnalités", () => {
