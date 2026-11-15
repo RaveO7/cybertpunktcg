@@ -201,7 +201,7 @@ export function Tag({ children, tone = "muted" }: { children: React.ReactNode; t
     yellow: "border-yellow/60 text-yellow",
     danger: "border-danger/60 text-danger",
   };
-  return <span className={`mr-1 inline-flex h-5 items-center border px-1.5 text-[11px] ${colors[tone]}`}>{children}</span>;
+  return <span className={`mr-1 inline-flex h-5 items-center border px-1.5 text-[12px] ${colors[tone]}`}>{children}</span>;
 }
 
 /** Libellé d'un tour de top cut selon son nombre de matchs. */

@@ -60,7 +60,7 @@ export function GlobalStat({
   } ${href ? "hover:bg-panel-2/40" : ""}`;
   const body = (
     <>
-      <span className="flex flex-wrap justify-between gap-x-2 font-display text-[10px] font-semibold uppercase tracking-[0.12em] text-muted sm:text-[11px] sm:tracking-[0.16em]">
+      <span className="flex flex-wrap justify-between gap-x-2 font-display text-[10px] font-semibold uppercase tracking-[0.12em] text-muted sm:text-[12px] sm:tracking-[0.16em]">
         <span>{label}</span>
         {href && linkLabel ? (
           <span className={tone === "danger" ? "text-danger" : "text-cyan"}>{linkLabel} →</span>
@@ -95,7 +95,7 @@ export function MiniStat({
   }`;
   const body = (
     <>
-      <span className="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</span>
+      <span className="font-display text-[12px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</span>
       <span className={`font-mono text-xl ${tone === "danger" ? "text-danger" : "text-foreground"}`}>{value}</span>
     </>
   );
@@ -216,7 +216,7 @@ export function DataTable({ minWidth, className = "", children }: { minWidth: st
   return (
     <div className={`hud-panel relative overflow-x-auto scrollbar-hud ${className}`}>
       <table
-        className="w-full text-left text-sm md:min-w-[var(--table-min)] [&_tbody_tr]:border-t [&_tbody_tr]:border-line/60 [&_tbody_tr:first-child]:border-t-0 [&_tbody_tr:hover]:bg-cyan/[0.04] [&_thead]:border-b [&_thead]:border-[var(--hud-border)] [&_th]:px-2.5 [&_th]:py-3 [&_th]:font-display [&_th]:text-[10px] sm:[&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.04em] [&_th]:text-muted sm:[&_th]:whitespace-nowrap sm:[&_th]:px-4 sm:[&_th]:tracking-[0.12em]"
+        className="w-full text-left text-sm md:min-w-[var(--table-min)] [&_tbody_tr]:border-t [&_tbody_tr]:border-line/60 [&_tbody_tr:first-child]:border-t-0 [&_tbody_tr:hover]:bg-cyan/[0.04] [&_thead]:border-b [&_thead]:border-[var(--hud-border)] [&_th]:px-2.5 [&_th]:py-3 [&_th]:font-display [&_th]:text-[10px] sm:[&_th]:text-[12px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.04em] [&_th]:text-muted sm:[&_th]:whitespace-nowrap sm:[&_th]:px-4 sm:[&_th]:tracking-[0.12em]"
         style={{ "--table-min": minWidth } as CSSProperties}
       >
         {children}

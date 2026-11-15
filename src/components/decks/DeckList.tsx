@@ -201,7 +201,7 @@ function DeckSummaryCard({
             </dd>
           </div>
         </dl>
-        <p className="flex items-center justify-between gap-2 text-[11px] text-muted">
+        <p className="flex items-center justify-between gap-2 text-[12px] text-muted">
           <span>{t("decks.updated", { date: updated })}</span>
           {shortfall.totalCopies > 0 ? (
             <span className={`font-semibold ${shortfall.missingCopies === 0 ? "text-gain" : "text-yellow"}`}>

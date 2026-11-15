@@ -121,7 +121,7 @@ export function ShortfallPanel({
             ))}
           </ul>
           <p className="flex items-center justify-between gap-3 border-t border-line/60 px-3 py-2 text-sm sm:px-4">
-            <span className="text-[11px] text-muted">{t("decks.missingHint")}</span>
+            <span className="text-[12px] text-muted">{t("decks.missingHint")}</span>
             <span className="font-mono tabular-nums">{fmt.money(shortfall.missingCost)}</span>
           </p>
         </div>

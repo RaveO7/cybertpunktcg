@@ -220,7 +220,7 @@ function PickerTile({
           <span className="absolute top-2 right-2 bg-cyan px-1.5 py-0.5 font-mono text-xs font-semibold text-black">×{quantity}</span>
         ) : null}
         {owned > 0 ? (
-          <span className="absolute top-2 left-2 bg-black/85 px-1.5 py-0.5 font-mono text-[11px] text-gain">✓ {owned}</span>
+          <span className="absolute top-2 left-2 bg-black/85 px-1.5 py-0.5 font-mono text-[12px] text-gain">✓ {owned}</span>
         ) : null}
       </button>
       <span className="line-clamp-2 min-h-[2.5em] text-xs leading-tight" title={label}>
