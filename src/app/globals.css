@@ -532,9 +532,17 @@ html {
   overflow: hidden;
   border-radius: 4.5% / 3.2%;
   box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--hud-border);
-  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   transition: transform 0.18s ease-out, box-shadow 0.3s ease;
   outline: none;
+}
+
+/*
+ * Inclinaison 3D réservée à la carte active : au repos, la transformation 3D (identité visuelle) faisait
+ * de chaque carte un calque composité, avec son ombre et son halo flou ; leur rendu pendant la donne
+ * occupait le thread principal et retardait le premier affichage de l'accueil (Lighthouse mobile).
+ */
+.hero-fan-card[data-active] .hero-fan-face {
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
 }
 
 .hero-fan-face img {
@@ -595,7 +603,8 @@ html {
   .hero-fan-glare {
     transition: none;
   }
-  .hero-fan-face {
+  .hero-fan-face,
+  .hero-fan-card[data-active] .hero-fan-face {
     transform: none;
   }
 }
