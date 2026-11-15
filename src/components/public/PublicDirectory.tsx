@@ -14,6 +14,7 @@ import { LazyMap, type MapMarker } from "@/components/geo/LazyMap";
 import { localizedPath } from "@/i18n/paths";
 import { buttonClass, inputClass, panelClass } from "@/components/tournament/ui";
 import { api, isAbort } from "@/lib/client/api";
+import { usePageRestored } from "@/lib/client/use-page-restored";
 import type { DirectoryFacets, DirectoryResult } from "@/lib/tournament/directory";
 import { isPeriod, PERIODS, type Period } from "@/lib/tournament/periods";
 import { apiParams, cleanParams, PAGE_KEYS, type DirectoryParams } from "./directory-params";
@@ -46,7 +47,10 @@ export function PublicDirectory({
   const [facets, setFacets] = useState<DirectoryFacets | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
-  const firstLoad = useRef(initial !== null);
+  // Sur l'accueil, page générée à l'avance : les données du rendu serveur peuvent dater, la liste est
+  // redemandée dès l'affichage. Ailleurs, la page est rendue à chaque visite : pas de second chargement.
+  const firstLoad = useRef(initial !== null && !embedded);
+  const restored = usePageRestored();
   const view = params.view === "map" ? "map" : "list";
   const near = nearOf(params);
   const period: Period = isPeriod(params.period) ? params.period : "any";
@@ -60,18 +64,20 @@ export function PublicDirectory({
   }
 
   const apiQuery = apiParams(params, new Date()).toString();
+  // Requête de la liste affichée : la redemander (mise à jour) ne repasse pas par « Chargement… ».
+  const shownQuery = useRef(initial === null ? null : apiQuery);
 
   useEffect(() => {
     if (firstLoad.current) {
-      // Données du rendu serveur : pas de second chargement.
       firstLoad.current = false;
       return;
     }
     const controller = new AbortController();
     const loadDirectory = async () => {
-      setLoading(true);
+      if (shownQuery.current !== apiQuery) setLoading(true);
       try {
-        setResult(await api(`/api/tournaments/public?${apiQuery}`, { schema: "publicDirectorySchema", signal: controller.signal, cache: "no-store" }));
+        setResult(await api(`/api/tournaments/public?${apiQuery}`, { schema: "publicDirectorySchema", signal: controller.signal, cache: "no-cache" }));
+        shownQuery.current = apiQuery;
         setError(false);
       } catch (reason) {
         if (!isAbort(reason)) setError(true);
@@ -84,7 +90,7 @@ export function PublicDirectory({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [apiQuery]);
+  }, [apiQuery, restored]);
 
   useEffect(() => {
     const controller = new AbortController();
