@@ -15,6 +15,9 @@ import { useDemoSteps, useDemoTableCopy } from "@/lib/rules/use-rules";
 import { CoachCallout } from "@/components/CoachCallout";
 import { playCardMoves, takeFlipSnapshot, type FlipSnapshot } from "@/components/demo-card-moves";
 import { GameCard } from "@/components/GameCard";
+// Styles du tutoriel (classes .demo-*, .dm-*, aussi utilisées par GameCard et CoachCallout) : importés ici
+// pour ne charger cette feuille que sur les pages du tutoriel, pas dans la feuille globale bloquante.
+import "./demo-match.css";
 import {
   cardOf,
   initialMatchState,
