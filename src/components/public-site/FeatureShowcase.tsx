@@ -313,7 +313,7 @@ function Segments({ total, filled, tone = "yellow" }: { total: number; filled: n
 }
 
 function HudLabel({ children }: { children: ReactNode }) {
-  return <p className="font-mono text-[11px] tracking-[0.18em] text-cyan uppercase">{children}</p>;
+  return <p className="font-mono text-[12px] tracking-[0.18em] text-cyan uppercase">{children}</p>;
 }
 
 function Visual({ feature, data }: { feature: string; data: ShowcaseData }) {

@@ -16,7 +16,7 @@ export function SeatsTag({ tournament }: { tournament: Pick<PublicTournamentSumm
 export function VerifiedBadge() {
   const t = useTranslations();
   return (
-    <span className="inline-flex h-5 items-center gap-1 border border-yellow/60 px-1.5 text-[11px] text-yellow" title={t("publicTournaments.verified")}>
+    <span className="inline-flex h-5 items-center gap-1 border border-yellow/60 px-1.5 text-[12px] text-yellow" title={t("publicTournaments.verified")}>
       <span aria-hidden="true">✓</span>
       {t("publicTournaments.verified")}
     </span>

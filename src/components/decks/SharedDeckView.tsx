@@ -84,7 +84,7 @@ export function SharedDeckView({ name, ownerName, summary, legendImages }: Props
                 ) : (
                   <span className="grid aspect-[63/88] w-full place-items-center rounded-md bg-black text-xs text-muted">N/A</span>
                 )}
-                <p className="mt-1 truncate text-[11px]" title={cardLabel(line.card)}>
+                <p className="mt-1 truncate text-[12px]" title={cardLabel(line.card)}>
                   {line.quantity > 1 ? `${line.quantity} × ` : ""}
                   {cardLabel(line.card)}
                 </p>
