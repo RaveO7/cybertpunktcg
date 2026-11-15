@@ -31,7 +31,7 @@ const SETTINGS = new URL(self.location.href).searchParams;
 const LANG = SETTINGS.get("lang") || "fr";
 const HOME = `/${LANG}`;
 const SHELL_PAGES = (SETTINGS.get("pages") || HOME).split(",").filter((path) => path.startsWith("/"));
-const SHELL_ASSETS = [`/${LANG}/manifest.webmanifest`, "/icons/icon-192.png?v=2", "/icons/icon-512.png?v=2"];
+const SHELL_ASSETS = [`/${LANG}/manifest.webmanifest`, "/icons/icon-192.png?v=2", "/icons/icon-512.png?v=2", "/icons/icon-512.webp"];
 const OFFLINE_TEXT = {
   title: SETTINGS.get("title") || "Offline",
   body: SETTINGS.get("body") || "",
