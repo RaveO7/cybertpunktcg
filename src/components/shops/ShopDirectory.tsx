@@ -16,6 +16,7 @@ import { VerifiedBadge } from "@/components/public/TournamentCard";
 import { buttonClass, inputClass, panelClass } from "@/components/tournament/ui";
 import type { ShopDirectoryResult } from "@/lib/api-responses";
 import { api, isAbort } from "@/lib/client/api";
+import { usePageRestored } from "@/lib/client/use-page-restored";
 type Params = Record<string, string>;
 
 const KEYS = ["country", "city", "lat", "lng", "radius", "place", "page", "view"] as const;
@@ -41,7 +42,9 @@ export function ShopDirectory({
   const [params, setParams] = useState<Params>(() => clean(initialParams));
   const [result, setResult] = useState<ShopDirectoryResult | null>(initial);
   const [error, setError] = useState(false);
-  const firstLoad = useRef(initial !== null);
+  // Sur l'accueil, page générée à l'avance : liste redemandée dès l'affichage (cf. PublicDirectory).
+  const firstLoad = useRef(initial !== null && !embedded);
+  const restored = usePageRestored();
   const view = params.view === "map" ? "map" : "list";
   const countries = useCountryOptions(locale, params.country);
   const near: NearPoint | null = params.lat && params.lng ? { lat: Number(params.lat), lng: Number(params.lng), radius: Number(params.radius) || 25, label: params.place ?? "" } : null;
@@ -67,7 +70,7 @@ export function ShopDirectory({
       return;
     }
     const controller = new AbortController();
-    api(`/api/shops?${apiQuery}`, { schema: "shopDirectorySchema", signal: controller.signal, cache: "no-store" })
+    api(`/api/shops?${apiQuery}`, { schema: "shopDirectorySchema", signal: controller.signal, cache: "no-cache" })
       .then((body) => {
         setResult(body);
         setError(false);
@@ -76,7 +79,7 @@ export function ShopDirectory({
         if (!isAbort(reason)) setError(true);
       });
     return () => controller.abort();
-  }, [apiQuery]);
+  }, [apiQuery, restored]);
 
   const markers = useMemo<MapMarker[]>(
     () =>
