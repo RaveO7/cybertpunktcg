@@ -93,6 +93,17 @@ function fichiersModifies(base, head) {
   return r.stdout.split(/\r?\n/).filter(Boolean);
 }
 
+// Saute le build si rien n'a changé côté site depuis le dernier déploiement réussi, ou si ce commit seul ne
+// touche pas au site et que le code arrivé entre-temps vient des commits précédents, déployés par leur propre
+// build (fusions enchaînées : ce build attendait derrière le leur et l'aurait refait à l'identique).
+export function buildSaute({ niveauDepuisReference, niveauCommit, referenceAvantParent }) {
+  return niveauDepuisReference === "aucun" || (niveauCommit === "aucun" && referenceAvantParent);
+}
+
+function estAncetre(ancetre, descendant) {
+  return spawnSync("git", ["merge-base", "--is-ancestor", ancetre, descendant]).status === 0;
+}
+
 function modeVercel() {
   const precedent = process.env.VERCEL_GIT_PREVIOUS_SHA;
   if (process.env.VERCEL_ENV !== "production" || !precedent) {
@@ -100,13 +111,19 @@ function modeVercel() {
     process.exit(1);
   }
   const fichiers = fichiersModifies(precedent, "HEAD");
-  if (!fichiers) {
-    console.log(`Build : ${precedent} absent du clone, impossible de comparer.`);
+  const fichiersCommit = fichiersModifies("HEAD^", "HEAD");
+  if (!fichiers || !fichiersCommit) {
+    console.log(`Build : ${precedent} ou HEAD^ absent du clone, impossible de comparer.`);
     process.exit(1);
   }
-  const niveau = classer(fichiers);
-  console.log(`${niveau === "aucun" ? "Build sauté" : "Build"} : ${fichiers.length} fichier(s) depuis ${precedent.slice(0, 7)}, niveau ${niveau}.`);
-  process.exit(niveau === "aucun" ? 0 : 1);
+  const niveauDepuisReference = classer(fichiers);
+  const niveauCommit = classer(fichiersCommit);
+  const saute = buildSaute({ niveauDepuisReference, niveauCommit, referenceAvantParent: estAncetre(precedent, "HEAD^") });
+  console.log(
+    `${saute ? "Build sauté" : "Build"} : ${fichiers.length} fichier(s) depuis ${precedent.slice(0, 7)} (niveau ${niveauDepuisReference}), ` +
+      `ce commit seul : niveau ${niveauCommit}.`,
+  );
+  process.exit(saute ? 0 : 1);
 }
 
 function modeNiveau(args) {
