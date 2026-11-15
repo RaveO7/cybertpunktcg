@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // Mise en page racine sous [locale] : la 404 des URL sans route est rendue à part.
     globalNotFound: true,
+    // CSS en <style> dans le HTML (production seulement) : plus de feuille qui bloque le premier affichage
+    // (~250 ms en mobile selon Lighthouse). Le CSS (16 Ko br, Tailwind) voyage avec chaque page HTML.
+    inlineCss: true,
     // Navigation instantanée : une page dynamique déjà vue est réaffichée depuis le cache du routeur
     // pendant 30 s (les pages statiques et les liens préchargés en entier : 5 min). Ce cache est vidé à
     // chaque connexion/déconnexion (router.refresh dans CollectionProvider).
