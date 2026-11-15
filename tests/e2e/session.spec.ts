@@ -59,6 +59,23 @@ test.describe("connexion par l'écran", () => {
   });
 });
 
+test("une session vérifiée au chargement ne fait pas redemander la page", async ({ page, account }) => {
+  void account;
+  // Cookie seul, rien de mémorisé sur l'appareil : la vérification confirme la session avec laquelle le serveur
+  // a rendu la page. Un router.refresh la redemanderait (requête RSC hors préchargement) et la rendrait deux fois.
+  const pageReloads: string[] = [];
+  page.on("request", (request) => {
+    const headers = request.headers();
+    if (headers.rsc === "1" && !headers["next-router-prefetch"] && new URL(request.url()).pathname === "/fr/decks") {
+      pageReloads.push(request.url());
+    }
+  });
+  await page.goto("/fr/decks");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await settle(page);
+  expect(pageReloads).toEqual([]);
+});
+
 test("une session supprimée en base renvoie à l'écran de connexion", async ({ page, account }) => {
   await page.goto("/fr");
   await expect(dashboard(page)).toBeVisible();
