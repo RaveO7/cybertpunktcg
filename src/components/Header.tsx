@@ -409,7 +409,7 @@ export function BottomNav() {
                   <NavGlyph icon={link.icon} />
                   <NavBadge count={link.badge} label={(n) => t("wishlist.newAlerts", { n })} floating />
                 </span>
-                <span className="max-w-full truncate text-[11px] leading-none">{link.label}</span>
+                <span className="max-w-full truncate text-[12px] leading-none">{link.label}</span>
               </Link>
             </li>
           );

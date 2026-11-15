@@ -446,7 +446,7 @@ function DeckOverview({
                 >
                   ×
                 </button>
-                <p className="mt-1 truncate text-[11px]" title={cardLabel(line.card)}>
+                <p className="mt-1 truncate text-[12px]" title={cardLabel(line.card)}>
                   {line.card.name}
                 </p>
               </li>
@@ -473,13 +473,13 @@ function DeckOverview({
       <div className="flex flex-wrap gap-1.5">
         {colors.length > 0 ? (
           colors.map((color) => (
-            <span key={color} className="inline-flex h-6 items-center gap-1.5 border border-line px-1.5 text-[11px]">
+            <span key={color} className="inline-flex h-6 items-center gap-1.5 border border-line px-1.5 text-[12px]">
               <span className={`h-2 w-2 rounded-full ${colorDotClass(color)}`} aria-hidden="true" />
               {t("decks.ramLimit", { color, n: analysis.ramLimits[color] })}
             </span>
           ))
         ) : (
-          <span className="text-[11px] text-muted">{t("decks.noRam")}</span>
+          <span className="text-[12px] text-muted">{t("decks.noRam")}</span>
         )}
       </div>
 
@@ -594,7 +594,7 @@ function DeckRow({
       >
         {label}
       </button>
-      <span className="w-5 shrink-0 text-center font-mono text-[11px] text-muted" title={line.card.cost != null ? t("decks.cost", { n: line.card.cost }) : undefined}>
+      <span className="w-5 shrink-0 text-center font-mono text-[12px] text-muted" title={line.card.cost != null ? t("decks.cost", { n: line.card.cost }) : undefined}>
         {line.card.cost ?? ""}
       </span>
       <span
@@ -621,7 +621,7 @@ function CostCurve({ curve }: { curve: number[] }) {
           <li key={cost} className="flex h-full flex-col items-center justify-end gap-1" aria-label={t("decks.curveBar", { cost: cost === 7 ? "7+" : String(cost), n: count })}>
             <span className="font-mono text-[10px] tabular-nums text-muted">{count || ""}</span>
             <span className="w-full bg-cyan/70" style={{ height: `${(count / max) * 65}%`, minHeight: count ? 2 : 0 }} />
-            <span className="font-mono text-[11px] text-muted">{cost === 7 ? "7+" : cost}</span>
+            <span className="font-mono text-[12px] text-muted">{cost === 7 ? "7+" : cost}</span>
           </li>
         ))}
       </ol>

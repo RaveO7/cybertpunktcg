@@ -34,7 +34,7 @@ export function BlockGrid({
       action={
         gridItems.length > 1 ? (
           <div role="group" aria-label={t("dashboard.sortGroup")} className="flex items-center border border-line">
-            <span className="px-2 font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-muted sm:px-3">
+            <span className="px-2 font-display text-[12px] font-semibold uppercase tracking-[0.14em] text-muted sm:px-3">
               {t("dashboard.sortLabel")}
             </span>
             {(

@@ -6,7 +6,7 @@ import { colorDotClass } from "@/components/CardTile";
 import { ICONIC_GRADIENT_SOFT, isIconicRarity, rarityColor } from "@/lib/rarity-color";
 import type { CardDTO, Filters, PrintingDTO } from "@/lib/types";
 
-const chipClass = "inline-flex h-6 items-center gap-1 border border-line/80 px-1.5 text-[11px]";
+const chipClass = "inline-flex h-6 items-center gap-1 border border-line/80 px-1.5 text-[12px]";
 
 const chipButtonClass =
   "transition hover:border-cyan/60 hover:bg-cyan/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70";
@@ -130,7 +130,7 @@ export function CardDetails({
           onClick={filterOn({ eddiable: card.isEddiable ? "true" : "false" })}
           className={
             card.isEddiable
-              ? "inline-flex h-6 items-center gap-1 border border-gain/45 bg-gain/10 px-1.5 text-[11px] text-gain"
+              ? "inline-flex h-6 items-center gap-1 border border-gain/45 bg-gain/10 px-1.5 text-[12px] text-gain"
               : `${chipClass} text-muted`
           }
         >

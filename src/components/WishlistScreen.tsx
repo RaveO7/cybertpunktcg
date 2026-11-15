@@ -154,7 +154,7 @@ export function WishlistScreen() {
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "gain" }) {
   return (
     <div className="min-w-0 border border-line bg-panel px-3 py-3 sm:px-4">
-      <p className="truncate text-[11px] tracking-[0.12em] text-muted uppercase sm:text-xs">{label}</p>
+      <p className="truncate text-xs tracking-[0.12em] text-muted uppercase">{label}</p>
       <p className={`mt-2 text-xl sm:text-2xl ${tone === "gain" ? "text-gain" : "text-foreground"}`}>{value}</p>
     </div>
   );
@@ -212,17 +212,17 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
           <span className="block truncate">{row.title}</span>
           <span className="mt-1 flex flex-wrap gap-1.5">
             {row.reached ? (
-              <span className="inline-flex h-5 items-center border border-gain/45 bg-gain/10 px-1.5 text-[11px] text-gain">
+              <span className="inline-flex h-5 items-center border border-gain/45 bg-gain/10 px-1.5 text-[12px] text-gain">
                 {since ? t("wishlist.reachedSince", { date: since }) : t("wishlist.targetReached")}
               </span>
             ) : null}
             {fresh ? (
-              <span className="inline-flex h-5 items-center bg-yellow px-1.5 text-[11px] font-semibold text-black">
+              <span className="inline-flex h-5 items-center bg-yellow px-1.5 text-[12px] font-semibold text-black">
                 {t("wishlist.alertNew")}
               </span>
             ) : null}
             {row.owned > 0 ? (
-              <span className="inline-flex h-5 items-center border border-line px-1.5 text-[11px] text-muted">
+              <span className="inline-flex h-5 items-center border border-line px-1.5 text-[12px] text-muted">
                 {t("wishlist.owned", { n: fmt.int(row.owned) })}
               </span>
             ) : null}
@@ -237,7 +237,7 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
             {row.market != null ? fmt.money(row.market) : t("wishlist.noPrice")}
             {movement === "up" || movement === "down" ? <TrendBadge delta={movement} /> : null}
           </p>
-          {gap != null ? <p className="font-mono text-[11px] text-muted">{t("wishlist.gap", { amount: fmt.money(gap) })}</p> : null}
+          {gap != null ? <p className="font-mono text-[12px] text-muted">{t("wishlist.gap", { amount: fmt.money(gap) })}</p> : null}
         </div>
         <label className="w-28">
           <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t("wishlist.targetPrice")}</span>

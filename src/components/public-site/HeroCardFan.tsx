@@ -441,7 +441,7 @@ function CardDialog({
                   <dl className="grid grid-cols-3 gap-2 sm:max-w-xs">
                     {stats.map((stat) => (
                       <div key={stat.label} className="border border-line bg-background/60 px-3 py-2">
-                        <dt className="font-mono text-[11px] tracking-[0.18em] text-cyan">{stat.label}</dt>
+                        <dt className="font-mono text-[12px] tracking-[0.18em] text-cyan">{stat.label}</dt>
                         <dd className="font-display text-2xl text-foreground">{stat.value}</dd>
                       </div>
                     ))}
