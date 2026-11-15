@@ -91,11 +91,11 @@ export function PencilIcon({ className }: { className: string }) {
 export function ValidityBadge({ analysis }: { analysis: DeckAnalysis }) {
   const t = useTranslations();
   return analysis.valid ? (
-    <span className="inline-flex h-6 shrink-0 items-center border border-gain/45 bg-gain/10 px-1.5 text-[11px] text-gain">
+    <span className="inline-flex h-6 shrink-0 items-center border border-gain/45 bg-gain/10 px-1.5 text-[12px] text-gain">
       {t("decks.valid")}
     </span>
   ) : (
-    <span className="inline-flex h-6 shrink-0 items-center border border-danger/45 bg-danger/10 px-1.5 text-[11px] text-danger">
+    <span className="inline-flex h-6 shrink-0 items-center border border-danger/45 bg-danger/10 px-1.5 text-[12px] text-danger">
       {t("decks.issueCount", { n: analysis.issues.length })}
     </span>
   );
@@ -137,7 +137,7 @@ export function Stat({ label, value, hint, tone }: { label: string; value: strin
 export function CardFacts({ card, ramOk }: { card: CardDTO; ramOk: boolean }) {
   const t = useTranslations();
   return (
-    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[11px] text-muted">
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[12px] text-muted">
       <span className="inline-flex items-center gap-1">
         <span className={`h-2 w-2 rounded-full ${colorDotClass(card.color)}`} aria-hidden="true" />
         {card.color ?? "—"}

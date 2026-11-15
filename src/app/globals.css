@@ -397,7 +397,7 @@ html {
   background: var(--chip-bg);
   color: var(--chip-color, var(--cyan));
   font-weight: 700;
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
@@ -407,7 +407,7 @@ html {
 .hud-label {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-weight: 500;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
