@@ -39,6 +39,8 @@ describe("seo : routes localisées", () => {
       it: "/it/negozi/arasaka-games",
     },
     { fr: "/fr/cgu", en: "/en/terms", de: "/de/nutzungsbedingungen", es: "/es/condiciones", it: "/it/termini" },
+    // Connexion : page publique indexée, même chemin dans toutes les langues.
+    { fr: "/fr/connexion", en: "/en/connexion", de: "/de/connexion", es: "/es/connexion", it: "/it/connexion" },
   ];
 
   it("fait correspondre chaque page dans toutes les langues", () => {
