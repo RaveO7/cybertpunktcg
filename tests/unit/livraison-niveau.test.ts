@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { classer, correspond } from "../../scripts/livraison-niveau.mjs";
+import { buildSaute, classer, correspond } from "../../scripts/livraison-niveau.mjs";
 
 describe("niveau de livraison", () => {
   it("ne construit rien pour des mesures, docs, tests ou outils", () => {
@@ -33,5 +33,14 @@ describe("niveau de livraison", () => {
     assert.equal(correspond("src/lib/tournament/service.ts", ["src/lib/**/service.ts"]), true);
     assert.equal(correspond("src/lib/auth.ts.bak", ["src/lib/auth.ts"]), false);
     assert.equal(correspond("src/README.md", ["**/*.md"]), true);
+  });
+
+  it("ne refait pas en production le build d'un commit précédent pour un commit sans effet sur le site", () => {
+    assert.equal(buildSaute({ niveauDepuisReference: "aucun", niveauCommit: "aucun", referenceAvantParent: false }), true);
+    // Fusions enchaînées : le code vient du commit précédent, déployé par son propre build.
+    assert.equal(buildSaute({ niveauDepuisReference: "leger", niveauCommit: "aucun", referenceAvantParent: true }), true);
+    assert.equal(buildSaute({ niveauDepuisReference: "leger", niveauCommit: "leger", referenceAvantParent: true }), false);
+    // Historique introuvable dans le clone : on construit.
+    assert.equal(buildSaute({ niveauDepuisReference: "leger", niveauCommit: "aucun", referenceAvantParent: false }), false);
   });
 });
