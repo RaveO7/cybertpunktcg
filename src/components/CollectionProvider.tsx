@@ -350,6 +350,10 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         if (cancelled) return;
         let body = collectionBody(schemas, collection);
         if (!body) throw new Error("collection");
+        // Session inconnue jusqu'ici (rien de mémorisé sur l'appareil) : le serveur a rendu la page avec ce même
+        // cookie, rien d'affiché ni de mis en cache n'appartient à une autre session. Ce n'est pas un changement
+        // de compte : pas de router.refresh, qui redemanderait la page et la rendrait une seconde fois.
+        if (previousSession.current === "") previousSession.current = body.user.id;
         rememberSession(body.user);
         const freshCatalog = await catalogRequest;
         if (!freshCatalog) throw new Error("catalog");

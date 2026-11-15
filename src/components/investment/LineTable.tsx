@@ -548,9 +548,15 @@ function CardNameButton({
   );
 }
 
+// Créer un Intl.DateTimeFormat coûte cher : un seul par langue, partagé par toutes les lignes.
+const purchaseDayFormats = new Map<string, Intl.DateTimeFormat>();
+
 /** Date d'achat courte (« 12 mars 2026 »). */
 function formatPurchaseDay(day: string, locale: string) {
-  return new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
-    new Date(`${day}T00:00:00.000Z`),
-  );
+  let format = purchaseDayFormats.get(locale);
+  if (!format) {
+    format = new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+    purchaseDayFormats.set(locale, format);
+  }
+  return format.format(new Date(`${day}T00:00:00.000Z`));
 }
