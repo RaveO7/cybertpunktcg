@@ -37,6 +37,8 @@ const ANY_SHIFT_Y = -0.0265;
 const targets = [
   { file: "public/icons/icon-192.png", size: 192, scale: MASKABLE_SCALE, shiftY: ANY_SHIFT_Y },
   { file: "public/icons/icon-512.png", size: 512, scale: MASKABLE_SCALE, shiftY: ANY_SHIFT_Y },
+  // Splash de l'app (AppSplash) : même image que icon-512.png, en WebP sans perte (≈ 8 Kio au lieu de 21).
+  { file: "public/icons/icon-512.webp", size: 512, scale: MASKABLE_SCALE, shiftY: ANY_SHIFT_Y },
   { file: "public/icons/maskable-512.png", size: 512, scale: MASKABLE_SCALE },
   { file: "public/icons/apple-icon.png", size: 180, scale: 0.86 },
 ];
@@ -68,7 +70,8 @@ async function main() {
   for (const target of targets) {
     const output = path.join(root, target.file);
     await mkdir(path.dirname(output), { recursive: true });
-    await sharp(Buffer.from(iconSvg(target.scale, target.shiftY))).resize(target.size, target.size).png().toFile(output);
+    const image = sharp(Buffer.from(iconSvg(target.scale, target.shiftY))).resize(target.size, target.size);
+    await (target.file.endsWith(".webp") ? image.webp({ lossless: true, effort: 6 }) : image.png()).toFile(output);
     console.log(`✓ ${target.file}`);
   }
 
