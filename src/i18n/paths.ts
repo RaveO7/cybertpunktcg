@@ -19,6 +19,7 @@ export const PUBLIC_ROUTES = {
   legalNotice: "/mentions-legales",
   terms: "/cgu",
   privacy: "/confidentialite",
+  login: "/connexion",
 } as const satisfies Record<string, AppPathname>;
 
 export type PublicRouteKey = keyof typeof PUBLIC_ROUTES;

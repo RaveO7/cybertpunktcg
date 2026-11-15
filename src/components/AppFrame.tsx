@@ -26,7 +26,6 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     isSharedDeck ||
     pathname.startsWith("/t/") ||
     publicRouteOfPath(pathname) !== null ||
-    pathname === "/connexion" ||
     LEGAL_PATHS.includes(pathname) ||
     // Fonctionnalité pas encore publiée : la page répond 404, inutile de passer par la connexion.
     (pathname === "/souhaits" && !WISHLIST_ENABLED);
