@@ -2,7 +2,8 @@
  * Requêtes de démarrage lancées dès le <head> (cf. SiteShell), avant le chargement et l'hydratation de
  * React : quand une session est mémorisée sur l'appareil, collection et catalogue partent aussitôt, en
  * parallèle du JS, et leurs réponses sont lues dès leur arrivée. CollectionProvider reprend ces résultats
- * (déjà prêts le plus souvent : le tableau de bord s'affiche alors dès la fin de l'hydratation).
+ * (déjà prêts le plus souvent : le tableau de bord s'affiche alors dès la fin de l'hydratation) et demande
+ * lui-même ce que le script n'a pas lancé.
  */
 import type { ResponseSchemas } from "@/lib/client/api";
 import { SESSION_USER_KEY } from "@/lib/session-hint";
@@ -14,6 +15,12 @@ const GLOBAL_KEY = "__cptcgBoot";
 // déjà en cache. Collection : jamais servie par le cache HTTP.
 const CATALOG_INIT: RequestInit = { cache: "no-cache" };
 const COLLECTION_INIT: RequestInit = { cache: "no-store" };
+
+// Liste des decks (« /fr/decks », sans « ?deck= ») : le catalogue (~80 Ko) n'y sert qu'à résumer les decks
+// existants. Lancé depuis le <head>, il partageait la bande passante du premier affichage ; CollectionProvider
+// le demande à l'hydratation.
+const NO_BOOT_CATALOG_PATH = /^\/[a-z]{2}\/decks\/?$/;
+const DECK_PARAM = /[?&]deck=/;
 
 /** Réponse de GET /api/collection, lue par `collectionBody` (`body` null si refusée). */
 export type CollectionResult = {
@@ -35,8 +42,8 @@ export function collectionBody(schemas: ResponseSchemas, result: CollectionResul
 
 export type BootRequests = {
   collection: Promise<CollectionResult>;
-  /** null : réponse en erreur. */
-  catalog: Promise<CatalogDTO | null>;
+  /** null : réponse en erreur ; absent : non lancé sur cette page (NO_BOOT_CATALOG_PATH). */
+  catalog?: Promise<CatalogDTO | null>;
   /** Résultats déjà arrivés, lisibles sans attendre. */
   done: { collection?: CollectionResult; catalog?: CatalogDTO | null };
 };
@@ -54,8 +61,8 @@ export function requestCatalog(): Promise<CatalogDTO | null> {
   );
 }
 
-/** Version autonome (sans module) de requestCollection et requestCatalog, exécutée dans le <head>. */
-export const BOOT_REQUESTS_SCRIPT = `(function(){try{if(!localStorage.getItem(${JSON.stringify(SESSION_USER_KEY)}))return;var d={};var b={done:d,collection:fetch("/api/collection",${JSON.stringify(COLLECTION_INIT)}).then(function(r){return(r.ok?r.json():Promise.resolve(null)).then(function(body){return d.collection={status:r.status,body:body}})}),catalog:fetch("/api/catalog",${JSON.stringify(CATALOG_INIT)}).then(function(r){return r.ok?r.json():null}).then(function(c){d.catalog=c;return c})};b.collection.catch(function(){});b.catalog.catch(function(){});window[${JSON.stringify(GLOBAL_KEY)}]=b;}catch(e){}})();`;
+/** Version autonome (sans module) de requestCollection, requestCatalog, exécutée dans le <head>. */
+export const BOOT_REQUESTS_SCRIPT = `(function(){try{if(!localStorage.getItem(${JSON.stringify(SESSION_USER_KEY)}))return;var d={};var b={done:d,collection:fetch("/api/collection",${JSON.stringify(COLLECTION_INIT)}).then(function(r){return(r.ok?r.json():Promise.resolve(null)).then(function(body){return d.collection={status:r.status,body:body}})})};b.collection.catch(function(){});if(!${NO_BOOT_CATALOG_PATH}.test(location.pathname)||${DECK_PARAM}.test(location.search)){b.catalog=fetch("/api/catalog",${JSON.stringify(CATALOG_INIT)}).then(function(r){return r.ok?r.json():null}).then(function(c){d.catalog=c;return c});b.catalog.catch(function(){})}window[${JSON.stringify(GLOBAL_KEY)}]=b;}catch(e){}})();`;
 
 /** Requêtes lancées par le script de démarrage, reprises une seule fois. */
 export function takeBootRequests(): BootRequests | null {
