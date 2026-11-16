@@ -48,23 +48,30 @@ async function legendCards() {
   return cards;
 }
 
-test("la liste des decks n'attend le catalogue que pour résumer des decks", async ({ page, account }) => {
-  // Première visite : la session est mémorisée ; les rechargements passent par le script du <head>.
+test("la liste des decks ne charge le catalogue que pour résumer des decks", async ({ page, account }) => {
+  const catalogRequests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/catalog") catalogRequests.push(request.url());
+  });
+  // Première visite (session vérifiée par l'application), puis rechargement (session mémorisée : script
+  // du <head>) : sans deck, le catalogue n'est demandé ni par l'un ni par l'autre.
   await page.goto("/fr/decks");
   await expect(page.getByText("Aucun deck pour l’instant")).toBeVisible();
-
-  // Catalogue sans réponse : la liste vide s'affiche quand même.
-  await page.route("**/api/catalog", () => undefined);
   await page.reload();
   await expect(page.getByText("Aucun deck pour l’instant")).toBeVisible();
-  await page.unroute("**/api/catalog");
+  await settle(page);
+  expect(catalogRequests).toEqual([]);
 
-  // Avec un deck, le résumé (Legends) arrive avec le catalogue demandé par l'application.
+  // En quittant la liste, le catalogue arrive pour les autres écrans.
+  await page.getByRole("link", { name: "Cartes" }).first().click();
+  await expect.poll(() => catalogRequests.length).toBeGreaterThan(0);
+
+  // Avec un deck, le résumé (Legends) arrive avec le catalogue demandé par l'écran.
   const cards = await legendCards();
   await prisma.deck.create({
     data: { userId: account.id, name: "Deck résumé", cards: { create: cards.map((card) => ({ cardId: card.id, quantity: 1 })) } },
   });
-  await page.reload();
+  await page.goto("/fr/decks");
   const summary = page.getByRole("listitem").filter({ hasText: "Deck résumé" });
   await expect(summary).toBeVisible();
   await expect(summary.getByText("Aucune Legend")).toHaveCount(0);

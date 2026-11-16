@@ -11,6 +11,7 @@ import { matchRoute } from "@/i18n/match";
 import type { ImportLine } from "@/lib/collection-csv";
 import { type BootRequests, collectionBody, requestCatalog, requestCollection, takeBootRequests } from "@/lib/boot-requests";
 import { readSavedCollection } from "@/lib/offline";
+import { useCatalogGate } from "@/components/use-catalog-gate";
 import { matchLine, sameLine } from "@/lib/collection-line";
 import {
   type NewOp,
@@ -116,6 +117,8 @@ type CollectionContextValue = {
   deleteLine: (id: string) => Promise<void>;
   /** Page réservée aux comptes : vérifie la session auprès du serveur même sans session mémorisée. */
   requireSession: () => void;
+  /** Écran qui affiche le catalogue sur la liste des decks, où il n'est pas chargé d'office (useCatalogGate). */
+  requireCatalog: () => void;
   /** Modifications faites hors ligne, pas encore envoyées au serveur. */
   pendingCount: number;
   /** Lignes visées par une modification en attente. */
@@ -165,6 +168,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   // Vérification de la session (GET /api/collection) : seulement avec une session mémorisée ou sur une
   // page réservée aux comptes. Un visiteur des pages publiques n'envoie aucune requête vouée au 401.
   const [verifySession, setVerifySession] = useState(false);
+  const { catalogWanted, requireCatalog } = useCatalogGate();
   const errors = useTranslations("errors.request");
   const requestError = useApiErrorMessage();
   // Lu au moment de l'échec, dans la langue courante, sans relancer le chargement initial.
@@ -321,11 +325,12 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       const remembered = rememberedUser.current;
       // Le catalogue (public, servi par le CDN) part en même temps que la collection, même sans session
       // mémorisée (première visite sur l'appareil) : l'attendre après la vérification de session retardait
-      // l'affichage de la grille. Session refusée : il est simplement ignoré.
+      // l'affichage de la grille. Session refusée : il est simplement ignoré. Liste des decks : seulement
+      // quand un écran le réclame (useCatalogGate).
       // Compte mémorisé : la dernière copie gardée par le service worker s'affiche aussitôt, remplacée dès la
       // réponse du serveur ; les deux requêtes sont en général déjà parties depuis le <head> (boot-requests).
       const boot = bootRequests.current;
-      const catalogRequest = boot?.catalog ?? requestCatalog();
+      const catalogRequest = catalogWanted.then(() => boot?.catalog ?? requestCatalog());
       catalogRequest.catch(() => undefined);
       if (remembered) {
         void readSavedCollection(remembered.id).then((saved) => {
@@ -384,7 +389,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     return () => {
       cancelled = true;
     };
-  }, [verifySession]);
+  }, [verifySession, catalogWanted]);
 
   /** Nom de la carte visée par une opération, pour les messages d'échec. */
   function cardName(op: QueuedOp) {
@@ -665,6 +670,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       syncErrors,
       dismissSyncError: (id) => setSyncErrors((list) => list.filter((entry) => entry.id !== id)),
       requireSession: () => setVerifySession(true),
+      requireCatalog,
     }),
     // Les fonctions ferment sur user ; session, ready, catalog et items sont l'état public.
     // eslint-disable-next-line react-hooks/exhaustive-deps
