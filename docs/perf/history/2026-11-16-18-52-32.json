@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "date": "2026-11-16T18:59:34.210Z",
+  "label": "avant catalogue à la demande (prod #52)",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "7233905",
+  "runs": 5,
+  "pages": {
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 66,
+            "fcp": 344,
+            "lcp": 360,
+            "domContentLoaded": 279.20000000298023,
+            "load": 393.40000000596046,
+            "visualComplete": 361.70000000298023,
+            "fullyLoaded": 885.3000000119209,
+            "cls": 0,
+            "requests": 74,
+            "totalKB": 1101,
+            "jsKB": 387,
+            "imageKB": 262
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 82,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 1141,
+            "lcp": 3642,
+            "tbt": 310,
+            "cls": 0,
+            "speedIndex": 2261,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 66.70000000298023,
+            "fcp": 248,
+            "lcp": 600,
+            "domContentLoaded": 205.09999999403954,
+            "load": 325.70000000298023,
+            "visualComplete": 600,
+            "fullyLoaded": 993.2999999970198,
+            "cls": 0,
+            "requests": 78,
+            "totalKB": 1106,
+            "jsKB": 387,
+            "imageKB": 250
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 98,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 339,
+            "lcp": 1140,
+            "tbt": 1,
+            "cls": 0,
+            "speedIndex": 863,
+            "runs": 5
+          }
+        }
+      }
+    },
+    "decks": {
+      "path": "/fr/decks",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 78.19999998807907,
+            "fcp": 228,
+            "lcp": 228,
+            "domContentLoaded": 142.09999999403954,
+            "load": 269.20000000298023,
+            "visualComplete": 228,
+            "fullyLoaded": 786,
+            "cls": 0,
+            "requests": 62,
+            "totalKB": 681,
+            "jsKB": 361,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/decks",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 90,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 1146,
+            "lcp": 2982,
+            "tbt": 159,
+            "cls": 0,
+            "speedIndex": 1362,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 69.6000000089407,
+            "fcp": 236,
+            "lcp": 252,
+            "domContentLoaded": 170.90000000596046,
+            "load": 297.79999999701977,
+            "visualComplete": 252,
+            "fullyLoaded": 965,
+            "cls": 0,
+            "requests": 71,
+            "totalKB": 711,
+            "jsKB": 362,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/decks",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 336,
+            "lcp": 646,
+            "tbt": 0,
+            "cls": 0,
+            "speedIndex": 417,
+            "runs": 5
+          }
+        }
+      }
+    }
+  }
+}
