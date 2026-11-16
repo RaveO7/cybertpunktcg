@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "date": "2026-11-16T18:13:47.282Z",
+  "label": "après catalogue différé (#52)",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "05dc2ec",
+  "runs": 5,
+  "pages": {
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 69.5,
+            "fcp": 288,
+            "lcp": 288,
+            "domContentLoaded": 225.20000000298023,
+            "load": 383.29999999701977,
+            "visualComplete": 344,
+            "fullyLoaded": 1018.6000000089407,
+            "cls": 0,
+            "requests": 74,
+            "totalKB": 1100,
+            "jsKB": 387,
+            "imageKB": 262
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 59,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 1150,
+            "lcp": 5301,
+            "tbt": 889,
+            "cls": 0,
+            "speedIndex": 2567,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 70.8999999910593,
+            "fcp": 316,
+            "lcp": 624,
+            "domContentLoaded": 216.8999999910593,
+            "load": 416.70000000298023,
+            "visualComplete": 624,
+            "fullyLoaded": 874.1999999880791,
+            "cls": 0.085,
+            "requests": 78,
+            "totalKB": 1105,
+            "jsKB": 387,
+            "imageKB": 250
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 96,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 350,
+            "lcp": 1141,
+            "tbt": 108,
+            "cls": 0,
+            "speedIndex": 1023,
+            "runs": 5
+          }
+        }
+      }
+    },
+    "decks": {
+      "path": "/fr/decks",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 65.70000000298023,
+            "fcp": 264,
+            "lcp": 272,
+            "domContentLoaded": 136.5,
+            "load": 304.70000000298023,
+            "visualComplete": 272,
+            "fullyLoaded": 768.8999999910593,
+            "cls": 0,
+            "requests": 62,
+            "totalKB": 681,
+            "jsKB": 361,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/decks",
+            "consoleErrors": [
+              "Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+            ],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 75,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 1142,
+            "lcp": 3555,
+            "tbt": 525,
+            "cls": 0,
+            "speedIndex": 1696,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 70.6000000089407,
+            "fcp": 224,
+            "lcp": 224,
+            "domContentLoaded": 151.09999999403954,
+            "load": 287.6000000089407,
+            "visualComplete": 224,
+            "fullyLoaded": 885,
+            "cls": 0,
+            "requests": 71,
+            "totalKB": 711,
+            "jsKB": 362,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/decks",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 350,
+            "lcp": 657,
+            "tbt": 18,
+            "cls": 0,
+            "speedIndex": 504,
+            "runs": 5
+          }
+        }
+      }
+    }
+  }
+}

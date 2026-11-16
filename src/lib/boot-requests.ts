@@ -16,10 +16,12 @@ const GLOBAL_KEY = "__cptcgBoot";
 const CATALOG_INIT: RequestInit = { cache: "no-cache" };
 const COLLECTION_INIT: RequestInit = { cache: "no-store" };
 
-// Liste des decks (« /fr/decks », sans « ?deck= ») : le catalogue (~80 Ko) n'y sert qu'à résumer les decks
-// existants. Lancé depuis le <head>, il partageait la bande passante du premier affichage ; CollectionProvider
-// le demande à l'hydratation.
-const NO_BOOT_CATALOG_PATH = /^\/[a-z]{2}\/decks\/?$/;
+/**
+ * Liste des decks (« /fr/decks », sans « ?deck= ») : le catalogue (~80 Ko) n'y sert qu'à résumer les decks
+ * existants. Lancé au démarrage, il partageait la bande passante du premier affichage : ni ce script ni
+ * CollectionProvider (useCatalogGate) ne le demandent avant qu'un écran en ait besoin.
+ */
+export const DECKS_LIST_PATH = /^\/[a-z]{2}\/decks\/?$/;
 const DECK_PARAM = /[?&]deck=/;
 
 /** Réponse de GET /api/collection, lue par `collectionBody` (`body` null si refusée). */
@@ -42,7 +44,7 @@ export function collectionBody(schemas: ResponseSchemas, result: CollectionResul
 
 export type BootRequests = {
   collection: Promise<CollectionResult>;
-  /** null : réponse en erreur ; absent : non lancé sur cette page (NO_BOOT_CATALOG_PATH). */
+  /** null : réponse en erreur ; absent : non lancé sur cette page (DECKS_LIST_PATH). */
   catalog?: Promise<CatalogDTO | null>;
   /** Résultats déjà arrivés, lisibles sans attendre. */
   done: { collection?: CollectionResult; catalog?: CatalogDTO | null };
@@ -62,7 +64,7 @@ export function requestCatalog(): Promise<CatalogDTO | null> {
 }
 
 /** Version autonome (sans module) de requestCollection, requestCatalog, exécutée dans le <head>. */
-export const BOOT_REQUESTS_SCRIPT = `(function(){try{if(!localStorage.getItem(${JSON.stringify(SESSION_USER_KEY)}))return;var d={};var b={done:d,collection:fetch("/api/collection",${JSON.stringify(COLLECTION_INIT)}).then(function(r){return(r.ok?r.json():Promise.resolve(null)).then(function(body){return d.collection={status:r.status,body:body}})})};b.collection.catch(function(){});if(!${NO_BOOT_CATALOG_PATH}.test(location.pathname)||${DECK_PARAM}.test(location.search)){b.catalog=fetch("/api/catalog",${JSON.stringify(CATALOG_INIT)}).then(function(r){return r.ok?r.json():null}).then(function(c){d.catalog=c;return c});b.catalog.catch(function(){})}window[${JSON.stringify(GLOBAL_KEY)}]=b;}catch(e){}})();`;
+export const BOOT_REQUESTS_SCRIPT = `(function(){try{if(!localStorage.getItem(${JSON.stringify(SESSION_USER_KEY)}))return;var d={};var b={done:d,collection:fetch("/api/collection",${JSON.stringify(COLLECTION_INIT)}).then(function(r){return(r.ok?r.json():Promise.resolve(null)).then(function(body){return d.collection={status:r.status,body:body}})})};b.collection.catch(function(){});if(!${DECKS_LIST_PATH}.test(location.pathname)||${DECK_PARAM}.test(location.search)){b.catalog=fetch("/api/catalog",${JSON.stringify(CATALOG_INIT)}).then(function(r){return r.ok?r.json():null}).then(function(c){d.catalog=c;return c});b.catalog.catch(function(){})}window[${JSON.stringify(GLOBAL_KEY)}]=b;}catch(e){}})();`;
 
 /** Requêtes lancées par le script de démarrage, reprises une seule fois. */
 export function takeBootRequests(): BootRequests | null {

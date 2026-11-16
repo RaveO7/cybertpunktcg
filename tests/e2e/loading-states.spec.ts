@@ -18,8 +18,13 @@ async function holdCatalog(page: Page) {
   return release;
 }
 
+/** Un deck sur le compte : la liste des decks attend alors le catalogue pour le résumer (vide, elle s'en passe). */
+async function createDeck(userId: string) {
+  await prisma.deck.create({ data: { userId, name: "Deck en attente" } });
+}
+
 test("squelette : immobile quand l'utilisateur demande moins d'animations", async ({ page, account }) => {
-  void account;
+  await createDeck(account.id);
   const release = await holdCatalog(page);
   try {
     await page.goto("/fr/decks");
@@ -43,7 +48,7 @@ test("squelette : immobile quand l'utilisateur demande moins d'animations", asyn
 });
 
 test("écrans du compte : squelette et aucun « 0 » avant l'arrivée du catalogue", async ({ page, account }) => {
-  void account;
+  await createDeck(account.id);
   // La liste de souhaits n'est pas encore publiée (WISHLIST_ENABLED) : hors de ce parcours.
   for (const path of ["/fr", "/fr/investissement", "/fr/decks", "/fr/parametres"]) {
     const release = await holdCatalog(page);
@@ -86,7 +91,7 @@ test("historique de prix en échec : « Réessayer » puis la courbe", async ({ 
 });
 
 test("catalogue en échec : « Réessayer » recharge l'écran", async ({ page, account }) => {
-  void account;
+  await createDeck(account.id);
   let fail = true;
   await page.route(CATALOG, (route) => (fail ? route.fulfill({ status: 500, body: "{}" }) : route.continue()));
   await page.goto("/fr/decks");
