@@ -1,45 +1,41 @@
-// Tuile de carte des pages publiques : rendue côté serveur (fiche) comme dans la grille client du catalogue.
+// Tuile de carte des pages publiques (catalogue et fiche), rendue au serveur.
 
 import Link from "next/link";
 import { CardImage } from "@/components/CardImage";
+import { THUMB, TILE_CLASSES } from "@/components/public-site/tile-reveal";
 import { thumbnailSrcSet } from "@/lib/card-image";
 
-const THUMB = { width: 400, height: 559 };
-
-/** Ce qu'il faut d'une carte pour sa tuile (props sérialisées vers la grille client du catalogue). */
+/** Ce qu'il faut d'une carte pour sa tuile. */
 export type TileCard = { slug: string; name: string; href: string; alt: string; image: string | null; thumb: string | null };
 
 /**
  * Tuile de carte reprenant celle de l'explorateur : halo aux couleurs de l'illustration, balayage et
  * zoom au survol (effets réservés à la souris, cf. globals.css).
- * `light` : même cadre et même lien, sans image ni halo (tuile pas encore affichée en entier).
+ * `light` : même cadre et même lien, sans image ni halo ; les données de l'image restent en attributs
+ * `data-*`, la grille du catalogue (CatalogGrid) l'ajoute à l'approche de l'écran.
  */
-export function CatalogCardTile({
-  card,
-  sizes,
-  eager = false,
-  light = false,
-}: {
-  card: TileCard;
-  sizes: string;
-  eager?: boolean;
-  light?: boolean;
-}) {
+export function CatalogCardTile({ card, sizes, eager = false, light = false }: { card: TileCard; sizes: string; eager?: boolean; light?: boolean }) {
+  const deferred = light && card.thumb !== null;
   const withImage = card.thumb !== null && !light;
   // Halos et tuile partagent srcset et sizes : une seule image téléchargée.
   const srcSet = withImage ? thumbnailSrcSet(card.image) : undefined;
   return (
-    <li className="group relative">
+    <li
+      className="group relative"
+      data-thumb={deferred ? (card.thumb ?? undefined) : undefined}
+      data-image={deferred ? (card.image ?? undefined) : undefined}
+      data-alt={deferred ? card.alt : undefined}
+    >
       {withImage ? (
         <>
-          <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+          <div className={TILE_CLASSES.haloBack} aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
-            <img srcSet={srcSet} sizes={sizes} src={card.thumb ?? undefined} alt="" loading="lazy" decoding="async" className="card-ambilight" />
+            <img srcSet={srcSet} sizes={sizes} src={card.thumb ?? undefined} alt="" loading="lazy" decoding="async" className={TILE_CLASSES.haloImage} />
           </div>
-          <div className="card-ambilight-spill z-[1]" aria-hidden="true">
-            <div className="relative h-full">
+          <div className={TILE_CLASSES.haloSpill} aria-hidden="true">
+            <div className={TILE_CLASSES.haloSpillInner}>
               {/* eslint-disable-next-line @next/next/no-img-element -- halo décoratif, même miniature que la tuile */}
-              <img srcSet={srcSet} sizes={sizes} src={card.thumb ?? undefined} alt="" loading="lazy" decoding="async" className="card-ambilight" />
+              <img srcSet={srcSet} sizes={sizes} src={card.thumb ?? undefined} alt="" loading="lazy" decoding="async" className={TILE_CLASSES.haloImage} />
             </div>
           </div>
         </>
@@ -59,7 +55,7 @@ export function CatalogCardTile({
               height={THUMB.height}
               loading={eager ? "eager" : "lazy"}
               decoding="async"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className={TILE_CLASSES.image}
             />
           ) : null}
         </div>

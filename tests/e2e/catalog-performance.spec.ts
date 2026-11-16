@@ -1,9 +1,9 @@
 import { expect, settle, test } from "./fixtures";
 
 /**
- * Catalogue public, rendu allégé : toutes les cartes sont dans le HTML serveur (liens et noms, pour les
+ * Catalogue public, rendu allégé : toutes les tuiles sont dans le HTML serveur (liens et noms, pour les
  * moteurs), mais seules les 20 premières tuiles ont leur image au chargement ; la suite passe en tuile
- * complète par paquets à l'approche de l'écran. Visiteur : rien n'est créé en base.
+ * complète (halos, image) à l'approche de l'écran. Visiteur : rien n'est créé en base.
  */
 
 test.use({ signedIn: false });
@@ -28,6 +28,11 @@ test("catalogue : toutes les cartes dans le HTML, images affichées par paquets"
     if ((await pending.count()) > 0) await pending.first().scrollIntoViewIfNeeded({ timeout: 1_000 });
     await expect(withImage).toHaveCount(serverLinks.size, { timeout: 1_000 });
   }).toPass();
+  // Tuile complétée dans le navigateur : halos et image nommée, comme une tuile rendue au serveur.
+  const revealed = tiles.last();
+  await expect(revealed.locator("img.card-ambilight")).toHaveCount(2);
+  await expect(revealed.locator("a img")).toHaveAttribute("alt", /.+/);
+  await expect(page.locator("main li[data-thumb]")).toHaveCount(0);
 
   // Le lien d'une tuile ouvre toujours la fiche.
   const last = tiles.last().getByRole("link");
