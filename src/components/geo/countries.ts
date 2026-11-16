@@ -9,9 +9,18 @@ export const COUNTRY_CODES = [
   "CL", "JP", "KR", "CN", "TW", "HK", "SG", "AU", "NZ", "MA", "TN", "DZ", "SN", "CI", "RE", "GP", "MQ", "NC", "PF",
 ] as const;
 
+// Créer un Intl.DisplayNames coûte cher (une liste de pays en crée des dizaines) : un seul par langue.
+const regionNames = new Map<string, Intl.DisplayNames>();
+
 export function countryName(code: string, locale: string) {
+  const intl = intlLocale(locale);
   try {
-    return new Intl.DisplayNames([intlLocale(locale)], { type: "region" }).of(code) ?? code;
+    let names = regionNames.get(intl);
+    if (!names) {
+      names = new Intl.DisplayNames([intl], { type: "region" });
+      regionNames.set(intl, names);
+    }
+    return names.of(code) ?? code;
   } catch {
     return code;
   }
