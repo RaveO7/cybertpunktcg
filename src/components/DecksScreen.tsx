@@ -28,7 +28,13 @@ export function DecksScreen() {
       </div>
     );
   }
-  if (!collectionReady || !catalog || !decks.ready) return <DecksSkeleton />;
+  if (!decks.ready) return <DecksSkeleton />;
+  // Aucun deck : la liste vide s'affiche sans attendre le catalogue (ni lancé depuis le <head> sur cette page,
+  // cf. boot-requests), qui ne sert qu'à résumer les decks.
+  if (!deckId && decks.decks.length === 0) {
+    return <DeckList decks={decks.decks} catalog={null} onCreate={decks.create} onDelete={decks.remove} />;
+  }
+  if (!collectionReady || !catalog) return <DecksSkeleton />;
 
   if (deckId) {
     const deck = decks.decks.find((entry) => entry.id === deckId);

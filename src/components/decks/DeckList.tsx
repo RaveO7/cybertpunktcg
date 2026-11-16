@@ -28,7 +28,8 @@ export function DeckList({
   onDelete,
 }: {
   decks: DeckDTO[];
-  catalog: CatalogDTO;
+  /** null seulement sans deck (rien à résumer). */
+  catalog: CatalogDTO | null;
   onCreate: (input: { name?: string; cards?: DeckEntry[] }) => Promise<DeckDTO>;
   onDelete: (id: string) => Promise<void>;
 }) {
@@ -37,7 +38,7 @@ export function DeckList({
   const router = useRouter();
   const { items } = useCollection();
   const { cardsById, printingsByCard, preview } = useDeckCatalog(catalog);
-  const owned = useMemo(() => ownedCopiesByCard(items, catalog.printings), [items, catalog.printings]);
+  const owned = useMemo(() => ownedCopiesByCard(items, catalog?.printings ?? []), [items, catalog]);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const dateFormat = new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short" });

@@ -48,6 +48,28 @@ async function legendCards() {
   return cards;
 }
 
+test("la liste des decks n'attend le catalogue que pour résumer des decks", async ({ page, account }) => {
+  // Première visite : la session est mémorisée ; les rechargements passent par le script du <head>.
+  await page.goto("/fr/decks");
+  await expect(page.getByText("Aucun deck pour l’instant")).toBeVisible();
+
+  // Catalogue sans réponse : la liste vide s'affiche quand même.
+  await page.route("**/api/catalog", () => undefined);
+  await page.reload();
+  await expect(page.getByText("Aucun deck pour l’instant")).toBeVisible();
+  await page.unroute("**/api/catalog");
+
+  // Avec un deck, le résumé (Legends) arrive avec le catalogue demandé par l'application.
+  const cards = await legendCards();
+  await prisma.deck.create({
+    data: { userId: account.id, name: "Deck résumé", cards: { create: cards.map((card) => ({ cardId: card.id, quantity: 1 })) } },
+  });
+  await page.reload();
+  const summary = page.getByRole("listitem").filter({ hasText: "Deck résumé" });
+  await expect(summary).toBeVisible();
+  await expect(summary.getByText("Aucune Legend")).toHaveCount(0);
+});
+
 test("les cartes manquantes s'ajoutent à la liste de souhaits en une fois", async ({ page, account }) => {
   const cards = await legendCards();
   const deck = await prisma.deck.create({
