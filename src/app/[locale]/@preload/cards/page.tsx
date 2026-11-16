@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
-import { firstGridImages, firstRowMedia } from "@/lib/cards-preload";
+import { firstGridImages } from "@/lib/cards-preload";
 import { loadCatalogCached } from "@/lib/catalog";
 import { CARDS_VIEW_COOKIE, parseCardsViewCookie } from "@/lib/preferences";
 
-/** Première rangée la plus large de la grille (4 colonnes), chaque carte seulement aux largeurs où elle y figure. */
+/** Première rangée la plus large de la grille (4 colonnes) ; les 2 premières sont visibles à toutes les largeurs. */
 const PRELOADED_CARDS = 4;
 const HIGH_PRIORITY_CARDS = 2;
 
@@ -20,13 +20,6 @@ export default async function CardsPreload({ searchParams }: PageProps<"/[locale
   }
   const view = parseCardsViewCookie(cookieStore.get(CARDS_VIEW_COOKIE)?.value);
   return firstGridImages(catalog, params, view, PRELOADED_CARDS).map((href, index) => (
-    <link
-      key={href}
-      rel="preload"
-      as="image"
-      href={href}
-      media={firstRowMedia(index)}
-      fetchPriority={index < HIGH_PRIORITY_CARDS ? "high" : "auto"}
-    />
+    <link key={href} rel="preload" as="image" href={href} fetchPriority={index < HIGH_PRIORITY_CARDS ? "high" : "auto"} />
   ));
 }
