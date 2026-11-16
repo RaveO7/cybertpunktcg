@@ -1,0 +1,240 @@
+{
+  "version": 1,
+  "date": "2026-11-15T23:01:22.224Z",
+  "label": "avant préchargement collection limité (prod 76a52c8)",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "f6e1a26",
+  "runs": 5,
+  "pages": {
+    "fiche-carte": {
+      "path": "/fr/cartes/adam-smasher-ender-of-legends",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 66.30000000074506,
+            "fcp": 244,
+            "lcp": 244,
+            "domContentLoaded": 137.60000000149012,
+            "load": 278.19999999925494,
+            "visualComplete": 244,
+            "fullyLoaded": 662.3000000007451,
+            "cls": 0,
+            "requests": 40,
+            "totalKB": 624,
+            "jsKB": 256,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 79,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 1380,
+            "lcp": 3325,
+            "tbt": 504,
+            "cls": 0,
+            "speedIndex": 1927,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 64.5,
+            "fcp": 252,
+            "lcp": 252,
+            "domContentLoaded": 132.89999999850988,
+            "load": 252.20000000298023,
+            "visualComplete": 252,
+            "fullyLoaded": 640.8000000007451,
+            "cls": 0,
+            "requests": 41,
+            "totalKB": 511,
+            "jsKB": 256,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 375,
+            "lcp": 657,
+            "tbt": 21,
+            "cls": 0,
+            "speedIndex": 697,
+            "runs": 5
+          }
+        }
+      }
+    },
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 63.80000000074506,
+            "fcp": 296,
+            "lcp": 296,
+            "domContentLoaded": 252.39999999850988,
+            "load": 365.69999999925494,
+            "visualComplete": 314.1000000014901,
+            "fullyLoaded": 858.2999999970198,
+            "cls": 0,
+            "requests": 74,
+            "totalKB": 1100,
+            "jsKB": 387,
+            "imageKB": 262
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 56,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 1146,
+            "lcp": 5280,
+            "tbt": 1433,
+            "cls": 0,
+            "speedIndex": 2617,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 69.10000000149012,
+            "fcp": 368,
+            "lcp": 688,
+            "domContentLoaded": 242.90000000223517,
+            "load": 421.5999999977648,
+            "visualComplete": 688,
+            "fullyLoaded": 916.1999999992549,
+            "cls": 0,
+            "requests": 78,
+            "totalKB": 1104,
+            "jsKB": 387,
+            "imageKB": 250
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [
+              "Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+            ],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 95,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 340,
+            "lcp": 1131,
+            "tbt": 136,
+            "cls": 0,
+            "speedIndex": 1069,
+            "runs": 5
+          }
+        }
+      }
+    },
+    "decks": {
+      "path": "/fr/decks",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 64.90000000223517,
+            "fcp": 240,
+            "lcp": 240,
+            "domContentLoaded": 146.5,
+            "load": 301.8999999985099,
+            "visualComplete": 240,
+            "fullyLoaded": 685.8000000007451,
+            "cls": 0,
+            "requests": 62,
+            "totalKB": 681,
+            "jsKB": 361,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/decks",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 81,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 1134,
+            "lcp": 3550,
+            "tbt": 337,
+            "cls": 0,
+            "speedIndex": 1477,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 68.09999999776483,
+            "fcp": 200,
+            "lcp": 200,
+            "domContentLoaded": 140.80000000074506,
+            "load": 269.5999999977648,
+            "visualComplete": 200,
+            "fullyLoaded": 865.5,
+            "cls": 0,
+            "requests": 71,
+            "totalKB": 710,
+            "jsKB": 362,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/decks",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 63,
+            "fcp": 343,
+            "lcp": 733,
+            "tbt": 15,
+            "cls": 0,
+            "speedIndex": 595,
+            "runs": 5
+          }
+        }
+      }
+    }
+  }
+}

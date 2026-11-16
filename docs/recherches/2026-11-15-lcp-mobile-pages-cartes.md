@@ -31,9 +31,9 @@ Decks (référence 3,42 s) : sans polices 3,05 s ; sans `/api/catalog` (80 Ko ch
 
 Collection : retirer les images de cartes ne compte que lorsque la première carte est l'élément LCP ; les 3e et 4e préchargées partent en priorité basse et sont hors du calcul.
 
-## Ce qui a été fait
+## Essai écarté : préchargement des cartes 3 et 4 limité aux grands écrans (#48, annulé)
 
-Collection : les 3e et 4e cartes ne sont préchargées qu'aux largeurs où elles sont sur la première rangée (`media` sur le `<link rel="preload">`, `firstRowMedia` dans `src/lib/cards-preload.ts`). Sur téléphone, 2 images en 400 px (~70 Ko) ne sont plus téléchargées pour rien. Gain Lighthouse attendu : nul ou faible (images hors du calcul) ; gain réel en bande passante mobile.
+Idée : sur téléphone (2 colonnes), ne plus précharger les 3e et 4e cartes en 400 px. Mesure prod avant/après (5 passages, `2026-11-15-22-50-36` → `2026-11-15-23-05-03`) : poids inchangé (1100 Ko) et « Visuel » mobile de la collection 0,31 → 0,60 s. Le 400 px préchargé n'était pas perdu : la 2e rangée du téléphone le réutilisait ; sans lui, ces cartes arrivent après le JavaScript. Les écarts Lighthouse (collection +9) sont du bruit (pages non touchées : fiche +3, decks −8). Ne pas retenter.
 
 ## Pistes restantes (hors de ce chantier)
 
