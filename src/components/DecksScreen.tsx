@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useCollection } from "@/components/CollectionProvider";
 import { DeckEditor } from "@/components/decks/DeckEditor";
@@ -13,8 +14,12 @@ export function DecksScreen() {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const deckId = searchParams.get("deck");
-  const { catalog, ready: collectionReady, error: collectionError, retry } = useCollection();
+  const { catalog, ready: collectionReady, error: collectionError, retry, requireCatalog } = useCollection();
   const decks = useDecks();
+  const needsCatalog = Boolean(deckId) || decks.decks.length > 0;
+  useEffect(() => {
+    if (needsCatalog) requireCatalog();
+  }, [needsCatalog, requireCatalog]);
 
   const failure = collectionError
     ? { message: collectionError, retry }
@@ -28,7 +33,13 @@ export function DecksScreen() {
       </div>
     );
   }
-  if (!collectionReady || !catalog || !decks.ready) return <DecksSkeleton />;
+  if (!decks.ready) return <DecksSkeleton />;
+  // Aucun deck : la liste vide s'affiche sans le catalogue, qui ne sert qu'à résumer les decks (pas chargé
+  // sur cette page tant qu'il n'est pas réclamé, cf. useCatalogGate).
+  if (!needsCatalog) {
+    return <DeckList decks={decks.decks} catalog={null} onCreate={decks.create} onDelete={decks.remove} />;
+  }
+  if (!collectionReady || !catalog) return <DecksSkeleton />;
 
   if (deckId) {
     const deck = decks.decks.find((entry) => entry.id === deckId);

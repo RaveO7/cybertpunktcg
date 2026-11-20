@@ -14,7 +14,8 @@ import { BOOT_REQUESTS_SCRIPT } from "@/lib/boot-requests";
 import { CLIENT_BLOCKS, pickBlocks } from "@/i18n/client-messages";
 import { IntlClientProvider } from "@/i18n/IntlClientProvider";
 import { PREFERENCES_STORAGE_KEY, THEME_CHROME_COLORS } from "@/lib/preferences";
-import type { Locale } from "@/i18n/config";
+import { intlWarmupScript } from "@/lib/intl-warmup";
+import { intlLocale, type Locale } from "@/i18n/config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,7 +45,7 @@ export async function SiteShell({ lang, head, children }: { lang: Locale; head: 
       {/* Mise en page racine (App Router) : <head> est attendu ici, la règle vise le routeur Pages. */}
       {/* eslint-disable-next-line @next/next/no-head-element */}
       <head>
-        <BootScript html={BOOT_REQUESTS_SCRIPT + themeBootScript + REVEAL_BOOT_SCRIPT} />
+        <BootScript html={BOOT_REQUESTS_SCRIPT + themeBootScript + REVEAL_BOOT_SCRIPT + intlWarmupScript(intlLocale(lang))} />
         {/* Préchargements propres à la page (route parallèle @preload), hors de RequireUser. */}
         {head}
       </head>
