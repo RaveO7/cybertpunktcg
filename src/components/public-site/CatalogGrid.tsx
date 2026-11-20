@@ -1,39 +1,36 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { CatalogCardTile, type TileCard } from "@/components/public-site/CatalogCardTile";
-
-/** Tuiles affichées en entier par paquet (images, halos). */
-export const CATALOG_BATCH = 20;
+import { useEffect, useRef, type ReactNode } from "react";
+import { revealTile } from "@/components/public-site/tile-reveal";
 
 /**
- * Grille d'une section du catalogue, allégée : toutes les cartes sont dans le HTML (lien et nom, pour les
- * moteurs et sans JS), mais seules les `initial` premières ont leur image et leurs halos ; les suivantes
- * passent en tuile complète par paquets, à l'approche de l'écran. Même cadre dans les deux cas : rien ne bouge.
+ * Grille d'une section du catalogue. Les tuiles sont rendues au serveur (`children`) : les premières en
+ * entier, les suivantes allégées (lien et nom, sans image ni halo). Seule cette grille est un composant
+ * client : elle ajoute les images d'une tuile allégée à l'approche de l'écran, sans rien rendre elle-même.
  */
-export function CatalogGrid({ cards, sizes, initial, eager }: { cards: TileCard[]; sizes: string; initial: number; eager: number }) {
-  const [shown, setShown] = useState(initial);
+export function CatalogGrid({ sizes, children }: { sizes: string; children: ReactNode }) {
   const listRef = useRef<HTMLUListElement>(null);
 
-  // Observe la première tuile allégée ; ré-observée après chaque paquet, tant qu'elle reste proche la suite arrive.
   useEffect(() => {
-    const next = listRef.current?.children[shown];
-    if (!next || typeof IntersectionObserver === "undefined") return;
+    const list = listRef.current;
+    if (!list || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) setShown((count) => Math.max(count, shown + CATALOG_BATCH));
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          observer.unobserve(entry.target);
+          revealTile(entry.target as HTMLElement, sizes);
+        }
       },
       { rootMargin: "800px 0px 800px 0px" },
     );
-    observer.observe(next);
+    for (const tile of list.querySelectorAll<HTMLElement>("li[data-thumb]")) observer.observe(tile);
     return () => observer.disconnect();
-  }, [shown]);
+  }, [sizes]);
 
   return (
     <ul ref={listRef} className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-      {cards.map((card, index) => (
-        <CatalogCardTile key={card.slug} card={card} sizes={sizes} eager={index < eager} light={index >= shown} />
-      ))}
+      {children}
     </ul>
   );
 }

@@ -7,7 +7,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { Fragment, type ReactNode } from "react";
 import { CardImage } from "@/components/CardImage";
 import { CatalogCardTile, type TileCard } from "@/components/public-site/CatalogCardTile";
-import { CATALOG_BATCH, CatalogGrid } from "@/components/public-site/CatalogGrid";
+import { CatalogGrid } from "@/components/public-site/CatalogGrid";
 import { TrackCardLink } from "@/components/public-site/TrackCardLink";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { JsonLd } from "@/components/site/JsonLd";
@@ -21,6 +21,8 @@ import { localizedPath } from "@/i18n/paths";
 import { translatorFor } from "@/i18n/server";
 
 const IMAGE = { width: 733, height: 1024 };
+/** Tuiles complètes au rendu (début de la première section) ; les autres reçoivent leur image en approchant de l'écran. */
+const FULL_TILES = 20;
 
 // Largeur affichée des images (attribut sizes) : conteneur max-w-5xl (1024 px) en px-4, gap-3 (12 px).
 /** Grille du catalogue : 3 colonnes, 4 dès sm, 6 dès md. */
@@ -138,12 +140,17 @@ export async function CatalogPage({ locale }: { locale: Locale }) {
             <h2 className="font-display text-lg uppercase tracking-wide text-yellow">
               {group.label} <span className="font-mono text-sm text-muted">({group.cards.length})</span>
             </h2>
-            <CatalogGrid
-              cards={group.cards.map((card) => tileCard(card, locale, tCard("imageAlt", { name: card.name })))}
-              sizes={CATALOG_GRID_SIZES}
-              initial={groupIndex === 0 ? CATALOG_BATCH : 0}
-              eager={groupIndex === 0 ? 6 : 0}
-            />
+            <CatalogGrid sizes={CATALOG_GRID_SIZES}>
+              {group.cards.map((card, index) => (
+                <CatalogCardTile
+                  key={card.slug}
+                  card={tileCard(card, locale, tCard("imageAlt", { name: card.name }))}
+                  sizes={CATALOG_GRID_SIZES}
+                  eager={groupIndex === 0 && index < 6}
+                  light={groupIndex > 0 || index >= FULL_TILES}
+                />
+              ))}
+            </CatalogGrid>
           </section>
         ))}
       </div>
