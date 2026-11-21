@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { clientErrorSchema } from "../../src/lib/api-schemas";
 import { toReport } from "../../src/lib/client/error-reporting";
-import { ancestry, hydrationDiff, isHydrationError, type DomElement } from "../../src/lib/client/hydration-context";
+import { ancestry, hydrationDiff, hydrationReport, isHydrationError, type DomElement } from "../../src/lib/client/hydration-context";
 
 function element(tagName: string, parentElement: DomElement | null, options: Partial<DomElement> = {}): DomElement {
   return { tagName, id: "", classList: [], outerHTML: `<${tagName.toLowerCase()}></${tagName.toLowerCase()}>`, parentElement, ...options };
@@ -36,11 +36,21 @@ describe("hydrationDiff", () => {
     assert.match(hydrationDiff([server.header, server.main, extra], [client.header, client.main]), /\[navigateur\] \(aucun\)/);
   });
 
-  it("ignore les scripts ajoutés par React ou Next", () => {
+  it("rapport : contenu du corps dans l'ordre, puis balises disparues ou apparues (corps technique et tête)", () => {
     const server = page();
     const client = page();
-    const script = element("SCRIPT", client.body);
-    assert.match(hydrationDiff([server.header, server.main], [script, client.header, client.main]), /aucun écart de structure/);
+    const script = element("SCRIPT", client.body, { outerHTML: '<script src="/a.js"></script>' });
+    const css = '<link rel="stylesheet" href="/a.css">';
+    const meta = '<meta name="theme-color" content="#000">';
+    const text = hydrationReport(
+      { head: [element("META", null, { outerHTML: meta }), element("LINK", null, { outerHTML: css })], body: [server.header, server.main] },
+      // Tête réordonnée par React : la feuille de style en premier, sans écart à signaler pour elle.
+      { head: [element("LINK", null, { outerHTML: css }), element("TITLE", null)], body: [script, client.header, client.main] },
+    );
+    const [content, technical, head] = text.split(/\n(?=\[(?:corps|tête))/);
+    assert.match(content, /^\[corps, contenu\] .*\naucun écart de structure/);
+    assert.equal(technical, '[corps, balises techniques] disparues :\n(aucune)\napparues :\n<script src="/a.js"></script>');
+    assert.equal(head, `[tête] disparues :\n${meta}\napparues :\n<title></title>`);
   });
 
   it("même structure : le dit", () => {
