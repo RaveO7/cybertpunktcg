@@ -1,6 +1,7 @@
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
+import { canonicalSetCode } from "../src/lib/set-code";
 
 const prisma = new PrismaClient();
 const API = "https://api.netdeck.gg/api/cards/cyberpunk";
@@ -152,6 +153,13 @@ async function main() {
     throw new Error(`Import incomplet : ${cards.length} cartes reçues, ${total} annoncées.`);
   }
 
+  const sourceCodes = new Set(setOrder.keys());
+  for (const card of cards) {
+    for (const printing of card.printings ?? []) if (printing.set?.code) sourceCodes.add(printing.set.code);
+    if (card.set?.code) sourceCodes.add(card.set.code);
+  }
+  const setCodeOf = (code: string) => canonicalSetCode(code, sourceCodes);
+
   const seenCards = new Set<string>();
   const seenPrintings = new Set<string>();
 
@@ -239,10 +247,11 @@ async function main() {
     for (const printing of printings) {
       if (!printing.set?.code || !printing.collector_number) continue;
       const known = setOrder.get(printing.set.code);
+      const setCode = setCodeOf(printing.set.code);
       const setRow = await prisma.set.upsert({
-        where: { code: printing.set.code },
+        where: { code: setCode },
         create: {
-          code: printing.set.code,
+          code: setCode,
           name: known?.name || printing.set.name,
           sortOrder: known?.sortOrder ?? 500,
           status: "available",
@@ -303,7 +312,8 @@ async function main() {
     }
   }
 
-  for (const [code, info] of setOrder) {
+  for (const [sourceCode, info] of setOrder) {
+    const code = setCodeOf(sourceCode);
     await prisma.set.upsert({
       where: { code },
       create: { code, name: info.name, sortOrder: info.sortOrder, status: "available" },
