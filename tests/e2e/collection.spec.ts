@@ -40,6 +40,20 @@ test("fiche carte ouverte : la barre du bas mène directement à une autre secti
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
+test("lien direct vers une carte : la fiche s'ouvre (code chargé à la demande)", async ({ page, account }) => {
+  void account;
+  // Catalogue local en lecture seule.
+  const printing = await prisma.printing.findFirst({
+    where: { language: "en", set: { code: { not: { startsWith: SEALED_SET_PREFIX } } } },
+    select: { id: true },
+  });
+  test.skip(!printing, "Catalogue local vide : lancer `npm run import:cards` pour ce test.");
+  await page.goto(`/fr/cards?printing=${printing!.id}`);
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("heading", { level: 2 })).not.toBeEmpty();
+});
+
 test("recherche : une faute de frappe trouve quand même la carte", async ({ page, account }) => {
   void account;
   await page.goto("/fr/cards");
