@@ -78,6 +78,27 @@ async function cardsCachedOffline(page: Page) {
   await settle(page);
 }
 
+test("réseau coupé en cours d'usage : la fiche d'une carte jamais ouverte s'affiche (code préchargé au repos)", async ({
+  page,
+  context,
+  account,
+}) => {
+  test.skip(!prodURL, "E2E_PROD_URL absent : serveur de production non lancé.");
+  void account;
+  await page.goto("/fr/cards");
+  await expect(page.getByRole("button", { name: /^Adam Smasher/ }).first()).toBeVisible();
+  // Fin des requêtes : le code des fenêtres, chargé à la demande, a été préchargé au repos après load.
+  await settle(page);
+  await context.setOffline(true);
+  try {
+    await page.getByRole("button", { name: /^Adam Smasher/ }).first().click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: /Adam Smasher/ })).toBeVisible();
+  } finally {
+    await context.setOffline(false);
+  }
+});
+
 async function addFromModal(page: Page, name: RegExp, isMobile: boolean) {
   await page.getByRole("button", { name }).first().click();
   const dialog = page.getByRole("dialog");

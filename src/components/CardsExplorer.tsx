@@ -5,8 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { useBrowseSelection } from "@/components/BrowseSelection";
-import { CardModal } from "@/components/CardModal";
-import { QuickAddSheet } from "@/components/QuickAddSheet";
+import dynamic from "next/dynamic";
+import { OverlaySkeleton } from "@/components/site/ScreenSkeleton";
+import { usePreloadAfterLoad } from "@/components/use-preload-after-load";
 import { useCollection } from "@/components/CollectionProvider";
 import { useWishlist } from "@/components/WishlistProvider";
 import { FilterPanel } from "@/components/FilterPanel";
@@ -48,6 +49,19 @@ import { usePreferences } from "@/components/PreferencesProvider";
 import { conditionOptionLabel } from "@/lib/condition-label";
 import type { Translator } from "@/i18n/translator";
 import { filterDefaultsFrom } from "@/lib/preferences";
+
+// Fenêtres chargées à leur première ouverture, pas avec la grille (premier chargement plus léger), puis
+// préchargées au repos pour rester disponibles hors ligne (usePreloadAfterLoad).
+const loadCardModal = () => import("@/components/CardModal").then((module) => module.CardModal);
+const loadQuickAddSheet = () => import("@/components/QuickAddSheet").then((module) => module.QuickAddSheet);
+// Panneau des prix : chargé à part par la fiche elle-même, préchargé aussi pour qu'elle s'ouvre hors ligne.
+const loadWindows = () =>
+  Promise.all([
+    import("@/components/CardModal").then((module) => module.loadPricePanel()),
+    loadQuickAddSheet(),
+  ]);
+const CardModal = dynamic(loadCardModal, { loading: () => <OverlaySkeleton /> });
+const QuickAddSheet = dynamic(loadQuickAddSheet, { loading: () => <OverlaySkeleton /> });
 
 /** Mêmes critères de liste : seule la fiche ouverte (`printingId`) peut différer. */
 function sameListFilters(a: Filters, b: Filters) {
@@ -139,6 +153,7 @@ export function CardsExplorer({
   const { setCardsLocation } = useBrowseSelection();
   const t = useTranslations();
   const { prefs } = usePreferences();
+  usePreloadAfterLoad(loadWindows);
   const { sort: prefSort, collection: prefCollection } = prefs;
   const filterDefaults = useMemo(
     () => filterDefaultsFrom({ sort: prefSort, collection: prefCollection }),

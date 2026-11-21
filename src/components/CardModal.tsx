@@ -18,8 +18,13 @@ import { printingTitle, resolveRulesText } from "@/lib/logic";
 import { WISHLIST_ENABLED } from "@/lib/site";
 import { useModal } from "@/components/use-modal";
 
-// Prix et historique (graphique compris) : chargés à la demande, une fois la fiche ouverte.
-const PricePanel = dynamic(() => import("@/components/card-modal/PricePanel").then((module) => module.PricePanel));
+/**
+ * Prix et historique (graphique compris) : chargés à la demande, une fois la fiche ouverte. Exporté pour le
+ * préchargement au repos (CardsExplorer) : le même import charge les mêmes fichiers, gardés par le service
+ * worker pour ouvrir la fiche hors ligne.
+ */
+export const loadPricePanel = () => import("@/components/card-modal/PricePanel").then((module) => module.PricePanel);
+const PricePanel = dynamic(loadPricePanel);
 
 /**
  * Télécharge et décode une image hors de la page : affichée ensuite, elle apparaît sans délai.

@@ -1,14 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useCollection } from "@/components/CollectionProvider";
-import { DeckEditor } from "@/components/decks/DeckEditor";
 import { DeckList } from "@/components/decks/DeckList";
 import { useDecks } from "@/components/decks/hooks";
 import { BackLink } from "@/components/decks/ui";
 import { ScreenError, ScreenSkeleton, SkeletonBlock } from "@/components/site/ScreenSkeleton";
+import { usePreloadAfterLoad } from "@/components/use-preload-after-load";
+
+// Éditeur et ses panneaux chargés à l'ouverture d'un deck, pas avec la liste (premier chargement plus léger),
+// puis préchargés au repos pour rester disponibles hors ligne (usePreloadAfterLoad).
+const loadDeckEditor = () => import("@/components/decks/DeckEditor").then((module) => module.DeckEditor);
+const DeckEditor = dynamic(loadDeckEditor, { loading: () => <DecksSkeleton /> });
 
 export function DecksScreen() {
   const t = useTranslations();
@@ -16,6 +22,7 @@ export function DecksScreen() {
   const deckId = searchParams.get("deck");
   const { catalog, ready: collectionReady, error: collectionError, retry, requireCatalog } = useCollection();
   const decks = useDecks();
+  usePreloadAfterLoad(loadDeckEditor);
   const needsCatalog = Boolean(deckId) || decks.decks.length > 0;
   useEffect(() => {
     if (needsCatalog) requireCatalog();
