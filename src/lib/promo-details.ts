@@ -12,6 +12,15 @@ export const PROMO_DETAILS: Readonly<Record<number, PromoDetails>> = {
     rulesText: null,
     card: { cardType: "Legend", color: "Yellow", cost: 5, power: 26, ram: 2 },
   },
+  // Alpha : « Lucyna Kushinada — Fresh Beginnings », même promo que Set 1 Promos 004a (visuel netdeck).
+  904914: {
+    collectorNumber: "904914",
+    imagePath: "/card-images/9b4231da-b5e9-44ee-9de9-75ba6a6e6de6.webp",
+    sourceImageUrl:
+      "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/9b4231da-b5e9-44ee-9de9-75ba6a6e6de6/render-msyiij67.webp",
+    rulesText: null,
+    card: { cardType: "Legend", color: "Blue", cost: null, power: null, ram: 2 },
+  },
   // Alpha (exburst A001–A031).
   904915: {
     collectorNumber: "A001",

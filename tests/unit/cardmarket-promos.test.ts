@@ -43,9 +43,10 @@ describe("planPromoProducts", () => {
 });
 
 describe("PROMO_DETAILS", () => {
-  it("donne A001–A031 et N000 une seule fois, chacun avec son image dans public/card-images", () => {
+  it("donne A001–A031, N000 et la Lucyna de l'Alpha une seule fois, chacun avec son image dans public/card-images", () => {
     const details = Object.values(PROMO_DETAILS);
     expect(details.map((entry) => entry.collectorNumber).toSorted()).toEqual([
+      "904914",
       ...Array.from({ length: 31 }, (_, index) => `A${String(index + 1).padStart(3, "0")}`),
       "N000",
     ]);
