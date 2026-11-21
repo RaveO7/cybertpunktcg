@@ -111,3 +111,26 @@ describe("proxy : langue de l'URL", () => {
     assert.equal(response.cookies.get("cptcg-country")?.value, "ES");
   });
 });
+
+describe("proxy : indicateur de session lisible par le script du <head>", () => {
+  const hintLine = (response: Response) =>
+    response.headers.getSetCookie().find((line) => line.startsWith("cptcg_signed=")) ?? "";
+
+  it("posé quand la session est là et l'indicateur absent, lisible par le script (pas httpOnly)", () => {
+    const line = hintLine(proxy(request("/fr/cards", SESSION)));
+    assert.ok(line.startsWith("cptcg_signed=1"));
+    assert.doesNotMatch(line, /httponly/i);
+    assert.match(line, /Path=\//);
+  });
+
+  it("retiré quand la session a disparu", () => {
+    const line = hintLine(proxy(request("/fr/cards", { cptcg_signed: "1" })));
+    assert.ok(line.startsWith("cptcg_signed=;"));
+    assert.match(line, /Expires=Thu, 01 Jan 1970|Max-Age=0/i);
+  });
+
+  it("aucune écriture quand l'indicateur correspond déjà à la session", () => {
+    assert.equal(hintLine(proxy(request("/fr/cards", { ...SESSION, cptcg_signed: "1" }))), "");
+    assert.equal(hintLine(proxy(request("/fr/cartes/v-streetkid"))), "");
+  });
+});

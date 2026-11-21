@@ -47,6 +47,20 @@ export function ScreenSkeleton({
   );
 }
 
+/**
+ * Fenêtre dont le code n'est pas encore arrivé (chargée à sa première ouverture) : même fond que les
+ * fenêtres, zone marquée occupée.
+ */
+export function OverlaySkeleton() {
+  return (
+    <div className="fixed inset-x-0 top-0 bottom-[var(--app-bottom-nav)] z-50 flex items-center justify-center bg-black/80 p-4">
+      <ScreenSkeleton className="w-full max-w-sm">
+        <SkeletonBlock className="aspect-[63/88] w-full" />
+      </ScreenSkeleton>
+    </div>
+  );
+}
+
 function subscribeOnline(listener: () => void) {
   window.addEventListener("online", listener);
   window.addEventListener("offline", listener);

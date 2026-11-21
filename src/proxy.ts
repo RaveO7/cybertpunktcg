@@ -4,7 +4,7 @@ import { INTERNATIONAL_LOCALE, isLocale, LOCALE_COOKIE, type Locale } from "@/i1
 import { formatRoute, internalPath, matchRoute, splitLocale, type MatchedRoute } from "@/i18n/match";
 import { landingSections, routing, type AppPathname } from "@/i18n/routing";
 import { COUNTRY_COOKIE, isCountryCode } from "@/lib/i18n/geo-locale";
-import { SESSION_COOKIE } from "@/lib/session-cookie";
+import { SESSION_COOKIE, SESSION_HINT_COOKIE } from "@/lib/session-cookie";
 
 /** Préfixes de langue, chemins traduits et URL inconnues : gérés par next-intl. */
 const handleI18nRouting = createMiddleware(routing);
@@ -89,7 +89,23 @@ export const SESSION_PAGE_HEADER = "x-cptcg-session";
 
 export function proxy(request: NextRequest) {
   const response = route(request);
-  response.headers.set(SESSION_PAGE_HEADER, request.cookies.has(SESSION_COOKIE) ? "1" : "0");
+  const hasSession = request.cookies.has(SESSION_COOKIE);
+  response.headers.set(SESSION_PAGE_HEADER, hasSession ? "1" : "0");
+
+  // Indicateur de session lisible par le script du <head> (BOOT_REQUESTS_SCRIPT), qui lance alors
+  // collection et catalogue avant le JS même sans session mémorisée sur l'appareil. Écrit seulement
+  // quand il ne correspond plus au cookie de session.
+  if (hasSession !== request.cookies.has(SESSION_HINT_COOKIE)) {
+    if (hasSession) {
+      response.cookies.set(SESSION_HINT_COOKIE, "1", {
+        path: "/",
+        sameSite: "lax",
+        secure: request.nextUrl.protocol === "https:",
+      });
+    } else {
+      response.cookies.delete(SESSION_HINT_COOKIE);
+    }
+  }
 
   // Pays de connexion (fourni par Vercel) transmis au navigateur, qui propose dès le chargement la
   // version de la page dans la langue du visiteur.

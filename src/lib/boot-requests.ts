@@ -6,6 +6,7 @@
  * lui-même ce que le script n'a pas lancé.
  */
 import type { ResponseSchemas } from "@/lib/client/api";
+import { SESSION_HINT_COOKIE } from "@/lib/session-cookie";
 import { SESSION_USER_KEY } from "@/lib/session-hint";
 import type { CatalogDTO } from "@/lib/types";
 
@@ -63,8 +64,15 @@ export function requestCatalog(): Promise<CatalogDTO | null> {
   );
 }
 
-/** Version autonome (sans module) de requestCollection, requestCatalog, exécutée dans le <head>. */
-export const BOOT_REQUESTS_SCRIPT = `(function(){try{if(!localStorage.getItem(${JSON.stringify(SESSION_USER_KEY)}))return;var d={};var b={done:d,collection:fetch("/api/collection",${JSON.stringify(COLLECTION_INIT)}).then(function(r){return(r.ok?r.json():Promise.resolve(null)).then(function(body){return d.collection={status:r.status,body:body}})})};b.collection.catch(function(){});if(!${DECKS_LIST_PATH}.test(location.pathname)||${DECK_PARAM}.test(location.search)){b.catalog=fetch("/api/catalog",${JSON.stringify(CATALOG_INIT)}).then(function(r){return r.ok?r.json():null}).then(function(c){d.catalog=c;return c});b.catalog.catch(function(){})}window[${JSON.stringify(GLOBAL_KEY)}]=b;}catch(e){}})();`;
+/** Indicateur de session posé par le proxy (src/proxy.ts), cherché dans document.cookie. */
+const SESSION_HINT_PATTERN = `/(?:^|;\\s*)${SESSION_HINT_COOKIE}=/`;
+
+/**
+ * Version autonome (sans module) de requestCollection, requestCatalog, exécutée dans le <head>. Lancée si
+ * la session est mémorisée sur l'appareil, ou si l'indicateur de session est présent (stockage local vidé
+ * ou effacé par le navigateur, mesure Lighthouse).
+ */
+export const BOOT_REQUESTS_SCRIPT = `(function(){try{if(!localStorage.getItem(${JSON.stringify(SESSION_USER_KEY)})&&!${SESSION_HINT_PATTERN}.test(document.cookie))return;var d={};var b={done:d,collection:fetch("/api/collection",${JSON.stringify(COLLECTION_INIT)}).then(function(r){return(r.ok?r.json():Promise.resolve(null)).then(function(body){return d.collection={status:r.status,body:body}})})};b.collection.catch(function(){});if(!${DECKS_LIST_PATH}.test(location.pathname)||${DECK_PARAM}.test(location.search)){b.catalog=fetch("/api/catalog",${JSON.stringify(CATALOG_INIT)}).then(function(r){return r.ok?r.json():null}).then(function(c){d.catalog=c;return c});b.catalog.catch(function(){})}window[${JSON.stringify(GLOBAL_KEY)}]=b;}catch(e){}})();`;
 
 /** Requêtes lancées par le script de démarrage, reprises une seule fois. */
 export function takeBootRequests(): BootRequests | null {

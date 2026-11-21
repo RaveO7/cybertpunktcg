@@ -76,6 +76,28 @@ test("une session vérifiée au chargement ne fait pas redemander la page", asyn
   expect(pageReloads).toEqual([]);
 });
 
+test("cookie de session sans session mémorisée : collection et catalogue partent depuis le <head>", async ({ page, account }) => {
+  void account;
+  // Le script du <head> range ses requêtes dans window.__cptcgBoot (repris ensuite par CollectionProvider) :
+  // on note leur lancement au moment où il les range.
+  await page.addInitScript(() => {
+    let boot: unknown;
+    Object.defineProperty(window, "__cptcgBoot", {
+      configurable: true,
+      get: () => boot,
+      set: (value) => {
+        boot = value;
+        (window as unknown as { bootStarted: boolean }).bootStarted = true;
+      },
+    });
+  });
+  // Rien de mémorisé sur l'appareil : seul l'indicateur posé par le proxy annonce la session.
+  await page.goto("/fr/cards");
+  await expect(page.locator("[data-card-id]").first()).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { bootStarted?: boolean }).bootStarted)).toBe(true);
+  expect(await page.evaluate(() => document.cookie)).toContain("cptcg_signed=1");
+});
+
 test("une session supprimée en base renvoie à l'écran de connexion", async ({ page, account }) => {
   await page.goto("/fr");
   await expect(dashboard(page)).toBeVisible();
