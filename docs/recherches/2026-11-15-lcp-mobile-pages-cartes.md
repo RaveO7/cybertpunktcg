@@ -74,3 +74,9 @@ Sur ordinateur, rien ne change : 100, 98 et 100.
 - **Collection, mesure bimodale** : 2 passages ont un LCP à 3,6 s (élément LCP : le logo de l'écran de démarrage), 3 passages à 5,3 s (élément LCP : l'image d'une carte, observée vers 880 ms). Ce second mode existait avant (5,28 s le matin même).
 - **Collection, effet du préchargement** : dans ce second mode, le préchargement au repos (~23 Ko de JS entre 620 et 700 ms, après `load` à 440 ms) se termine avant le LCP observé. Lantern le compte alors dans le LCP simulé. Le décaler de quelques secondes le sortirait du calcul.
 - **Effet réel** : la collection et les decks ont un affichage complet plus court (collection 0,92 → 0,76 s, decks 0,80 → 0,73 s). Le poids total de la collection augmente de 39 Ko, car les fenêtres préchargées sont comptées, mais après l'affichage.
+
+### Préchargement décalé de 5 s (#72, 2026-11-21) : sans effet, retiré
+
+Hypothèse testée : sortir le préchargement des fenêtres du LCP simulé de la collection en le lançant 5 s après `load`. Mesure prod mobile (5 passages, `2026-11-21-17-30-03` → `2026-11-21-17-50-54`) : collection 76 → 73, toujours bimodale (3 passages à LCP 5,2–5,6 s, 2 à 3,6 s). L'hypothèse est fausse : sur les passages lents, l'image de carte (élément LCP) a un « délai de rendu » simulé de 3,1 à 3,6 s, le temps que le JS de la page et les réponses catalogue et collection arrivent. Le décalage est retiré (il retardait la mise en cache hors ligne sans rien apporter).
+
+Piste réelle pour la collection : que la première rangée de cartes ne dépende plus du JS client et des données de l'API (rendu serveur des premières vignettes, comme les tuiles du catalogue public de #53), ou que l'écran de démarrage reste l'élément LCP.
