@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { translationStatus } from "../../src/i18n/cards";
+import { CARD_BACK_IMAGE } from "../../src/lib/card-image";
 import { cardWithNeighbours, publicCards } from "../../src/lib/seo/public-catalog";
 import type { CardDTO, CatalogDTO, PrintingDTO } from "../../src/lib/types";
 
@@ -89,6 +90,20 @@ describe("seo : catalogue public", () => {
     assert.equal(v.translated, true);
     assert.equal(v.mainPrintingId, "v-fr");
     assert.equal(v.marketPrice, "12.50");
+  });
+
+  it("impression principale sans visuel : vrai visuel d'une autre impression avant le dos de carte", () => {
+    const withBack: CatalogDTO = {
+      ...catalog,
+      printings: [
+        printing("jackie-en", "jackie", { collectorNumber: "010", imagePath: CARD_BACK_IMAGE }),
+        printing("jackie-promo", "jackie", { setCode: "PRM01", collectorNumber: "P2" }),
+        printing("adam-en", "adam", { collectorNumber: "002", imagePath: CARD_BACK_IMAGE }),
+      ],
+    };
+    const cards = publicCards(withBack, "en");
+    assert.equal(cards.find((c) => c.slug === "jackie")?.image, "/card-images/jackie-promo.webp");
+    assert.equal(cards.find((c) => c.slug === "adam")?.image, CARD_BACK_IMAGE);
   });
 
   it("repli anglais sans impression française", () => {

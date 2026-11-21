@@ -7,6 +7,14 @@ export const THUMB_WIDTH = 400;
 /** Autres largeurs, rangées dans thumb/<largeur>/ : le navigateur choisit dans le srcset celle qui suffit à l'affichage. */
 export const THUMB_EXTRA_WIDTHS = [160, 200, 240, 320, 560] as const;
 
+/** Dos de carte affiché à la place d'un visuel introuvable (aucune source n'en a). */
+export const CARD_BACK_IMAGE = `${CARD_IMAGES_PREFIX}card-back.webp`;
+
+/** Vrai visuel de l'impression (ni absent, ni le dos de carte de remplacement). */
+export function hasOwnImage(src: string | null | undefined): src is string {
+  return Boolean(src) && src !== CARD_BACK_IMAGE;
+}
+
 /** Chemin de la miniature d'une image locale de carte, ou null si l'image n'en a pas. */
 export function thumbnailPath(src: string | null | undefined): string | null {
   if (!src || !src.startsWith(CARD_IMAGES_PREFIX)) return null;

@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { userFromRequest } from "./auth";
 import { prisma } from "./prisma";
+import { CARD_BACK_IMAGE } from "./card-image";
 import { GUIDE_DETAIL_KINDS, type GuideDetailKind } from "./cardmarket";
 import { lineDate } from "./collection-line";
 import type { CardDTO, CatalogDTO, CollectionItemDTO, ConditionDTO, PrintingDTO, PriceGuideDTO, SetDTO } from "./types";
@@ -73,7 +74,7 @@ export async function loadCatalog(): Promise<CatalogDTO> {
     rarity: printing.rarity,
     language: printing.language,
     localizedName: printing.localizedName,
-    imagePath: printing.imagePath,
+    imagePath: printing.imagePath ?? CARD_BACK_IMAGE,
     artist: printing.artist,
     printedRulesText: printing.printedRulesText,
     officialFinish: printing.officialFinish,
