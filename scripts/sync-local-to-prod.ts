@@ -1,14 +1,13 @@
-// Envoie les modifications de la base locale (SQLite) vers la base de production (Postgres Vercel) :
+// Envoie les modifications de la base locale (SQLite) vers la base de production (Postgres Supabase) :
 // - structure : `prisma db push` (refuse toute modification qui perdrait des données) ;
 // - catalogue (sets, cartes, tirages, états, sources) : ajoutés ou mis à jour, jamais supprimés ;
 // - prix et historique de prix : la prod devient identique au local ;
 // - collections : les cartes locales absentes de la prod sont ajoutées au compte de même e-mail.
 //   Rien n'est supprimé ni modifié dans les collections, comptes et partages de prod.
 // Usage : npm run db:sync-prod          (ou --dry-run : génère data/sync-prod.sql sans rien envoyer)
+// Base de prod : PROD_DATABASE_URL de .env.local (comme scripts/backup-prod.ts).
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { existsSync, writeFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { insertStatements, readRows, requireLocalDatabase, scalarColumns } from "./sql-dump";
 
@@ -81,18 +80,13 @@ function run(command: string, args: string[], env: NodeJS.ProcessEnv = process.e
   if (result.status !== 0) throw new Error(`Échec : ${command} ${args.join(" ")}`);
 }
 
+// Le secret DATABASE_URL de Vercel ne se télécharge pas (`vercel env pull` le remplace par un repère) : l'adresse
+// de la prod est gardée en local, la même que pour les sauvegardes.
 function productionDatabaseUrl() {
-  const dir = mkdtempSync(join(tmpdir(), "cptcg-"));
-  const file = join(dir, "prod.env");
-  try {
-    run("vercel", ["env", "pull", `"${file}"`, "--environment", "production", "--yes"]);
-    const line = readFileSync(file, "utf8").split(/\r?\n/).find((entry) => entry.startsWith("DATABASE_URL="));
-    const url = line?.slice("DATABASE_URL=".length).replace(/^"|"$/g, "");
-    if (!url?.startsWith("postgres")) throw new Error("DATABASE_URL de production introuvable.");
-    return url;
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+  if (existsSync(".env.local")) process.loadEnvFile(".env.local");
+  const url = process.env.PROD_DATABASE_URL;
+  if (!url?.startsWith("postgres")) throw new Error("PROD_DATABASE_URL (postgresql://…) absente de .env.local.");
+  return url;
 }
 
 async function main() {
