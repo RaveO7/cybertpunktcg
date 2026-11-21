@@ -7,6 +7,7 @@ export function literal(value: unknown): string {
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number" || typeof value === "bigint") return String(value);
   if (Prisma.Decimal.isDecimal(value)) return value.toString();
+  if (value instanceof Uint8Array) return `'\\x${Buffer.from(value).toString("hex")}'`;
   return `'${String(value).replace(/'/g, "''")}'`;
 }
 
@@ -16,6 +17,22 @@ export function scalarColumns(model: string) {
   return found.fields
     .filter((field) => field.kind === "scalar" || field.kind === "enum")
     .map((field) => field.name);
+}
+
+/** Tous les modèles, chacun après ceux qu'il référence : ordre d'insertion sans violer de clé étrangère. */
+export function tablesInForeignKeyOrder(models: readonly Prisma.DMMF.Model[] = Prisma.dmmf.datamodel.models) {
+  const references = new Map(
+    models.map((model) => [model.name, model.fields.filter((field) => field.relationFromFields?.length).map((field) => field.type)]),
+  );
+  const ordered: string[] = [];
+  while (ordered.length < models.length) {
+    const next = models.find(
+      (model) => !ordered.includes(model.name) && references.get(model.name)!.every((name) => name === model.name || ordered.includes(name)),
+    );
+    if (!next) throw new Error("Cycle de clés étrangères entre modèles");
+    ordered.push(next.name);
+  }
+  return ordered;
 }
 
 export async function readRows(prisma: PrismaClient, model: string) {
