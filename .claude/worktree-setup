@@ -3,4 +3,4 @@ node scripts/prisma.mjs generate
 npx tsx scripts/generate-thumbnails.ts
 # Base et guide de prix copiés du dossier principal à des moments différents : réimporter le guide copié pour
 # que tests/db/cardmarket.test.ts compare deux copies concordantes (sans réseau, base locale du worktree).
-npx tsx scripts/import-prices.ts --offline --force
+npx tsx --env-file=.env scripts/import-prices.ts --offline --force
