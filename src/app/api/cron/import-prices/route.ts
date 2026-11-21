@@ -1,4 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { revalidateTag } from "next/cache";
@@ -11,6 +10,7 @@ import { importPrices } from "@/lib/price-import";
 import { prisma } from "@/lib/prisma";
 import { purgeExpiredRateLimits } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-response";
+import { hasBearerSecret } from "@/lib/bearer-secret";
 
 // Appelé chaque jour par Vercel Cron (vercel.json). Vercel envoie « Authorization: Bearer $CRON_SECRET ».
 export const dynamic = "force-dynamic";
@@ -18,16 +18,8 @@ export const maxDuration = 300;
 
 const JOB_NAME = "import-prices";
 
-function authorized(request: Request) {
-  const secret = process.env.CRON_SECRET?.trim();
-  if (!secret) return false;
-  const given = Buffer.from(request.headers.get("authorization") ?? "");
-  const expected = Buffer.from(`Bearer ${secret}`);
-  return given.length === expected.length && timingSafeEqual(given, expected);
-}
-
 export async function GET(request: Request) {
-  if (!authorized(request)) return apiError(request, "common.unauthorized", 401);
+  if (!hasBearerSecret(request, process.env.CRON_SECRET)) return apiError(request, "common.unauthorized", 401);
 
   // Ménage annexe : un échec ici ne doit pas empêcher l'import.
   await purgeExpiredRateLimits().catch((error) => reportError("purge rate-limit", error));
