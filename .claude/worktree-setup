@@ -1,3 +1,6 @@
 # Commandes lancées une fois dans chaque nouveau worktree, après l'installation des dépendances (hook ~/.claude/hooks/worktree-prep.mjs).
 node scripts/prisma.mjs generate
 npx tsx scripts/generate-thumbnails.ts
+# Base et guide de prix copiés du dossier principal à des moments différents : réimporter le guide copié pour
+# que tests/db/cardmarket.test.ts compare deux copies concordantes (sans réseau, base locale du worktree).
+npx tsx scripts/import-prices.ts --offline --force
