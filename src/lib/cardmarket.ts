@@ -68,6 +68,12 @@ export const EXPANSION_ALIASES: Record<string, string> = {
 };
 
 /**
+ * Extensions Cardmarket reliées d'office à une extension du catalogue, quand la ressemblance des noms ne suffit
+ * pas : « Set 1 Promos » compte une promo absente de netdeck (« Jackie & V »), sous le seuil de 80 % de noms connus.
+ */
+export const EXPANSION_SET_BY_ID: Readonly<Record<string, string>> = { "id:6719": "PRM01" };
+
+/**
  * No beta→retail price copy: those are distinct market SKUs even when Cardmarket
  * only lists one expansion. Unreleased twins simply stay unpriced.
  * @deprecated Kept empty so policy tests can assert nothing is allow-listed.
@@ -292,7 +298,9 @@ export function matchCardmarketPrices(
   const classified = new Map<string, { label: string | null; tied: string[] }>();
   const twinGroupKeys = new Map<string, string[]>();
   for (const [key, group] of groups) {
-    const result = classifyGroup(group, setByName, namesBySet);
+    const forced = EXPANSION_SET_BY_ID[key];
+    const result =
+      forced && namesBySet.has(forced) ? { label: forced, tied: [] as string[] } : classifyGroup(group, setByName, namesBySet);
     classified.set(key, result);
     if (!result.label && result.tied.length === 2) {
       const beta = result.tied.find((code) => /beta/i.test(code));

@@ -396,3 +396,34 @@ describe("produits scellés (cardmarket-sealed)", () => {
     assert.ok(left.endsWith("-1001"));
   });
 });
+
+describe("matchCardmarketPrices : extension reliée d'office", () => {
+  it("« Set 1 Promos » (id 6719) est reliée à PRM01 malgré une promo absente du catalogue", () => {
+    const products = [
+      { idProduct: 1, name: "Rebecca - Having a Moment", expansionName: null, idExpansion: 6719, number: null },
+      { idProduct: 2, name: "Adam Smasher - Ender of Legends", expansionName: null, idExpansion: 6719, number: null },
+      { idProduct: 3, name: "Misty Olszewski - Mender of Broken Spirits", expansionName: null, idExpansion: 6719, number: null },
+      { idProduct: 4, name: "Jackie & V — Chooms to the End", expansionName: null, idExpansion: 6719, number: null },
+    ];
+    const printings = [
+      { id: "rebecca", setCode: "PRM01", collectorNumber: "005", name: "Rebecca - Having a Moment" },
+      { id: "adam", setCode: "PRM01", collectorNumber: "008", name: "Adam Smasher - Ender of Legends" },
+      { id: "misty", setCode: "PRM01", collectorNumber: "006", name: "Misty Olszewski - Mender of Broken Spirits" },
+      { id: "lucyna", setCode: "PRM01", collectorNumber: "004a", name: "Lucyna Kushinada - Fresh Beginnings" },
+    ];
+    const trends = new Map([
+      [1, 100],
+      [3, 35],
+      [4, 999],
+    ]);
+    const report = matchCardmarketPrices(products, trends, [], printings);
+    assert.deepEqual(
+      report.expansions.map((expansion) => expansion.setCode),
+      ["PRM01"],
+    );
+    const byId = new Map(report.assignments.map((row) => [row.printingId, row.amount]));
+    assert.equal(byId.get("rebecca"), "100.00");
+    assert.equal(byId.get("misty"), "35.00");
+    assert.equal(byId.size, 2, "Jackie & V n'a pas d'impression au catalogue");
+  });
+});
