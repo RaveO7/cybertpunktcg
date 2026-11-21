@@ -1,9 +1,18 @@
-// Fiches de l'Alpha Kit (Cardmarket « Alpha », 6722), absentes de netdeck : relevées sur exburst.dev
-// (https://exburst.dev/cyberpunk/series/ALPHA), images copiées dans public/card-images. Clé : id produit Cardmarket.
-// Les produits sans fiche (Lucyna, 2ᵉ versions de Jackie, V et Viktor) gardent leur id produit comme numéro.
+// Fiches des cartes Cardmarket absentes de netdeck, relevées sur exburst.dev (séries ALPHA et PROMO), images
+// copiées dans public/card-images. Clé : id produit Cardmarket. Les produits sans fiche (Lucyna de l'Alpha,
+// 2ᵉ versions de Jackie, V et Viktor) gardent leur id produit comme numéro et n'ont pas d'image.
 import type { PromoDetails } from "./cardmarket-promos";
 
-export const ALPHA_KIT_DETAILS: Readonly<Record<number, PromoDetails>> = {
+export const PROMO_DETAILS: Readonly<Record<number, PromoDetails>> = {
+  // Set 1 Promos : « Jackie & V — Chooms to the End » (exburst N000).
+  924040: {
+    collectorNumber: "N000",
+    imagePath: "/card-images/promo-n000.webp",
+    sourceImageUrl: "https://cdn.exburst.dev/cards/cyberpunk/N000_fx_1773105864012.webp",
+    rulesText: null,
+    card: { cardType: "Legend", color: "Yellow", cost: 5, power: 26, ram: 2 },
+  },
+  // Alpha (exburst A001–A031).
   904915: {
     collectorNumber: "A001",
     imagePath: "/card-images/alpha-a001.webp",

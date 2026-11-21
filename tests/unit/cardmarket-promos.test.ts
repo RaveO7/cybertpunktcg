@@ -1,9 +1,9 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { ALPHA_KIT_DETAILS } from "@/lib/alpha-kit-data";
 import { matchCardmarketPrices, productNameKey, type CardmarketProduct } from "@/lib/cardmarket";
 import { planPromoProducts, splitPromoName } from "@/lib/cardmarket-promos";
+import { PROMO_DETAILS } from "@/lib/promo-details";
 
 const product = (idProduct: number, name: string, idExpansion: number): CardmarketProduct => ({
   idProduct,
@@ -42,12 +42,13 @@ describe("planPromoProducts", () => {
   });
 });
 
-describe("ALPHA_KIT_DETAILS", () => {
-  it("donne A001–A031 une seule fois, chacun avec son image dans public/card-images", () => {
-    const details = Object.values(ALPHA_KIT_DETAILS);
-    expect(details.map((entry) => entry.collectorNumber).toSorted()).toEqual(
-      Array.from({ length: 31 }, (_, index) => `A${String(index + 1).padStart(3, "0")}`),
-    );
+describe("PROMO_DETAILS", () => {
+  it("donne A001–A031 et N000 une seule fois, chacun avec son image dans public/card-images", () => {
+    const details = Object.values(PROMO_DETAILS);
+    expect(details.map((entry) => entry.collectorNumber).toSorted()).toEqual([
+      ...Array.from({ length: 31 }, (_, index) => `A${String(index + 1).padStart(3, "0")}`),
+      "N000",
+    ]);
     for (const entry of details) expect(existsSync(path.join("public", entry.imagePath))).toBe(true);
   });
 });
