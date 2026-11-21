@@ -43,3 +43,34 @@ Idée : sur téléphone (2 colonnes), ne plus précharger les 3e et 4e cartes en
 4. Chakra Petch (3 graisses) et Geist Mono : sans effet mesurable sur le LCP simulé.
 
 À noter : le LCP « observé » dans le Chrome sans fenêtre de Lighthouse arrive souvent après l'événement `load` (présentation de la première image différée), ce qui élargit encore l'ensemble des requêtes comptées.
+
+## Chantier « JS du premier chargement » (#70, 2026-11-21)
+
+Change OpenSpec `reduire-js-premier-chargement` (archivé).
+
+**Ce qui a été fait :**
+- Fiche de carte, ajout rapide et éditeur de decks sont chargés à l'ouverture. JS de départ (build local, non compressé, sans les polyfills `noModule`) : collection 855 → 812 Ko, decks 828 → 765 Ko. Fiche publique inchangée (709 Ko), car elle ne contenait aucune de ces fenêtres.
+- Ces fenêtres sont préchargées au repos après `load`, pour rester disponibles hors ligne.
+- Le proxy pose un cookie indicateur `cptcg_signed` : collection et catalogue partent du `<head>` même sans session mémorisée sur l'appareil.
+
+**Ce qui a été écarté :**
+- Précompilation des traductions (next-intl `precompile`) : elle s'applique aussi au serveur, refuse `t.raw` et ne garde pas les 140 contenus structurés (accueil, légal, règles). Ne pas retenter sans migrer ces contenus.
+- `push-client` chargé à la demande : un fichier indisponible ferait échouer la déconnexion, pour un gain de 1,9 Ko.
+
+Les autres modules communs (`CollectionProvider`, `offline-queue`, `i18n/match`, `Header`) servent tous au premier affichage. Le reste du JS (~430 Ko) vient de React et de Next.
+
+**Mesure prod avant/après** (5 passages, à la suite, même machine sur secteur ; `2026-11-21-15-14-02` → `2026-11-21-15-45-22`). Mobile :
+
+| Page | Note | LCP simulé | TBT |
+|---|---|---|---|
+| Fiche carte | 84 → 92 | 3,25 → 3,19 s | 364 → 133 ms |
+| Collection | 84 → 78 | 3,34 → 5,29 s | 255 → 177 ms |
+| Decks | 94 → 95 | 2,81 → 2,74 s | 135 → 84 ms |
+
+Sur ordinateur, rien ne change : 100, 98 et 100.
+
+**Lecture des résultats :**
+- **Fiche** : son JS n'a pas changé, donc le +8 est du bruit (TBT). Les notes de la fiche relevées ce jour vont de 84 à 92. L'objectif de 92 est atteint sur cette mesure, mais pas de façon fiable.
+- **Collection, mesure bimodale** : 2 passages ont un LCP à 3,6 s (élément LCP : le logo de l'écran de démarrage), 3 passages à 5,3 s (élément LCP : l'image d'une carte, observée vers 880 ms). Ce second mode existait avant (5,28 s le matin même).
+- **Collection, effet du préchargement** : dans ce second mode, le préchargement au repos (~23 Ko de JS entre 620 et 700 ms, après `load` à 440 ms) se termine avant le LCP observé. Lantern le compte alors dans le LCP simulé. Le décaler de quelques secondes le sortirait du calcul.
+- **Effet réel** : la collection et les decks ont un affichage complet plus court (collection 0,92 → 0,76 s, decks 0,80 → 0,73 s). Le poids total de la collection augmente de 39 Ko, car les fenêtres préchargées sont comptées, mais après l'affichage.
