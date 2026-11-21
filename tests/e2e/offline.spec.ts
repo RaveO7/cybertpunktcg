@@ -117,6 +117,40 @@ test("app rouverte sans réseau : la fiche d'une carte s'ouvre au clic", async (
   }
 });
 
+test("investissement : la fiche d'une carte s'ouvre, en ligne puis dans l'app rouverte sans réseau", async ({ page, context, account }) => {
+  test.skip(!prodURL, "E2E_PROD_URL absent : serveur de production non lancé.");
+  const printing = await prisma.printing.findFirstOrThrow({ where: { language: "en", card: { name: { startsWith: "Adam Smasher" } } } });
+  const condition = await prisma.condition.findFirstOrThrow({ where: { code: "NM" } });
+  await prisma.collectionItem.create({
+    data: { userId: account.id, printingId: printing.id, conditionId: condition.id, quantity: 1, purchasePrice: 1, purchaseCurrency: "EUR" },
+  });
+  const openCard = page.locator('button[title^="Ouvrir la fiche de"]:visible').first();
+  const heading = page.getByRole("dialog").getByRole("heading", { name: /Adam Smasher/ });
+
+  await page.goto("/fr/investissement");
+  await settle(page);
+  await page.waitForFunction(() => navigator.serviceWorker?.controller != null, null, { timeout: 30_000 }).catch(async () => {
+    await page.reload();
+    await page.waitForFunction(() => navigator.serviceWorker?.controller != null, null, { timeout: 30_000 });
+  });
+  await page.reload();
+  // Fiche chargée à la demande : en ligne, puis préchargée au repos pour le hors ligne.
+  await openCard.click();
+  await expect(heading).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Fermer", exact: true }).click();
+  await settle(page);
+
+  await context.setOffline(true);
+  try {
+    await page.reload();
+    await settle(page);
+    await openCard.click();
+    await expect(heading).toBeVisible();
+  } finally {
+    await context.setOffline(false);
+  }
+});
+
 async function addFromModal(page: Page, name: RegExp, isMobile: boolean) {
   await page.getByRole("button", { name }).first().click();
   const dialog = page.getByRole("dialog");
