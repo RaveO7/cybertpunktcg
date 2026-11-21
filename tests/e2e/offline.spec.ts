@@ -87,13 +87,32 @@ test("réseau coupé en cours d'usage : la fiche d'une carte jamais ouverte s'af
   void account;
   await page.goto("/fr/cards");
   await expect(page.getByRole("button", { name: /^Adam Smasher/ }).first()).toBeVisible();
-  // Fin des requêtes : le code des fenêtres, chargé à la demande, a été préchargé au repos après load.
+  // Le code des fenêtres, chargé à la demande, est préchargé au repos 5 s après load (use-preload-after-load).
+  await page.waitForTimeout(6000);
   await settle(page);
   await context.setOffline(true);
   try {
     await page.getByRole("button", { name: /^Adam Smasher/ }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByRole("dialog").getByRole("heading", { name: /Adam Smasher/ })).toBeVisible();
+  } finally {
+    await context.setOffline(false);
+  }
+});
+
+test("app rouverte sans réseau : la fiche d'une carte s'ouvre au clic", async ({ page, context, account }) => {
+  test.skip(!prodURL, "E2E_PROD_URL absent : serveur de production non lancé.");
+  void account;
+  // La navigation précharge l'écran investissement en ligne, mais pas une fois l'app rouverte hors ligne :
+  // la fiche ne doit dépendre d'aucun fichier propre à l'ordre de chargement des pages.
+  await cardsCachedOffline(page);
+  await context.setOffline(true);
+  try {
+    await page.reload();
+    await settle(page);
+    await page.getByRole("button", { name: /^Adam Smasher/ }).first().click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: /Adam Smasher/ })).toBeVisible();
+    expect(new URL(page.url()).searchParams.get("printing")).toBeTruthy();
   } finally {
     await context.setOffline(false);
   }

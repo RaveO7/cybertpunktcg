@@ -54,12 +54,7 @@ import { filterDefaultsFrom } from "@/lib/preferences";
 // préchargées au repos pour rester disponibles hors ligne (usePreloadAfterLoad).
 const loadCardModal = () => import("@/components/CardModal").then((module) => module.CardModal);
 const loadQuickAddSheet = () => import("@/components/QuickAddSheet").then((module) => module.QuickAddSheet);
-// Panneau des prix : chargé à part par la fiche elle-même, préchargé aussi pour qu'elle s'ouvre hors ligne.
-const loadWindows = () =>
-  Promise.all([
-    import("@/components/CardModal").then((module) => module.loadPricePanel()),
-    loadQuickAddSheet(),
-  ]);
+const loadWindows = () => Promise.all([loadCardModal(), loadQuickAddSheet()]);
 const CardModal = dynamic(loadCardModal, { loading: () => <OverlaySkeleton /> });
 const QuickAddSheet = dynamic(loadQuickAddSheet, { loading: () => <OverlaySkeleton /> });
 
