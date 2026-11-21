@@ -7,11 +7,21 @@
 import type { PrismaClient } from "@prisma/client";
 import { EXPANSION_SET_BY_ID, expansionKey, productNameKey, type CardmarketProduct } from "./cardmarket";
 import { sealedExternalId, slugifySealed } from "./cardmarket-sealed";
+import { ALPHA_KIT_DETAILS } from "./alpha-kit-data";
 
 /** Extensions Cardmarket sans équivalent netdeck : l'extension du catalogue est créée par l'import. */
 export const CARDMARKET_ONLY_SETS: Readonly<Record<string, { code: string; name: string; sortOrder: number }>> = {
-  // « Alpha Kit Set » (A001–A031) : kit d'accès anticipé, cartes reprises dans les starter decks.
-  "id:6722": { code: "alphakit", name: "Alpha Kit", sortOrder: 100 },
+  // « Alpha » (Alpha Kit, A001–A031) : kit d'accès anticipé, cartes reprises dans les starter decks.
+  "id:6722": { code: "alphakit", name: "Alpha", sortOrder: 100 },
+};
+
+/** Fiche d'un produit relevée ailleurs que sur Cardmarket (numéro, visuel, texte et caractéristiques imprimés). */
+export type PromoDetails = {
+  collectorNumber: string;
+  imagePath: string;
+  sourceImageUrl: string;
+  rulesText: string | null;
+  card: { cardType: string; color: string | null; cost: number | null; power: number | null; ram: number | null };
 };
 
 export type PromoPlan = {
@@ -78,11 +88,20 @@ export async function upsertPromoProducts(prisma: PrismaClient, products: Cardma
     const setId = setIdByCode.get(setCode);
     if (!setId) continue;
     const externalId = sealedExternalId(product.idProduct);
-    const cardId = cardIdByName.get(productNameKey(product.name)) ?? (await upsertPromoCard(prisma, product)).id;
+    const details = ALPHA_KIT_DETAILS[product.idProduct];
+    const cardId =
+      cardIdByName.get(productNameKey(product.name)) ?? (await upsertPromoCard(prisma, product, details)).id;
+    const printed = {
+      collectorNumber: details?.collectorNumber ?? String(product.idProduct),
+      imagePath: details?.imagePath ?? null,
+      sourceImageUrl: details?.sourceImageUrl ?? null,
+      printedRulesText: details?.rulesText ?? null,
+      rarity: details ? "Promo" : null,
+    };
     await prisma.printing.upsert({
       where: { externalId },
-      update: { cardId, setId, isActive: true },
-      create: { externalId, cardId, setId, collectorNumber: String(product.idProduct), language: "en" },
+      update: { ...printed, cardId, setId, isActive: true },
+      create: { ...printed, externalId, cardId, setId, language: "en" },
     });
   }
   const coveredIds = plan.covered.map((id) => sealedExternalId(id));
@@ -98,8 +117,8 @@ export async function upsertPromoProducts(prisma: PrismaClient, products: Cardma
   return { added: plan.missing.length, retired: retired.count };
 }
 
-/** Carte inconnue du catalogue : créée d'après le nom du produit (sans texte ni type, absents de Cardmarket). */
-function upsertPromoCard(prisma: PrismaClient, product: CardmarketProduct) {
+/** Carte inconnue du catalogue : créée d'après le nom du produit et, s'il y en a une, sa fiche relevée ailleurs. */
+function upsertPromoCard(prisma: PrismaClient, product: CardmarketProduct, details: PromoDetails | undefined) {
   const externalId = sealedExternalId(product.idProduct);
   const { name, subname } = splitPromoName(product.name);
   const fields = {
@@ -108,6 +127,8 @@ function upsertPromoCard(prisma: PrismaClient, product: CardmarketProduct) {
     displayName: subname ? `${name}: ${subname}` : name,
     canonicalName: subname ? `${name} — ${subname}` : name,
     canonicalBaseName: name,
+    ...details?.card,
+    rulesText: details?.rulesText ?? null,
     isActive: true,
   };
   return prisma.card.upsert({
