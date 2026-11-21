@@ -91,17 +91,27 @@ export async function upsertPromoProducts(prisma: PrismaClient, products: Cardma
     const details = PROMO_DETAILS[product.idProduct];
     const cardId =
       cardIdByName.get(productNameKey(product.name)) ?? (await upsertPromoCard(prisma, product, details)).id;
-    const printed = {
-      collectorNumber: details?.collectorNumber ?? String(product.idProduct),
-      imagePath: details?.imagePath ?? null,
-      sourceImageUrl: details?.sourceImageUrl ?? null,
-      printedRulesText: details?.rulesText ?? null,
-      rarity: details ? "Promo" : null,
-    };
+    // Sans fiche : numéro et visuel laissés tels quels (visuel Cardmarket éventuel, scripts/import-cardmarket-images.ts).
+    const printed = details
+      ? {
+          collectorNumber: details.collectorNumber,
+          imagePath: details.imagePath,
+          sourceImageUrl: details.sourceImageUrl,
+          printedRulesText: details.rulesText,
+          rarity: "Promo",
+        }
+      : {};
     await prisma.printing.upsert({
       where: { externalId },
       update: { ...printed, cardId, setId, isActive: true },
-      create: { ...printed, externalId, cardId, setId, language: "en" },
+      create: {
+        collectorNumber: String(product.idProduct),
+        ...printed,
+        externalId,
+        cardId,
+        setId,
+        language: "en",
+      },
     });
   }
   const coveredIds = plan.covered.map((id) => sealedExternalId(id));

@@ -6,6 +6,7 @@ import { requestLocale } from "@/lib/api-response";
 import { absoluteAppUrl } from "@/lib/app-url";
 import { fail } from "@/lib/app-error";
 import { prisma } from "@/lib/prisma";
+import { hasOwnImage } from "@/lib/card-image";
 import { createShareToken, isShareTokenFormat } from "@/lib/share-token";
 import { analyzeDeck, deckShortfall, deckToText, type DeckAnalysis, type DeckEntry, type DeckLine } from "@/lib/deck-rules";
 import { TYPE_ORDER } from "@/lib/reference-data";
@@ -137,7 +138,7 @@ export function legendImages(legends: DeckLine[], printings: PrintingDTO[]) {
   const wanted = new Set(legends.map((line) => line.card.id));
   const best = new Map<string, PrintingDTO>();
   for (const printing of printings) {
-    if (!wanted.has(printing.cardId) || !printing.imagePath) continue;
+    if (!wanted.has(printing.cardId) || !hasOwnImage(printing.imagePath)) continue;
     const current = best.get(printing.cardId);
     if (!current || (current.language !== "en" && printing.language === "en")) best.set(printing.cardId, printing);
   }
