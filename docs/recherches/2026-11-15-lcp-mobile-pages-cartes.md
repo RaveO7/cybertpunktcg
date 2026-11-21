@@ -80,3 +80,25 @@ Sur ordinateur, rien ne change : 100, 98 et 100.
 Hypothèse testée : sortir le préchargement des fenêtres du LCP simulé de la collection en le lançant 5 s après `load`. Mesure prod mobile (5 passages, `2026-11-21-17-30-03` → `2026-11-21-17-50-54`) : collection 76 → 73, toujours bimodale (3 passages à LCP 5,2–5,6 s, 2 à 3,6 s). L'hypothèse est fausse : sur les passages lents, l'image de carte (élément LCP) a un « délai de rendu » simulé de 3,1 à 3,6 s, le temps que le JS de la page et les réponses catalogue et collection arrivent. Le décalage est retiré (il retardait la mise en cache hors ligne sans rien apporter).
 
 Piste réelle pour la collection : que la première rangée de cartes ne dépende plus du JS client et des données de l'API (rendu serveur des premières vignettes, comme les tuiles du catalogue public de #53), ou que l'écran de démarrage reste l'élément LCP.
+
+### Aperçu serveur de la collection : abandonné (2026-11-21)
+
+La piste ci-dessus a été spécifiée (change OpenSpec `collection-premieres-cartes-serveur`, non archivé), puis abandonnée après la mesure « avant » : collection mobile **89** (médiane de 5, `2026-11-21-21-16-47`), contre 66 au bilan complet du même jour. Quatre passages sur cinq affichent la grille dès le premier affichage (LCP simulé 3,5 s) ; le cinquième, où la grille arrive après, donne 77 (LCP 5,3 s). Le TBT du bilan complet était 5 fois plus haut (557 contre 119 ms) : la machine était plus chargée. Gain restant estimé à ~3 points pour une route parallèle, un nouveau format de cookie et 4 e2e : pas fait.
+
+### Le premier affichage attend-il le JS ? Non, hors Lighthouse (2026-11-22)
+
+Constat de l'audit : sur toutes les pages, le FCP *observé* par Lighthouse arrive après `load`. Lantern compte alors tout le JS dans le FCP et le LCP simulés.
+
+Mesures (`/fr/cgu`, prod, Playwright, mobile 412 px) :
+
+| Conditions | FCP | Fin du JS (`load`) |
+|---|---:|---:|
+| sans bridage, JS actif / JS coupé | 224–272 ms / 216–248 ms | 281–321 ms |
+| CPU ×4 | 323 ms | — |
+| CPU ×4 + 4G lente (150 ms, 1,6 Mbit/s) | **1 951 ms** (juste après le CSS, 1,8 s) | 3 557 ms |
+
+Dans un vrai Chrome, la page s'affiche dès que le HTML et le CSS sont là, avant le JS. C'est la vitesse du chargement sans bridage qui fait finir le JS avant la première image dans le passage observé de Lighthouse, et Lantern en déduit une dépendance qui n'existe pas pour un visiteur.
+
+Lighthouse en bridage réel (`--throttling-method=devtools`) montre une tâche de 3,6 à 3,9 s sans événement enfant, juste après l'arrivée du CSS et des polices (FCP 6,4 s). Elle est absente d'une trace Playwright dans les mêmes conditions (CPU ×4 + 4G lente) : c'est un artefact de cet environnement, pas un coût réel.
+
+Leviers restants pour la note simulée : réduire le JS (déjà au plus bas côté app, le reste vient de React et de Next), ou réduire l'aller-retour du CSS (`inlineCss`, déjà écarté). Rien à corriger dans le rendu lui-même.
