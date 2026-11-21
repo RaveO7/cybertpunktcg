@@ -45,3 +45,7 @@ et `DATABASE_URL_POOLED` (pooler transaction 6543) remplacées sur Vercel en Pro
 - Turso : https://turso.tech/pricing · https://www.prisma.io/docs/orm/v6/overview/databases/turso
 - Autres : https://docs.cockroachlabs.com/docs/cockroachcloud/costs · https://aiven.io/docs/products/postgresql/concepts/pg-free-tier · https://render.com/docs/free
 - Prisma Postgres : https://www.prisma.io/docs/postgres/faq
+
+## Suite : région des fonctions (2026-11-21)
+
+Après la migration, `/api/collection` répondait en ~390 ms au lieu de ~100 ms (mesure navigateur, même compte, déploiements avant/après le changement de `DATABASE_URL`) : les fonctions tournaient à Francfort (`fra1`) et la base est en Irlande (eu-west-1), chaque requête SQL payait l'aller-retour entre les deux. LCP desktop de la collection 0,60 → 0,93 s, note Lighthouse 98 → 85. Fonctions déplacées à Dublin (`dub1` dans `vercel.json`), à côté de la base.
