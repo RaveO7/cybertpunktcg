@@ -7,7 +7,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { EXPANSION_SET_BY_ID, expansionKey, productNameKey, type CardmarketProduct } from "./cardmarket";
 import { sealedExternalId, slugifySealed } from "./cardmarket-sealed";
-import { ALPHA_KIT_DETAILS } from "./alpha-kit-data";
+import { PROMO_DETAILS } from "./promo-details";
 
 /** Extensions Cardmarket sans équivalent netdeck : l'extension du catalogue est créée par l'import. */
 export const CARDMARKET_ONLY_SETS: Readonly<Record<string, { code: string; name: string; sortOrder: number }>> = {
@@ -88,7 +88,7 @@ export async function upsertPromoProducts(prisma: PrismaClient, products: Cardma
     const setId = setIdByCode.get(setCode);
     if (!setId) continue;
     const externalId = sealedExternalId(product.idProduct);
-    const details = ALPHA_KIT_DETAILS[product.idProduct];
+    const details = PROMO_DETAILS[product.idProduct];
     const cardId =
       cardIdByName.get(productNameKey(product.name)) ?? (await upsertPromoCard(prisma, product, details)).id;
     const printed = {
