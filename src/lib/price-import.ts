@@ -24,6 +24,7 @@ import {
   slugifySealed,
   type SealedProduct,
 } from "./cardmarket-sealed";
+import { upsertPromoProducts } from "./cardmarket-promos";
 import { shiftUtcDay, utcDay, utcDayKey } from "./price-history";
 import { reportError } from "./monitoring";
 import type { PushReport } from "./push";
@@ -86,6 +87,7 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
 
   const sealedUpsert =
     sealedProducts.length > 0 ? await upsertSealedProducts(ctx, sealedProducts) : { products: 0 };
+  const promoUpsert = await upsertPromoProducts(prisma, products);
   const sealedAssignments = await sealedPriceAssignments(ctx, trends);
 
   const [sets, printings] = await Promise.all([
@@ -323,6 +325,8 @@ export async function importPrices(prisma: PrismaClient, options: ImportPricesOp
       matchedProducts: report.matchedProducts,
       sealedProducts: sealedUpsert.products,
       sealedPriced: sealedAssignments.length,
+      promosAdded: promoUpsert.added,
+      promosRetired: promoUpsert.retired,
       printingsPriced: assignments.length,
       guideDetailsWritten: detailRows.length,
       ambiguous: report.ambiguousProducts,

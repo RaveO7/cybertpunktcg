@@ -114,7 +114,10 @@ async function deactivateMissing(model: "card" | "printing", seen: Set<string>) 
     model === "card"
       ? await prisma.card.findMany({ select: { id: true, externalId: true } })
       : await prisma.printing.findMany({ select: { id: true, externalId: true } });
-  const stale = rows.filter((row) => !seen.has(row.externalId)).map((row) => row.id);
+  // Produits scellés et promos `cardmarket:*` : gérés par l'import des prix, absents de netdeck.
+  const stale = rows
+    .filter((row) => !seen.has(row.externalId) && !row.externalId.startsWith("cardmarket:"))
+    .map((row) => row.id);
   for (let index = 0; index < stale.length; index += 400) {
     const chunk = stale.slice(index, index + 400);
     if (chunk.length === 0) continue;
