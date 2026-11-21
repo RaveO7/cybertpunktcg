@@ -2,7 +2,7 @@
 
 ## 1. Mesure de référence
 
-- [ ] 1.1 Mesure prod « avant » : `npx tsx scripts/perf-audit.ts --only fiche-carte,collection,decks --runs 5 --label "avant chantier JS"`, lancée machine au calme juste avant la livraison. Vérification : un nouveau fichier dans `docs/perf/history/`.
+- [x] 1.1 Mesure prod « avant » : `npx tsx scripts/perf-audit.ts --only fiche-carte,collection,decks --runs 5 --label "avant chantier JS"`, lancée machine au calme juste avant la livraison. Vérification : un nouveau fichier dans `docs/perf/history/`.
 - [x] 1.2 Script d'analyse du JS chargé par page, tiré du build avec source maps (dans le scratchpad, hors du dépôt), relancé à chaque étape. Vérification : il affiche les tailles de la fiche, de la collection et des decks.
 
 ## 2. Traductions précompilées (abandonné)
@@ -27,8 +27,8 @@
 
 ## 6. Vérification d'ensemble
 
-- [ ] 6.1 `npm run verify` vert (hook) ; captures desktop et mobile de `fr/cards`, `fr/decks` et de la fiche carte, relues.
-- [ ] 6.2 Mesure prod « après » avec les mêmes options que la 1.1, à la suite ; résultats et conclusion ajoutés à `docs/recherches/2026-11-15-lcp-mobile-pages-cartes.md`. Vérification : tableau avant/après dans la recherche.
+- [x] 6.1 `npm run verify` vert (hook) ; captures desktop et mobile de `fr/cards`, `fr/decks` et de la fiche carte, relues.
+- [x] 6.2 Mesure prod « après » avec les mêmes options que la 1.1, à la suite ; résultats et conclusion ajoutés à `docs/recherches/2026-11-15-lcp-mobile-pages-cartes.md`. Vérification : tableau avant/après dans la recherche.
 
 ## Workflow follow-up
 
