@@ -24,10 +24,10 @@ async function main() {
     });
     console.log(`${rows.length} erreur(s) depuis le ${since.toISOString().slice(0, 16)}${values.match ? ` contenant « ${values.match} »` : ""}\n`);
 
-    const groups = Map.groupBy(rows, (row) => row.message);
+    const groups = groupBy(rows, (row) => row.message);
     for (const [message, items] of [...groups].sort((a, b) => b[1].length - a[1].length)) {
       const count = (labels: string[]) =>
-        [...Map.groupBy(labels, (label) => label)].map(([value, list]) => `${value} ×${list.length}`).join(", ");
+        [...groupBy(labels, (label) => label)].map(([value, list]) => `${value} ×${list.length}`).join(", ");
       console.log(`## ${items.length} × ${message}`);
       console.log(`   pages : ${count(items.map((item) => item.path))}`);
       console.log(`   navigateurs : ${count(items.map((item) => browserName(item.userAgent)))}`);
@@ -41,6 +41,13 @@ async function main() {
   } finally {
     await prisma.$disconnect();
   }
+}
+
+/** Map.groupBy n'existe qu'à partir de Node 21 : le projet tourne sous Node 20. */
+function groupBy<T>(items: T[], key: (item: T) => string) {
+  const groups = new Map<string, T[]>();
+  for (const item of items) groups.set(key(item), [...(groups.get(key(item)) ?? []), item]);
+  return groups;
 }
 
 /** Navigateur et appareil, assez pour regrouper sans afficher tout l'en-tête. */
