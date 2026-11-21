@@ -3,6 +3,7 @@ import path from "node:path";
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { CATALOG_CACHE_TAG } from "@/lib/catalog";
+import { purgeOldClientErrors } from "@/lib/client-errors";
 import { purgeGeocodeCache } from "@/lib/geo/server";
 import { checkPriceGuideFreshness, recordJobFailure, recordJobSuccess } from "@/lib/job-status";
 import { reportError } from "@/lib/monitoring";
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
   // Ménage annexe : un échec ici ne doit pas empêcher l'import.
   await purgeExpiredRateLimits().catch((error) => reportError("purge rate-limit", error));
   await purgeGeocodeCache().catch((error) => reportError("purge geocode-cache", error));
+  await purgeOldClientErrors().catch((error) => reportError("purge client-errors", error));
 
   try {
     // Seul /tmp est inscriptible sur Vercel.

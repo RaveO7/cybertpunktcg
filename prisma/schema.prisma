@@ -90,6 +90,21 @@ model GeocodeCache {
   @@index([createdAt])
 }
 
+/// Erreur JavaScript d'un visiteur (POST /api/client-errors), gardée pour l'analyse : les logs Vercel ne
+/// conservent qu'une heure. Lue par scripts/client-errors.ts ; purgée après 30 jours par le cron quotidien.
+model ClientError {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  message       String
+  stack         String?
+  path          String
+  /// Page contrôlée par le service worker (qui peut la servir depuis son cache).
+  serviceWorker Boolean
+  userAgent     String?
+
+  @@index([createdAt])
+}
+
 /// Boutique de jeu : vitrine publique (/boutiques/[slug]) gérée par un compte. Le lieu est
 /// stocké à plat (mêmes colonnes que Tournament) pour filtrer par ville et par rayon.
 model Shop {
