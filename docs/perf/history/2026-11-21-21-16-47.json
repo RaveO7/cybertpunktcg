@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "date": "2026-11-21T21:20:15.660Z",
+  "label": "avant aperçu serveur collection",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "d16791f",
+  "runs": 5,
+  "pages": {
+    "collection": {
+      "path": "/fr/cards",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 70,
+            "fcp": 312,
+            "lcp": 312,
+            "domContentLoaded": 301.10000002384186,
+            "load": 522.8000000119209,
+            "visualComplete": 366.4000000357628,
+            "fullyLoaded": 863.1999999880791,
+            "cls": 0,
+            "requests": 80,
+            "totalKB": 1132,
+            "jsKB": 412,
+            "imageKB": 262
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [
+              "Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+            ],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 89,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 1084,
+            "lcp": 3632,
+            "tbt": 154,
+            "cls": 0,
+            "speedIndex": 2623,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 63,
+            "fcp": 264,
+            "lcp": 500,
+            "domContentLoaded": 244.89999997615814,
+            "load": 405.69999998807907,
+            "visualComplete": 500,
+            "fullyLoaded": 768.3999999761581,
+            "cls": 0,
+            "requests": 83,
+            "totalKB": 1136,
+            "jsKB": 412,
+            "imageKB": 250
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cards",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 98,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 355,
+            "lcp": 1079,
+            "tbt": 0,
+            "cls": 0,
+            "speedIndex": 747,
+            "runs": 5
+          }
+        }
+      }
+    }
+  }
+}
