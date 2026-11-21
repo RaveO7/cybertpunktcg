@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useCollection } from "@/components/CollectionProvider";
 import { useCachedJson } from "@/components/data-cache";
 import { api } from "@/lib/client/api";
+import { hasOwnImage } from "@/lib/card-image";
 import { useTranslatedRequest } from "@/lib/client/use-api-error-message";
 import { compareDeckLines, extensionsByCard, isDeckCard, type DeckEntry } from "@/lib/deck-rules";
 import type { CardDTO, CatalogDTO, DeckDTO, PrintingDTO } from "@/lib/types";
@@ -63,7 +64,8 @@ export function useDeckCatalog(catalog: CatalogDTO | null) {
       // Visuel : un tirage anglais avec image de préférence.
       const current = preview.get(printing.cardId);
       const better =
-        printing.imagePath && (!current?.imagePath || (current.language !== "en" && printing.language === "en"));
+        hasOwnImage(printing.imagePath) &&
+        (!hasOwnImage(current?.imagePath) || (current.language !== "en" && printing.language === "en"));
       if (!current || better) preview.set(printing.cardId, printing);
     }
     const pool = catalog.cards.filter(isDeckCard).sort((a, b) => compareDeckLines({ card: a, quantity: 1 }, { card: b, quantity: 1 }));

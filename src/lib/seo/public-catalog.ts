@@ -5,7 +5,7 @@
  * jour, sinon texte anglais.
  */
 
-import { thumbnailPath } from "@/lib/card-image";
+import { hasOwnImage, thumbnailPath } from "@/lib/card-image";
 import { FRENCH_SOURCE_SET_CODE, isSealedSetCode, MAIN_SET_CODE } from "@/lib/reference-data";
 import type { CardDTO, CatalogDTO, PrintingDTO } from "@/lib/types";
 import { CARD_TEXT_LOCALE, translatedRulesText, type CardTranslations } from "@/i18n/cards";
@@ -101,6 +101,8 @@ function toPublicCard(card: CardDTO, printings: PrintingDTO[], locale: Locale, t
     locale === CARD_TEXT_LOCALE ? undefined : sorted.find((printing) => printing.language === locale && printing.localizedName);
   const siteTranslation = localized ? null : translatedRulesText(translations, card.slug, card.rulesText);
   const main = localized ?? english;
+  // Visuel : celui de l'impression principale, sinon un vrai visuel d'une autre impression avant le dos de carte.
+  const pictured = hasOwnImage(main?.imagePath) ? main : (sorted.find((printing) => hasOwnImage(printing.imagePath)) ?? main);
   const prices = sorted.map((printing) => amount(printing.marketPrice)).filter((value): value is number => value !== null);
   const mainPrice = amount(english?.marketPrice ?? null);
   return {
@@ -118,8 +120,8 @@ function toPublicCard(card: CardDTO, printings: PrintingDTO[], locale: Locale, t
     flavorText: localized ? null : card.flavorText,
     keywords: card.keywords,
     tags: card.tags,
-    image: main?.imagePath ?? null,
-    thumb: thumbnailPath(main?.imagePath) ?? main?.imagePath ?? null,
+    image: pictured?.imagePath ?? null,
+    thumb: thumbnailPath(pictured?.imagePath) ?? pictured?.imagePath ?? null,
     artist: main?.artist ?? english?.artist ?? null,
     marketPrice: mainPrice !== null ? mainPrice.toFixed(2) : prices.length ? Math.min(...prices).toFixed(2) : null,
     printings: sorted.map((printing) => ({
