@@ -87,8 +87,7 @@ test("réseau coupé en cours d'usage : la fiche d'une carte jamais ouverte s'af
   void account;
   await page.goto("/fr/cards");
   await expect(page.getByRole("button", { name: /^Adam Smasher/ }).first()).toBeVisible();
-  // Le code des fenêtres, chargé à la demande, est préchargé au repos 5 s après load (use-preload-after-load).
-  await page.waitForTimeout(6000);
+  // Fin des requêtes : le code des fenêtres, chargé à la demande, a été préchargé au repos après load.
   await settle(page);
   await context.setOffline(true);
   try {
