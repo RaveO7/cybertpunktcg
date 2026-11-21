@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import type { clientErrorSchema } from "@/lib/api-schemas";
 import { api } from "@/lib/client/api";
-import { hydrationDiff, isHydrationError } from "@/lib/client/hydration-context";
+import { hydrationReport, isHydrationError, type PageElements } from "@/lib/client/hydration-context";
 
 // Au plus quelques envois par chargement de page : une erreur répétée en boucle ne doit pas inonder les logs.
 const MAX_REPORTS = 5;
@@ -32,11 +32,15 @@ export function toReport(
 export function installErrorReporting() {
   const sent = new Set<string>();
   // Éléments du HTML serveur avant l'hydratation (ce script passe avant elle) : en cas d'erreur
-  // d'hydratation, ceux que React a retirés et ceux qu'il a créés disent où est l'écart.
-  const serverElements = Array.from(document.body.getElementsByTagName("*"));
+  // d'hydratation, la comparaison avec ceux d'après dit où est l'écart.
+  const pageElements = (): PageElements => ({
+    head: Array.from(document.head.getElementsByTagName("*")),
+    body: Array.from(document.body.getElementsByTagName("*")),
+  });
+  const serverElements = pageElements();
   const hydrationContext = (error: unknown) => {
     if (!(error instanceof Error) || !isHydrationError(error.message)) return undefined;
-    return hydrationDiff(serverElements, Array.from(document.body.getElementsByTagName("*")));
+    return hydrationReport(serverElements, pageElements());
   };
   const send = (error: unknown) => {
     const report = toReport(
