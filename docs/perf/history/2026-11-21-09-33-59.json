@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "date": "2026-11-21T09:38:10.258Z",
+  "label": "après #53 (+#58) catalogue",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "a3cf196",
+  "runs": 5,
+  "pages": {
+    "catalogue": {
+      "path": "/fr/cartes",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 70.59999996423721,
+            "fcp": 300,
+            "lcp": 300,
+            "domContentLoaded": 223.89999997615814,
+            "load": 420.19999998807907,
+            "visualComplete": 300,
+            "fullyLoaded": 773.8999999761581,
+            "cls": 0,
+            "requests": 56,
+            "totalKB": 693,
+            "jsKB": 259,
+            "imageKB": 69
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 87,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 1388,
+            "lcp": 3467,
+            "tbt": 209,
+            "cls": 0,
+            "speedIndex": 1830,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 66.70000004768372,
+            "fcp": 264,
+            "lcp": 264,
+            "domContentLoaded": 186.9000000357628,
+            "load": 306.80000001192093,
+            "visualComplete": 308.4000000357628,
+            "fullyLoaded": 756.1000000238419,
+            "cls": 0,
+            "requests": 65,
+            "totalKB": 614,
+            "jsKB": 259,
+            "imageKB": 51
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 353,
+            "lcp": 713,
+            "tbt": 22,
+            "cls": 0,
+            "speedIndex": 770,
+            "runs": 5
+          }
+        }
+      }
+    }
+  }
+}
