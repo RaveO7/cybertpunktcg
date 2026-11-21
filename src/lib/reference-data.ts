@@ -46,6 +46,7 @@ export const BLOCKS: readonly { name: string; sets: readonly string[]; related?:
       "nightcitybrawls1",
       "nightcityshowdowns1",
       "PRM01",
+      "alphakit",
     ],
   },
 ];

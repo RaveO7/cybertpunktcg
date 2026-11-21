@@ -22,8 +22,19 @@ describe("planPromoProducts", () => {
     expect(plan.covered).toEqual([904772]);
   });
 
+  it("ajoute tous les produits d'une extension inconnue de netdeck (Alpha Kit)", () => {
+    const plan = planPromoProducts(
+      [product(904968, "Saburo Arasaka - Stubborn Patriarch", 6722), product(904922, "Saburo Arasaka - Stubborn Patriarch", 6722)],
+      new Map([...catalog, ["alphakit", new Set<string>()]]),
+    );
+    expect(plan.missing.map((entry) => [entry.product.idProduct, entry.setCode])).toEqual([
+      [904968, "alphakit"],
+      [904922, "alphakit"],
+    ]);
+  });
+
   it("ignore les autres extensions et une extension promo absente du catalogue", () => {
-    expect(planPromoProducts([product(1, "Inconnue", 6722)], catalog)).toEqual({ missing: [], covered: [] });
+    expect(planPromoProducts([product(1, "Inconnue", 6714)], catalog)).toEqual({ missing: [], covered: [] });
     expect(planPromoProducts([product(2, "Jackie & V", 6719)], new Map())).toEqual({ missing: [], covered: [] });
   });
 });
