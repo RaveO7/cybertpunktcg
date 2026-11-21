@@ -5,7 +5,8 @@
 // - collections : les cartes locales absentes de la prod sont ajoutées au compte de même e-mail.
 //   Rien n'est supprimé ni modifié dans les collections, comptes et partages de prod.
 // Usage : npm run db:sync-prod          (ou --dry-run : génère data/sync-prod.sql sans rien envoyer)
-// Base de prod : PROD_DATABASE_URL de .env.local (comme scripts/backup-prod.ts).
+// Base de prod : PROD_DATABASE_URL de .env.local (comme scripts/backup-prod.ts). Ensuite, le cache du site est vidé
+// par /api/revalidate (REVALIDATE_SECRET de .env.local, la même que sur Vercel).
 import { spawnSync } from "node:child_process";
 import { existsSync, writeFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
@@ -14,6 +15,7 @@ import { insertStatements, readRows, requireLocalDatabase, scalarColumns } from 
 requireLocalDatabase();
 const prisma = new PrismaClient();
 const OUTPUT = "data/sync-prod.sql";
+const PRODUCTION_URL = "https://cybertpunktcg.vercel.app";
 const dryRun = process.argv.includes("--dry-run");
 
 // Ajoutés ou mis à jour (clé : id), dans l'ordre des clés étrangères.
@@ -99,6 +101,19 @@ async function main() {
   run("node", ["scripts/prisma.mjs", "db", "push", "--skip-generate"], env);
   run("node", ["scripts/prisma.mjs", "db", "execute", "--file", OUTPUT], env);
   console.log("Production synchronisée.");
+  await revalidateProduction();
+}
+
+// Sans revalidation, le site garde jusqu'à une heure le catalogue et les fiches d'avant la synchro.
+async function revalidateProduction() {
+  const secret = process.env.REVALIDATE_SECRET?.trim();
+  if (!secret) throw new Error("REVALIDATE_SECRET absente de .env.local : cache du site non vidé (jusqu'à 1 h de retard).");
+  const response = await fetch(`${PRODUCTION_URL}/api/revalidate`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${secret}` },
+  });
+  if (!response.ok) throw new Error(`Cache du site non vidé : /api/revalidate a répondu ${response.status}.`);
+  console.log("Cache du site vidé : les changements sont visibles dès la prochaine visite.");
 }
 
 main()
