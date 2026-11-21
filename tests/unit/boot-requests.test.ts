@@ -3,7 +3,7 @@ import { BOOT_REQUESTS_SCRIPT, takeBootRequests } from "@/lib/boot-requests";
 import { SESSION_USER_KEY } from "@/lib/session-hint";
 
 /** Exécute le script du <head> à l'adresse donnée ; rend les URL demandées. */
-function runBootScript(url: string, { remembered = true } = {}) {
+function runBootScript(url: string, { remembered = true, cookie = "" } = {}) {
   const requested: string[] = [];
   const fetchStub = vi.fn((input: string) => {
     requested.push(input);
@@ -13,6 +13,7 @@ function runBootScript(url: string, { remembered = true } = {}) {
   vi.stubGlobal("fetch", fetchStub);
   vi.stubGlobal("location", { pathname, search });
   vi.stubGlobal("localStorage", { getItem: (key: string) => (remembered && key === SESSION_USER_KEY ? "{}" : null) });
+  vi.stubGlobal("document", { cookie });
   vi.stubGlobal("window", globalThis);
   new Function(BOOT_REQUESTS_SCRIPT)();
   return requested;
@@ -38,7 +39,14 @@ describe("BOOT_REQUESTS_SCRIPT", () => {
     expect(boot?.collection).toBeInstanceOf(Promise);
   });
 
-  it("ne lance rien sans session mémorisée", () => {
+  it("ne lance rien sans session mémorisée ni indicateur de session", () => {
     expect(runBootScript("/fr/cards", { remembered: false })).toEqual([]);
+    expect(runBootScript("/fr/cards", { remembered: false, cookie: "a=1; xcptcg_signed=1" })).toEqual([]);
+  });
+
+  it("lance les requêtes sans session mémorisée quand l'indicateur de session est présent", () => {
+    expect(runBootScript("/fr/cards", { remembered: false, cookie: "cptcg_signed=1" })).toEqual(["/api/collection", "/api/catalog"]);
+    expect(runBootScript("/fr/decks", { remembered: false, cookie: "a=b; cptcg_signed=1" })).toEqual(["/api/collection"]);
+    takeBootRequests();
   });
 });
