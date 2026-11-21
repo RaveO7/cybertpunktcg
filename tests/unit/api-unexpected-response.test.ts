@@ -48,4 +48,14 @@ describe("réponse au format inattendu", () => {
     assert.deepEqual(items, [existing]);
     assert.equal(report.mock.calls.length, 1, "le problème est signalé pour diagnostic");
   });
+
+  it("lecture du corps interrompue (navigation pendant un préchargement) : échec sans erreur signalée", async () => {
+    const interrupted = new Response("{}", { status: 200 });
+    vi.spyOn(interrupted, "json").mockRejectedValue(new TypeError("Load failed"));
+    vi.stubGlobal("fetch", vi.fn(async () => interrupted));
+    const report = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await assert.rejects(api("/api/tournaments", { schema: "tournamentListSchema" }), { name: "ApiError", kind: "invalid" });
+    assert.equal(report.mock.calls.length, 0, "pas une réponse au mauvais format");
+  });
 });

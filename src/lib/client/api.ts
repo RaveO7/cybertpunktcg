@@ -87,9 +87,20 @@ export async function api(url: string, options: BaseOptions & { schema?: SchemaN
     if (isAbort(error)) throw error;
     throw new ApiError("offline", 0, "");
   }
-  const payload: unknown = await response.json().catch(() => null);
+  let payload: unknown = null;
+  let bodyLost = false;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    if (isAbort(error)) throw error;
+    // JSON illisible (SyntaxError, corps vide compris) : payload null, vérifié plus bas comme les autres.
+    // Lecture du corps interrompue (Safari, quand la page change pendant un préchargement ; réseau coupé) :
+    // la requête a atteint le serveur (pas « offline », cf. plus bas), mais ce n'est pas un défaut de format.
+    bodyLost = !(error instanceof SyntaxError);
+  }
   if (response.status === 401) throw new ApiError("session", 401, serverMessage(payload));
   if (!response.ok) throw new ApiError("server", response.status, serverMessage(payload), serverDetails(payload));
+  if (bodyLost) throw new ApiError("invalid", response.status, "");
   if (!schema || !schemas) return payload;
   let loaded: ResponseSchemas;
   try {
