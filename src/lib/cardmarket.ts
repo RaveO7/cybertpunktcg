@@ -70,6 +70,7 @@ export const EXPANSION_ALIASES: Record<string, string> = {
 /**
  * Extensions Cardmarket reliées d'office à une extension du catalogue, quand la ressemblance des noms ne suffit
  * pas : « Set 1 Promos » compte une promo absente de netdeck (« Jackie & V »), sous le seuil de 80 % de noms connus.
+ * Les produits de ces extensions absents du catalogue y sont ajoutés par l'import des prix (`cardmarket-promos.ts`).
  */
 export const EXPANSION_SET_BY_ID: Readonly<Record<string, string>> = { "id:6719": "PRM01" };
 
@@ -154,8 +155,12 @@ export function findSharedProductClones(
   return clones;
 }
 
+/** Fautes d'orthographe des noms Cardmarket, ramenées au nom du catalogue (clé normalisée → clé normalisée). */
+const PRODUCT_NAME_FIXES: Readonly<Record<string, string>> = { "tetratonic rippler": "tetratronic rippler" };
+
 export function productNameKey(name: string) {
-  return normalizeText(name.replace(/\(\s*v\.?\s*\d+\s*\)/gi, " "));
+  const key = normalizeText(name.replace(/\(\s*v\.?\s*\d+\s*\)/gi, " "));
+  return PRODUCT_NAME_FIXES[key] ?? key;
 }
 
 export function parseProductFile(text: string) {
@@ -467,7 +472,7 @@ function classifyGroup(
   return { label: null, tied };
 }
 
-function expansionKey(product: CardmarketProduct) {
+export function expansionKey(product: Pick<CardmarketProduct, "idExpansion" | "expansionName" | "idProduct">) {
   if (product.idExpansion != null) return `id:${product.idExpansion}`;
   if (product.expansionName) return `name:${normalizeText(product.expansionName)}`;
   return `product:${product.idProduct}`;
