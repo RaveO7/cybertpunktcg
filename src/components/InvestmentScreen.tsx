@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -7,8 +8,8 @@ import { intlLocale } from "@/i18n/config";
 import { Link } from "@/i18n/navigation";
 import { useNumberFormat } from "@/i18n/number-format";
 import type { ChartPurchase } from "@/components/PriceChart";
-import { CardModal } from "@/components/CardModal";
 import { useCollection } from "@/components/CollectionProvider";
+import { usePreloadAfterLoad } from "@/components/use-preload-after-load";
 import { attachPurchases, chartRangeStart, filterChartRange, type ChartRange } from "@/components/investment/chart-range";
 import { InvestmentChart, chartRangeLabel } from "@/components/investment/InvestmentChart";
 import { InvestmentFilters } from "@/components/investment/InvestmentFilters";
@@ -27,7 +28,7 @@ import { investmentViewParams, parseInvestmentView } from "@/components/investme
 import { useInvestmentHistory, usePeriodReference } from "@/components/investment/use-investment-history";
 import { displayRows, useLineSelection } from "@/components/investment/use-line-selection";
 import { formatSignedPercent } from "@/components/TrendBadge";
-import { ScreenError, ScreenSkeleton, SkeletonBlock, SkeletonRows } from "@/components/site/ScreenSkeleton";
+import { OverlaySkeleton, ScreenError, ScreenSkeleton, SkeletonBlock, SkeletonRows } from "@/components/site/ScreenSkeleton";
 import {
   applyInvestmentPeriod,
   buildInvestmentLines,
@@ -46,11 +47,17 @@ import {
   SEALED_GROUP_FILTER,
 } from "@/lib/reference-data";
 
+// Fiche carte (prix et graphique compris) chargée à sa première ouverture, pas avec l'écran, puis préchargée
+// au repos pour s'ouvrir hors ligne (usePreloadAfterLoad). Module propre à l'écran : voir InvestmentCardModal.
+const loadCardModal = () => import("@/components/investment/InvestmentCardModal").then((module) => module.InvestmentCardModal);
+const CardModal = dynamic(loadCardModal, { loading: () => <OverlaySkeleton /> });
+
 export function InvestmentScreen() {
   const fmt = useNumberFormat();
   // Textes des tableaux triés dans l'ordre alphabétique de la langue de la page.
   const locale = intlLocale(useLocale());
   const { ready, error, retry, catalog, items, saveLine, patchLine, deleteLine, pendingIds } = useCollection();
+  usePreloadAfterLoad(loadCardModal);
   const t = useTranslations();
   // Vue lue dans l'URL : lien du tableau de bord, rechargement, lien partagé. Elle y est réécrite à chaque changement.
   const searchParams = useSearchParams();
