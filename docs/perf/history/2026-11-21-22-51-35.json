@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "date": "2026-11-21T22:56:08.687Z",
+  "label": "après fiche différée sur l'investissement (#83)",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "2e97b57",
+  "runs": 5,
+  "pages": {
+    "investissement": {
+      "path": "/fr/investissement",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 80.19999998807907,
+            "fcp": 244,
+            "lcp": 244,
+            "domContentLoaded": 212,
+            "load": 401.80000001192093,
+            "visualComplete": 244,
+            "fullyLoaded": 1073.5,
+            "cls": 0,
+            "requests": 68,
+            "totalKB": 700,
+            "jsKB": 370,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/investissement",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 71,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 1238,
+            "lcp": 3725,
+            "tbt": 738,
+            "cls": 0,
+            "speedIndex": 1963,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 76.40000003576279,
+            "fcp": 228,
+            "lcp": 228,
+            "domContentLoaded": 216.89999997615814,
+            "load": 337.9000000357628,
+            "visualComplete": 228,
+            "fullyLoaded": 934.5999999642372,
+            "cls": 0,
+            "requests": 67,
+            "totalKB": 699,
+            "jsKB": 370,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/investissement",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 322,
+            "lcp": 751,
+            "tbt": 68,
+            "cls": 0,
+            "speedIndex": 718,
+            "runs": 5
+          }
+        }
+      }
+    }
+  }
+}

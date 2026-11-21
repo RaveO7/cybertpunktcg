@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "date": "2026-11-21T22:26:11.748Z",
+  "label": "avant fiche différée sur l'investissement",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "48c7413",
+  "runs": 5,
+  "pages": {
+    "investissement": {
+      "path": "/fr/investissement",
+      "auth": true,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 71.10000002384186,
+            "fcp": 316,
+            "lcp": 316,
+            "domContentLoaded": 288.80000001192093,
+            "load": 408.80000001192093,
+            "visualComplete": 316,
+            "fullyLoaded": 1087.300000011921,
+            "cls": 0,
+            "requests": 67,
+            "totalKB": 695,
+            "jsKB": 365,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/investissement",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 64,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 1239,
+            "lcp": 4307,
+            "tbt": 898,
+            "cls": 0,
+            "speedIndex": 2228,
+            "runs": 5
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 80,
+            "fcp": 228,
+            "lcp": 228,
+            "domContentLoaded": 203.20000004768372,
+            "load": 348.60000002384186,
+            "visualComplete": 228,
+            "fullyLoaded": 1023.3000000119209,
+            "cls": 0,
+            "requests": 67,
+            "totalKB": 694,
+            "jsKB": 365,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/investissement",
+            "consoleErrors": [
+              "Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+            ],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 66,
+            "fcp": 358,
+            "lcp": 744,
+            "tbt": 92,
+            "cls": 0,
+            "speedIndex": 775,
+            "runs": 5
+          }
+        }
+      }
+    }
+  }
+}
