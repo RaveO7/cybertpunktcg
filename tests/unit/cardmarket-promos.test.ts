@@ -1,4 +1,7 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { ALPHA_KIT_DETAILS } from "@/lib/alpha-kit-data";
 import { matchCardmarketPrices, productNameKey, type CardmarketProduct } from "@/lib/cardmarket";
 import { planPromoProducts, splitPromoName } from "@/lib/cardmarket-promos";
 
@@ -36,6 +39,16 @@ describe("planPromoProducts", () => {
   it("ignore les autres extensions et une extension promo absente du catalogue", () => {
     expect(planPromoProducts([product(1, "Inconnue", 6714)], catalog)).toEqual({ missing: [], covered: [] });
     expect(planPromoProducts([product(2, "Jackie & V", 6719)], new Map())).toEqual({ missing: [], covered: [] });
+  });
+});
+
+describe("ALPHA_KIT_DETAILS", () => {
+  it("donne A001–A031 une seule fois, chacun avec son image dans public/card-images", () => {
+    const details = Object.values(ALPHA_KIT_DETAILS);
+    expect(details.map((entry) => entry.collectorNumber).toSorted()).toEqual(
+      Array.from({ length: 31 }, (_, index) => `A${String(index + 1).padStart(3, "0")}`),
+    );
+    for (const entry of details) expect(existsSync(path.join("public", entry.imagePath))).toBe(true);
   });
 });
 
