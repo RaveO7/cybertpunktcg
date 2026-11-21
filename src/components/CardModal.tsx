@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { chipColor } from "@/components/CardTile";
 import { RulesText } from "@/components/RulesText";
@@ -11,20 +10,17 @@ import { CardDetails } from "@/components/card-modal/CardDetails";
 import { LineEditor, LineReadonly } from "@/components/card-modal/CollectionLines";
 import { ModalHeader } from "@/components/card-modal/ModalHeader";
 import { PrintingsStrip } from "@/components/card-modal/PrintingsStrip";
+// Import direct, pas next/dynamic : la fiche est déjà chargée à part sur la collection, et un import à la
+// demande imbriqué existe en deux variantes de fichiers (collection, investissement). Le navigateur garde
+// la première déclarée, souvent celle de la page investissement préchargée par la navigation : la variante
+// de la collection n'était jamais mise en cache et la fiche plantait une fois l'app rouverte hors ligne.
+import { PricePanel } from "@/components/card-modal/PricePanel";
 import { isTypingTarget, toAmount } from "@/components/card-modal/shared";
 import type { CardDTO, CollectionItemDTO, ConditionDTO, Filters, PrintingDTO } from "@/lib/types";
 import { thumbnailPath } from "@/lib/card-image";
 import { printingTitle, resolveRulesText } from "@/lib/logic";
 import { WISHLIST_ENABLED } from "@/lib/site";
 import { useModal } from "@/components/use-modal";
-
-/**
- * Prix et historique (graphique compris) : chargés à la demande, une fois la fiche ouverte. Exporté pour le
- * préchargement au repos (CardsExplorer) : le même import charge les mêmes fichiers, gardés par le service
- * worker pour ouvrir la fiche hors ligne.
- */
-export const loadPricePanel = () => import("@/components/card-modal/PricePanel").then((module) => module.PricePanel);
-const PricePanel = dynamic(loadPricePanel);
 
 /**
  * Télécharge et décode une image hors de la page : affichée ensuite, elle apparaît sans délai.
