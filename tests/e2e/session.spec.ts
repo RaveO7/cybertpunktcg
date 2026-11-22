@@ -14,6 +14,13 @@ test.afterEach(async () => {
 test.describe("connexion par l'écran", () => {
   test.use({ signedIn: false });
 
+  test("le formulaire de connexion est dans le HTML du serveur (affiché sans attendre le JS)", async ({ request }) => {
+    const html = await (await request.get("/fr/connexion")).text();
+    const body = html.replace(/<script[\s\S]*?<\/script>/g, "");
+    expect(body).toContain('name="password"');
+    expect(body).toContain("La collection est enregistrée sur votre compte");
+  });
+
   test("la session tient après rechargement et dans un nouvel onglet", async ({ page, context, account }) => {
     await page.goto("/fr/connexion");
     await page.getByRole("tab", { name: "Se connecter" }).click();
