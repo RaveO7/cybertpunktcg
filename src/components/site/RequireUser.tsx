@@ -16,15 +16,29 @@ const AuthScreen = dynamic(() => import("@/components/AuthScreen").then((module)
  * de connexion seulement après un refus du serveur, l'écran de démarrage tant qu'elle est inconnue. Chaque
  * écran gère ensuite le chargement de ses données.
  */
-export function RequireUser({ children }: { children: React.ReactNode }) {
+export function RequireUser({
+  children,
+  pending = <AppSplash />,
+}: {
+  children: React.ReactNode;
+  /** Affiché tant que la session est inconnue : squelette d'une page dont l'en-tête est rendu par le serveur. */
+  pending?: React.ReactNode;
+}) {
   const { session, error, requireSession } = useCollection();
   // Sans session mémorisée, seule une page réservée aux comptes interroge le serveur (cookie présent ?).
   useEffect(() => {
     if (session === "guest") requireSession();
   }, [session, requireSession]);
-  if (session === "signed-out") return <AuthScreen />;
+  if (session === "signed-out") {
+    // Sans boîte (contents) : masque l'en-tête rendu par le serveur d'une page comme Decks (voir sa page.tsx).
+    return (
+      <div className="contents" data-hides-page-header="">
+        <AuthScreen />
+      </div>
+    );
+  }
   if (session === "unknown" || session === "guest") {
-    if (!error) return <AppSplash />;
+    if (!error) return pending;
     return (
       <div className="flex flex-1 items-center justify-center text-sm opacity-70" role="alert">
         {error}

@@ -31,14 +31,17 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     (pathname === "/souhaits" && !WISHLIST_ENABLED);
   // Tableau de bord : servi à l'adresse de l'accueil (chemin interne « / », public), mais réservé aux comptes
   // comme les autres pages privées. Il porte déjà son propre RequireUser.
-  const isDashboard = useSelectedLayoutSegments()[0] === "tableau-de-bord";
+  const segment = useSelectedLayoutSegments()[0];
+  const isDashboard = segment === "tableau-de-bord";
   const privatePage = !isPublicPage || isDashboard;
+  // Pages privées qui portent leur propre RequireUser, sous un en-tête rendu par le serveur.
+  const guardsItself = segment === "decks";
   // Le didacticiel occupe toute la hauteur : pas de pied de page.
   // Écran de démarrage d'une page réservée aux comptes (voir RequireUser) : pas de pied de page, qui serait
   // seul en bas de l'écran puis repoussé par le contenu à son arrivée (décalage de mise en page).
   const awaitingSession = privatePage && (session === "unknown" || session === "guest") && !error;
   const showFooter = !pathname.startsWith("/comment-jouer") && !awaitingSession;
-  const content = isPublicPage ? children : <RequireUser>{children}</RequireUser>;
+  const content = isPublicPage || guardsItself ? children : <RequireUser>{children}</RequireUser>;
   return (
     <div className="relative flex h-dvh flex-col overflow-clip">
       <Header privatePage={privatePage} />

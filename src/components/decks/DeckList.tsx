@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { intlLocale } from "@/i18n/config";
 import { CardImage } from "@/components/CardImage";
 import { colorDotClass } from "@/components/CardTile";
@@ -35,7 +35,6 @@ export function DeckList({
 }) {
   const t = useTranslations();
   const locale = useLocale();
-  const router = useRouter();
   const { items } = useCollection();
   const { cardsById, printingsByCard, preview } = useDeckCatalog(catalog);
   const owned = useMemo(() => ownedCopiesByCard(items, catalog?.printings ?? []), [items, catalog]);
@@ -55,29 +54,9 @@ export function DeckList({
     }
   }
 
-  const create = () =>
-    run(async () => {
-      const deck = await onCreate({ name: t("decks.defaultName") });
-      router.push({ pathname: "/decks", query: { deck: deck.id } });
-    });
-
+  // Titre, intro et bouton « Nouveau deck » : en-tête rendu par le serveur (page Decks), au-dessus de la liste.
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-5 px-3 pt-4 pb-24 sm:gap-6 sm:px-4 sm:py-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl text-yellow sm:text-4xl">{t("decks.title")}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted">{t("decks.subtitle")}</p>
-        </div>
-        {/* Mobile : flottant au centre, juste au-dessus de la barre d'onglets, pour le pouce. */}
-        <button
-          type="button"
-          className="fixed bottom-[calc(var(--app-bottom-nav)+1rem)] left-1/2 z-30 inline-flex h-12 -translate-x-1/2 items-center justify-center bg-yellow px-6 text-sm font-semibold text-black shadow-lg shadow-black/50 hover:brightness-110 disabled:opacity-50 sm:static sm:h-10 sm:translate-x-0 sm:px-4 sm:shadow-none"
-          disabled={pending}
-          onClick={() => void create()}
-        >
-          {t("decks.newDeck")}
-        </button>
-      </div>
+    <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-5 px-3 pt-5 pb-24 sm:gap-6 sm:px-4 sm:pt-6 sm:pb-6">
       {message ? (
         <p role="alert" className="text-sm text-danger">
           {message}
