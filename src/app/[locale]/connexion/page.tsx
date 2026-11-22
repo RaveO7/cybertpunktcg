@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getLocale } from "next-intl/server";
+import { AuthScreen } from "@/components/AuthScreen";
 import { LoginScreen } from "@/components/site/LoginScreen";
 import { translatorFor } from "@/i18n/server";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -14,7 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    // LoginScreen lit l'URL (useSearchParams) : sans fallback, le formulaire manquerait au HTML de la page
+    // statique et n'apparaîtrait qu'après le JS (Lighthouse mobile 84 → 96 avec ce formulaire rendu par le
+    // serveur). Le paramètre `mode` s'applique à l'hydratation.
+    <Suspense fallback={<AuthScreen redirectTo={null} />}>
       <LoginScreen />
     </Suspense>
   );
