@@ -21,6 +21,12 @@ test.describe("connexion par l'écran", () => {
     expect(body).toContain("La collection est enregistrée sur votre compte");
   });
 
+  test("titre et intro des decks sont dans le HTML du serveur (LCP sans attendre le JS ni la session)", async ({ request }) => {
+    const html = await (await request.get("/fr/decks")).text();
+    const body = html.replace(/<script[\s\S]*?<\/script>/g, "");
+    expect(body).toContain("Construisez vos decks");
+  });
+
   test("la session tient après rechargement et dans un nouvel onglet", async ({ page, context, account }) => {
     await page.goto("/fr/connexion");
     await page.getByRole("tab", { name: "Se connecter" }).click();
