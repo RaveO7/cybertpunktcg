@@ -83,7 +83,6 @@
   "deleteCancel": "Annuler",
   "deleting": "Suppression…",
   "deleteFailed": "Suppression impossible.",
-  "loading": "Chargement…",
   "pushTitle": "Notifications d’alerte de prix",
   "pushHint": "Recevez une notification sur cet appareil quand une carte de votre liste de souhaits atteint votre prix cible, même application fermée.",
   "pushEnable": "Activer sur cet appareil",
