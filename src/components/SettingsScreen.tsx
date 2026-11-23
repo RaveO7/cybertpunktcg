@@ -12,7 +12,7 @@ import type { ShareInfo } from "@/lib/api-responses";
 import { OfflineSection } from "@/components/OfflineSection";
 import { usePreferences } from "@/components/PreferencesProvider";
 import { PushSettingsSection } from "@/components/PushNotifications";
-import { ScreenSkeleton, SkeletonBlock } from "@/components/site/ScreenSkeleton";
+import { SkeletonBlock } from "@/components/site/ScreenSkeleton";
 import { useRouter } from "@/i18n/navigation";
 import {
   CollectionCsvError,
@@ -57,7 +57,7 @@ function sortOptions(t: Translator): { value: SortKey; label: string }[] {
 
 export function SettingsScreen() {
   const fmt = useNumberFormat();
-  const { user, ready, logout, deleteAccount, items, catalog, importLines, pendingCount } = useCollection();
+  const { user, logout, deleteAccount, items, catalog, importLines, pendingCount } = useCollection();
   const router = useRouter();
   const t = useTranslations();
   const locale = useLocale();
@@ -241,10 +241,7 @@ export function SettingsScreen() {
     setPrefs({ [key]: value });
   }
 
-  if (!ready) return <SettingsSkeleton />;
-
-  if (!user) return null;
-
+  // Rendu aussi avant la vérification de session (page Paramètres) : seuls le nom et l'e-mail attendent le compte.
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-8">
       <p className="font-mono text-xs tracking-[0.18em] text-cyan">{t("settings.eyebrow")}</p>
@@ -254,11 +251,11 @@ export function SettingsScreen() {
       <dl className="mt-8 space-y-4 border-t border-line pt-6">
         <div>
           <dt className="text-xs uppercase tracking-[0.14em] text-muted">{t("settings.displayName")}</dt>
-          <dd className="mt-1 text-base text-foreground">{user.displayName}</dd>
+          <dd className="mt-1 text-base text-foreground">{user ? user.displayName : <SkeletonBlock className="h-6 w-40" />}</dd>
         </div>
         <div>
           <dt className="text-xs uppercase tracking-[0.14em] text-muted">{t("settings.email")}</dt>
-          <dd className="mt-1 break-all text-base text-foreground">{user.email}</dd>
+          <dd className="mt-1 break-all text-base text-foreground">{user ? user.email : <SkeletonBlock className="h-6 w-56" />}</dd>
         </div>
       </dl>
 
@@ -594,7 +591,7 @@ export function SettingsScreen() {
           </button>
         ) : (
           <div className="mt-4 space-y-3 border border-danger/60 p-4">
-            <p className="text-sm text-foreground">{t("settings.deleteConfirmText", { email: user.email })}</p>
+            <p className="text-sm text-foreground">{t("settings.deleteConfirmText", { email: user?.email ?? "" })}</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -692,31 +689,5 @@ function Field({
         ))}
       </select>
     </label>
-  );
-}
-
-/**
- * Squelette des réglages : titre, compte, puis les sections. Au moins la hauteur de l'écran, comme les
- * réglages : le pied de page reste dessous et n'est pas repoussé à leur arrivée.
- */
-function SettingsSkeleton() {
-  const t = useTranslations();
-  return (
-    <ScreenSkeleton
-      label={t("settings.loading")}
-      className="mx-auto flex min-h-[100cqh] w-full max-w-lg shrink-0 flex-col gap-6 px-4 py-8"
-    >
-      <div className="flex flex-col gap-2">
-        <SkeletonBlock className="h-3 w-24" />
-        <SkeletonBlock className="h-9 w-48" />
-        <SkeletonBlock className="h-4 w-full" />
-      </div>
-      {Array.from({ length: 3 }, (_, index) => (
-        <div key={index} className="flex flex-col gap-3 border-t border-line pt-6">
-          <SkeletonBlock className="h-3 w-28" />
-          <SkeletonBlock className="h-12 w-full" />
-        </div>
-      ))}
-    </ScreenSkeleton>
   );
 }

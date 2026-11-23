@@ -83,7 +83,6 @@
   "deleteCancel": "Cancelar",
   "deleting": "Eliminando…",
   "deleteFailed": "No se ha podido eliminar la cuenta.",
-  "loading": "Cargando…",
   "pushTitle": "Notificaciones de alertas de precio",
   "pushHint": "Recibe una notificación en este dispositivo cuando una carta de tu lista de deseos alcance tu precio objetivo, incluso con la aplicación cerrada.",
   "pushEnable": "Activar en este dispositivo",
