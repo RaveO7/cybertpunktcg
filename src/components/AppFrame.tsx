@@ -11,6 +11,11 @@ import { LEGAL_PATHS, WISHLIST_ENABLED } from "@/lib/site";
 import { publicRouteOfPath } from "@/i18n/paths";
 import { useInternalPathname } from "@/i18n/useInternalPathname";
 
+// Pages privées qui portent leur propre RequireUser, pour afficher dès le HTML du serveur ce qui ne dépend pas
+// du compte (voir leur page.tsx). Chemins internes exacts : les sous-pages (tournois publics, console d'un
+// tournoi…) gardent le RequireUser d'ici.
+const PAGES_GUARDING_THEMSELVES = ["/decks", "/tournois"];
+
 export function AppFrame({ children }: { children: React.ReactNode }) {
   // Chemin interne (segments français, sans préfixe de langue) : mêmes règles dans toutes les langues.
   const pathname = useInternalPathname();
@@ -31,11 +36,9 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     (pathname === "/souhaits" && !WISHLIST_ENABLED);
   // Tableau de bord : servi à l'adresse de l'accueil (chemin interne « / », public), mais réservé aux comptes
   // comme les autres pages privées. Il porte déjà son propre RequireUser.
-  const segment = useSelectedLayoutSegments()[0];
-  const isDashboard = segment === "tableau-de-bord";
+  const isDashboard = useSelectedLayoutSegments()[0] === "tableau-de-bord";
   const privatePage = !isPublicPage || isDashboard;
-  // Pages privées qui portent leur propre RequireUser, sous un en-tête rendu par le serveur.
-  const guardsItself = segment === "decks";
+  const guardsItself = PAGES_GUARDING_THEMSELVES.includes(pathname);
   // Le didacticiel occupe toute la hauteur : pas de pied de page.
   // Écran de démarrage d'une page réservée aux comptes (voir RequireUser) : pas de pied de page, qui serait
   // seul en bas de l'écran puis repoussé par le contenu à son arrivée (décalage de mise en page).
