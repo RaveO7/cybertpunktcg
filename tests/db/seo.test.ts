@@ -127,6 +127,7 @@ describe("sitemap", () => {
       de: `${SITE}/de/turniere/${upcomingId}`,
       es: `${SITE}/es/torneos/${upcomingId}`,
       it: `${SITE}/it/tornei/${upcomingId}`,
+      "x-default": `${SITE}/en/tournaments/${upcomingId}`,
     });
     assert.ok(upcoming?.lastModified instanceof Date);
   });
@@ -151,8 +152,8 @@ describe("sitemap", () => {
     for (const url of Object.values(terms)) {
       const legal = byUrl.get(url);
       assert.ok(legal, url);
-      // Alternatives réciproques : chaque version déclare les cinq.
-      assert.deepEqual(legal.alternates?.languages, terms);
+      // Alternatives réciproques : chaque version déclare les cinq, plus x-default.
+      assert.deepEqual(legal.alternates?.languages, { ...terms, "x-default": terms.en });
       assert.equal(legal.lastModified, undefined);
     }
     for (const path of ["/fr/mentions-legales", "/en/legal-notice", "/de/impressum", "/fr/confidentialite", "/it/privacy", "/fr/connexion", "/en/connexion"]) {

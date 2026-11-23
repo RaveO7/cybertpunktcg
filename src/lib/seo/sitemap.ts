@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { isSealedSetCode } from "@/lib/reference-data";
 import { LOCALES } from "@/i18n/config";
-import { localizedPath, type PublicRouteKey } from "@/i18n/paths";
+import { languageAlternates, localizedPath, type PublicRouteKey } from "@/i18n/paths";
 import { absoluteUrl } from "@/lib/seo/site";
 
 /** Tournois terminés gardés dans le sitemap (résultats) pendant 180 jours après leur début. */
@@ -12,9 +12,9 @@ const SEALED_CARD_TYPES = ["Sealed", "Lot"];
 
 type Entry = MetadataRoute.Sitemap[number];
 
-/** Une entrée par langue, chacune déclarant toutes les versions comme alternatives. */
+/** Une entrée par langue, chacune déclarant toutes les versions (et x-default, comme le HTML) comme alternatives. */
 function localized(key: PublicRouteKey, params: Record<string, string> = {}, lastModified?: Date): Entry[] {
-  const languages = Object.fromEntries(LOCALES.map((locale) => [locale, absoluteUrl(localizedPath(key, locale, params))]));
+  const languages = Object.fromEntries(Object.entries(languageAlternates(key, params)).map(([lang, path]) => [lang, absoluteUrl(path)]));
   return LOCALES.map((locale) => ({
     url: absoluteUrl(localizedPath(key, locale, params)),
     ...(lastModified ? { lastModified } : {}),
