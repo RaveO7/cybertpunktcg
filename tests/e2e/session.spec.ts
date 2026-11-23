@@ -27,6 +27,12 @@ test.describe("connexion par l'écran", () => {
     expect(body).toContain("Construisez vos decks");
   });
 
+  test("l'écran des tournois est dans le HTML du serveur (affiché pendant la vérification de session)", async ({ request }) => {
+    const html = await (await request.get("/fr/tournois")).text();
+    const body = html.replace(/<script[\s\S]*?<\/script>/g, "");
+    expect(body).toContain("Rejoindre un tournoi");
+  });
+
   test("la session tient après rechargement et dans un nouvel onglet", async ({ page, context, account }) => {
     await page.goto("/fr/connexion");
     await page.getByRole("tab", { name: "Se connecter" }).click();
