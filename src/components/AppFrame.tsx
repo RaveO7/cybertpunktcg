@@ -14,7 +14,7 @@ import { useInternalPathname } from "@/i18n/useInternalPathname";
 // Pages privées qui portent leur propre RequireUser, pour afficher dès le HTML du serveur ce qui ne dépend pas
 // du compte (voir leur page.tsx). Chemins internes exacts : les sous-pages (tournois publics, console d'un
 // tournoi…) gardent le RequireUser d'ici.
-const PAGES_GUARDING_THEMSELVES = ["/decks", "/tournois", "/parametres"];
+const PAGES_GUARDING_THEMSELVES = ["/decks", "/tournois", "/parametres", "/investissement"];
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   // Chemin interne (segments français, sans préfixe de langue) : mêmes règles dans toutes les langues.
