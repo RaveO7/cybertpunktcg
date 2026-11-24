@@ -28,9 +28,9 @@ afterAll(async () => {
 });
 
 describe("mots de passe", () => {
-  it("stocke le mot de passe tel quel et le vérifie", async () => {
+  it("hache le mot de passe et le vérifie", async () => {
     const roundtrip = await hashPassword(password);
-    assert.equal(roundtrip, password, "password stored in clear");
+    assert.ok(roundtrip.startsWith("scrypt$"), "password not hashed");
     assert.ok(await verifyPassword(password, roundtrip));
     assert.equal(await verifyPassword("autre-mot", roundtrip), false, "password mismatch accepted");
   });
@@ -76,11 +76,26 @@ describe("inscription et connexion", () => {
     assert.equal(await authenticate(`absent-${stamp}@example.com`, password), null, "unknown accepted");
   });
 
-  it("remplace un ancien hachage à la connexion", async () => {
-    await prisma.user.update({ where: { id: accountId }, data: { passwordHash: legacyHash(password) } });
-    assert.equal((await authenticate(email, password))?.id, accountId, "legacy login");
+  it("stocke un hash scrypt à l'inscription", async () => {
+    const stored = await prisma.user.findUnique({ where: { id: accountId } });
+    assert.ok(stored?.passwordHash?.startsWith("scrypt$"), "register stored clear password");
+  });
+
+  it("hache à la connexion un ancien mot de passe stocké en clair", async () => {
+    await prisma.user.update({ where: { id: accountId }, data: { passwordHash: password } });
+    assert.equal((await authenticate(email, password))?.id, accountId, "clear-text login");
     const upgraded = await prisma.user.findUnique({ where: { id: accountId } });
-    assert.equal(upgraded?.passwordHash, password, "legacy hash not replaced by clear password");
+    const rehashed = upgraded?.passwordHash ?? "";
+    assert.ok(rehashed.startsWith("scrypt$"), "clear password not rehashed");
+    assert.ok(await verifyPassword(password, rehashed), "rehash does not verify");
+  });
+
+  it("garde tel quel un hash scrypt existant à la connexion", async () => {
+    const legacy = legacyHash(password);
+    await prisma.user.update({ where: { id: accountId }, data: { passwordHash: legacy } });
+    assert.equal((await authenticate(email, password))?.id, accountId, "scrypt login");
+    const after = await prisma.user.findUnique({ where: { id: accountId } });
+    assert.equal(after?.passwordHash, legacy, "scrypt hash rewritten");
   });
 });
 
