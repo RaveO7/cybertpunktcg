@@ -4,13 +4,6 @@ Outil local pour consulter les cartes officielles et suivre une collection.
 
 Les cartes viennent de la même API que [cyberpunktcg.com/cards](https://cyberpunktcg.com/cards) (`api.netdeck.gg`). Le set principal s'appelle **Welcome to Night City — Retail**, pas « Extension 001 » : ce nom n'existe pas dans la base officielle. Les autres sets déjà publiés (beta, promos, starters, français) sont importés comme des extensions distinctes.
 
-## Lancer
-
-```bash
-npm install
-npm run import:cards
-npm run dev
-```
 
 `npm run import:cards` crée la base SQLite, importe les cartes et télécharge les images. Les URL d'images officielles expirent, donc elles sont copiées dans `public/card-images`. Relancer la commande met à jour le catalogue sans effacer les collections.
 
