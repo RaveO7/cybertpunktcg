@@ -5,6 +5,14 @@ description: Mesure répétable du site en ligne (ou d'une preview) — temps de
 
 Demande : $ARGUMENTS
 
+## Avant de mesurer (protocole fixe, à ne pas me redemander)
+
+1. **Secteur** : `(Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus).PowerOnline` doit valoir `True`. Sur batterie (TBT ×5 à ×30) : ne pas mesurer, me demander de brancher. Une mesure faite sur batterie est jetée.
+2. **Machine calme** : aucun `next dev`/`next start`, build, e2e ni autre mesure en cours (le hook avant push en lance : pousser *après* la mesure « avant », pas pendant).
+3. **Brave** : noter s'il est ouvert (`tasklist | grep -ci brave`). Il occupe le GPU et double le TBT ; le fermer seulement si je l'ai dit, sinon le laisser dans le même état pour l'avant et l'après, et l'indiquer dans le compte rendu. Pas de `--disable-gpu` (protocole différent de l'historique).
+4. **Témoin** : inclure `cgu` dans chaque série (`--only cgu,<pages>`). Référence ≈ 98 mobile, TBT ≈ 160 ms. Si le témoin bouge de plus de 5 points entre l'avant et l'après, la machine a changé : le dire, et ne conclure que sur le LCP (moins sensible à la charge), pas sur la note.
+5. **Même protocole** avant et après : mêmes `--only`, même `--runs` (3 par défaut, médiane), même cible (prod contre prod, preview contre preview), l'une juste après l'autre.
+
 ## Lancer la mesure
 
 ```
