@@ -160,7 +160,9 @@ describe("seo : données structurées", () => {
   });
 
   it("site, fil d'Ariane et liste", () => {
-    assert.equal(websiteLd("en").url, "https://tcgtracker.test/en");
+    // Nom de site : racine du domaine quelle que soit la langue, noms alternatifs avec l'adresse en dernier.
+    assert.equal(websiteLd("fr").url, "https://tcgtracker.test/");
+    assert.deepEqual(websiteLd("fr").alternateName, ["Cyberpunk TCG Tracker", "tcgtracker.test"]);
     const crumbs = breadcrumbLd([
       { name: "Accueil", path: "/" },
       { name: "Cartes", path: "/cartes" },
