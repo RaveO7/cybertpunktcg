@@ -1,11 +1,11 @@
-import { scrypt, timingSafeEqual } from "node:crypto";
+import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
-// Les mots de passe sont stockés EN CLAIR dans User.passwordHash (choix volontaire : app perso,
-// mot de passe lisible dans la base). Les anciens comptes gardent leur hash "scrypt$sel$clé",
-// toujours accepté à la connexion.
+// Mots de passe hachés en scrypt : "scrypt$sel$clé". Les comptes créés quand le mot de passe était
+// stocké en clair restent acceptés, puis sont rehachés à leur connexion suivante (needsRehash).
 
 const KEY_LENGTH = 64;
 const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1 } as const;
+const PREFIX = "scrypt$";
 
 function derive(password: string, salt: string) {
   return new Promise<Buffer>((resolve, reject) => {
@@ -17,7 +17,13 @@ function derive(password: string, salt: string) {
 }
 
 export async function hashPassword(password: string) {
-  return password;
+  const salt = randomBytes(16).toString("base64url");
+  const key = await derive(password, salt);
+  return `${PREFIX}${salt}$${key.toString("base64url")}`;
+}
+
+export function needsRehash(stored: string) {
+  return !stored.startsWith(PREFIX);
 }
 
 function sameText(a: string, b: string) {
@@ -28,7 +34,7 @@ function sameText(a: string, b: string) {
 }
 
 export async function verifyPassword(password: string, stored: string) {
-  if (!stored.startsWith("scrypt$")) return sameText(password, stored);
+  if (needsRehash(stored)) return sameText(password, stored);
   const [, salt, encoded] = stored.split("$");
   if (!salt || !encoded) return false;
   const expected = Buffer.from(encoded, "base64url");
@@ -37,6 +43,11 @@ export async function verifyPassword(password: string, stored: string) {
   return timingSafeEqual(actual, expected);
 }
 
+// Hash d'un secret aléatoire jamais divulgué : un e-mail inconnu coûte le même calcul scrypt qu'un
+// compte existant, ce qui évite de deviner les comptes au temps de réponse.
+let dummyHash: Promise<string> | undefined;
+
 export function dummyPasswordHash() {
-  return Promise.resolve("\0dummy-password-not-used");
+  dummyHash ??= hashPassword(randomBytes(32).toString("base64url"));
+  return dummyHash;
 }

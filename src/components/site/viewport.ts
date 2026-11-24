@@ -1,10 +1,9 @@
 import type { Viewport } from "next";
-import { THEME_CHROME_COLORS } from "@/lib/preferences";
 
 export const siteViewport: Viewport = {
-  // Couleur des barres du navigateur et du système : celle du thème de l'app, pas celle du téléphone.
-  // Sombre par défaut ; themeBootScript puis applyTheme() la corrigent pour le thème clair.
-  themeColor: THEME_CHROME_COLORS.dark,
+  // Pas de themeColor ici : la <meta name="theme-color"> est posée par themeBootScript (SiteShell) puis
+  // applyTheme(). Depuis Next 16.4, celle du viewport est réécrite en sombre à l'hydratation et écrasait
+  // le thème clair.
   width: "device-width",
   initialScale: 1,
   // Plein écran sur iPhone (encoche, barre d'accueil) : les marges viennent de env(safe-area-inset-*).

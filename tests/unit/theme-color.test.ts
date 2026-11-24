@@ -123,7 +123,7 @@ describe("applyTheme", () => {
 });
 
 describe("siteViewport", () => {
-  it("annonce une seule couleur sombre, sans variante prefers-color-scheme", () => {
-    assert.equal(siteViewport.themeColor, "#07080d");
+  it("laisse la theme-color au script de démarrage (Next la réécrirait à l'hydratation)", () => {
+    assert.equal(siteViewport.themeColor, undefined);
   });
 });
