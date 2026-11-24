@@ -1,6 +1,6 @@
 // Hook PostToolUse : après chaque modification d'un fichier JS/TS du projet, lance ESLint sur ce seul fichier.
 // Erreur ou avertissement → sortie renvoyée à Claude (code 2) pour qu'il corrige tout de suite, pas en fin de tâche.
-// Sans les règles typées (ESLINT_FAST=1, ~4 s au lieu de ~15 s) : typecheck-on-stop.mjs les vérifie en fin de tâche.
+// Sans les règles typées (ESLINT_FAST=1, ~4 s au lieu de ~15 s) : verify-on-stop.mjs les vérifie en fin de tâche.
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
