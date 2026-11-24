@@ -35,7 +35,7 @@ import {
   readStoredPreferences,
   writeStoredPreferences,
 } from "../../src/lib/preferences";
-import { dummyPasswordHash, hashPassword, verifyPassword } from "../../src/lib/password";
+import { dummyPasswordHash, hashPassword, needsRehash, verifyPassword } from "../../src/lib/password";
 import {
   displaySetName,
   extensionsFor,
@@ -308,11 +308,19 @@ describe("preferences", () => {
 });
 
 describe("password (partie pure)", () => {
-  it("stockage en clair : le « hash » est le mot de passe", async () => {
-    assert.equal(await hashPassword("s3cret pass"), "s3cret pass");
+  it("hache en scrypt salé, jamais le mot de passe en clair", async () => {
+    const first = await hashPassword("s3cret pass");
+    const second = await hashPassword("s3cret pass");
+    assert.ok(first.startsWith("scrypt$"));
+    assert.equal(first.includes("s3cret"), false);
+    assert.notEqual(first, second, "same salt reused");
+    assert.equal(await verifyPassword("s3cret pass", first), true);
+    assert.equal(await verifyPassword("s3cret pasS", first), false);
+    assert.equal(needsRehash(first), false);
   });
 
-  it("vérifie un mot de passe en clair, sensible à la casse et à la longueur", async () => {
+  it("vérifie encore un ancien mot de passe en clair, sensible à la casse et à la longueur", async () => {
+    assert.equal(needsRehash("abcdefgh"), true);
     assert.equal(await verifyPassword("abcdefgh", "abcdefgh"), true);
     assert.equal(await verifyPassword("abcdefgH", "abcdefgh"), false);
     assert.equal(await verifyPassword("abcdefg", "abcdefgh"), false);
@@ -341,7 +349,7 @@ describe("password (partie pure)", () => {
 
   it("le hash factice ne correspond à aucun mot de passe saisissable usuel", async () => {
     const dummy = await dummyPasswordHash();
-    assert.equal(dummy.startsWith("scrypt$"), false);
+    assert.ok(dummy.startsWith("scrypt$"), "dummy must cost a scrypt like a real account");
     assert.equal(await verifyPassword("", dummy), false);
     assert.equal(await verifyPassword("dummy-password-not-used", dummy), false);
   });
