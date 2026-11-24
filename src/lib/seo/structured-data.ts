@@ -32,12 +32,17 @@ function toAbsolute(url: string | null | undefined): string | null {
   return /^https?:\/\//.test(url) ? url : absoluteUrl(url);
 }
 
+/**
+ * Nom du site dans les résultats Google : `url` = racine du domaine (Google ignore les noms de site déclarés pour
+ * un sous-répertoire comme /fr), noms alternatifs du plus au moins préféré, l'adresse du site en dernier recours.
+ */
 export function websiteLd(locale: Locale): JsonLdObject {
   return {
     "@context": CONTEXT,
     "@type": "WebSite",
     name: SITE.name,
-    url: absoluteUrl(localizedPath("home", locale)),
+    alternateName: [`${GAME_NAME} Tracker`, new URL(absoluteUrl("/")).host],
+    url: absoluteUrl("/"),
     inLanguage: locale,
   };
 }
