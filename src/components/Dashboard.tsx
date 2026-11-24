@@ -186,9 +186,9 @@ export function Dashboard() {
                 {t("dashboard.eyebrow")}
                 {current && scope !== current ? ` · ${current.name}` : null}
               </p>
-              <h1 className="mt-1.5 font-display text-2xl font-bold uppercase leading-tight tracking-wide text-yellow sm:text-4xl">
+              <h2 className="mt-1.5 font-display text-2xl font-bold uppercase leading-tight tracking-wide text-yellow sm:text-4xl">
                 {heroTitle}
-              </h1>
+              </h2>
               <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-muted">{heroIntro}</p>
             </div>
           </div>
@@ -320,7 +320,7 @@ export function Dashboard() {
 }
 
 /** Squelette du tableau de bord : en-tête et ses quatre chiffres, puis la grille des blocs. */
-function DashboardSkeleton() {
+export function DashboardSkeleton() {
   const t = useTranslations();
   return (
     <ScreenSkeleton

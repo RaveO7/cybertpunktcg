@@ -1,4 +1,6 @@
 {
+  "pageTitle": "Tableau de bord",
+  "pageIntro": "Suivez votre collection extension par extension : cartes possédées, cartes manquantes, doublons et valeur au prix Cardmarket, en français et en anglais.",
   "eyebrow": "MA COLLECTION",
   "intro": "Le total anglais compte chaque carte une fois, en beta ou en retail. Ces deux impressions sont détaillées en dessous. Le français correspond au retail traduit.",
   "sealedIntro": "Les produits scellés et lots Cardmarket sont une catégorie à part : choisissez d’abord Scellé, puis le type (boosters, boxes, decks…).",

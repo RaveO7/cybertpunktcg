@@ -39,6 +39,12 @@ test.describe("connexion par l'écran", () => {
     expect(body).toContain("Langue du site");
   });
 
+  test("titre et intro du tableau de bord sont dans le HTML du serveur", async ({ request }) => {
+    const html = await (await request.get("/fr/tableau-de-bord")).text();
+    const body = html.replace(/<script[\s\S]*?<\/script>/g, "");
+    expect(body).toContain("Suivez votre collection extension par extension");
+  });
+
   test("la session tient après rechargement et dans un nouvel onglet", async ({ page, context, account }) => {
     await page.goto("/fr/connexion");
     await page.getByRole("tab", { name: "Se connecter" }).click();
