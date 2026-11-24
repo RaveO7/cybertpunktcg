@@ -1,4 +1,6 @@
 {
+  "pageTitle": "Dashboard",
+  "pageIntro": "Track your collection set by set: cards owned, cards missing, duplicates and value at Cardmarket prices, in English and French.",
   "eyebrow": "MY COLLECTION",
   "intro": "The English total counts each card once, across beta or retail. Those two printings are detailed below. French matches the translated retail set.",
   "sealedIntro": "Sealed products and Cardmarket lots are a separate category: choose Sealed first, then the type (boosters, boxes, decks…).",
