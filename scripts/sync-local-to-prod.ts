@@ -6,7 +6,8 @@
 //   Rien n'est supprimé ni modifié dans les collections, comptes et partages de prod.
 // Usage : npm run db:sync-prod          (ou --dry-run : génère data/sync-prod.sql sans rien envoyer)
 // Base de prod : PROD_DATABASE_URL de .env.local (comme scripts/backup-prod.ts). Ensuite, le cache du site est vidé
-// par /api/revalidate (REVALIDATE_SECRET de .env.local, la même que sur Vercel).
+// par /api/revalidate (REVALIDATE_SECRET de .env.local, la même que sur Vercel), et les fiches modifiées sont
+// signalées à IndexNow (scripts/indexnow.ts).
 import { spawnSync } from "node:child_process";
 import { existsSync, writeFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
@@ -102,6 +103,8 @@ async function main() {
   run("node", ["scripts/prisma.mjs", "db", "execute", "--file", OUTPUT], env);
   console.log("Production synchronisée.");
   await revalidateProduction();
+  // Bing et les moteurs IndexNow apprennent tout de suite les cartes ajoutées ou modifiées.
+  run("npx", ["tsx", "scripts/indexnow.ts"]);
 }
 
 // Sans revalidation, le site garde jusqu'à une heure le catalogue et les fiches d'avant la synchro.

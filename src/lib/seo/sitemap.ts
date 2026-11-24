@@ -26,15 +26,30 @@ function latest(dates: Date[]): Date {
   return dates.reduce((max, date) => (date > max ? date : max));
 }
 
+const STATIC_PAGES: PublicRouteKey[] = ["home", "cards", "legalNotice", "terms", "privacy", "login"];
+
+/** Pages fixes (accueil, catalogue, pages légales…), sans date de modification. */
+export function staticSitemapEntries(): Entry[] {
+  return STATIC_PAGES.flatMap((key) => localized(key));
+}
+
+/** Fiches des cartes (hors produits scellés), datées de leur dernière modification ou de celle d'un de leurs tirages. */
+export async function cardSitemapEntries(): Promise<Entry[]> {
+  const cards = await prisma.card.findMany({
+    where: { isActive: true, OR: [{ cardType: null }, { cardType: { notIn: SEALED_CARD_TYPES } }] },
+    select: { slug: true, updatedAt: true, printings: { where: { isActive: true }, select: { updatedAt: true, set: { select: { code: true } } } } },
+    orderBy: { slug: "asc" },
+  });
+  return cards
+    .filter((card) => card.printings.some((printing) => !isSealedSetCode(printing.set.code)))
+    .flatMap((card) => localized("card", { slug: card.slug }, latest([card.updatedAt, ...card.printings.map((p) => p.updatedAt)])));
+}
+
 /** Toutes les pages publiques indexables, avec leurs versions linguistiques et leur date de modification. */
 export async function buildSitemap(now = new Date()): Promise<MetadataRoute.Sitemap> {
   const since = new Date(now.getTime() - SITEMAP_TOURNAMENT_DAYS * DAY_MS);
   const [cards, shops, tournaments] = await Promise.all([
-    prisma.card.findMany({
-      where: { isActive: true, OR: [{ cardType: null }, { cardType: { notIn: SEALED_CARD_TYPES } }] },
-      select: { slug: true, updatedAt: true, printings: { where: { isActive: true }, select: { updatedAt: true, set: { select: { code: true } } } } },
-      orderBy: { slug: "asc" },
-    }),
+    cardSitemapEntries(),
     prisma.shop.findMany({ where: { status: { not: "rejected" } }, select: { slug: true, updatedAt: true }, orderBy: { slug: "asc" } }),
     prisma.tournament.findMany({
       where: { visibility: "public", status: { not: "annule" }, startsAt: { gte: since } },
@@ -43,12 +58,9 @@ export async function buildSitemap(now = new Date()): Promise<MetadataRoute.Site
     }),
   ]);
 
-  const staticPages: PublicRouteKey[] = ["home", "cards", "legalNotice", "terms", "privacy", "login"];
   return [
-    ...staticPages.flatMap((key) => localized(key)),
-    ...cards
-      .filter((card) => card.printings.some((printing) => !isSealedSetCode(printing.set.code)))
-      .flatMap((card) => localized("card", { slug: card.slug }, latest([card.updatedAt, ...card.printings.map((p) => p.updatedAt)]))),
+    ...staticSitemapEntries(),
+    ...cards,
     ...shops.flatMap((shop) => localized("shop", { slug: shop.slug }, shop.updatedAt)),
     ...tournaments.flatMap((t) => localized("tournament", { id: t.id }, t.updatedAt)),
   ];
