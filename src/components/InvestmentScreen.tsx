@@ -298,8 +298,7 @@ export function InvestmentScreen() {
   }
   if (baseLines.length === 0) {
     return (
-      <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6">
-        <h1 className="text-2xl text-yellow sm:text-4xl">{t("investment.eyebrow")}</h1>
+      <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-5 px-3 pt-5 pb-4 sm:gap-8 sm:px-4 sm:pt-8 sm:pb-6">
         <section className="flex max-w-xl flex-col items-start gap-3 border border-line bg-panel p-6">
           <h2 className="text-lg">{t("investment.emptyCollectionTitle")}</h2>
           <p className="text-sm leading-6 text-muted">{t("investment.emptyCollectionBody")}</p>
@@ -315,8 +314,7 @@ export function InvestmentScreen() {
   }
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6">
-      <h1 className="text-2xl text-yellow sm:text-4xl">{t("investment.eyebrow")}</h1>
+    <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-col gap-5 px-3 pt-5 pb-4 sm:gap-8 sm:px-4 sm:pt-8 sm:pb-6">
 
       <section className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         <SummaryStat
@@ -439,7 +437,7 @@ export function InvestmentScreen() {
 }
 
 /**
- * Squelette de l'investissement : titre, quatre chiffres, courbe, filtres et tableau. Au moins la hauteur
+ * Squelette de l’investissement (titre rendu par la page) : quatre chiffres, courbe, filtres et tableau. Au moins la hauteur
  * de l'écran, comme le portefeuille : le pied de page reste dessous à son arrivée.
  */
 export function InvestmentSkeleton() {
@@ -447,9 +445,8 @@ export function InvestmentSkeleton() {
   return (
     <ScreenSkeleton
       label={t("investment.loading")}
-      className="mx-auto flex min-h-[100cqh] w-full min-w-0 max-w-[1600px] shrink-0 flex-col gap-5 px-3 py-4 sm:gap-8 sm:px-4 sm:py-6"
+      className="mx-auto flex min-h-[100cqh] w-full min-w-0 max-w-[1600px] shrink-0 flex-col gap-5 px-3 pt-5 pb-4 sm:gap-8 sm:px-4 sm:pt-8 sm:pb-6"
     >
-      <SkeletonBlock className="h-8 w-48 sm:h-10" />
       <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (
           <SkeletonBlock key={index} className="h-20" />

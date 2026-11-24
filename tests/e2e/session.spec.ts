@@ -45,6 +45,12 @@ test.describe("connexion par l'écran", () => {
     expect(body).toContain("Suivez votre collection extension par extension");
   });
 
+  test("titre et intro de l'investissement sont dans le HTML du serveur", async ({ request }) => {
+    const html = await (await request.get("/fr/investissement")).text();
+    const body = html.replace(/<script[\s\S]*?<\/script>/g, "");
+    expect(body).toContain("Suivez la valeur de votre collection au prix Cardmarket");
+  });
+
   test("la session tient après rechargement et dans un nouvel onglet", async ({ page, context, account }) => {
     await page.goto("/fr/connexion");
     await page.getByRole("tab", { name: "Se connecter" }).click();
