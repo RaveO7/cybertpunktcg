@@ -16,7 +16,14 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata() {
-  return rootMetadata(await getLocale());
+  const metadata = await rootMetadata(await getLocale());
+
+  return {
+    ...metadata,
+    verification: {
+      google: "GDgD8FeCILlIkZnrmezO1cxVtYXRW3_R8HTk1ziC1UY",
+    },
+  };
 }
 
 export default async function RootLayout({ children, preload, params }: LayoutProps<"/[locale]">) {
