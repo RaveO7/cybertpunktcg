@@ -49,6 +49,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Images de cartes et icônes (fichiers de public/, servis sinon en max-age=0) : gardées 1 jour
+        // puis reprises en arrière-plan pendant 7 jours. Pas d'« immutable » : leurs noms n'ont pas
+        // de hash de contenu, une image remplacée doit finir par arriver.
+        source: "/:dir(card-images|icons)/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+      },
+      {
         // Service worker (mode hors-ligne) : jamais mis en cache HTTP, pour que les mises à jour arrivent.
         source: "/sw.js",
         headers: [

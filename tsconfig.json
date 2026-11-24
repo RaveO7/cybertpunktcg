@@ -41,6 +41,8 @@
     ".next-e2e-prod/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "data",
+    ".claude/worktrees"
   ]
 }
