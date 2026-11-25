@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { Link } from "@/i18n/navigation";
 import { useSharedBinder } from "@/components/SharedBinderProvider";
-import { aggregateCollection, computeProgress, marketValue, releasedChecklist, viewOwnership } from "@/lib/logic";
+import { aggregateCollection, computeProgress, marketValue } from "@/lib/cards/collection-stats";
+import { releasedChecklist, viewOwnership } from "@/lib/cards/printings";
 import {
   BETA_SET_CODE,
   ENGLISH_SET_ID,

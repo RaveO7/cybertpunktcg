@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { useWishlist } from "@/components/WishlistProvider";
-import { wishlistTargetReached } from "@/lib/logic";
+import { wishlistTargetReached } from "@/lib/cards/pricing";
 
 /** Bloc de la fiche carte : ajout à la liste de souhaits et prix cible de l'alerte. */
 export function WishlistPanel({ printingId, marketPrice }: { printingId: string; marketPrice: number | null }) {

@@ -13,7 +13,7 @@ import {
   type Scope,
 } from "@/components/dashboard/model";
 import { Bar, DataTable, MiniStat, Section } from "@/components/dashboard/ui";
-import { progressByRarity } from "@/lib/logic";
+import { progressByRarity } from "@/lib/cards/collection-stats";
 import type { Progress } from "@/lib/types";
 
 /** Détail du bloc (ou de l'extension) choisi : compteurs, extensions du bloc et progression par rareté. */

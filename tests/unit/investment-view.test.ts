@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { investmentViewParams, parseInvestmentView, type InvestmentView } from "../../src/components/investment/url-state";
 import { setMarketDeltaPct, setProfitPct, sortSetRows } from "../../src/components/investment/sorting";
-import type { SetInvestment } from "../../src/lib/logic";
+import type { SetInvestment } from "../../src/lib/investment/portfolio";
 
 const DEFAULT_VIEW: InvestmentView = {
   set: "all",

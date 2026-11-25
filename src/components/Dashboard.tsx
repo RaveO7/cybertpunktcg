@@ -5,7 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { getPathname, useRouter } from "@/i18n/navigation";
 import { useBrowseSelection } from "@/components/BrowseSelection";
-import { useCollection, whenIdle } from "@/components/CollectionProvider";
+import { useCollection } from "@/components/CollectionProvider";
+import { whenIdle } from "@/lib/client/when-idle";
 import { TrendBadge } from "@/components/TrendBadge";
 import { BlockGrid } from "@/components/dashboard/BlockGrid";
 import {

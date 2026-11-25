@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadCatalogCached, loadCollection, requireUser } from "@/lib/catalog";
-import {
-  aggregateCollection,
-  computeProgress,
-  progressByRarity,
-  releasedChecklist,
-  spentAmount,
-  viewOwnership,
-} from "@/lib/logic";
+import { aggregateCollection, computeProgress, progressByRarity, spentAmount } from "@/lib/cards/collection-stats";
+import { releasedChecklist, viewOwnership } from "@/lib/cards/printings";
 import { ENGLISH_SET_ID, FRENCH_SET_ID } from "@/lib/reference-data";
 import { sessionRequired } from "@/lib/api-response";
 

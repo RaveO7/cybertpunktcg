@@ -4,6 +4,7 @@
 //   jamais en autocomplétion (interdit par sa politique d'usage), 1 requête/s au total.
 // Les réponses sont gardées 30 jours en base pour ménager ces services gratuits.
 
+import { reportError } from "@/lib/monitoring";
 import type { Place } from "./location";
 
 export const IGN_SEARCH_URL = "https://data.geopf.fr/geocodage/search";
@@ -57,7 +58,11 @@ async function fetchJson(deps: GeocoderDeps, url: URL, headers: Record<string, s
 }
 
 async function cached<T>(deps: GeocoderDeps, key: string, load: () => Promise<T>): Promise<T> {
-  const hit = await deps.cache.get(key).catch(() => null);
+  // Le cache n'est qu'une optimisation : s'il échoue on interroge le service, mais on le signale.
+  const hit = await deps.cache.get(key).catch((error) => {
+    void reportError("geocode-cache-read", error);
+    return null;
+  });
   if (hit !== null) {
     try {
       return JSON.parse(hit) as T;
@@ -66,7 +71,7 @@ async function cached<T>(deps: GeocoderDeps, key: string, load: () => Promise<T>
     }
   }
   const value = await load();
-  await deps.cache.set(key, JSON.stringify(value)).catch(() => undefined);
+  await deps.cache.set(key, JSON.stringify(value)).catch((error) => reportError("geocode-cache-write", error));
   return value;
 }
 

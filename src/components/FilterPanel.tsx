@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { extensionValue, sealedBrowseFilters } from "@/lib/logic";
+import { extensionValue } from "@/lib/cards/printings";
+import { sealedBrowseFilters } from "@/lib/cards/filters";
 import {
   ALL_SETS_ID,
   isSealedSetCode,

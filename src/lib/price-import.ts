@@ -624,6 +624,7 @@ async function probeGame(id: number) {
     signal: AbortSignal.timeout(25000),
   });
   if (response.status === 403 || response.status === 503) {
+    // On ne lit le corps que pour libérer la connexion : son échec n'change pas le verdict « bloqué ».
     await response.arrayBuffer().catch(() => undefined);
     return "blocked";
   }
@@ -637,6 +638,7 @@ async function probeGame(id: number) {
     chunks.push(step.value);
     size += step.value.length;
   }
+  // Annulation du flux restant : sans risque, les 12 premiers ko suffisent déjà au verdict.
   await reader.cancel().catch(() => undefined);
   const text = Buffer.concat(chunks).toString("utf8");
   if (text.includes("Just a moment") || text.includes("cf-browser-verification")) return "blocked";

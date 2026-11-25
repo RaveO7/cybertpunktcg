@@ -29,17 +29,8 @@ import { useInvestmentHistory, usePeriodReference } from "@/components/investmen
 import { displayRows, useLineSelection } from "@/components/investment/use-line-selection";
 import { formatSignedPercent } from "@/components/TrendBadge";
 import { OverlaySkeleton, ScreenError, ScreenSkeleton, SkeletonBlock, SkeletonRows } from "@/components/site/ScreenSkeleton";
-import {
-  applyInvestmentPeriod,
-  buildInvestmentLines,
-  filterInvestmentLines,
-  groupInvestmentPositions,
-  investmentBySet,
-  printingTitle,
-  siblingPrintings,
-  summarizeInvestment,
-  type InvestmentPerformance,
-} from "@/lib/logic";
+import { applyInvestmentPeriod, buildInvestmentLines, filterInvestmentLines, groupInvestmentPositions, investmentBySet, summarizeInvestment, type InvestmentPerformance } from "@/lib/investment/portfolio";
+import { printingTitle, siblingPrintings } from "@/lib/cards/printings";
 import {
   CARDS_GROUP_FILTER,
   isSealedSetCode,

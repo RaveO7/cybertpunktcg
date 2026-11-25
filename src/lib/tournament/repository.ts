@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { fail } from "./errors";
 import type { MatchState, MatchStatus } from "./match-state";
 import type { MatchResult } from "./scores";
+import { readMatchResult } from "./stored-json";
 
 export type Tx = Prisma.TransactionClient;
 type Db = Tx | PrismaClient;
@@ -118,23 +119,14 @@ export async function tournamentRevision(id: string) {
   return row?.revision ?? null;
 }
 
-function parseResult(json: string | null): MatchResult | null {
-  if (!json) return null;
-  try {
-    return JSON.parse(json) as MatchResult;
-  } catch {
-    return null;
-  }
-}
-
 export function toMatchState(match: MatchRow): MatchState {
   return {
     status: match.status as MatchStatus,
     kind: match.kind as MatchResult["kind"],
     gamesA: match.gamesA,
     gamesB: match.gamesB,
-    declA: parseResult(match.declAJson),
-    declB: parseResult(match.declBJson),
+    declA: readMatchResult(match.declAJson),
+    declB: readMatchResult(match.declBJson),
     declaredAt: match.declaredAt,
     confirmedOnSite: match.confirmedOnSite,
     isBye: match.playerBId === null,

@@ -11,7 +11,8 @@ import { TrendBadge } from "@/components/TrendBadge";
 import { useWishlist } from "@/components/WishlistProvider";
 import { ScreenError, ScreenSkeleton, SkeletonBlock, SkeletonRows } from "@/components/site/ScreenSkeleton";
 import { intlLocale } from "@/i18n/config";
-import { priceMovement, printingTitle, wishlistTargetReached } from "@/lib/logic";
+import { priceMovement, wishlistTargetReached } from "@/lib/cards/pricing";
+import { printingTitle } from "@/lib/cards/printings";
 import { marketplaceLinks } from "@/lib/marketplace-links";
 import type { CardDTO, PrintingDTO, WishlistItemDTO } from "@/lib/types";
 

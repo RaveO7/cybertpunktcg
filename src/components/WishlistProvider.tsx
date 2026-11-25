@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useCollection, whenIdle } from "@/components/CollectionProvider";
+import { useCollection } from "@/components/CollectionProvider";
+import { whenIdle } from "@/lib/client/when-idle";
 import { fetchCached } from "@/components/data-cache";
 import { api } from "@/lib/client/api";
 import { useTranslatedRequest } from "@/lib/client/use-api-error-message";

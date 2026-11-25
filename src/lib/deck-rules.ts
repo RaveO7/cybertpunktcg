@@ -1,7 +1,7 @@
 // Règles de construction de deck (cf. « Construction de deck & RAM » dans src/lib/rules/howto-play.ts)
 // et comparaison avec la collection. Module pur : utilisé par l'écran des decks et les tests.
 import { BLOCKS, COLOR_ORDER, TYPE_ORDER } from "./reference-data";
-import { normalizeText } from "./logic";
+import { normalizeText } from "./cards/search";
 import type { CardDTO, CollectionItemDTO, PrintingDTO } from "./types";
 
 export const DECK_RULES = { legends: 3, minCards: 40, maxCards: 50, maxCopies: 3 } as const;

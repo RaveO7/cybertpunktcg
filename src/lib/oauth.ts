@@ -1,6 +1,7 @@
 import { createHmac, createPrivateKey, randomBytes, sign, timingSafeEqual } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextResponse } from "next/server";
+import { z } from "zod";
 import type { Locale } from "@/i18n/config";
 import { formatRoute } from "@/i18n/match";
 import { cookieSecure, normalizeDisplayName, normalizeEmail } from "@/lib/auth";
@@ -10,6 +11,39 @@ export const OAUTH_PROVIDERS = ["google", "apple"] as const;
 export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
 
 const USER_ID = /^[a-zA-Z0-9_-]{8,64}$/;
+
+// Champ optionnel dont un type inattendu est ignoré (traité comme absent) plutôt que de faire échouer la connexion.
+const lenient = <T extends z.ZodType>(schema: T) => schema.optional().catch(undefined);
+
+const stateSchema = z.object({
+  p: z.string(),
+  l: lenient(z.string().nullable()),
+  e: z.number(),
+});
+
+const googleTokenSchema = z.object({ access_token: z.string().min(1) });
+
+const googleProfileSchema = z.object({
+  sub: z.string().min(1),
+  email: lenient(z.string()),
+  email_verified: lenient(z.boolean()),
+  name: lenient(z.string()),
+});
+
+const appleTokenSchema = z.object({ id_token: z.string().min(1) });
+
+const appleClaimsSchema = z.object({
+  sub: z.string(),
+  iss: lenient(z.string()),
+  aud: lenient(z.union([z.string(), z.array(z.string())])),
+  exp: lenient(z.number()),
+  email: lenient(z.string()),
+  email_verified: lenient(z.union([z.string(), z.boolean()])),
+});
+
+const appleUserSchema = z.object({
+  name: z.object({ firstName: lenient(z.string()), lastName: lenient(z.string()) }).optional(),
+});
 
 type OAuthProfile = {
   provider: OAuthProvider;
@@ -100,16 +134,14 @@ export function verifyOAuthState(raw: string | null, expectedProvider: OAuthProv
   const right = Buffer.from(expected);
   if (left.length !== right.length || !timingSafeEqual(left, right)) return null;
   try {
-    const parsed = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as {
-      p?: string;
-      l?: string | null;
-      e?: number;
-    };
-    if (!isOAuthProvider(String(parsed.p)) || parsed.p !== expectedProvider) return null;
-    if (typeof parsed.e !== "number" || parsed.e <= Date.now()) return null;
+    const parsed = stateSchema.safeParse(JSON.parse(Buffer.from(body, "base64url").toString("utf8")));
+    if (!parsed.success) return null;
+    const { p, l, e } = parsed.data;
+    if (!isOAuthProvider(p) || p !== expectedProvider) return null;
+    if (e <= Date.now()) return null;
     return {
-      provider: parsed.p,
-      localUserId: typeof parsed.l === "string" && USER_ID.test(parsed.l) ? parsed.l : null,
+      provider: p,
+      localUserId: typeof l === "string" && USER_ID.test(l) ? l : null,
     };
   } catch {
     return null;
@@ -202,8 +234,9 @@ function decodeJwtPayload(token: string) {
   const parts = token.split(".");
   if (parts.length < 2) return null;
   try {
-    return JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as Record<string, unknown>;
+    return appleClaimsSchema.parse(JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")));
   } catch {
+    // JWT illisible ou sans `sub` : l'appelant traite null comme un profil invalide.
     return null;
   }
 }
@@ -245,27 +278,22 @@ async function exchangeGoogle(code: string, request: Request): Promise<OAuthProf
     }),
   });
   if (!tokenResponse.ok) throw new Error("OAUTH_TOKEN");
-  const tokenJson = (await tokenResponse.json()) as { access_token?: string };
-  if (!tokenJson.access_token) throw new Error("OAUTH_TOKEN");
+  const tokenJson = googleTokenSchema.safeParse(await tokenResponse.json());
+  if (!tokenJson.success) throw new Error("OAUTH_TOKEN");
 
   const profileResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
-    headers: { authorization: `Bearer ${tokenJson.access_token}` },
+    headers: { authorization: `Bearer ${tokenJson.data.access_token}` },
   });
   if (!profileResponse.ok) throw new Error("OAUTH_PROFILE");
-  const profile = (await profileResponse.json()) as {
-    sub?: string;
-    email?: string;
-    email_verified?: boolean;
-    name?: string;
-  };
-  if (!profile.sub) throw new Error("OAUTH_PROFILE");
-  const email =
-    profile.email_verified === false ? null : normalizeEmail(typeof profile.email === "string" ? profile.email : null);
+  const parsedProfile = googleProfileSchema.safeParse(await profileResponse.json());
+  if (!parsedProfile.success) throw new Error("OAUTH_PROFILE");
+  const profile = parsedProfile.data;
+  const email = profile.email_verified === false ? null : normalizeEmail(profile.email ?? null);
   return {
     provider: "google",
     providerUserId: profile.sub,
     email,
-    displayName: normalizeDisplayName(typeof profile.name === "string" ? profile.name : null),
+    displayName: normalizeDisplayName(profile.name ?? null),
   };
 }
 
@@ -283,10 +311,10 @@ async function exchangeApple(code: string, request: Request, rawUser: string | n
     }),
   });
   if (!tokenResponse.ok) throw new Error("OAUTH_TOKEN");
-  const tokenJson = (await tokenResponse.json()) as { id_token?: string };
-  if (!tokenJson.id_token) throw new Error("OAUTH_TOKEN");
-  const claims = decodeJwtPayload(tokenJson.id_token);
-  if (!claims || typeof claims.sub !== "string") throw new Error("OAUTH_PROFILE");
+  const tokenJson = appleTokenSchema.safeParse(await tokenResponse.json());
+  if (!tokenJson.success) throw new Error("OAUTH_TOKEN");
+  const claims = decodeJwtPayload(tokenJson.data.id_token);
+  if (!claims) throw new Error("OAUTH_PROFILE");
   const clientId = process.env.APPLE_CLIENT_ID!.trim();
   if (claims.iss !== "https://appleid.apple.com") throw new Error("OAUTH_PROFILE");
   const aud = claims.aud;
@@ -297,10 +325,11 @@ async function exchangeApple(code: string, request: Request, rawUser: string | n
   let displayName: string | null = null;
   if (rawUser) {
     try {
-      const parsed = JSON.parse(rawUser) as { name?: { firstName?: string; lastName?: string } };
+      const parsed = appleUserSchema.parse(JSON.parse(rawUser));
       const full = [parsed.name?.firstName, parsed.name?.lastName].filter(Boolean).join(" ");
       displayName = normalizeDisplayName(full || null);
     } catch {
+      // Le nom n'est transmis qu'à la première connexion et reste facultatif : on continue sans.
       displayName = null;
     }
   }
@@ -308,7 +337,7 @@ async function exchangeApple(code: string, request: Request, rawUser: string | n
   const email =
     claims.email_verified === "false" || claims.email_verified === false
       ? null
-      : normalizeEmail(typeof claims.email === "string" ? claims.email : null);
+      : normalizeEmail(claims.email ?? null);
 
   return {
     provider: "apple",

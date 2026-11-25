@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { wishlistTargetReached } from "../../src/lib/logic";
+import { wishlistTargetReached } from "../../src/lib/cards/pricing";
 
 describe("wishlistTargetReached", () => {
   it("atteint quand le prix est égal ou inférieur à la cible (au centime près)", () => {

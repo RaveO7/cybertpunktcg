@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { CardImage } from "@/components/CardImage";
 import { toAmount } from "@/components/card-modal/shared";
-import { baseCollectorNumber } from "@/lib/logic";
+import { baseCollectorNumber } from "@/lib/cards/printings";
 import type { PrintingDTO } from "@/lib/types";
 
 /** Bandeau des impressions de la carte, avec prix et pastille « possédée ». */

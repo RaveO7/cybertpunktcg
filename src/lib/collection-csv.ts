@@ -2,7 +2,7 @@
 // L'import accepte l'export de l'application, un tableur « maison » (en-têtes FR/EN usuels)
 // et les exports Cardmarket (stock ou achats, séparateur « ; »).
 import { EXPANSION_ALIASES, parseCsv, productNameKey } from "./cardmarket";
-import { normalizeText, numberMatches } from "./logic";
+import { normalizeText, numberMatches } from "./cards/search";
 import { CURRENCIES } from "./parse";
 import { CONDITIONS, isSealedSetCode } from "./reference-data";
 import type { CatalogDTO, CollectionItemDTO, PrintingDTO } from "./types";

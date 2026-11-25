@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useNumberFormat, type NumberFormat } from "@/i18n/number-format";
 import { TrendBadge, formatSignedMoney, formatSignedPercent } from "@/components/TrendBadge";
 import { lineProfitPct } from "@/components/investment/sorting";
-import { amountSign, type PriceMovement } from "@/lib/logic";
+import { amountSign, type PriceMovement } from "@/lib/cards/pricing";
 
 export function SummaryStat({
   label,

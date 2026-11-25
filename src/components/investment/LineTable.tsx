@@ -18,7 +18,7 @@ import {
   type SortState,
 } from "@/components/investment/sorting";
 import { MarketChange, ProfitValue, moneyOrDash, profitClass } from "@/components/investment/ui";
-import type { InvestmentLine, InvestmentPosition } from "@/lib/logic";
+import type { InvestmentLine, InvestmentPosition } from "@/lib/investment/portfolio";
 
 /** Clic sur une ligne : sa clé (carte ou achat) et les achats qu'elle couvre. */
 type RowClick = (event: MouseEvent, rowKey: string, itemIds: string[]) => void;
