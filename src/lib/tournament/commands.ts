@@ -20,7 +20,8 @@ import {
 } from "./match-state";
 import { moveBye, pairingWarnings, swapPlayers, type PairedMatch, type PairingWarning, type TournamentFormat } from "./pairing";
 import { cryptoRng, type Rng } from "./random";
-import { saveMatchState, toMatchState, writeTournament, type FullTournament, type RoundRow, type Tx } from "./repository";
+import { NOTIFYING_COMMANDS, tournamentEvents, type TournamentEvent } from "./notifications";
+import { loadTournament, saveMatchState, toMatchState, writeTournament, type FullTournament, type RoundRow, type Tx } from "./repository";
 import { sameResult, type Phase } from "./scores";
 import {
   advanceCut,
@@ -66,7 +67,12 @@ export type CommandResult = {
   replayed?: boolean;
 };
 
-export type CommandOptions = { now?: Date; rng?: Rng };
+export type CommandOptions = {
+  now?: Date;
+  rng?: Rng;
+  /** Évènements à notifier aux joueurs, appelé une fois la commande validée (pas pour un renvoi). */
+  onEvents?: (events: TournamentEvent[]) => void;
+};
 
 type Ctx = { userId: string; role: "owner" | "co"; now: Date; rng: Rng };
 
@@ -93,12 +99,12 @@ export async function runOrganizerCommand(
     if (!limited.ok) fail("tournaments.tooManyPublications", 429);
   }
   try {
-    return await writeTournament(tournamentId, async (tx, t) => {
+    const { result, events } = await writeTournament(tournamentId, async (tx, t) => {
       // Revérifié sous verrou : une copie concurrente de la même commande a pu passer avant nous.
       const done = await tx.tournamentAction.findUnique({
         where: { tournamentId_clientActionId: { tournamentId, clientActionId: command.clientActionId } },
       });
-      if (done) return { ...(JSON.parse(done.resultJson) as CommandResult), replayed: true };
+      if (done) return { result: { ...(JSON.parse(done.resultJson) as CommandResult), replayed: true }, events: [] };
       const role = organizerRole(t, userId);
       if (!role) fail("tournaments.organizersOnly", 403);
       const ctx: Ctx = { userId, role, now: options.now ?? new Date(), rng: options.rng ?? cryptoRng };
@@ -106,8 +112,11 @@ export async function runOrganizerCommand(
       await tx.tournamentAction.create({
         data: { tournamentId, clientActionId: command.clientActionId, resultJson: JSON.stringify(redact(result)) },
       });
-      return result;
+      const after = NOTIFYING_COMMANDS.has(command.type) ? await loadTournament(tx, tournamentId) : null;
+      return { result, events: after ? tournamentEvents(t, after, userId) : [] };
     });
+    if (events.length) options.onEvents?.(events);
+    return result;
   } catch (error) {
     // Même commande envoyée deux fois en parallèle : la seconde lit le résultat de la première.
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

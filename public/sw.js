@@ -130,8 +130,8 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
-// Notifications d'alerte de prix (src/lib/push.ts) : { title, body, url, tag }, déjà dans la langue de
-// l'abonnement. Le tag remplace la notification précédente au lieu d'en empiler une nouvelle.
+// Notifications push (alertes de prix, tournois : src/lib/push.ts) : { title, body, url, tag }, déjà dans la
+// langue de l'abonnement. Le tag remplace la notification précédente au lieu d'en empiler une nouvelle.
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -150,7 +150,8 @@ self.addEventListener("push", (event) => {
   );
 });
 
-// Toucher la notification : liste de souhaits dans une fenêtre déjà ouverte de l'app, sinon une nouvelle.
+// Toucher la notification : sa page (liste de souhaits, écran joueur du tournoi) dans une fenêtre déjà
+// ouverte de l'app, sinon une nouvelle.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const target = new URL(event.notification.data?.url || HOME, self.location.origin);

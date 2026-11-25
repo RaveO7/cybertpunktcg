@@ -218,5 +218,20 @@
   "pairings": "Emparejamientos",
   "claimTitle": "Recuperar mi perfil",
   "claimHint": "El organizador te ha mostrado tu QR personal: este móvil quedará vinculado a tu perfil de jugador.",
-  "claimButton": "Vincular este móvil"
+  "claimButton": "Vincular este móvil",
+  "push": {
+    "round": "Ronda {number}",
+    "topCut": "Top cut",
+    "pairing": "mesa {table} contra {opponent}",
+    "bye": "tienes el bye",
+    "unknownOpponent": "un jugador",
+    "roundPublished": "{round}: {pairing}.",
+    "roundStarted": "Empieza la {round}: {pairing}.",
+    "approved": "Tu inscripción ha sido aprobada.",
+    "ended": "Torneo terminado: los resultados ya están disponibles.",
+    "endedRank": "Torneo terminado: has quedado en el puesto {rank}.",
+    "champion": "Torneo terminado: ¡has ganado el torneo!",
+    "cancelled": "El organizador ha cancelado el torneo."
+  },
+  "pushPrompt": "¿Recibir en este dispositivo un aviso de cada ronda (mesa y rival) y de los resultados?"
 }

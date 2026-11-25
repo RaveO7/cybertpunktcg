@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { expect, settle, test } from "./fixtures";
 
 /**
- * Notifications d'alerte de prix : option des réglages, proposition dans la liste de souhaits et
+ * Notifications push : option des réglages, proposition dans la liste de souhaits et
  * désabonnement à la déconnexion. Le service worker est bloqué en test et Chromium n'a pas de service
  * push : l'abonnement du navigateur est simulé (endpoint en push.example.com), l'autorisation vient du
  * contexte Playwright. Les abonnements suivent le compte de test (suppression en cascade).
@@ -70,7 +70,7 @@ test("autorisation accordée : proposition dans la liste de souhaits, puis désa
   await prisma.wishlistItem.create({ data: { userId: account.id, printingId: printing.id, targetPrice: "0.01" } });
 
   await open(page, "/fr/souhaits");
-  const prompt = page.getByRole("region", { name: "Notifications d’alerte de prix" });
+  const prompt = page.getByRole("region", { name: "Notifications", exact: true });
   await expect(prompt).toContainText("Être prévenu par notification");
   await prompt.getByRole("button", { name: "Activer les notifications" }).click();
   await expect(prompt.getByRole("status")).toHaveText("Notifications activées sur cet appareil.");
