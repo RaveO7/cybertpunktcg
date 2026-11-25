@@ -23,6 +23,7 @@ import { cryptoRng, type Rng } from "./random";
 import { NOTIFYING_COMMANDS, tournamentEvents, type TournamentEvent } from "./notifications";
 import { loadTournament, saveMatchState, toMatchState, writeTournament, type FullTournament, type RoundRow, type Tx } from "./repository";
 import { sameResult, type Phase } from "./scores";
+import { readCommandResult } from "./stored-json";
 import {
   advanceCut,
   cutStillOpen,
@@ -104,7 +105,7 @@ export async function runOrganizerCommand(
       const done = await tx.tournamentAction.findUnique({
         where: { tournamentId_clientActionId: { tournamentId, clientActionId: command.clientActionId } },
       });
-      if (done) return { result: { ...(JSON.parse(done.resultJson) as CommandResult), replayed: true }, events: [] };
+      if (done) return { result: readCommandResult(done.resultJson), events: [] };
       const role = organizerRole(t, userId);
       if (!role) fail("tournaments.organizersOnly", 403);
       const ctx: Ctx = { userId, role, now: options.now ?? new Date(), rng: options.rng ?? cryptoRng };
@@ -132,7 +133,7 @@ async function storedResult(tournamentId: string, clientActionId: string): Promi
     where: { tournamentId_clientActionId: { tournamentId, clientActionId } },
   });
   if (!row) return null;
-  return { ...(JSON.parse(row.resultJson) as CommandResult), replayed: true };
+  return readCommandResult(row.resultJson);
 }
 
 const OK: CommandResult = { ok: true };

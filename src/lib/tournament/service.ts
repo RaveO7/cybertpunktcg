@@ -10,6 +10,7 @@ import type { Rng } from "./random";
 import type { FullTournament, MatchRow, PlayerRow, RoundRow, Tx } from "./repository";
 import { toMatchState } from "./repository";
 import { walkoverGames, winnerOf, type MatchType, type Phase } from "./scores";
+import { readCutDrawList, readCutState } from "./stored-json";
 import {
   computeStandings,
   type LateEntryPolicy,
@@ -116,21 +117,11 @@ export function tournamentStandings(t: FullTournament): Standing[] {
 }
 
 export function readCut(t: FullTournament): CutState | null {
-  if (!t.cutJson) return null;
-  try {
-    return JSON.parse(t.cutJson) as CutState;
-  } catch {
-    return null;
-  }
+  return readCutState(t.cutJson);
 }
 
 export function readCutDraws(t: FullTournament): CutDraw[] {
-  if (!t.cutDrawJson) return [];
-  try {
-    return JSON.parse(t.cutDrawJson) as CutDraw[];
-  } catch {
-    return [];
-  }
+  return readCutDrawList(t.cutDrawJson);
 }
 
 /** Crée une ronde en brouillon et ses matchs ; un bye est validé d'emblée. */
