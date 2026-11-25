@@ -34,10 +34,10 @@ const toAmount = (value: string | null | undefined) => {
 };
 
 /** Cibles atteintes d'abord, puis les plus proches de leur cible, puis les cartes sans cible. */
-function compareRows(a: Row, b: Row) {
+function compareRows(a: Row, b: Row, locale: string) {
   if (a.reached !== b.reached) return a.reached ? -1 : 1;
   const gap = (row: Row) => (row.target && row.market != null ? row.market / row.target : Number.POSITIVE_INFINITY);
-  return gap(a) - gap(b) || a.title.localeCompare(b.title, "fr");
+  return gap(a) - gap(b) || a.title.localeCompare(b.title, locale);
 }
 
 export function WishlistScreen() {
@@ -83,8 +83,8 @@ export function WishlistScreen() {
         owned: owned.get(printing.id) ?? 0,
       });
     }
-    return result.sort(compareRows);
-  }, [catalog, collection, wishlist.items]);
+    return result.sort((a, b) => compareRows(a, b, locale));
+  }, [catalog, collection, wishlist.items, locale]);
 
   const failure = error
     ? { message: error, retry }

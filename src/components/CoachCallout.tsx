@@ -121,7 +121,7 @@ export function CoachCallout({
         }}
       />
       <div
-        className="dm-coach-in pointer-events-none fixed z-[73] w-[min(248px,calc(100vw-16px))] border border-yellow/80 bg-[#0d1118]/95 p-2 shadow-lg backdrop-blur-sm"
+        className="dm-coach-in pointer-events-none fixed z-[73] w-[min(248px,calc(100vw-16px))] border border-yellow/80 bg-panel/95 p-2 shadow-lg backdrop-blur-sm"
         style={{ left: box.left, top: box.top }}
         role="status"
       >

@@ -9,8 +9,11 @@
   --panel: #10141c;
   --panel-2: #171d28;
   --line: #2c384c;
+  --line-field: #66768e;
   --muted: #93a0b4;
   --yellow: #f5e642;
+  --yellow-fill: var(--yellow);
+  --cyan-fill: var(--cyan);
   --cyan: #3ee0ff;
   --danger: #ff5d6c;
   --gain: #3ecf8e;
@@ -33,12 +36,15 @@
   --panel: #ffffff;
   --panel-2: #f1f5fb;
   --line: #c5d0de;
+  --line-field: #76879d;
   --muted: #5a6a7e;
-  --yellow: #b89200;
-  --cyan: #0b8fa8;
+  --yellow: #7f6400;
+  --yellow-fill: #b89200;
+  --cyan-fill: #0b8fa8;
+  --cyan: #08748a;
   --danger: #d63b4c;
   --cp-red: #d1103f;
-  --gain: #1f9d63;
+  --gain: #157a4b;
   --body-glow: rgba(11, 143, 168, 0.14);
   --hud-panel: #f7fafc;
   --hud-border: rgba(11, 143, 168, 0.28);
@@ -56,6 +62,7 @@
   --color-panel: var(--panel);
   --color-panel-2: var(--panel-2);
   --color-line: var(--line);
+  --color-line-field: var(--line-field);
   --color-muted: var(--muted);
   --color-yellow: var(--yellow);
   --color-cyan: var(--cyan);
@@ -635,7 +642,7 @@ html {
   gap: 0.6rem;
   height: 3.25rem;
   padding: 0 1.6rem;
-  background: var(--yellow);
+  background: var(--yellow-fill);
   color: #000;
   font-family: var(--font-chakra-petch), sans-serif;
   font-weight: 700;
@@ -653,7 +660,7 @@ html {
   clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 .cp-btn:hover {
-  background: var(--cyan);
+  background: var(--cyan-fill);
 }
 .cp-btn:focus-visible {
   outline: 2px solid var(--cyan);
@@ -832,7 +839,7 @@ html {
 /* Boutons sur le bandeau jaune : noir sur jaune. */
 .cp-on-yellow .cp-btn {
   background: #000;
-  color: var(--yellow);
+  color: var(--yellow-fill);
 }
 .cp-on-yellow .cp-btn:hover {
   background: #1a1a1a;
@@ -1059,4 +1066,16 @@ html {
   .card-dialog[data-state] .card-dialog-flip {
     animation: none;
   }
+}
+
+/*
+ * Thème clair : --yellow et --cyan sont assez foncés pour du texte (≥ 4,5:1). Les aplats portant du texte noir
+ * gardent la teinte plus claire d'origine, sinon le noir dessus passerait sous 4,5:1.
+ */
+[data-theme="light"] .bg-yellow,
+[data-theme="light"] .hover\:bg-yellow:hover {
+  background-color: var(--yellow-fill);
+}
+[data-theme="light"] .bg-cyan {
+  background-color: var(--cyan-fill);
 }
