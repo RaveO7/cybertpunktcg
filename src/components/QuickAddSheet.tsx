@@ -152,7 +152,7 @@ export function QuickAddSheet({
             </div>
           ) : null}
           <div className="min-w-0">
-            <h2 id="quick-add-title" className="truncate text-xl font-bold text-white">
+            <h2 id="quick-add-title" className="truncate text-xl font-bold text-foreground">
               {name}
             </h2>
             <p className="font-mono text-sm text-muted">

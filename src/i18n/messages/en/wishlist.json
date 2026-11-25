@@ -26,8 +26,6 @@
   "buyOn": "Buy {name} online",
   "failed": "Action failed.",
   "pushPrompt": "Get a notification on this device when a target price is reached?",
-  "pushPromptEnable": "Turn on notifications",
-  "pushPromptDismiss": "Not now",
   "push": {
     "title": "Target price reached",
     "one": "{name} is at {price}.",

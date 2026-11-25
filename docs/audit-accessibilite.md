@@ -72,3 +72,16 @@ Seuils : 4,5:1 pour le texte, 3:1 pour le grand texte et les éléments d'interf
 3. Thème clair : supprimer les couleurs codées en dur (`text-white`, `#c4cede`, `#05060a`, `#0d1118`, bordure possédée), foncer `--yellow`, `--cyan` et `--gain` jusqu'à au moins 4,5:1.
 4. Exposer les états : « possédée », sélection en mode ajout, puces de filtre (`aria-pressed`), nombre de résultats (`role="status"`).
 5. Bordures de champ à 3:1 (token `--field-border`) ; texte des raretés Rare/Epic légèrement éclairci en sombre.
+
+## Corrigé (lot accessibilité de novembre 2026)
+
+- Focus visible sur les cartes (anneau intérieur cyan, `CardTile.tsx`) ; état « possédée » annoncé aux lecteurs d'écran (texte `sr-only`, clé `cards.ownedCount`).
+- Thème clair : `--yellow` `#b89200` → `#7f6400` (2,52 → 4,83:1 sur `--background`), `--cyan` `#0b8fa8` → `#08748a` (3,27 → 4,64:1), `--gain` `#1f9d63` → `#157a4b` (2,97 → 4,59:1). Les aplats `bg-yellow` / `bg-cyan` portant du texte noir gardent l'ancienne teinte (`--yellow-fill`, `--cyan-fill`).
+- Couleurs codées en dur remplacées par les tokens : `CardTile` (`text-white`), `QuickAddSheet`, `RulesText` (`#c4cede`), `CardAnatomy` (`#05060a`), `CoachCallout` (`#0d1118`). La bordure « possédée » codée en dur n'a pas été touchée.
+- Lien d'évitement « Aller au contenu » vers `<main id="contenu">` (`AppFrame`).
+- Puces de filtre en `aria-pressed` ; champ de recherche des listes de filtres nommé (`aria-label`) ; bordure de champ des filtres via le token `--line-field` (3,14:1 en clair, 3,66:1 en sombre).
+- Défilement « retour en haut » du tutoriel : instantané si `prefers-reduced-motion`.
+- Pages d'erreur globales : `<html lang>` mis à la langue de l'URL (`GlobalFallback`).
+- Info-bulle « Eddies » traduite ; tris `localeCompare` suivant la langue courante.
+
+Reste ouvert : gestion du focus des dialogues, nombre de résultats en `role="status"`, sélection du mode ajout (fichiers du lot parallèle : `CardsExplorer`, `CollectionLines`), `--danger` en thème clair (3,92:1), les autres `fieldClass` (`AuthScreen`, `card-modal/shared.ts`, `QuickAddSheet`), raretés et anneaux de focus `/70`.

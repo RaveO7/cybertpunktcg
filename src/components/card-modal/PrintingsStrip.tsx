@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { CardImage } from "@/components/CardImage";
 import { toAmount } from "@/components/card-modal/shared";
@@ -23,6 +23,7 @@ export function PrintingsStrip({
 }) {
   const fmt = useNumberFormat();
   const t = useTranslations();
+  const locale = useLocale();
 
   // Selected printing first, then the same artwork (same number across beta/retail/languages,
   // then same artist and rarity), then the other printings.
@@ -35,8 +36,8 @@ export function PrintingsStrip({
   const allPrintings = [...siblings, printing].sort(
     (a, b) =>
       appearanceRank(a) - appearanceRank(b) ||
-      a.setName.localeCompare(b.setName, "fr") ||
-      a.collectorNumber.localeCompare(b.collectorNumber, "fr", { numeric: true }),
+      a.setName.localeCompare(b.setName, locale) ||
+      a.collectorNumber.localeCompare(b.collectorNumber, locale, { numeric: true }),
   );
 
   if (siblings.length === 0) return null;

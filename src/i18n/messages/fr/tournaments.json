@@ -218,5 +218,20 @@
   "pairings": "Appariements",
   "claimTitle": "Récupérer mon profil",
   "claimHint": "L’organisateur vous a montré votre QR personnel : ce téléphone va être lié à votre profil de joueur.",
-  "claimButton": "Lier ce téléphone"
+  "claimButton": "Lier ce téléphone",
+  "push": {
+    "round": "Ronde {number}",
+    "topCut": "Top cut",
+    "pairing": "table {table} contre {opponent}",
+    "bye": "vous avez le bye",
+    "unknownOpponent": "un joueur",
+    "roundPublished": "{round} : {pairing}.",
+    "roundStarted": "{round} commence : {pairing}.",
+    "approved": "Votre inscription est validée.",
+    "ended": "Tournoi terminé : les résultats sont en ligne.",
+    "endedRank": "Tournoi terminé : vous finissez {rank, selectordinal, one {#er} other {#e}}.",
+    "champion": "Tournoi terminé : vous remportez le tournoi !",
+    "cancelled": "L’organisateur a annulé le tournoi."
+  },
+  "pushPrompt": "Être prévenu sur cet appareil de chaque ronde (table et adversaire) et des résultats ?"
 }
