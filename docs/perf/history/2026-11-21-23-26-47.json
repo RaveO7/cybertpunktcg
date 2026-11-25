@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "date": "2026-11-21T23:30:55.043Z",
+  "label": "diagnostic premier affichage",
+  "baseUrl": "https://cybertpunktcg.vercel.app",
+  "gitSha": "8b38a0f",
+  "runs": 3,
+  "pages": {
+    "fiche-carte": {
+      "path": "/fr/cartes/adam-smasher-ender-of-legends",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 75,
+            "fcp": 272,
+            "lcp": 272,
+            "domContentLoaded": 198.39999997615814,
+            "load": 290.80000001192093,
+            "visualComplete": 272,
+            "fullyLoaded": 677.3999999761581,
+            "cls": 0,
+            "requests": 42,
+            "totalKB": 603,
+            "jsKB": 260,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 63,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 1226,
+            "lcp": 3247,
+            "tbt": 10185,
+            "cls": 0,
+            "speedIndex": 1692,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 64.60000002384186,
+            "fcp": 268,
+            "lcp": 268,
+            "domContentLoaded": 207.5,
+            "load": 294,
+            "visualComplete": 268,
+            "fullyLoaded": 685.8999999761581,
+            "cls": 0,
+            "requests": 43,
+            "totalKB": 489,
+            "jsKB": 260,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cartes/adam-smasher-ender-of-legends",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 70,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 318,
+            "lcp": 701,
+            "tbt": 2044,
+            "cls": 0,
+            "speedIndex": 822,
+            "runs": 3
+          }
+        }
+      }
+    },
+    "cgu": {
+      "path": "/fr/cgu",
+      "auth": false,
+      "profiles": {
+        "mobile": {
+          "timings": {
+            "ttfb": 61.799999952316284,
+            "fcp": 188,
+            "lcp": 188,
+            "domContentLoaded": 176.39999997615814,
+            "load": 252.69999998807907,
+            "visualComplete": 188,
+            "fullyLoaded": 637.6999999880791,
+            "cls": 0,
+            "requests": 37,
+            "totalKB": 420,
+            "jsKB": 258,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cgu",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 65,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 1228,
+            "lcp": 2848,
+            "tbt": 10289,
+            "cls": 0,
+            "speedIndex": 1730,
+            "runs": 3
+          }
+        },
+        "desktop": {
+          "timings": {
+            "ttfb": 65.69999998807907,
+            "fcp": 256,
+            "lcp": 256,
+            "domContentLoaded": 194.5,
+            "load": 342,
+            "visualComplete": 256,
+            "fullyLoaded": 718.5,
+            "cls": 0,
+            "requests": 37,
+            "totalKB": 420,
+            "jsKB": 258,
+            "imageKB": 0
+          },
+          "checks": {
+            "status": 200,
+            "finalPath": "/fr/cgu",
+            "consoleErrors": [],
+            "failedRequests": [],
+            "brokenImages": []
+          },
+          "lighthouse": {
+            "performance": 90,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "fcp": 311,
+            "lcp": 638,
+            "tbt": 255,
+            "cls": 0,
+            "speedIndex": 872,
+            "runs": 3
+          }
+        }
+      }
+    }
+  }
+}
