@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ChartPoint } from "@/components/PriceChart";
+import type { ChartPoint } from "@/components/price-chart/types";
 import { fetchCached, readCached } from "@/components/data-cache";
 import { CHART_RANGE_DAYS, type ChartRange } from "@/components/investment/chart-range";
 import type { Parsed } from "@/lib/client/api";

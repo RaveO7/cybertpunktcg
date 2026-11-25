@@ -1,5 +1,5 @@
 // Notifications Web Push : abonnements des appareils (/api/push/subscribe) et envoi aux appareils d'une
-// liste de comptes. Deux usages : alertes de prix après l'import quotidien (src/lib/price-import.ts) et
+// liste de comptes. Deux usages : alertes de prix après l'import quotidien (src/lib/price-import/) et
 // tournois (src/lib/tournament/notifications.ts). Clés VAPID dans l'environnement ; sans elles, rien
 // n'est envoyé et l'option des réglages est masquée.
 import type { PrismaClient } from "@prisma/client";

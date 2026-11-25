@@ -3,7 +3,8 @@
 import { useSelectedLayoutSegments } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCollection } from "@/components/CollectionProvider";
-import { BottomNav, Header } from "@/components/Header";
+import { Header } from "@/components/Header";
+import { BottomNav } from "@/components/header/BottomNav";
 import { Footer } from "@/components/Footer";
 import { OfflineBanner } from "@/components/OfflineSupport";
 import { LegacyLocalePreference, PreferredLanguageRedirect } from "@/components/site/PreferredLanguageRedirect";

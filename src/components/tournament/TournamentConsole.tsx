@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { Translator } from "@/i18n/translator";
-import type { CommandWarning } from "@/lib/tournament/commands";
+import type { CommandWarning } from "@/lib/tournament/command-context";
 import type { TournamentView } from "@/lib/tournament/view";
 import { useOrganizerActions, useServerNow, useTournamentState, type ActionOutcome } from "./hooks";
 import { PlayersTab } from "./PlayersTab";

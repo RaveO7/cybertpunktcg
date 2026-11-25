@@ -1,6 +1,6 @@
 // Durée affichée par le graphique de valeur et fenêtre de dates correspondante (sans React : testable seule).
 
-import type { ChartPoint, ChartPurchase } from "@/components/PriceChart";
+import type { ChartPoint, ChartPurchase } from "@/components/price-chart/types";
 
 export type ChartRange = "1d" | "1w" | "1m" | "1y" | "all";
 

@@ -7,12 +7,11 @@ import {
   DISTINCT_MARKET_SET_PAIRS,
   findSharedProductClones,
   languageMarketSetPairs,
-  matchCardmarketPrices,
-  parsePriceFile,
-  parseProductFile,
   RETAIL_PRICE_PROPAGATION,
-  type LocalPrinting,
-} from "../../src/lib/cardmarket";
+} from "../../src/lib/cardmarket/clones";
+import { matchCardmarketPrices } from "../../src/lib/cardmarket/match";
+import { parsePriceFile, parseProductFile } from "../../src/lib/cardmarket/parse";
+import type { LocalPrinting } from "../../src/lib/cardmarket/types";
 import { prisma } from "../../src/lib/prisma";
 import { assertFullCatalog } from "../helpers/catalog";
 

@@ -5,9 +5,10 @@
  */
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
+import { languageMarketSetPairs } from "../../src/lib/cardmarket/clones";
+import { productNameKey } from "../../src/lib/cardmarket/keys";
+import { matchCardmarketPrices } from "../../src/lib/cardmarket/match";
 import {
-  languageMarketSetPairs,
-  matchCardmarketPrices,
   parseGuideDetails,
   parseGuideDetailsFile,
   parsePriceFile,
@@ -15,8 +16,7 @@ import {
   parseProductFile,
   parseProducts,
   parseTrends,
-  productNameKey,
-} from "../../src/lib/cardmarket";
+} from "../../src/lib/cardmarket/parse";
 import {
   parseSealedProductFile,
   parseSealedProducts,

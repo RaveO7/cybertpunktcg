@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 import { userFromRequest } from "./auth";
 import { prisma } from "./prisma";
 import { CARD_BACK_IMAGE } from "./card-image";
-import { GUIDE_DETAIL_KINDS, type GuideDetailKind } from "./cardmarket";
+import { GUIDE_DETAIL_KINDS, type GuideDetailKind } from "./cardmarket/parse";
 import { lineDate } from "./collection-line";
 import type { CardDTO, CatalogDTO, CollectionItemDTO, ConditionDTO, PrintingDTO, PriceGuideDTO, SetDTO } from "./types";
 

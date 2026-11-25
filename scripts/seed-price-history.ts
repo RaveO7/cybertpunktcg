@@ -5,7 +5,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
-import { parsePriceFile } from "../src/lib/cardmarket";
+import { parsePriceFile } from "../src/lib/cardmarket/parse";
 import { sealedProductId } from "../src/lib/cardmarket-sealed";
 import { shiftUtcDay, utcDay, utcDayKey } from "../src/lib/price-history";
 
@@ -37,7 +37,8 @@ async function main() {
   // store productId is NOT on Price. Use printing.externalId for sealed; for singles look up from
   // products file by matching through a fresh match report.
 
-  const { matchCardmarketPrices, parseProductFile } = await import("../src/lib/cardmarket");
+  const { matchCardmarketPrices } = await import("../src/lib/cardmarket/match");
+  const { parseProductFile } = await import("../src/lib/cardmarket/parse");
   const products = parseProductFile(
     await readFile(path.join(ROOT, "data/cardmarket/products_singles_23.json"), "utf8"),
   );

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it, vi } from "vitest";
-import type { ChartPoint, ChartPurchase } from "../../src/components/PriceChart";
+import type { ChartPoint, ChartPurchase } from "../../src/components/price-chart/types";
 import { attachPurchases, chartRangeStart, filterChartRange } from "../../src/components/investment/chart-range";
 import { initialSortDir, sortPositionRows, sortSetRows } from "../../src/components/investment/sorting";
 import {

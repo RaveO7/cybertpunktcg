@@ -1,5 +1,5 @@
 /**
- * Import du guide de prix Cardmarket (src/lib/price-import.ts) écrit en base.
+ * Import du guide de prix Cardmarket (src/lib/price-import/) écrit en base.
  * Travaille sur une COPIE de la base SQLite de DATABASE_URL (tests/helpers/db-copy.ts) :
  * la vraie base n'est jamais modifiée. Dans la copie, tout le catalogue existant est désactivé
  * et les prix Cardmarket vidés, puis un mini-catalogue propre au test est créé : le test marche
@@ -16,7 +16,7 @@ import { afterAll, beforeAll, describe, it } from "vitest";
 import { openDatabaseCopy } from "../helpers/db-copy";
 
 type Prisma = typeof import("../../src/lib/prisma").prisma;
-type PriceImport = typeof import("../../src/lib/price-import");
+type PriceImport = typeof import("../../src/lib/price-import/import-prices");
 type PriceHistory = typeof import("../../src/lib/price-history");
 
 const stamp = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -159,7 +159,7 @@ beforeAll(async () => {
   db = await openDatabaseCopy("cptcg-price-import-");
   prisma = db.prisma;
   filesDir = mkdtempSync(path.join(db.tmpDir, "files-"));
-  ({ importPrices } = await import("../../src/lib/price-import"));
+  ({ importPrices } = await import("../../src/lib/price-import/import-prices"));
   ph = await import("../../src/lib/price-history");
 
   // Copie seulement : catalogue existant hors jeu, prix Cardmarket repartis de zéro.

@@ -4,11 +4,10 @@ import {
   assignmentCoverage,
   DISTINCT_MARKET_SET_PAIRS,
   findSharedProductClones,
-  matchCardmarketPrices,
-  parsePriceFile,
-  parseProductFile,
   RETAIL_PRICE_PROPAGATION,
-} from "../../src/lib/cardmarket";
+} from "../../src/lib/cardmarket/clones";
+import { matchCardmarketPrices } from "../../src/lib/cardmarket/match";
+import { parsePriceFile, parseProductFile } from "../../src/lib/cardmarket/parse";
 import {
   buildPortfolioHistory,
   buildPrintingHistory,
