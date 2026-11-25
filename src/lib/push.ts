@@ -6,6 +6,7 @@ import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/i18n/config";
 import { formatterFor, translatorFor } from "@/i18n/server";
 import { routePath } from "@/i18n/paths";
+import { fail } from "./app-error";
 import { prisma } from "./prisma";
 
 /** Regroupe les notifications d'alerte : une nouvelle remplace la précédente au lieu de s'empiler. */
@@ -17,15 +18,35 @@ const PRICE_TTL_SECONDS = 24 * 60 * 60;
 
 export type PushSubscriptionInput = { endpoint: string; keys: { p256dh: string; auth: string }; locale?: string };
 
-/** Enregistre l'appareil pour ce compte. Un endpoint déjà connu passe au compte courant. */
+/** Abonnements conservés par compte : les plus anciens sont supprimés au-delà. */
+export const MAX_PUSH_SUBSCRIPTIONS_PER_USER = 10;
+
+/**
+ * Enregistre l'appareil pour ce compte. Un endpoint appartenant à un autre compte n'est jamais
+ * écrasé ni réattribué par simple connaissance de son URL : il ne passe au compte courant que si les
+ * clés envoyées sont celles déjà enregistrées (même navigateur, par exemple après un changement de
+ * compte sur un appareil partagé). Sinon : refus (409).
+ */
 export async function savePushSubscription(userId: string, input: PushSubscriptionInput, fallbackLocale: Locale) {
   const locale = isLocale(input.locale) ? input.locale : fallbackLocale;
   const data = { userId, p256dh: input.keys.p256dh, auth: input.keys.auth, locale };
+  const existing = await prisma.pushSubscription.findUnique({ where: { endpoint: input.endpoint } });
+  if (existing && existing.userId !== userId && (existing.p256dh !== data.p256dh || existing.auth !== data.auth)) {
+    fail("common.saveFailed", 409);
+  }
   await prisma.pushSubscription.upsert({
     where: { endpoint: input.endpoint },
     create: { endpoint: input.endpoint, ...data },
-    update: data,
+    // Réabonnement : l'appareil redevient le plus récent, il ne sera pas le premier supprimé.
+    update: { ...data, createdAt: new Date() },
   });
+  const surplus = await prisma.pushSubscription.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    skip: MAX_PUSH_SUBSCRIPTIONS_PER_USER,
+    select: { id: true },
+  });
+  if (surplus.length) await prisma.pushSubscription.deleteMany({ where: { id: { in: surplus.map((row) => row.id) } } });
   return { active: true, locale };
 }
 
