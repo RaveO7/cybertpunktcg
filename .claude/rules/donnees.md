@@ -19,7 +19,7 @@ paths:
 - Nouvelle garde d'accès : test dans `tests/db/security.test.ts` + mutation (skill `test-mutation`).
 
 ## Validation et erreurs
-- Toute entrée (corps, query string, params, en-têtes, réponse d'une API externe) passe par un schéma Zod de `src/lib/api-schemas.ts` (ou du domaine). Query string : `z.coerce.*`.
+- Toute entrée (corps, query string, params, en-têtes, réponse d'une API externe) passe par un schéma Zod de `src/lib/api-schemas/` (un fichier par domaine) (ou du domaine). Query string : `z.coerce.*`.
 - Un schéma est défini une fois ; le type en dérive (`z.infer`), pas d'interface parallèle.
 - Erreur serveur inattendue : `reportError(source, error, contexte)` de `src/lib/monitoring.ts`, puis réponse via `errorResponse`.
 

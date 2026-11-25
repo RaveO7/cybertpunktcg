@@ -12,6 +12,6 @@ effort: high
    - nouveau champ obligatoire sur une table existante : une valeur par défaut, sinon `db push` refuse en prod ;
    - pas de type ou d'option propre à Postgres que SQLite ne supporte pas (enums natifs, `@db.*`), sauf vérification des deux côtés.
 3. **Appliquer en local** : `node scripts/prisma.mjs generate` puis `node scripts/prisma.mjs db push --skip-generate`.
-4. **Code** : types, requêtes, `src/lib/api-schemas.ts`, et les endroits qui listent les tables (`scripts/sql-dump.ts`, `scripts/sync-local-to-prod.ts`, `scripts/export-local-to-postgres.ts`, `scripts/export-test-fixtures.ts`, `tests/fixtures/seed-ci.ts`) si la table doit y figurer.
+4. **Code** : types, requêtes, `src/lib/api-schemas/` (un fichier par domaine), et les endroits qui listent les tables (`scripts/sql-dump.ts`, `scripts/sync-local-to-prod.ts`, `scripts/export-local-to-postgres.ts`, `scripts/export-test-fixtures.ts`, `tests/fixtures/seed-ci.ts`) si la table doit y figurer.
 5. **Vérifier** : typecheck, lint, `npm run test:unit`, `npm run test:db` ; suppression de compte : `npx vitest run tests/db/account-delete.test.ts`.
 6. **Prod** : rien à lancer à la main. Le build de production Vercel applique `db push` (`scripts/vercel-db-push.mjs`) et refuse toute perte de données. Si le changement supprime ou renomme une colonne avec des données, préviens-moi avant de commiter : il faut une migration en deux temps.
