@@ -150,7 +150,7 @@ export function LineEditor({
         <span className="relative flex h-10 items-center">
           <span className={`pointer-events-none absolute left-2 top-1/2 z-10 h-2 w-2 -translate-y-1/2 ${conditionDot(item.conditionCode)}`} aria-hidden="true" />
           <select
-            className="h-full w-full min-w-0 border border-line bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan"
+            className="h-full w-full min-w-0 border border-line-field bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan"
             value={item.conditionCode}
             onChange={(event) => show(onPatch(item.id, { conditionCode: event.target.value }))}
             title={conditionName ? `${item.conditionCode} — ${conditionName}` : t("modal.condition")}
@@ -168,7 +168,7 @@ export function LineEditor({
         <span className={labelClass} aria-hidden="true">
           {t("modal.quantity")}
         </span>
-        <div className="inline-flex h-10 w-full items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
+        <div className="inline-flex h-10 w-full items-stretch border border-line-field bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <button
             type="button"
             className={iconBtnClass}
@@ -205,7 +205,7 @@ export function LineEditor({
         <span className={labelClass} aria-hidden="true">
           {t("modal.unitPurchasePrice")}
         </span>
-        <div className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
+        <div className="flex h-10 border border-line-field bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <input
             className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
             placeholder="—"
