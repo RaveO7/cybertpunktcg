@@ -184,9 +184,19 @@ describe("seo : données structurées", () => {
   });
 
   it("carte : illustrateur absent → pas d'auteur", () => {
-    const ld = cardLd({ name: "V", slug: "v-streetkid", description: "Texte", image: "/card-images/v.webp", artist: null }, "fr");
+    const ld = cardLd({ name: "V", slug: "v-streetkid", description: "Texte", image: "/card-images/v.webp", artist: null, marketPrice: null }, "fr");
     assert.ok(!("author" in ld));
     assert.equal(ld.image, "https://tcgtracker.test/card-images/v.webp");
     assert.equal(ld.url, "https://tcgtracker.test/fr/cartes/v-streetkid");
+  });
+
+  it("carte : prix de marché → aussi Product avec une offre en euros, sans prix → CreativeWork seul", () => {
+    const source = { name: "V", slug: "v", description: null, image: null, artist: null };
+    const priced = cardLd({ ...source, marketPrice: "12.50" }, "fr");
+    assert.deepEqual(priced["@type"], ["CreativeWork", "Product"]);
+    assert.deepEqual(priced.offers, { "@type": "AggregateOffer", lowPrice: "12.50", priceCurrency: "EUR" });
+    const unpriced = cardLd({ ...source, marketPrice: null }, "fr");
+    assert.equal(unpriced["@type"], "CreativeWork");
+    assert.ok(!("offers" in unpriced));
   });
 });
