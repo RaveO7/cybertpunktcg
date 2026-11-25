@@ -26,11 +26,16 @@ function latest(dates: Date[]): Date {
   return dates.reduce((max, date) => (date > max ? date : max));
 }
 
-const STATIC_PAGES: PublicRouteKey[] = ["home", "cards", "legalNotice", "terms", "privacy", "login"];
+/** Pages qui affichent le catalogue : elles changent avec la dernière carte modifiée. */
+const CATALOG_PAGES: PublicRouteKey[] = ["home", "cards"];
+const FIXED_PAGES: PublicRouteKey[] = ["legalNotice", "terms", "privacy", "login"];
 
-/** Pages fixes (accueil, catalogue, pages légales…), sans date de modification. */
-export function staticSitemapEntries(): Entry[] {
-  return STATIC_PAGES.flatMap((key) => localized(key));
+/** Pages fixes : accueil et catalogue datés par le catalogue, pages légales sans date (aucune trace de leur modification). */
+export function staticSitemapEntries(catalogUpdatedAt: Date | null): Entry[] {
+  return [
+    ...CATALOG_PAGES.flatMap((key) => localized(key, {}, catalogUpdatedAt ?? undefined)),
+    ...FIXED_PAGES.flatMap((key) => localized(key)),
+  ];
 }
 
 /** Fiches des cartes (hors produits scellés), datées de leur dernière modification ou de celle d'un de leurs tirages. */
@@ -58,8 +63,9 @@ export async function buildSitemap(now = new Date()): Promise<MetadataRoute.Site
     }),
   ]);
 
+  const cardDates = cards.flatMap((entry) => (entry.lastModified instanceof Date ? [entry.lastModified] : []));
   return [
-    ...staticSitemapEntries(),
+    ...staticSitemapEntries(cardDates.length ? latest(cardDates) : null),
     ...cards,
     ...shops.flatMap((shop) => localized("shop", { slug: shop.slug }, shop.updatedAt)),
     ...tournaments.flatMap((t) => localized("tournament", { id: t.id }, t.updatedAt)),
