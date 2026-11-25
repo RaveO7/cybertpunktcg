@@ -41,7 +41,9 @@ test.describe("connecté", () => {
     await expect(page.getByRole("status").filter({ hasText: /1 exemplaire · 1 carte/ })).toBeVisible();
 
     // Quitter avec une sélection : dialogue modal, focus sur « Rester », Échap le ferme et rend le focus.
-    await addMode.click();
+    // Au clavier : Safari ne donne pas le focus à un bouton cliqué.
+    await addMode.focus();
+    await page.keyboard.press("Enter");
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Rester" })).toBeFocused();
