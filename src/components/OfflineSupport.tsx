@@ -42,6 +42,7 @@ export function ServiceWorkerRegister() {
   }).toString();
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
+    // Échec sans risque : le site fonctionne sans service worker (seul le mode hors ligne manque), et la prochaine visite réessaie.
     navigator.serviceWorker.register(`/sw.js?${params}`, { scope: "/", updateViaCache: "none" }).catch(() => undefined);
   }, [params]);
   return null;

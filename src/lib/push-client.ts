@@ -68,6 +68,7 @@ export async function readPushState(locale: string): Promise<PushState> {
   if ((await notificationPermission()) === "denied") return "denied";
   const subscription = await currentSubscription();
   if (!subscription) return "off";
+  // Rattachement au compte raté (hors ligne) : l'appareil reste abonné, il sera renvoyé à la prochaine lecture de l'état.
   await sendSubscription(subscription, locale).catch(() => undefined);
   return "on";
 }
@@ -86,6 +87,7 @@ export async function enablePush(locale: string): Promise<PushState> {
   try {
     await sendSubscription(subscription, locale);
   } catch (error) {
+    // Retour en arrière au mieux : l'erreur d'origine est relancée juste après et c'est elle que l'écran affiche.
     await subscription.unsubscribe().catch(() => undefined);
     throw error;
   }
@@ -97,7 +99,9 @@ export async function disablePush(): Promise<void> {
   try {
     const subscription = await currentSubscription();
     if (!subscription) return;
+    // Serveur injoignable : l'abonnement serveur sera purgé à son prochain envoi refusé (endpoint expiré).
     await api(SUBSCRIBE_URL, { method: "DELETE", body: { endpoint: subscription.endpoint } }).catch(() => undefined);
+    // Le désabonnement local peut échouer sans conséquence : ce navigateur n'est plus enregistré côté serveur.
     await subscription.unsubscribe().catch(() => undefined);
   } catch {
     // Service worker indisponible : rien à désabonner.

@@ -331,6 +331,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       // réponse du serveur ; les deux requêtes sont en général déjà parties depuis le <head> (boot-requests).
       const boot = bootRequests.current;
       const catalogRequest = catalogWanted.then(() => boot?.catalog ?? requestCatalog());
+      // Rejet traité à la lecture plus bas : ce gestionnaire évite seulement un rejet « non géré » entre-temps.
       catalogRequest.catch(() => undefined);
       if (remembered) {
         void readSavedCollection(remembered.id).then((saved) => {
@@ -512,6 +513,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         setQueued({ userId, ops: readOps(record).ops });
         void replayRef.current();
       })
+      // File hors ligne illisible : elle est ignorée, la collection du serveur fait foi.
       .catch(() => undefined);
     return () => {
       cancelled = true;
@@ -592,6 +594,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
           throw actionError(error, errors("logoutFailed"));
         });
         // Déconnexion voulue (confirmée par l'écran si la file n'est pas vide) : les modifications en attente sont perdues.
+        // Purge locale ratée (stockage bloqué) : sans conséquence, la file est de toute façon liée à l'identifiant de ce compte.
         if (user) await clearQueue(queueStore(), user.id).catch(() => undefined);
         endSession();
         setError(null);
@@ -600,6 +603,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         await api("/api/auth/account", { method: "DELETE", body: { confirm: true } }).catch((error: unknown) => {
           throw actionError(error, errors("deleteAccountFailed"));
         });
+        // Même justification qu'à la déconnexion : la purge locale est facultative.
         if (user) await clearQueue(queueStore(), user.id).catch(() => undefined);
         endSession();
         setError(null);
