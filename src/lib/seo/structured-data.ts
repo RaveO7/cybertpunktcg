@@ -266,13 +266,19 @@ export type CardLdSource = {
   description: string | null;
   image: string | null;
   artist: string | null;
+  /** Prix de marché Cardmarket en euros ("12.34"), null sans guide de prix importé. */
+  marketPrice: string | null;
 };
 
-/** Carte de jeu : œuvre appartenant au jeu Cyberpunk TCG. */
+/**
+ * Carte de jeu : œuvre appartenant au jeu Cyberpunk TCG. Avec un prix de marché, c'est aussi un produit
+ * (extrait enrichi « prix » dans Google) ; sans prix, Product serait invalide (offers requis), on s'en tient à CreativeWork.
+ */
 export function cardLd(card: CardLdSource, locale: Locale): JsonLdObject {
   return compact({
     "@context": CONTEXT,
-    "@type": "CreativeWork",
+    "@type": card.marketPrice ? ["CreativeWork", "Product"] : "CreativeWork",
+    offers: card.marketPrice ? { "@type": "AggregateOffer", lowPrice: card.marketPrice, priceCurrency: "EUR" } : null,
     name: card.name,
     url: absoluteUrl(localizedPath("card", locale, { slug: card.slug })),
     image: toAbsolute(card.image),

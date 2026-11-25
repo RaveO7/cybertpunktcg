@@ -32,7 +32,7 @@ async function main() {
   try {
     const startedAt = new Date();
     const since = lastSubmittedAt();
-    const entries = since ? await cardSitemapEntries() : [...staticSitemapEntries(), ...(await cardSitemapEntries())];
+    const entries = since ? await cardSitemapEntries() : [...staticSitemapEntries(null),...(await cardSitemapEntries())];
     const urls = indexNowUrls(entries, since);
     console.log(`IndexNow : ${urls.length} URL ${since ? `modifiées depuis le ${since.toISOString()}` : "(envoi complet)"}.`);
     if (dryRun || urls.length === 0) return;

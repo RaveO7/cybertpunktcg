@@ -217,7 +217,7 @@ export async function CardPage({ locale, slug }: { locale: Locale; slug: string 
         ]}
       />
       <JsonLd
-        data={[cardLd({ name: card.name, slug: card.slug, description: plainRules(card.rulesText), image: card.image, artist: card.artist }, locale)]}
+        data={[cardLd({ name: card.name, slug: card.slug, description: plainRules(card.rulesText), image: card.image, artist: card.artist, marketPrice: card.marketPrice }, locale)]}
       />
       <article className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-5">
         <div className="grid gap-6 md:grid-cols-[minmax(0,320px)_1fr]">
