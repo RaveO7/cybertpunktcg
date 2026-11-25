@@ -84,4 +84,14 @@ Seuils : 4,5:1 pour le texte, 3:1 pour le grand texte et les éléments d'interf
 - Pages d'erreur globales : `<html lang>` mis à la langue de l'URL (`GlobalFallback`).
 - Info-bulle « Eddies » traduite ; tris `localeCompare` suivant la langue courante.
 
-Reste ouvert : gestion du focus des dialogues, nombre de résultats en `role="status"`, sélection du mode ajout (fichiers du lot parallèle : `CardsExplorer`, `CollectionLines`), `--danger` en thème clair (3,92:1), les autres `fieldClass` (`AuthScreen`, `card-modal/shared.ts`, `QuickAddSheet`), raretés et anneaux de focus `/70`.
+## Corrigé (second lot, novembre 2026)
+
+- Dialogues : tous passent par `useModal` (`src/components/use-modal.ts`) — focus initial, Tab bouclé, fond `inert`, Échap, retour du focus. Couverts : fiche de carte, quitter le mode ajout (`LeaveAddModeDialog`, focus initial sur « Rester »), quitter le parcours (`HowToPlayScreen`), ajout rapide, tiroir de filtres, aperçu et confirmation des decks, éventail de l'accueil, et le parcours débutant plein écran du téléphone (`DemoMatch`, Échap = la croix de sortie).
+- Nombre de résultats en `role="status"` (`ResultSummary`).
+- Mode ajout : récapitulatif de la sélection en `role="status"` et erreur d'ajout en `role="alert"` (`SelectionBar`) ; compteur de la tuile annoncé « N exemplaires à ajouter » (clé `cards.queuedCount`). Les tuiles exposent déjà `aria-pressed` pendant la sélection au clavier ; un simple clic ouvre l'ajout rapide, ce n'est pas un bouton à bascule.
+- `--danger` en clair : `#d63b4c` → `#b8293a` (3,92 → 5,27:1 sur `--background`, 4,52:1 sur sa teinte 10 %).
+- `fieldClass` de `AuthScreen`, `card-modal/shared.ts` et `QuickAddSheet` sur `--line-field`.
+- Anneaux de focus : plus aucun `ring-*/70` ni `ring-yellow/80`, couleur pleine (en clair, cyan 2,80 → 4,64:1, jaune 2,81 → 4,83:1, danger 2,69 → 5,27:1 sur `--background`).
+- Raretés (texte des pastilles, teinte 12 % sur `--panel`) : en sombre Rare `#60a5fa` (4,37 → 6,04) et Epic `#f87171` (4,40 → 5,70) ; en clair Uncommon `#08704d` (5,13), Rare `#1d4ed8` (5,56), Epic `#b91c1c` (5,28), Nova `#7a6200` (4,97), Secret `#545e6d` (5,53), Common inchangé (4,72).
+
+Reste ouvert : bordures des champs écrits à la main hors `fieldClass` (prix et quantité de `AddCopyForm` / `CollectionLines`, recherche des listes de souhaits, recherche du catalogue), encore sur `--line`.

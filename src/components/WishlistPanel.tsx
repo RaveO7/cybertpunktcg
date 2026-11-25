@@ -64,7 +64,7 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
       >
         <label className="w-32">
           <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t("wishlist.targetPrice")}</span>
-          <span className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+          <span className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
             <input
               className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
               inputMode="decimal"
@@ -79,7 +79,7 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
           <button
             type="submit"
             disabled={pending}
-            className="inline-flex h-10 items-center gap-1.5 bg-yellow px-3 text-sm font-semibold text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80 disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-1.5 bg-yellow px-3 text-sm font-semibold text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow disabled:opacity-60"
           >
             {item ? t("wishlist.save") : t("wishlist.add")}
           </button>
@@ -89,7 +89,7 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
             type="button"
             disabled={pending}
             onClick={() => void run(() => wishlist.remove(item.id))}
-            className="inline-flex h-10 items-center border border-line px-3 text-sm text-muted transition hover:border-danger hover:text-danger focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/70 disabled:opacity-60"
+            className="inline-flex h-10 items-center border border-line px-3 text-sm text-muted transition hover:border-danger hover:text-danger focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger disabled:opacity-60"
           >
             {t("wishlist.remove")}
           </button>

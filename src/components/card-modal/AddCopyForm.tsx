@@ -166,7 +166,7 @@ export function DesktopAddForm({
         <span className="relative flex h-10 items-center">
           <span className={`pointer-events-none absolute left-2 top-1/2 z-10 h-2 w-2 -translate-y-1/2 ${conditionDot(conditionCode)}`} aria-hidden="true" />
           <select
-            className="h-full w-full min-w-0 border border-line bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan/70"
+            className="h-full w-full min-w-0 border border-line bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan"
             value={conditionCode}
             onChange={(event) => setConditionCode(event.target.value)}
             aria-label={t("modal.condition")}
@@ -178,7 +178,7 @@ export function DesktopAddForm({
             ))}
           </select>
         </span>
-        <div className="inline-flex h-10 w-full items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+        <div className="inline-flex h-10 w-full items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <button
             type="button"
             className={iconBtnClass}
@@ -203,7 +203,7 @@ export function DesktopAddForm({
             +
           </button>
         </div>
-        <div className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+        <div className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <input
             className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
             inputMode="decimal"
@@ -243,7 +243,7 @@ export function DesktopAddForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-10 items-center justify-center bg-yellow text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80 disabled:opacity-60"
+          className="inline-flex h-10 items-center justify-center bg-yellow text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow disabled:opacity-60"
           aria-label={pending ? t("modal.adding") : t("modal.add")}
           title={t("modal.add")}
         >
@@ -318,7 +318,7 @@ export function MobileAddForm({
               aria-pressed={active}
               title={condition.name}
               onClick={() => setConditionCode(condition.code)}
-              className={`h-11 font-mono text-[13px] transition focus-visible:relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/70 ${
+              className={`h-11 font-mono text-[13px] transition focus-visible:relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan ${
                 index > 0 ? "border-l border-line" : ""
               } ${active ? "bg-yellow font-semibold text-black" : "text-muted"}`}
             >
@@ -329,7 +329,7 @@ export function MobileAddForm({
       </div>
       {showMoreFields ? (
         <div className="grid grid-cols-2 gap-2.5">
-          <div className="flex h-11 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+          <div className="flex h-11 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
             <input
               className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-[15px] outline-none"
               inputMode="decimal"
@@ -371,7 +371,7 @@ export function MobileAddForm({
         </div>
       ) : null}
       <div className="flex gap-2.5">
-        <div className="flex h-12 items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+        <div className="flex h-12 items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <button
             type="button"
             className={`${iconBtnClass} w-11 text-lg`}
@@ -399,7 +399,7 @@ export function MobileAddForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap bg-yellow px-3 text-sm font-semibold sm:gap-2 sm:px-4 sm:text-[15px] text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80 disabled:opacity-60"
+          className="inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap bg-yellow px-3 text-sm font-semibold sm:gap-2 sm:px-4 sm:text-[15px] text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow disabled:opacity-60"
         >
           <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M8 3v10M3 8h10" />
@@ -409,7 +409,7 @@ export function MobileAddForm({
       </div>
       <button
         type="button"
-        className="h-9 text-[13px] text-cyan focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
+        className="h-9 text-[13px] text-cyan focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan"
         onClick={() => setShowMoreFields((value) => !value)}
         aria-expanded={showMoreFields}
       >

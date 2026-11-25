@@ -124,7 +124,7 @@ export function LineEditor({
         </div>
         <button
           type="button"
-          className={`grid h-11 w-11 shrink-0 place-items-center border transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70 ${
+          className={`grid h-11 w-11 shrink-0 place-items-center border transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan ${
             editing ? "border-cyan/60 text-cyan" : "border-line text-muted"
           }`}
           onClick={() => setEditing((value) => !value)}
@@ -150,7 +150,7 @@ export function LineEditor({
         <span className="relative flex h-10 items-center">
           <span className={`pointer-events-none absolute left-2 top-1/2 z-10 h-2 w-2 -translate-y-1/2 ${conditionDot(item.conditionCode)}`} aria-hidden="true" />
           <select
-            className="h-full w-full min-w-0 border border-line bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan/70"
+            className="h-full w-full min-w-0 border border-line bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan"
             value={item.conditionCode}
             onChange={(event) => show(onPatch(item.id, { conditionCode: event.target.value }))}
             title={conditionName ? `${item.conditionCode} — ${conditionName}` : t("modal.condition")}
@@ -168,7 +168,7 @@ export function LineEditor({
         <span className={labelClass} aria-hidden="true">
           {t("modal.quantity")}
         </span>
-        <div className="inline-flex h-10 w-full items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+        <div className="inline-flex h-10 w-full items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <button
             type="button"
             className={iconBtnClass}
@@ -205,7 +205,7 @@ export function LineEditor({
         <span className={labelClass} aria-hidden="true">
           {t("modal.unitPurchasePrice")}
         </span>
-        <div className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+        <div className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <input
             className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
             placeholder="—"
@@ -267,7 +267,7 @@ export function LineEditor({
 
       <button
         type="button"
-        className="col-span-2 inline-flex h-10 items-center justify-center gap-2 border border-danger/35 text-xs text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/70 md:col-span-1"
+        className="col-span-2 inline-flex h-10 items-center justify-center gap-2 border border-danger/35 text-xs text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger md:col-span-1"
         onClick={() => show(onDelete(item.id))}
         aria-label={t("modal.remove")}
         title={t("modal.remove")}

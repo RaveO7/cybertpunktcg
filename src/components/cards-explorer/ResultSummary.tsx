@@ -21,7 +21,7 @@ export function ResultSummary({
   const fmt = useNumberFormat();
   return (
     <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm text-muted">
-      <p>
+      <p role="status">
         {count === 0
           ? t("cards.noCards")
           : t("cards.cardCount", { count: fmt.int(count), noun: t("common.cards", { n: count }) })}
