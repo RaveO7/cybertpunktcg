@@ -7,42 +7,20 @@ import { clearDataCache, prefetchCached } from "@/components/data-cache";
 import type { MutationResult } from "@/lib/api-responses";
 import { ApiError, api, loadResponseSchemas, responseSchemasIfLoaded, type SchemaName } from "@/lib/client/api";
 import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
+import { whenIdle } from "@/lib/client/when-idle";
 import { matchRoute } from "@/i18n/match";
-import type { ImportLine } from "@/lib/collection-csv";
 import { type BootRequests, collectionBody, requestCatalog, requestCollection, takeBootRequests } from "@/lib/boot-requests";
 import { readSavedCollection } from "@/lib/offline";
 import { useCatalogGate } from "@/components/use-catalog-gate";
-import { matchLine, sameLine } from "@/lib/collection-line";
-import {
-  type NewOp,
-  type QueuedOp,
-  type QueueStore,
-  type SendResponse,
-  addOp,
-  applyOps,
-  clearQueue,
-  indexedDbQueueStore,
-  isTempId,
-  newTempId,
-  pendingLineIds,
-  readOps,
-  replayQueue,
-  requestFor,
-} from "@/lib/offline-queue";
+import { createLineActions } from "@/components/collection/line-actions";
+import type { CollectionContextValue, SessionStatus } from "@/components/collection/types";
+import { useOfflineQueue } from "@/components/collection/use-offline-queue";
+import { type NewOp, clearQueue, isTempId, requestFor } from "@/lib/offline-queue";
 import { disablePush } from "@/lib/push-client";
 import { browserStorage, clearSessionUser, readSessionUser, writeSessionUser } from "@/lib/session-hint";
 import type { AuthUser, CatalogDTO, CollectionItemDTO } from "@/lib/types";
 
-export type ImportSummary = { created: number; updated: number; skipped: number };
-
 const LOCAL_USER_KEY = "cptcg-user-id";
-
-/**
- * Statut de la session, indépendant du chargement des données (`ready`) : « unknown » avant la lecture
- * de l'appareil, « guest » sans session mémorisée tant que le serveur n'a pas été interrogé (pages
- * publiques), « signed-out » seulement après un refus du serveur (401) ou la déconnexion.
- */
-export type SessionStatus = "unknown" | "guest" | "signed-in" | "signed-out";
 
 /** Données des écrans les plus visités, chargées au repos pour qu'ils s'ouvrent sans attente. */
 const WARM_REQUESTS: [url: string, schema: SchemaName][] = [
@@ -55,78 +33,6 @@ const WARM_REQUESTS: [url: string, schema: SchemaName][] = [
 // Schémas demandés dès le chargement de ce module, en parallèle de l'hydratation : souvent déjà là quand
 // les réponses du démarrage (boot-requests) sont lues. Échec sans risque : chaque lecture relance le chargement.
 if (typeof window !== "undefined") loadResponseSchemas().catch(() => undefined);
-
-/** Délais avant de rejouer la file après une erreur temporaire (réseau, 5xx). */
-const RETRY_DELAYS_MS = [5_000, 30_000, 120_000];
-
-const NO_OPS: QueuedOp[] = [];
-
-/** Modification refusée par le serveur pendant la synchronisation. */
-export type SyncError = { id: string; userId: string; kind: "rejected" | "corrupted"; card: string | null; message: string };
-
-/** Lance `task` quand le navigateur est au repos ; renvoie de quoi l'annuler. */
-export function whenIdle(task: () => void) {
-  if ("requestIdleCallback" in window) {
-    const id = window.requestIdleCallback(task, { timeout: 3000 });
-    return () => window.cancelIdleCallback(id);
-  }
-  const id = setTimeout(task, 1500);
-  return () => clearTimeout(id);
-}
-
-type SaveInput = {
-  printingId: string;
-  conditionCode: string;
-  quantity: number;
-  mode: "add" | "set";
-  notes?: string | null;
-  purchasePrice?: string | null;
-  purchaseCurrency?: string | null;
-  purchasedAt?: string | null;
-};
-
-type PatchInput = {
-  conditionCode?: string;
-  quantity?: number;
-  notes?: string | null;
-  purchasePrice?: string | null;
-  purchaseCurrency?: string | null;
-  purchasedAt?: string | null;
-};
-
-type CollectionContextValue = {
-  session: SessionStatus;
-  ready: boolean;
-  error: string | null;
-  /** Relance le chargement du catalogue et de la collection après une erreur. */
-  retry: () => void;
-  user: AuthUser | null;
-  catalog: CatalogDTO | null;
-  items: CollectionItemDTO[];
-  login: (email: string, password: string) => Promise<void>;
-  register: (input: { email: string; password: string; displayName: string }) => Promise<void>;
-  logout: () => Promise<void>;
-  deleteAccount: () => Promise<void>;
-  saveLine: (input: SaveInput) => Promise<void>;
-  saveBatch: (input: {
-    conditionCode: string;
-    lines: { printingId: string; quantity: number }[];
-  }) => Promise<void>;
-  importLines: (input: { mode: "add" | "set"; lines: ImportLine[] }) => Promise<ImportSummary>;
-  patchLine: (id: string, input: PatchInput) => Promise<void>;
-  deleteLine: (id: string) => Promise<void>;
-  /** Page réservée aux comptes : vérifie la session auprès du serveur même sans session mémorisée. */
-  requireSession: () => void;
-  /** Écran qui affiche le catalogue sur la liste des decks, où il n'est pas chargé d'office (useCatalogGate). */
-  requireCatalog: () => void;
-  /** Modifications faites hors ligne, pas encore envoyées au serveur. */
-  pendingCount: number;
-  /** Lignes visées par une modification en attente. */
-  pendingIds: ReadonlySet<string>;
-  syncing: boolean;
-  syncErrors: SyncError[];
-  dismissSyncError: (id: string) => void;
-};
 
 const CollectionContext = createContext<CollectionContextValue | null>(null);
 
@@ -142,27 +48,6 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   const [catalog, setCatalog] = useState<CatalogDTO | null>(null);
   // Collection du serveur (ou de la copie gardée) ; celle affichée y ajoute les modifications en attente.
   const [serverItems, setItems] = useState<CollectionItemDTO[]>([]);
-  // File du compte qui l'a lue : un autre compte connecté ne la voit pas.
-  const [queued, setQueued] = useState<{ userId: string | null; ops: QueuedOp[] }>({ userId: null, ops: [] });
-  const userId = user?.id ?? null;
-  const ops = userId && queued.userId === userId ? queued.ops : NO_OPS;
-  const items = useMemo(() => applyOps(serverItems, ops, catalog?.conditions), [serverItems, ops, catalog]);
-  const pendingIds = useMemo(() => pendingLineIds(ops), [ops]);
-  const itemsRef = useRef(items);
-  const serverItemsRef = useRef(serverItems);
-  const opsRef = useRef(ops);
-  const userRef = useRef(user);
-  const catalogRef = useRef(catalog);
-  useEffect(() => {
-    itemsRef.current = items;
-    serverItemsRef.current = serverItems;
-    opsRef.current = ops;
-    userRef.current = user;
-    catalogRef.current = catalog;
-  }, [items, serverItems, ops, user, catalog]);
-  const [syncing, setSyncing] = useState(false);
-  const [allSyncErrors, setSyncErrors] = useState<SyncError[]>([]);
-  const syncErrors = useMemo(() => allSyncErrors.filter((entry) => entry.userId === userId), [allSyncErrors, userId]);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   // Vérification de la session (GET /api/collection) : seulement avec une session mémorisée ou sur une
@@ -175,9 +60,8 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   const loadFailedMessage = useEffectEvent(() => errors("loadCollection"));
   // Modifications locales de la collection : une réponse partie avant l'une d'elles est périmée.
   const edits = useRef(0);
-  const storeRef = useRef<QueueStore | null>(null);
-  const queueStore = () => (storeRef.current ??= indexedDbQueueStore());
-  const replayRef = useRef<() => Promise<void>>(async () => undefined);
+  const { items, ops, opsRef, pendingIds, syncing, syncErrors, dismissSyncError, readLatest, queueStore, enqueue, replay, replayRef } =
+    useOfflineQueue({ user, serverItems, catalog, errors, endSession, applyResult, setItems, edits });
 
   function editItems(update: (current: CollectionItemDTO[]) => CollectionItemDTO[]) {
     edits.current += 1;
@@ -390,150 +274,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     return () => {
       cancelled = true;
     };
-  }, [verifySession, catalogWanted]);
-
-  /** Nom de la carte visée par une opération, pour les messages d'échec. */
-  function cardName(op: QueuedOp) {
-    const printingId =
-      op.kind === "save"
-        ? op.payload.printingId
-        : (serverItemsRef.current.find((item) => item.id === op.lineId) ?? itemsRef.current.find((item) => item.id === op.lineId))
-            ?.printingId;
-    const current = catalogRef.current;
-    const printing = current?.printings.find((candidate) => candidate.id === printingId);
-    if (!printing) return null;
-    return printing.localizedName ?? current?.cards.find((card) => card.id === printing.cardId)?.name ?? null;
-  }
-
-  /** Modification gardée sur l'appareil, appliquée tout de suite à la collection affichée. */
-  async function enqueue(userId: string, op: NewOp) {
-    const next = await addOp(queueStore(), userId, op);
-    setQueued({ userId, ops: next });
-  }
-
-  const replaying = useRef(false);
-  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const retryStep = useRef(0);
-
-  /** Envoi d'une opération de la file : statut et corps, classés par replayQueue (protocole de la file). */
-  async function sendOp(op: QueuedOp): Promise<SendResponse> {
-    const { url, method, body } = requestFor(op);
-    try {
-      return { status: 200, body: await api(url, { method, body }) };
-    } catch (error) {
-      if (!(error instanceof ApiError)) throw error;
-      return { status: error.status, body: { error: error.message } };
-    }
-  }
-
-  /** Envoie la file du compte, une opération à la fois ; un seul onglet à la fois (verrou). */
-  async function replay() {
-    const current = userRef.current;
-    if (!current || replaying.current || !navigator.onLine) return;
-    if (retryTimer.current) clearTimeout(retryTimer.current);
-    retryTimer.current = null;
-    replaying.current = true;
-    let again = false;
-    try {
-      const store = queueStore();
-      // La file a pu changer dans un autre onglet.
-      const stored = readOps(await store.read(current.id)).ops;
-      if (userRef.current?.id !== current.id) return;
-      setQueued({ userId: current.id, ops: stored });
-      if (stored.length === 0) return;
-      setSyncing(true);
-      const run = () => replayQueue(store, current.id, sendOp);
-      const report = navigator.locks
-        ? await navigator.locks.request("cptcg-collection-queue", { ifAvailable: true }, (lock) => (lock ? run() : null))
-        : await run();
-      // Un autre onglet synchronise déjà.
-      if (!report || userRef.current?.id !== current.id) return;
-      const messages: SyncError[] = report.rejected.map(({ op, error }) => ({
-        id: `${op.userId}:${op.seq}`,
-        userId: current.id,
-        kind: "rejected",
-        card: cardName(op),
-        message: error || errors("saveFailed"),
-      }));
-      if (report.corrupted) {
-        messages.push({ id: `corrupted:${Date.now()}`, userId: current.id, kind: "corrupted", card: null, message: errors("syncCorrupted") });
-      }
-      for (const { result } of report.applied) applyResult(result);
-      // Réponse illisible : la collection affichée est relue sur le serveur en fin de passage (file vide).
-      if (report.unverified) console.error("Réponse au format inattendu", { url: "/api/collection", count: report.unverified });
-      setQueued({ userId: current.id, ops: report.remaining });
-      if (messages.length) setSyncErrors((list) => [...list, ...messages]);
-      if (report.stop === "auth") {
-        // Session expirée : la file reste sur l'appareil jusqu'à la reconnexion de ce compte.
-        endSession();
-        return;
-      }
-      if (report.stop === "retry") {
-        const delay = RETRY_DELAYS_MS[Math.min(retryStep.current, RETRY_DELAYS_MS.length - 1)];
-        retryStep.current += 1;
-        retryTimer.current = setTimeout(() => void replayRef.current(), delay);
-        return;
-      }
-      retryStep.current = 0;
-      // Modification ajoutée pendant la fin du passage : nouveau passage.
-      const added = readOps(await store.read(current.id)).ops;
-      if (added.length) {
-        setQueued({ userId: current.id, ops: added });
-        again = true;
-        return;
-      }
-      // File vide : la collection affichée reprend exactement celle du serveur.
-      const editsAtStart = edits.current;
-      const [fresh, schemas] = await Promise.all([requestCollection(), loadResponseSchemas()]).catch(
-        () => [null, null] as const,
-      );
-      const freshBody = fresh && schemas && collectionBody(schemas, fresh);
-      if (freshBody && edits.current === editsAtStart && opsRef.current.length === 0) setItems(freshBody.items);
-    } catch {
-      // IndexedDB ou réseau indisponible : nouvel essai au prochain déclencheur.
-    } finally {
-      replaying.current = false;
-      setSyncing(false);
-      if (again) void replayRef.current();
-    }
-  }
-  useEffect(() => {
-    replayRef.current = replay;
-  });
-
-  // File du compte connecté, relue sur l'appareil puis envoyée si le réseau est là. Un autre compte ne la voit pas.
-  useEffect(() => {
-    retryStep.current = 0;
-    if (!userId) return;
-    let cancelled = false;
-    void queueStore()
-      .read(userId)
-      .then((record) => {
-        if (cancelled) return;
-        setQueued({ userId, ops: readOps(record).ops });
-        void replayRef.current();
-      })
-      // File hors ligne illisible : elle est ignorée, la collection du serveur fait foi.
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
-
-  // Retour du réseau ou de l'onglet : la file repart.
-  useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void replayRef.current();
-    };
-    const onOnline = () => void replayRef.current();
-    window.addEventListener("online", onOnline);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.removeEventListener("online", onOnline);
-      document.removeEventListener("visibilitychange", onVisible);
-      if (retryTimer.current) clearTimeout(retryTimer.current);
-    };
-  }, []);
+  }, [verifySession, catalogWanted, replayRef]);
 
   /**
    * Modification d'une ligne. Hors ligne, sans réseau, ou derrière d'autres modifications en attente, elle
@@ -561,6 +302,9 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     applyResult(result);
     return "sent";
   }
+
+  // Construit à l'appel (jamais pendant le rendu) : les actions lisent l'état le plus récent.
+  const lineActions = () => createLineActions({ user, readLatest, errors, request, editItems, actionError });
 
   const value = useMemo<CollectionContextValue>(
     () => ({
@@ -608,71 +352,16 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
         endSession();
         setError(null);
       },
-      saveLine: async (input) => {
-        // Ligne identique déjà affichée (carte × état × prix × date × notes, comme la fusion faite par le serveur),
-        // sinon id temporaire.
-        const existing = matchLine(
-          itemsRef.current.filter((item) => item.printingId === input.printingId),
-          input,
-        );
-        await request({ kind: "save", lineId: existing?.id ?? newTempId(), payload: input });
-      },
-      saveBatch: async (input) => {
-        if (!user) throw new Error(errors("sessionExpired"));
-        const result = await api("/api/collection/bulk", { body: input, schema: "collectionItemsSchema" }).catch((error: unknown) => {
-          throw actionError(error, errors("addFailed"));
-        });
-        editItems((current) => {
-          const incoming = new Map(result.items.map((item) => [item.id, item]));
-          return [...current.filter((item) => !incoming.has(item.id)), ...incoming.values()];
-        });
-      },
-      importLines: async (input) => {
-        if (!user) throw new Error(errors("sessionExpired"));
-        const result = await api("/api/collection/import", { body: input, schema: "collectionImportSchema" }).catch((error: unknown) => {
-          throw actionError(error, errors("importFailed"));
-        });
-        editItems(() => result.items);
-        return { created: result.created, updated: result.updated, skipped: result.skipped };
-      },
-      patchLine: async (id, input) => {
-        // Mise à jour optimiste : l'interface reflète la modification sans attendre le serveur.
-        // Une ligne devenue identique à une autre (état, prix, date, notes) fusionne : on laisse alors le serveur trancher.
-        // Copie du serveur seulement : une ligne créée hors ligne n'existe que dans la file.
-        const previous = serverItemsRef.current.find((item) => item.id === id);
-        const merges =
-          previous != null &&
-          serverItemsRef.current.some(
-            (item) => item.id !== id && item.printingId === previous.printingId && sameLine(item, { ...previous, ...input }),
-          );
-        const optimistic = previous && input.conditionCode === undefined && !merges;
-        if (optimistic) {
-          editItems((current) =>
-            input.quantity != null && input.quantity <= 0
-              ? current.filter((item) => item.id !== id)
-              : current.map((item) => (item.id === id ? { ...item, ...input } : item)),
-          );
-        }
-        const restore = () => {
-          if (optimistic) editItems((current) => [...current.filter((item) => item.id !== id), previous]);
-        };
-        try {
-          const sent = await request({ kind: "patch", lineId: id, payload: input });
-          // En file : la modification s'affiche par la file, la copie du serveur reste celle du serveur.
-          if (sent === "queued") restore();
-        } catch (error) {
-          restore();
-          throw error;
-        }
-      },
-      deleteLine: async (id) => {
-        await request({ kind: "delete", lineId: id, payload: null });
-      },
+      saveLine: (input) => lineActions().saveLine(input),
+      saveBatch: (input) => lineActions().saveBatch(input),
+      importLines: (input) => lineActions().importLines(input),
+      patchLine: (id, input) => lineActions().patchLine(id, input),
+      deleteLine: (id) => lineActions().deleteLine(id),
       pendingCount: ops.length,
       pendingIds,
       syncing,
       syncErrors,
-      dismissSyncError: (id) => setSyncErrors((list) => list.filter((entry) => entry.id !== id)),
+      dismissSyncError,
       requireSession: () => setVerifySession(true),
       requireCatalog,
     }),
