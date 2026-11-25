@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { useNumberFormat, type NumberFormat } from "@/i18n/number-format";
-import type { PriceMovement } from "@/lib/logic";
+import type { PriceMovement } from "@/lib/cards/pricing";
 
 /** `percent` donné : affiche la variation en % au lieu du montant. */
 export function TrendBadge({ delta, amount, percent }: { delta: PriceMovement; amount?: number | null; percent?: number | null }) {

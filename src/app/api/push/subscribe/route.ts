@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { pushSubscribeSchema, pushUnsubscribeSchema, readJsonBody } from "@/lib/api-schemas";
 import { requireUser } from "@/lib/catalog";
 import { removePushSubscription, savePushSubscription } from "@/lib/push";
+import { limitUserWrites } from "@/lib/rate-limit-http";
 import { errorResponse, requestLocale, sessionRequired } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,8 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const user = await requireUser(request);
   if (!user) return sessionRequired(request);
+  const limited = await limitUserWrites(request, "push-subscribe", user.id, 20, 10 * 60_000);
+  if (limited) return limited;
   const parsed = await readJsonBody(request, pushSubscribeSchema);
   if (!parsed.ok) return parsed.response;
   try {

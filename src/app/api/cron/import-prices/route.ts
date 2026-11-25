@@ -36,8 +36,8 @@ export async function GET(request: Request) {
     await checkPriceGuideFreshness();
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    // Le détail reste dans le journal des tâches ; la réponse HTTP n'expose rien.
     await recordJobFailure(JOB_NAME, error);
-    return NextResponse.json({ status: "error", message }, { status: 500 });
+    return NextResponse.json({ status: "error", message: "Import failed" }, { status: 500 });
   }
 }

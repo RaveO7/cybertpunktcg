@@ -15,35 +15,15 @@ import {
   extendPortfolioHistory,
   utcDayKey,
 } from "../../src/lib/price-history";
-import {
-  aggregateCollection,
-  alignReleasedFilters,
-  boundedEditDistance,
-  cardSearchEntry,
-  browseChecklist,
-  buildInvestmentLines,
-  extensionValue,
-  computeProgress,
-  englishChecklist,
-  filterInvestmentLines,
-  filterPrintings,
-  investmentBySet,
-  languageOptions,
-  numberMatches,
-  ownershipOf,
-  parseFilters,
-  priceMovement,
-  printingSearchEntry,
-  rankBySearch,
-  SEARCH_SCORE,
-  searchScore,
-  setForLanguage,
-  sortPrintings,
-  summarizeInvestment,
-  viewOwnership,
-} from "../../src/lib/logic";
+import { aggregateCollection, computeProgress, ownershipOf } from "../../src/lib/cards/collection-stats";
+import { alignReleasedFilters, filterPrintings, parseFilters } from "../../src/lib/cards/filters";
+import { boundedEditDistance, cardSearchEntry, numberMatches, printingSearchEntry, rankBySearch, SEARCH_SCORE, searchScore } from "../../src/lib/cards/search";
+import { browseChecklist, extensionValue, englishChecklist, languageOptions, setForLanguage, viewOwnership } from "../../src/lib/cards/printings";
+import { buildInvestmentLines, filterInvestmentLines, investmentBySet, summarizeInvestment } from "../../src/lib/investment/portfolio";
+import { priceMovement } from "../../src/lib/cards/pricing";
+import { sortPrintings } from "../../src/lib/cards/sort";
 import type { CardDTO, CollectionItemDTO, Filters, PrintingDTO } from "../../src/lib/types";
-import { defaultFilters } from "../../src/lib/logic";
+import { defaultFilters } from "../../src/lib/cards/filters";
 
 function card(partial: Partial<CardDTO> & Pick<CardDTO, "id">): CardDTO {
   return {

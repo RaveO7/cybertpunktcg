@@ -62,6 +62,14 @@ export function LineEditor({
     onPatchRef.current = onPatch;
   }, [onPatch]);
   const quantity = pendingQty ?? item.quantity;
+  const tErrors = useTranslations("errors.request");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  /** Lance une écriture de la ligne ; un échec affiche son message (déjà traduit par le provider). */
+  function show(action: Promise<void>) {
+    setSaveError(null);
+    action.catch((error: unknown) => setSaveError(error instanceof Error ? error.message : tErrors("saveFailed")));
+  }
 
   function flushQuantity() {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -70,8 +78,8 @@ export function LineEditor({
     if (value == null) return;
     pendingRef.current = null;
     setPendingQty(null);
-    // En cas d'échec, le provider restaure la ligne : l'affichage revient à la valeur serveur.
-    onPatchRef.current(item.id, { quantity: value }).catch(() => {});
+    // En cas d'échec, le provider restaure la ligne (l'affichage revient à la valeur serveur) et le message s'affiche.
+    show(onPatchRef.current(item.id, { quantity: value }));
   }
 
   function setQuantity(next: number) {
@@ -144,7 +152,7 @@ export function LineEditor({
           <select
             className="h-full w-full min-w-0 border border-line bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan/70"
             value={item.conditionCode}
-            onChange={(event) => void onPatch(item.id, { conditionCode: event.target.value })}
+            onChange={(event) => show(onPatch(item.id, { conditionCode: event.target.value }))}
             title={conditionName ? `${item.conditionCode} — ${conditionName}` : t("modal.condition")}
           >
             {conditions.map((condition) => (
@@ -206,17 +214,19 @@ export function LineEditor({
             onChange={(event) => setPrice(event.target.value)}
             onBlur={() => {
               if ((item.purchasePrice ?? "") !== price.trim()) {
-                void onPatch(item.id, {
-                  purchasePrice: price.trim() ? price.trim() : null,
-                  purchaseCurrency: item.purchaseCurrency ?? "EUR",
-                });
+                show(
+                  onPatch(item.id, {
+                    purchasePrice: price.trim() ? price.trim() : null,
+                    purchaseCurrency: item.purchaseCurrency ?? "EUR",
+                  }),
+                );
               }
             }}
           />
           <select
             className="shrink-0 border-l border-line bg-panel px-1.5 font-mono text-xs text-foreground/80 outline-none"
             value={item.purchaseCurrency ?? "EUR"}
-            onChange={(event) => void onPatch(item.id, { purchaseCurrency: event.target.value })}
+            onChange={(event) => show(onPatch(item.id, { purchaseCurrency: event.target.value }))}
             aria-label={t("modal.currency")}
           >
             {CURRENCIES.map((code) => (
@@ -237,7 +247,7 @@ export function LineEditor({
           value={date}
           onChange={(event) => setDate(event.target.value)}
           onBlur={() => {
-            if ((item.purchasedAt ?? "") !== date) void onPatch(item.id, { purchasedAt: date || null });
+            if ((item.purchasedAt ?? "") !== date) show(onPatch(item.id, { purchasedAt: date || null }));
           }}
         />
       </label>
@@ -250,7 +260,7 @@ export function LineEditor({
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
           onBlur={() => {
-            if ((item.notes ?? "") !== notes.trim()) void onPatch(item.id, { notes });
+            if ((item.notes ?? "") !== notes.trim()) show(onPatch(item.id, { notes }));
           }}
         />
       </label>
@@ -258,7 +268,7 @@ export function LineEditor({
       <button
         type="button"
         className="col-span-2 inline-flex h-10 items-center justify-center gap-2 border border-danger/35 text-xs text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/70 md:col-span-1"
-        onClick={() => void onDelete(item.id)}
+        onClick={() => show(onDelete(item.id))}
         aria-label={t("modal.remove")}
         title={t("modal.remove")}
       >
@@ -268,6 +278,11 @@ export function LineEditor({
         <span className="md:hidden">{t("modal.remove")}</span>
       </button>
     </div>
+      {saveError ? (
+        <p role="alert" className="text-sm text-danger">
+          {saveError}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { normalizeDisplayName, normalizeEmail, normalizeLoginPassword, normalize
 import { MAX_IMPORT_LINES } from "./collection-csv";
 import { normalizePlace, type Place } from "./geo/location";
 import { CURRENCIES } from "./parse";
+import { isAllowedPushEndpoint } from "./push-endpoint";
 import { normalizePlayerName } from "./tournament/code";
 import { DESCRIPTION_MAX, PRIZES_MAX, SEARCH_RADII_KM, TOURNAMENT_CURRENCIES } from "./tournament/listing";
 import type { MatchResult } from "./tournament/scores";
@@ -218,7 +219,7 @@ export const portfolioHistorySchema = z.object({
 
 /** Clé d'un abonnement Web Push (base64url). */
 const pushKey = z.string().trim().min(1).max(256).regex(/^[A-Za-z0-9_=-]+$/);
-const pushEndpoint = z.url({ protocol: /^https$/ }).max(2048);
+const pushEndpoint = z.url({ protocol: /^https$/ }).max(2048).refine(isAllowedPushEndpoint);
 
 /** Abonnement Web Push d'un appareil (`PushSubscription.toJSON()`), et langue des notifications. */
 export const pushSubscribeSchema = z.object({

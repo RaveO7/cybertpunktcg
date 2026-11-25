@@ -9,7 +9,7 @@ import { PriceChart, type ChartPoint } from "@/components/PriceChart";
 import { formatSignedMoney, formatSignedPercent } from "@/components/TrendBadge";
 import { fieldLabelClass, toAmount } from "@/components/card-modal/shared";
 import { api } from "@/lib/client/api";
-import { amountSign, priceMovement } from "@/lib/logic";
+import { amountSign, priceMovement } from "@/lib/cards/pricing";
 import type { CollectionItemDTO, PrintingDTO } from "@/lib/types";
 
 /** Jour du dernier changement de prix : premier point de la série finale au prix actuel (null si inconnu). */

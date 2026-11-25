@@ -7,7 +7,7 @@ import { CardImage } from "@/components/CardImage";
 import { colorDotClass } from "@/components/CardTile";
 import { CardFacts, Stepper } from "@/components/decks/ui";
 import { cardLabel, isLegend, OTHER_EXTENSION, ramAllowed, type DeckAnalysis } from "@/lib/deck-rules";
-import { cardSearchEntry, rankBySearch, searchScore } from "@/lib/logic";
+import { cardSearchEntry, rankBySearch, searchScore } from "@/lib/cards/search";
 import { BLOCKS, COLOR_ORDER, TYPE_ORDER } from "@/lib/reference-data";
 import type { CardDTO, PrintingDTO } from "@/lib/types";
 

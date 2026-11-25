@@ -1,16 +1,9 @@
 // Données du tableau de bord : blocs, extensions, progression et valeurs, calculées depuis le catalogue.
 
 import type { Href } from "@/i18n/navigation";
-import {
-  aggregateCollection,
-  buildInvestmentLines,
-  computeProgress,
-  investmentBySet,
-  priceMovement,
-  spentAmount,
-  type PriceMovement,
-  type SetInvestment,
-} from "@/lib/logic";
+import { aggregateCollection, computeProgress, spentAmount } from "@/lib/cards/collection-stats";
+import { buildInvestmentLines, investmentBySet, type SetInvestment } from "@/lib/investment/portfolio";
+import { priceMovement, type PriceMovement } from "@/lib/cards/pricing";
 import { ALL_SETS_ID, BLOCKS, isSealedSetCode, MIN_EXTENSION_CARDS, partitionCatalogSets } from "@/lib/reference-data";
 import { rarityFill } from "@/lib/rarity-color";
 import type { CatalogDTO, CollectionItemDTO, Ownership, PrintingDTO, Progress } from "@/lib/types";

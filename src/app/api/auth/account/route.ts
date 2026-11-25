@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { deleteAccountSchema, readJsonBody } from "@/lib/api-schemas";
 import { sessionRequired } from "@/lib/api-response";
+import { limitUserWrites } from "@/lib/rate-limit-http";
 import { clearSessionCookie, deleteAccount, userFromRequest } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,8 @@ export const dynamic = "force-dynamic";
 export async function DELETE(request: Request) {
   const user = await userFromRequest(request);
   if (!user) return sessionRequired(request);
+  const limited = await limitUserWrites(request, "account-delete", user.id, 5, 10 * 60_000);
+  if (limited) return limited;
   const parsed = await readJsonBody(request, deleteAccountSchema);
   if (!parsed.ok) return parsed.response;
   await deleteAccount(user.id);

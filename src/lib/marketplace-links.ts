@@ -1,7 +1,7 @@
 // Liens de recherche vers les sites de revente (pas d'API : l'utilisateur atterrit sur la recherche du site).
 // eBay et CardNexus portent nos identifiants d'affiliation quand ils sont configurés.
 import type { CardDTO, PrintingDTO } from "./types";
-import { printingTitle } from "./logic";
+import { printingTitle } from "./cards/printings";
 
 export type MarketplaceLink = {
   id: "cardmarket" | "ebay" | "cardnexus" | "leboncoin" | "vinted";

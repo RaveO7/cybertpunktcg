@@ -1,44 +1,13 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { numberFormat } from "../../src/i18n/number-format";
-import {
-  aggregateCollection,
-  alignReleasedFilters,
-  applyInvestmentPeriod,
-  baseCollectorNumber,
-  buildFacets,
-  buildInvestmentLines,
-  collectorRangeIds,
-  groupInvestmentPositions,
-  defaultFilters,
-  equivalentPrintingIds,
-  filterInvestmentLines,
-  frenchChecklist,
-  investmentBySet,
-  isReleasedSet,
-  languageOptions,
-  marketValue,
-  matchesSearch,
-  mergeEquivalentOwnership,
-  normalizeSetCode,
-  normalizeText,
-  numberMatches,
-  parseFilters,
-  printingIdentity,
-  printingTitle,
-  printingsPriceTotal,
-  progressByRarity,
-  progressBySet,
-  releasedChecklist,
-  resolveRulesText,
-  sealedBrowseFilters,
-  serializeFilters,
-  setForLanguage,
-  sortPrintings,
-  spentAmount,
-  summarizeInvestment,
-  type InvestmentLine,
-} from "../../src/lib/logic";
+import { aggregateCollection, marketValue, progressByRarity, progressBySet, spentAmount } from "../../src/lib/cards/collection-stats";
+import { alignReleasedFilters, buildFacets, defaultFilters, parseFilters, sealedBrowseFilters, serializeFilters } from "../../src/lib/cards/filters";
+import { applyInvestmentPeriod, buildInvestmentLines, groupInvestmentPositions, filterInvestmentLines, investmentBySet, summarizeInvestment, type InvestmentLine } from "../../src/lib/investment/portfolio";
+import { baseCollectorNumber, equivalentPrintingIds, frenchChecklist, isReleasedSet, languageOptions, mergeEquivalentOwnership, normalizeSetCode, printingIdentity, printingTitle, releasedChecklist, resolveRulesText, setForLanguage } from "../../src/lib/cards/printings";
+import { collectorRangeIds, sortPrintings } from "../../src/lib/cards/sort";
+import { matchesSearch, normalizeText, numberMatches } from "../../src/lib/cards/search";
+import { printingsPriceTotal } from "../../src/lib/cards/pricing";
 import type { CardDTO, CollectionItemDTO, Filters, Ownership, PrintingDTO, SetDTO, SortKey } from "../../src/lib/types";
 import { lineMarketDelta, lineMarketDeltaPct, lineProfitPct, sortPositionRows } from "../../src/components/investment/sorting";
 
@@ -654,7 +623,7 @@ describe("valeur marché et dépenses", () => {
 
 describe("investissement (cas limites)", () => {
   it("priceMovement : seuil au demi-centime, valeurs non finies", async () => {
-    const { priceMovement } = await import("../../src/lib/logic");
+    const { priceMovement } = await import("../../src/lib/cards/pricing");
     assert.equal(priceMovement(1.004, 1), "flat");
     assert.equal(priceMovement(1.006, 1), "up");
     assert.equal(priceMovement(0.994, 1), "down");

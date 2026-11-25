@@ -187,12 +187,12 @@ describe("limites", () => {
     // IP fictives propres à cette exécution : compteurs neufs, sans toucher aux autres.
     const attackerIp = `203.0.113.1-${stamp}`;
     const otherIp = `198.51.100.7-${stamp}`;
-    const attempt = (ip: string, pass: string) =>
+    const attempt = (ip: string, pass: string, who = email) =>
       login(
         new Request("http://127.0.0.1/api/auth/login", {
           method: "POST",
           headers: { "content-type": "application/json", "x-forwarded-for": `${ip}, 10.0.0.1` },
-          body: JSON.stringify({ email, password: pass }),
+          body: JSON.stringify({ email: who, password: pass }),
         }),
       );
     const previousTrust = process.env.TRUST_PROXY;
@@ -200,12 +200,13 @@ describe("limites", () => {
     try {
       let hit429 = false;
       for (let i = 0; i < 25; i += 1) {
-        if ((await attempt(attackerIp, "mauvais-mot-de-passe")).status === 429) {
+        // Adresses différentes à chaque essai : seule la limite par IP peut répondre 429.
+        if ((await attempt(attackerIp, "mauvais-mot-de-passe", `inconnu.${i}.${stamp}@example.com`)).status === 429) {
           hit429 = true;
           break;
         }
       }
-      assert.equal(hit429, true, "le login doit finir en 429 sous rafale");
+      assert.equal(hit429, true, "le login doit finir en 429 sous rafale (limite par IP)");
       // Un autre visiteur ne doit pas être bloqué par les échecs du premier.
       assert.equal((await attempt(otherIp, password)).status, 200, "une autre IP ne doit pas être bloquée");
       const probeKey = clientKey(new Request("http://x/", { headers: { "x-forwarded-for": otherIp } }), "probe");
@@ -215,6 +216,70 @@ describe("limites", () => {
     } finally {
       if (previousTrust === undefined) delete process.env.TRUST_PROXY;
       else process.env.TRUST_PROXY = previousTrust;
+    }
+  });
+
+  it("la connexion se bloque après 10 échecs sur un même e-mail, depuis n'importe quelle IP", async () => {
+    const email = `lock.${stamp}@example.com`;
+    const user = await registerAccount({ email, password, displayName: "Lock", localUserId: null });
+    cleanupIds.push(user.id);
+    const attempt = (ip: string, pass: string) =>
+      login(
+        new Request("http://127.0.0.1/api/auth/login", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-forwarded-for": ip },
+          body: JSON.stringify({ email, password: pass }),
+        }),
+      );
+    const previousTrust = process.env.TRUST_PROXY;
+    process.env.TRUST_PROXY = "1";
+    try {
+      // 10 échecs depuis 10 IP différentes (aucune limite par IP atteinte) : toujours 401.
+      for (let i = 0; i < 10; i += 1) assert.equal((await attempt(`192.0.2.${i}-${stamp}`, "mauvais-mot-de-passe")).status, 401);
+      const blocked = await attempt(`192.0.2.99-${stamp}`, password);
+      assert.equal(blocked.status, 429, "même le bon mot de passe est refusé pendant le blocage");
+      assert.ok(Number(blocked.headers.get("retry-after")) > 0);
+      // Un autre compte n'est pas touché.
+      const other = `lock.other.${stamp}@example.com`;
+      const otherUser = await registerAccount({ email: other, password, displayName: "Autre", localUserId: null });
+      cleanupIds.push(otherUser.id);
+      const free = await login(
+        new Request("http://127.0.0.1/api/auth/login", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-forwarded-for": `192.0.2.50-${stamp}` },
+          body: JSON.stringify({ email: other, password }),
+        }),
+      );
+      assert.equal(free.status, 200);
+    } finally {
+      if (previousTrust === undefined) delete process.env.TRUST_PROXY;
+      else process.env.TRUST_PROXY = previousTrust;
+    }
+  });
+
+  it("sans IP lisible (clé « local »), les échecs d'un e-mail ne bloquent pas un autre compte", async () => {
+    const wrong = `local.wrong.${stamp}@example.com`;
+    const right = `local.right.${stamp}@example.com`;
+    const user = await registerAccount({ email: right, password, displayName: "Local", localUserId: null });
+    cleanupIds.push(user.id);
+    const attempt = (email: string, pass: string) =>
+      login(
+        new Request("http://127.0.0.1/api/auth/login", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email, password: pass }),
+        }),
+      );
+    const previousTrust = process.env.TRUST_PROXY;
+    delete process.env.TRUST_PROXY;
+    const previousVercel = process.env.VERCEL;
+    delete process.env.VERCEL;
+    try {
+      for (let i = 0; i < 5; i += 1) await attempt(wrong, "mauvais-mot-de-passe");
+      assert.equal((await attempt(right, password)).status, 200);
+    } finally {
+      if (previousTrust !== undefined) process.env.TRUST_PROXY = previousTrust;
+      if (previousVercel !== undefined) process.env.VERCEL = previousVercel;
     }
   });
 });

@@ -1,4 +1,4 @@
-import { normalizeText } from "./logic";
+import { normalizeText } from "./cards/search";
 
 export type SealedProduct = {
   idProduct: number;

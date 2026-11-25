@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
-import type { InvestmentLine, InvestmentPosition } from "@/lib/logic";
+import type { InvestmentLine, InvestmentPosition } from "@/lib/investment/portfolio";
 
 /** Sélection d'exemplaires dans le détail : résumé et courbe ne portent plus que sur eux. */
 export type LineSelection = {

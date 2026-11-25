@@ -5,7 +5,7 @@ import { expect, settle, test } from "./fixtures";
 /**
  * Notifications push : option des réglages, proposition dans la liste de souhaits et
  * désabonnement à la déconnexion. Le service worker est bloqué en test et Chromium n'a pas de service
- * push : l'abonnement du navigateur est simulé (endpoint en push.example.com), l'autorisation vient du
+ * push : l'abonnement du navigateur est simulé (endpoint en fcm.googleapis.com, seul hôte push accepté par l'API), l'autorisation vient du
  * contexte Playwright. Les abonnements suivent le compte de test (suppression en cascade).
  */
 
@@ -33,7 +33,7 @@ async function fakePushManager(context: BrowserContext) {
           return endpoint ? wrap(endpoint) : null;
         },
         subscribe: async () => {
-          const endpoint = `https://push.example.com/e2e/${Math.random().toString(36).slice(2)}`;
+          const endpoint = `https://fcm.googleapis.com/fcm/send/e2e-${Math.random().toString(36).slice(2)}`;
           sessionStorage.setItem(STORE, endpoint);
           return wrap(endpoint);
         },

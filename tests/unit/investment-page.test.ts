@@ -12,14 +12,8 @@ import {
   touchRow,
   type LineSelection,
 } from "../../src/components/investment/use-line-selection";
-import {
-  amountSign,
-  filterInvestmentLines,
-  priceMovement,
-  type InvestmentLine,
-  type InvestmentPosition,
-  type SetInvestment,
-} from "../../src/lib/logic";
+import { amountSign, priceMovement } from "../../src/lib/cards/pricing";
+import { filterInvestmentLines, type InvestmentLine, type InvestmentPosition, type SetInvestment } from "../../src/lib/investment/portfolio";
 
 function line(partial: Partial<InvestmentLine> & { itemId: string }): InvestmentLine {
   return {

@@ -41,6 +41,15 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          {
+            key: "Content-Security-Policy",
+            // Volontairement sans script-src/style-src/img-src : ils casseraient les scripts en ligne de Next,
+            // Vercel Analytics/Speed Insights et les tuiles Leaflet. Seules les protections sans effet de bord
+            // (clickjacking, <base>, plugins, cibles de formulaire ; OAuth Google/Apple par précaution).
+            value:
+              "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self' https://accounts.google.com https://appleid.apple.com",
+          },
           {
             key: "Permissions-Policy",
             // Géolocalisation pour soi seulement : recherche « autour de moi » de l'annuaire des tournois.

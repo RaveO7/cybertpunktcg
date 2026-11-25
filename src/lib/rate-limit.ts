@@ -39,6 +39,22 @@ export async function rateLimit(key: string, limit: number, windowMs: number): P
   }
 }
 
+/**
+ * Lit un compteur sans l'incrémenter : combien de temps reste-t-il avant la fin du blocage, ou 0 si
+ * la limite n'est pas atteinte. Sert aux limites qui ne comptent que les échecs (connexion).
+ */
+export async function blockedMs(key: string, limit: number): Promise<number> {
+  try {
+    const row = await prisma.rateLimit.findUnique({ where: { key } });
+    const now = Date.now();
+    if (!row || row.resetAt.getTime() <= now || row.count < limit) return 0;
+    return row.resetAt.getTime() - now;
+  } catch (error) {
+    await reportError("rate-limit", error);
+    return 0;
+  }
+}
+
 /** Purge les compteurs expirés (appelé par le cron quotidien). */
 export async function purgeExpiredRateLimits() {
   const { count } = await prisma.rateLimit.deleteMany({ where: { resetAt: { lt: new Date() } } });

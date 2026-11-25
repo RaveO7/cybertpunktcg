@@ -1,4 +1,5 @@
-import { baseCollectorNumber, numberMatches, normalizeText } from "./logic";
+import { baseCollectorNumber } from "./cards/printings";
+import { numberMatches, normalizeText } from "./cards/search";
 
 export type CardmarketProduct = {
   idProduct: number;

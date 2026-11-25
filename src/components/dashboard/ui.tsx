@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { Link, type Href } from "@/i18n/navigation";
 import { formatSignedMoney } from "@/components/TrendBadge";
-import { amountSign } from "@/lib/logic";
+import { amountSign } from "@/lib/cards/pricing";
 
 export function ProfitText({ value }: { value: number | null }) {
   const fmt = useNumberFormat();

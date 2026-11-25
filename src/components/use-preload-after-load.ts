@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { whenIdle } from "@/components/CollectionProvider";
+import { whenIdle } from "@/lib/client/when-idle";
 
 /**
  * Charge au repos, une fois la page chargée (événement load), le code d'une fenêtre importée à la demande

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "./prisma";
 import {
   buildPortfolioHistory,
@@ -101,6 +102,18 @@ export async function loadPortfolioPriceHistory(input: {
   }
 }
 
+const cachedPointsSchema = z.array(
+  z.object({
+    day: z.string(),
+    marketTotal: z.number(),
+    pricedCopies: z.number(),
+    invested: z.number().optional(),
+    profit: z.number().nullable().optional(),
+  }),
+);
+
+const cachedPricesSchema = z.record(z.string(), z.number());
+
 async function loadWithCache(
   userId: string,
   scope: string,
@@ -112,8 +125,11 @@ async function loadWithCache(
     where: { userId_scope: { userId, scope } },
   });
   const usable = cache?.fingerprint === fingerprint ? cache : null;
-  const cachedPoints: PortfolioHistoryPoint[] = usable ? JSON.parse(usable.pointsJson) : [];
-  const cachedPrices = new Map<string, number>(usable ? Object.entries(JSON.parse(usable.lastPricesJson)) : []);
+  // Un cache illisible lève : l'appelant retombe sur le calcul complet.
+  const cachedPoints: PortfolioHistoryPoint[] = usable ? cachedPointsSchema.parse(JSON.parse(usable.pointsJson)) : [];
+  const cachedPrices = new Map<string, number>(
+    usable ? Object.entries(cachedPricesSchema.parse(JSON.parse(usable.lastPricesJson))) : [],
+  );
   const cachedLastDay = usable?.lastDay ?? null;
 
   // Sans cache valide : tout l'historique. Sinon : seulement les jours après le dernier figé.

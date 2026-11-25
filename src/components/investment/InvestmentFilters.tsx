@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Translator } from "@/i18n/translator";
-import type { InvestmentPerformance } from "@/lib/logic";
+import type { InvestmentPerformance } from "@/lib/investment/portfolio";
 import { CARDS_GROUP_FILTER, SEALED_GROUP_FILTER } from "@/lib/reference-data";
 import type { SetDTO } from "@/lib/types";
 

@@ -32,6 +32,7 @@ export function OfflineSection({ catalog }: { catalog: CatalogDTO | null }) {
       .then((count) => {
         if (!cancelled) setCached(count);
       })
+      // Cache illisible : le compteur reste à sa valeur précédente, le bouton de téléchargement fonctionne quand même.
       .catch(() => undefined);
     return () => {
       cancelled = true;
@@ -52,6 +53,7 @@ export function OfflineSection({ catalog }: { catalog: CatalogDTO | null }) {
     } finally {
       abortRef.current = null;
       setProgress(null);
+      // Compte impossible : `null` masque le compteur plutôt que d'afficher un faux chiffre.
       setCached(await countCachedImages(urls).catch(() => null));
     }
   }

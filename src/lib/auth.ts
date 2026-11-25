@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextResponse } from "next/server";
+import { reportError } from "@/lib/monitoring";
 import { prisma } from "@/lib/prisma";
 import { dummyPasswordHash, hashPassword, verifyPassword } from "@/lib/password";
 import type { AuthUser } from "@/lib/types";
@@ -109,6 +110,11 @@ export function clearSessionCookie(response: NextResponse, request: Request) {
   response.cookies.set(sessionCookie(request, "", new Date(0), 0));
 }
 
+/** Supprime une session invalide ; l'échec ne bloque pas la requête (la session sera retentée) mais est signalé. */
+async function dropSession(id: string) {
+  await prisma.session.delete({ where: { id } }).catch((error) => reportError("auth-session-cleanup", error));
+}
+
 async function findAccount(token: string) {
   const session = await prisma.session.findUnique({
     where: { tokenHash: hashToken(token) },
@@ -116,12 +122,12 @@ async function findAccount(token: string) {
   });
   if (!session) return null;
   if (session.expiresAt.getTime() <= Date.now()) {
-    await prisma.session.delete({ where: { id: session.id } }).catch(() => undefined);
+    await dropSession(session.id);
     return null;
   }
   // Compte = e-mail + (mot de passe ou identité OAuth). Les anonymes n'ont ni l'un ni l'autre.
   if (!session.user.email) {
-    await prisma.session.delete({ where: { id: session.id } }).catch(() => undefined);
+    await dropSession(session.id);
     return null;
   }
   if (session.user.passwordHash) return session;
@@ -130,7 +136,7 @@ async function findAccount(token: string) {
     select: { id: true },
   });
   if (!oauth) {
-    await prisma.session.delete({ where: { id: session.id } }).catch(() => undefined);
+    await dropSession(session.id);
     return null;
   }
   return session;

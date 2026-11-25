@@ -173,7 +173,8 @@ describe.sequential("cron import-prices : exécution et statut du job", () => {
     mocks.importPrices.mockRejectedValue(new Error(`Cardmarket injoignable ${stamp}`));
     const first = await call(`Bearer ${SECRET}`);
     assert.equal(first.status, 500);
-    assert.deepEqual(await first.json(), { status: "error", message: `Cardmarket injoignable ${stamp}` });
+    // La réponse HTTP reste générique ; le détail va dans le statut de la tâche et l'alerte.
+    assert.deepEqual(await first.json(), { status: "error", message: "Import failed" });
     let row = await jobRow();
     assert.equal(row?.consecutiveFailures, 1);
     assert.equal(row?.lastError, `Cardmarket injoignable ${stamp}`);
@@ -182,11 +183,12 @@ describe.sequential("cron import-prices : exécution et statut du job", () => {
     assert.match(alerts[0], new RegExp(`Erreur import-prices : Cardmarket injoignable ${stamp}$`));
     assert.equal(mocks.revalidateTag.mock.calls.length, 0);
 
-    // Rejet qui n'est pas une Error : message conservé tel quel.
+    // Rejet qui n'est pas une Error : détail conservé dans le statut de la tâche, pas dans la réponse.
     mocks.importPrices.mockRejectedValue(`panne texte ${stamp}`);
     const second = await call(`Bearer ${SECRET}`);
     assert.equal(second.status, 500);
-    assert.equal(((await second.json()) as { message: string }).message, `panne texte ${stamp}`);
+    assert.equal(((await second.json()) as { message: string }).message, "Import failed");
+    assert.equal((await jobRow())?.lastError, `panne texte ${stamp}`);
     row = await jobRow();
     assert.equal(row?.consecutiveFailures, 2);
     assert.ok(

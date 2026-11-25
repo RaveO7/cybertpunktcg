@@ -8,7 +8,7 @@ import {
   type SetSortKey,
   type SortState,
 } from "@/components/investment/sorting";
-import type { InvestmentPerformance } from "@/lib/logic";
+import type { InvestmentPerformance } from "@/lib/investment/portfolio";
 
 export type InvestmentView = {
   set: string;

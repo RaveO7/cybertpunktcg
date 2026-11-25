@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { whenIdle } from "@/components/CollectionProvider";
+import { whenIdle } from "@/lib/client/when-idle";
 
 // Statistiques de visite et de performance de Vercel : chargées une fois la page affichée, pour ne pas
 // retarder le démarrage. Speed Insights lit tout de même les mesures déjà enregistrées par le navigateur
