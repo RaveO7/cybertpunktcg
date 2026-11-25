@@ -218,5 +218,20 @@
   "pairings": "Pairings",
   "claimTitle": "Recover my profile",
   "claimHint": "The organizer showed you your personal QR: this phone will be linked to your player profile.",
-  "claimButton": "Link this phone"
+  "claimButton": "Link this phone",
+  "push": {
+    "round": "Round {number}",
+    "topCut": "Top cut",
+    "pairing": "table {table} against {opponent}",
+    "bye": "you have the bye",
+    "unknownOpponent": "a player",
+    "roundPublished": "{round}: {pairing}.",
+    "roundStarted": "{round} is starting: {pairing}.",
+    "approved": "Your registration has been approved.",
+    "ended": "Tournament over: results are online.",
+    "endedRank": "Tournament over: you finished {rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}.",
+    "champion": "Tournament over: you won the tournament!",
+    "cancelled": "The organizer cancelled the tournament."
+  },
+  "pushPrompt": "Get notified on this device of each round (table and opponent) and of the results?"
 }

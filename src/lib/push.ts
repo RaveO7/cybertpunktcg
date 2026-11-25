@@ -1,6 +1,7 @@
-// Notifications Web Push des alertes de prix : abonnements des appareils (/api/push/subscribe) et envoi
-// après l'import quotidien des prix (src/lib/price-import.ts). Clés VAPID dans l'environnement ; sans
-// elles, rien n'est envoyé et l'option des réglages est masquée.
+// Notifications Web Push : abonnements des appareils (/api/push/subscribe) et envoi aux appareils d'une
+// liste de comptes. Deux usages : alertes de prix après l'import quotidien (src/lib/price-import.ts) et
+// tournois (src/lib/tournament/notifications.ts). Clés VAPID dans l'environnement ; sans elles, rien
+// n'est envoyé et l'option des réglages est masquée.
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/i18n/config";
 import { formatterFor, translatorFor } from "@/i18n/server";
@@ -11,8 +12,8 @@ import { prisma } from "./prisma";
 export const PUSH_TAG = "price-alerts";
 /** Envois simultanés au plus. */
 const CONCURRENCY = 10;
-/** Durée de conservation par le service push si l'appareil est éteint : un jour, jusqu'à l'import suivant. */
-const TTL_SECONDS = 24 * 60 * 60;
+/** Alertes de prix gardées un jour par le service push si l'appareil est éteint, jusqu'à l'import suivant. */
+const PRICE_TTL_SECONDS = 24 * 60 * 60;
 
 export type PushSubscriptionInput = { endpoint: string; keys: { p256dh: string; auth: string }; locale?: string };
 
@@ -36,10 +37,13 @@ export async function removePushSubscription(userId: string, endpoint: string) {
 
 export type TriggeredAlert = { userId: string; printingId: string; price: number };
 export type PushTarget = { endpoint: string; keys: { p256dh: string; auth: string } };
+/** Options d'envoi du service push : durée de conservation et sujet (un message en attente du même sujet est remplacé). */
+export type PushDelivery = { ttlSeconds: number; topic: string };
 /** Envoi d'une notification ; l'erreur porte `statusCode` quand le service push répond en erreur. */
-export type PushSender = (target: PushTarget, payload: string) => Promise<unknown>;
+export type PushSender = (target: PushTarget, payload: string, delivery: PushDelivery) => Promise<unknown>;
 export type PushPayload = { title: string; body: string; url: string; tag: string };
 export type PushReport = { users: number; sent: number; failed: number; removed: number; skipped?: "no-keys" };
+export type PushOptions = { send?: PushSender; log?: (message: string) => void };
 
 type VapidConfig = { publicKey: string; privateKey: string; subject: string };
 
@@ -55,8 +59,13 @@ let missingKeysLogged = false;
 async function webPushSender(config: VapidConfig): Promise<PushSender> {
   const { default: webPush } = await import("web-push");
   const details = { subject: config.subject, publicKey: config.publicKey, privateKey: config.privateKey };
-  return (target, payload) =>
-    webPush.sendNotification(target, payload, { TTL: TTL_SECONDS, topic: PUSH_TAG, urgency: "normal", vapidDetails: details });
+  return (target, payload, delivery) =>
+    webPush.sendNotification(target, payload, {
+      TTL: delivery.ttlSeconds,
+      topic: delivery.topic,
+      urgency: "normal",
+      vapidDetails: details,
+    });
 }
 
 /** Texte de la notification d'un compte : la carte et son prix s'il n'y a qu'une alerte, sinon le nombre. */
@@ -86,19 +95,20 @@ function statusOf(error: unknown) {
 }
 
 /**
- * Une notification par appareil abonné de chaque compte qui a de nouvelles alertes. Les abonnements
- * que le service push déclare expirés (404, 410) sont supprimés ; un échec n'arrête pas les autres envois.
+ * Une notification par appareil abonné de chaque compte de `userIds`, dans la langue de l'appareil
+ * (`payloadFor` est appelé une fois par compte et par langue). Les abonnements que le service push
+ * déclare expirés (404, 410) sont supprimés ; un échec n'arrête pas les autres envois.
  */
-export async function notifyPriceAlerts(
+export async function sendToUsers(
   client: PrismaClient,
-  alerts: TriggeredAlert[],
-  options: { send?: PushSender; log?: (message: string) => void } = {},
+  userIds: string[],
+  payloadFor: (userId: string, locale: Locale) => Promise<PushPayload>,
+  delivery: PushDelivery,
+  options: PushOptions = {},
 ): Promise<PushReport> {
   const log = options.log ?? console.info;
-  const byUser = new Map<string, TriggeredAlert[]>();
-  for (const alert of alerts) byUser.set(alert.userId, [...(byUser.get(alert.userId) ?? []), alert]);
   const report: PushReport = { users: 0, sent: 0, failed: 0, removed: 0 };
-  if (byUser.size === 0) return report;
+  if (userIds.length === 0) return report;
 
   let send = options.send;
   if (!send) {
@@ -112,24 +122,16 @@ export async function notifyPriceAlerts(
   }
 
   const subscriptions = await client.pushSubscription.findMany({
-    where: { userId: { in: [...byUser.keys()] } },
+    where: { userId: { in: [...new Set(userIds)] } },
     select: { endpoint: true, p256dh: true, auth: true, locale: true, userId: true },
   });
   if (subscriptions.length === 0) return report;
-  const printings = await client.printing.findMany({
-    where: { id: { in: alerts.map((alert) => alert.printingId) } },
-    select: { id: true, localizedName: true, card: { select: { canonicalName: true, name: true } } },
-  });
-  const names = new Map(printings.map((row) => [row.id, row.localizedName || row.card.canonicalName || row.card.name]));
   report.users = new Set(subscriptions.map((row) => row.userId)).size;
 
   const payloads = new Map<string, Promise<string>>();
-  const payloadFor = (userId: string, locale: Locale) => {
+  const serialized = (userId: string, locale: Locale) => {
     const key = `${userId}|${locale}`;
-    if (!payloads.has(key)) {
-      const entries = byUser.get(userId)!.map((alert) => ({ name: names.get(alert.printingId) ?? "?", price: alert.price }));
-      payloads.set(key, alertPayload(locale, entries).then((payload) => JSON.stringify(payload)));
-    }
+    if (!payloads.has(key)) payloads.set(key, payloadFor(userId, locale).then((payload) => JSON.stringify(payload)));
     return payloads.get(key)!;
   };
 
@@ -137,7 +139,7 @@ export async function notifyPriceAlerts(
   await pool(subscriptions, CONCURRENCY, async (row) => {
     const locale = isLocale(row.locale) ? row.locale : DEFAULT_LOCALE;
     try {
-      await send({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, await payloadFor(row.userId, locale));
+      await send({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, await serialized(row.userId, locale), delivery);
       report.sent += 1;
     } catch (error) {
       const status = statusOf(error);
@@ -149,4 +151,28 @@ export async function notifyPriceAlerts(
     report.removed = (await client.pushSubscription.deleteMany({ where: { endpoint: { in: expired } } })).count;
   }
   return report;
+}
+
+/** Alertes de prix : une notification par compte qui a de nouvelles alertes (voir `sendToUsers`). */
+export async function notifyPriceAlerts(client: PrismaClient, alerts: TriggeredAlert[], options: PushOptions = {}): Promise<PushReport> {
+  const byUser = new Map<string, TriggeredAlert[]>();
+  for (const alert of alerts) byUser.set(alert.userId, [...(byUser.get(alert.userId) ?? []), alert]);
+  if (byUser.size === 0) return { users: 0, sent: 0, failed: 0, removed: 0 };
+
+  const printings = await client.printing.findMany({
+    where: { id: { in: alerts.map((alert) => alert.printingId) } },
+    select: { id: true, localizedName: true, card: { select: { canonicalName: true, name: true } } },
+  });
+  const names = new Map(printings.map((row) => [row.id, row.localizedName || row.card.canonicalName || row.card.name]));
+  return sendToUsers(
+    client,
+    [...byUser.keys()],
+    (userId, locale) =>
+      alertPayload(
+        locale,
+        byUser.get(userId)!.map((alert) => ({ name: names.get(alert.printingId) ?? "?", price: alert.price })),
+      ),
+    { ttlSeconds: PRICE_TTL_SECONDS, topic: PUSH_TAG },
+    options,
+  );
 }
