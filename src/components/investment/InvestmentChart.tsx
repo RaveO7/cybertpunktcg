@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import type { ChartPoint } from "@/components/PriceChart";
+import type { ChartPoint } from "@/components/price-chart/types";
 import type { ChartRange } from "@/components/investment/chart-range";
 import { ScreenError, ScreenSkeleton, SkeletonBlock } from "@/components/site/ScreenSkeleton";
 import type { Translator } from "@/i18n/translator";

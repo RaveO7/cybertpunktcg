@@ -1,6 +1,6 @@
 // Colonnes JSON du tournoi relues de la base : validées à la lecture plutôt que castées.
 import { z } from "zod";
-import type { CommandResult } from "./commands";
+import type { CommandResult } from "./command-context";
 import type { CutState } from "./service";
 import type { MatchResult } from "./scores";
 import type { CutDraw } from "./top-cut";

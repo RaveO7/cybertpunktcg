@@ -3,7 +3,8 @@
 import { useMessages, useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { anatomyCopy } from "@/lib/rules/card-anatomy";
-import { buildInteractiveSteps, demoTableCopy } from "@/lib/rules/demo-match";
+import { demoTableCopy } from "@/lib/rules/demo-match";
+import { buildInteractiveSteps } from "@/lib/rules/demo-match-steps";
 import { EXAMPLE_CARDS, type ExampleCard } from "@/lib/rules/examples";
 import { howtoPlayContent } from "@/lib/rules/howto-play";
 import { tutorialCopy } from "@/lib/rules/tutorial";

@@ -1,7 +1,9 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { matchCardmarketPrices, productNameKey, type CardmarketProduct } from "@/lib/cardmarket";
+import { productNameKey } from "@/lib/cardmarket/keys";
+import { matchCardmarketPrices } from "@/lib/cardmarket/match";
+import type { CardmarketProduct } from "@/lib/cardmarket/types";
 import { planPromoProducts, splitPromoName } from "@/lib/cardmarket-promos";
 import { PROMO_DETAILS } from "@/lib/promo-details";
 

@@ -1,4 +1,4 @@
-import type { BoardCard, MatchState } from "@/lib/rules/demo-match";
+import type { BoardCard, MatchState } from "@/lib/rules/demo-match-state";
 
 /*
  * Déplacements de cartes du tutoriel (technique FLIP).

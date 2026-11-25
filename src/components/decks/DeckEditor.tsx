@@ -4,43 +4,28 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { useRouter } from "@/i18n/navigation";
-import { CardImage } from "@/components/CardImage";
-import { colorDotClass } from "@/components/CardTile";
 import { useCollection } from "@/components/CollectionProvider";
 import { CardPreview } from "@/components/decks/CardPreview";
 import { DEFAULT_FILTERS, DeckBrowser, type BrowserFilters } from "@/components/decks/DeckBrowser";
+import { CostCurve } from "@/components/decks/deck-editor/CostCurve";
+import { DeckCardList } from "@/components/decks/deck-editor/DeckCardList";
+import { DeckOverview } from "@/components/decks/deck-editor/DeckOverview";
+import { SaveIndicator } from "@/components/decks/deck-editor/SaveIndicator";
 import { ExportPanel, ImportPanel } from "@/components/decks/TransferPanels";
 import { ShareDeckPanel } from "@/components/decks/ShareDeckPanel";
 import { ShortfallPanel } from "@/components/decks/ShortfallPanel";
-import { useDeckCatalog, useDeckSaver, type SaveStatus } from "@/components/decks/hooks";
-import {
-  BackLink,
-  DeleteDeckDialog,
-  PencilIcon,
-  Stepper,
-  ValidityBadge,
-  buttonClass,
-  issueText,
-  panelClass,
-  primaryClass,
-} from "@/components/decks/ui";
+import { useDeckCatalog, useDeckSaver } from "@/components/decks/hooks";
+import { BackLink, DeleteDeckDialog, PencilIcon, buttonClass } from "@/components/decks/ui";
 import {
   DECK_RULES,
   analyzeDeck,
-  cardLabel,
   deckShortfall,
-  isLegal,
   isLegend,
   maxCopies,
   ownedCopiesByCard,
-  ramAllowed,
-  type DeckAnalysis,
   type DeckEntry,
-  type DeckLine,
-  type ShortfallLine,
 } from "@/lib/deck-rules";
-import { COLOR_ORDER, TYPE_ORDER } from "@/lib/reference-data";
-import type { CardDTO, CatalogDTO, DeckDTO, PrintingDTO } from "@/lib/types";
+import type { CardDTO, CatalogDTO, DeckDTO } from "@/lib/types";
 
 type Pane = "deck" | "add";
 
@@ -356,277 +341,5 @@ export function DeckEditor({
         />
       ) : null}
     </div>
-  );
-}
-
-function SaveIndicator({ status, error, onRetry }: { status: SaveStatus; error: string | null; onRetry: () => void }) {
-  const t = useTranslations();
-  if (status === "idle") return null;
-  if (status === "error") {
-    return (
-      <span role="alert" className="flex items-center gap-2 text-xs text-danger">
-        {error ?? t("decks.saveFailed")}
-        <button type="button" className="underline hover:text-foreground" onClick={onRetry}>
-          {t("decks.retry")}
-        </button>
-      </span>
-    );
-  }
-  return (
-    <span className="text-xs text-muted" aria-live="polite">
-      {status === "saving" ? t("decks.saving") : t("decks.saved")}
-    </span>
-  );
-}
-
-/** En-tête du deck : légalité, 3 emplacements de Legends, RAM par couleur et problèmes. */
-function DeckOverview({
-  analysis,
-  preview,
-  onQuantity,
-  onBrowseLegends,
-  onPreview,
-}: {
-  analysis: DeckAnalysis;
-  preview: Map<string, PrintingDTO>;
-  onQuantity: (cardId: string, quantity: number) => void;
-  onBrowseLegends: () => void;
-  onPreview: (cardId: string, list: string[]) => void;
-}) {
-  const fmt = useNumberFormat();
-  const t = useTranslations();
-  const sizeOk = analysis.mainCount >= DECK_RULES.minCards && analysis.mainCount <= DECK_RULES.maxCards;
-  const colors = COLOR_ORDER.filter((color) => analysis.ramLimits[color] != null);
-  const slots = Array.from({ length: Math.max(DECK_RULES.legends, analysis.legends.length) }, (_, position) => analysis.legends[position]);
-  return (
-    <section className={`${panelClass} flex flex-col gap-4 p-4`} aria-labelledby="deck-validation">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 id="deck-validation" className="hud-label">
-            {t("decks.validation")}
-          </h2>
-          <p className="mt-1 font-mono text-3xl tabular-nums">
-            <span className={sizeOk ? "text-gain" : "text-foreground"}>{fmt.int(analysis.mainCount)}</span>
-            <span className="text-base text-muted">
-              {" "}
-              / {DECK_RULES.minCards}–{DECK_RULES.maxCards}
-            </span>
-          </p>
-        </div>
-        <ValidityBadge analysis={analysis} />
-      </div>
-
-      <div>
-        <h3 className="hud-label mb-2">
-          {t("decks.legends")} · {analysis.legendCount}/{DECK_RULES.legends}
-        </h3>
-        <ul className="grid grid-cols-3 gap-2">
-          {slots.map((line, position) =>
-            line ? (
-              <li key={line.card.id} className="relative min-w-0">
-                <button
-                  type="button"
-                  className="block w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan"
-                  onClick={() => onPreview(line.card.id, analysis.legends.map((entry) => entry.card.id))}
-                  aria-label={t("decks.viewCard", { name: cardLabel(line.card) })}
-                >
-                  {preview.get(line.card.id)?.imagePath ? (
-                    <CardImage
-                      src={preview.get(line.card.id)!.imagePath!}
-                      alt=""
-                      className="aspect-[63/88] w-full rounded-md bg-black object-contain"
-                    />
-                  ) : (
-                    <span className="grid aspect-[63/88] w-full place-items-center rounded-md bg-black text-xs text-muted">N/A</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onQuantity(line.card.id, line.quantity - 1)}
-                  className="absolute top-1 right-1 grid h-7 w-7 place-items-center rounded-full bg-black/80 text-sm text-foreground hover:bg-danger"
-                  aria-label={t("decks.removeOne", { name: cardLabel(line.card) })}
-                >
-                  ×
-                </button>
-                <p className="mt-1 truncate text-[12px]" title={cardLabel(line.card)}>
-                  {line.card.name}
-                </p>
-              </li>
-            ) : (
-              <li key={`slot-${position}`} className="min-w-0">
-                <button
-                  type="button"
-                  onClick={onBrowseLegends}
-                  className="grid aspect-[63/88] w-full place-items-center rounded-md border border-dashed border-line text-xs text-muted transition hover:border-cyan hover:text-cyan"
-                >
-                  <span className="flex flex-col items-center gap-1">
-                    <span className="text-2xl leading-none" aria-hidden="true">
-                      +
-                    </span>
-                    Legend
-                  </span>
-                </button>
-              </li>
-            ),
-          )}
-        </ul>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5">
-        {colors.length > 0 ? (
-          colors.map((color) => (
-            <span key={color} className="inline-flex h-6 items-center gap-1.5 border border-line px-1.5 text-[12px]">
-              <span className={`h-2 w-2 rounded-full ${colorDotClass(color)}`} aria-hidden="true" />
-              {t("decks.ramLimit", { color, n: analysis.ramLimits[color] })}
-            </span>
-          ))
-        ) : (
-          <span className="text-[12px] text-muted">{t("decks.noRam")}</span>
-        )}
-      </div>
-
-      {analysis.issues.length > 0 ? (
-        <ul className="flex flex-col gap-1.5 border-t border-line/60 pt-3 text-xs text-danger">
-          {analysis.issues.map((issue, position) => (
-            <li key={`${issue.code}-${position}`} className="flex gap-2">
-              <span aria-hidden="true">✕</span>
-              {issueText(t, issue)}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </section>
-  );
-}
-
-/** Cartes du deck hors Legends, groupées par type, en lignes compactes. */
-function DeckCardList({
-  analysis,
-  lineByCard,
-  canAdd,
-  onQuantity,
-  onBrowse,
-  onPreview,
-}: {
-  analysis: DeckAnalysis;
-  lineByCard: Map<string, ShortfallLine>;
-  canAdd: (card: CardDTO) => boolean;
-  onQuantity: (cardId: string, quantity: number) => void;
-  onBrowse: () => void;
-  onPreview: (cardId: string, list: string[]) => void;
-}) {
-  const fmt = useNumberFormat();
-  const t = useTranslations();
-  if (analysis.main.length === 0) {
-    return (
-      <div className={`${panelClass} flex flex-col items-start gap-3 p-4`}>
-        <p className="text-sm text-muted">{t("decks.emptyDeck")}</p>
-        <button type="button" className={`${primaryClass} lg:hidden`} onClick={onBrowse}>
-          {t("decks.addCards")}
-        </button>
-      </div>
-    );
-  }
-  const known = TYPE_ORDER as readonly string[];
-  const groups = [
-    ...TYPE_ORDER.filter((type) => type !== "Legend").map((type) => ({
-      key: type,
-      title: type,
-      lines: analysis.main.filter((line) => line.card.cardType === type),
-    })),
-    { key: "other", title: t("decks.otherCards"), lines: analysis.main.filter((line) => !known.includes(line.card.cardType ?? "")) },
-  ].filter((group) => group.lines.length > 0);
-  return (
-    <section className={panelClass} aria-label={t("decks.mainDeck")}>
-      {groups.map((group) => (
-        <div key={group.key} className="border-t border-line/60 first:border-t-0">
-          <h3 className="hud-label flex justify-between px-3 pt-3 pb-1">
-            <span>{group.title}</span>
-            <span className="tabular-nums">{fmt.int(group.lines.reduce((sum, line) => sum + line.quantity, 0))}</span>
-          </h3>
-          <ul className="pb-1.5">
-            {group.lines.map((line) => (
-              <DeckRow
-                key={line.card.id}
-                line={line}
-                detail={lineByCard.get(line.card.id)}
-                ramOk={analysis.legends.length === 0 || ramAllowed(line.card, analysis.ramLimits)}
-                canAdd={canAdd(line.card)}
-                onQuantity={onQuantity}
-                onPreview={() => onPreview(line.card.id, analysis.main.map((entry) => entry.card.id))}
-              />
-            ))}
-          </ul>
-        </div>
-      ))}
-    </section>
-  );
-}
-
-function DeckRow({
-  line,
-  detail,
-  ramOk,
-  canAdd,
-  onQuantity,
-  onPreview,
-}: {
-  line: DeckLine;
-  detail: ShortfallLine | undefined;
-  ramOk: boolean;
-  canAdd: boolean;
-  onQuantity: (cardId: string, quantity: number) => void;
-  onPreview: () => void;
-}) {
-  const t = useTranslations();
-  const label = cardLabel(line.card);
-  const owned = detail?.owned ?? 0;
-  const ownedTone = owned >= line.quantity ? "bg-gain" : owned > 0 ? "bg-yellow" : "bg-line";
-  const problem = !ramOk || !isLegal(line.card) || line.quantity > DECK_RULES.maxCopies;
-  return (
-    <li className={`flex items-center gap-2 px-3 py-1 hover:bg-panel-2 ${problem ? "text-danger" : ""}`}>
-      <span className="w-4 shrink-0 text-right font-mono text-sm tabular-nums text-cyan">{line.quantity}</span>
-      <span className={`h-2 w-2 shrink-0 rounded-full ${colorDotClass(line.card.color)}`} aria-hidden="true" />
-      <button
-        type="button"
-        onClick={onPreview}
-        className="min-w-0 flex-1 truncate text-left text-sm hover:text-cyan"
-        title={label}
-        aria-label={t("decks.viewCard", { name: label })}
-      >
-        {label}
-      </button>
-      <span className="w-5 shrink-0 text-center font-mono text-[12px] text-muted" title={line.card.cost != null ? t("decks.cost", { n: line.card.cost }) : undefined}>
-        {line.card.cost ?? ""}
-      </span>
-      <span
-        className={`h-2.5 w-2.5 shrink-0 rounded-full ${ownedTone}`}
-        title={t("decks.ownedTitle", { owned, total: line.quantity })}
-        aria-label={t("decks.ownedTitle", { owned, total: line.quantity })}
-        role="img"
-      />
-      <Stepper card={line.card} quantity={line.quantity} canAdd={canAdd} onQuantity={onQuantity} compact />
-    </li>
-  );
-}
-
-function CostCurve({ curve }: { curve: number[] }) {
-  const t = useTranslations();
-  const max = Math.max(1, ...curve);
-  return (
-    <section className={`${panelClass} p-4`} aria-labelledby="deck-curve">
-      <h2 id="deck-curve" className="hud-label">
-        {t("decks.curve")}
-      </h2>
-      <ol className="mt-3 grid h-24 grid-cols-8 items-end gap-1.5">
-        {curve.map((count, cost) => (
-          <li key={cost} className="flex h-full flex-col items-center justify-end gap-1" aria-label={t("decks.curveBar", { cost: cost === 7 ? "7+" : String(cost), n: count })}>
-            <span className="font-mono text-[10px] tabular-nums text-muted">{count || ""}</span>
-            <span className="w-full bg-cyan/70" style={{ height: `${(count / max) * 65}%`, minHeight: count ? 2 : 0 }} />
-            <span className="font-mono text-[12px] text-muted">{cost === 7 ? "7+" : cost}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
   );
 }

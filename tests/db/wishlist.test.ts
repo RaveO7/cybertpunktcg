@@ -28,7 +28,7 @@ let db: Awaited<ReturnType<typeof openDatabaseCopy>> | null = null;
 let prisma: Prisma;
 let routes: Routes;
 let evaluateWishlistAlerts: typeof import("../../src/lib/wishlist").evaluateWishlistAlerts;
-let importPrices: typeof import("../../src/lib/price-import").importPrices;
+let importPrices: typeof import("../../src/lib/price-import/import-prices").importPrices;
 let sessionCookie: string;
 let filesDir: string;
 let sourceId: string;
@@ -109,7 +109,7 @@ beforeAll(async () => {
     seen: await import("../../src/app/api/wishlist/seen/route"),
   };
   ({ evaluateWishlistAlerts } = await import("../../src/lib/wishlist"));
-  ({ importPrices } = await import("../../src/lib/price-import"));
+  ({ importPrices } = await import("../../src/lib/price-import/import-prices"));
   const auth = await import("../../src/lib/auth");
   sessionCookie = auth.SESSION_COOKIE;
 

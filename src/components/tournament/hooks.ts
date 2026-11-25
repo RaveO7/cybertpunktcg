@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { useTranslations } from "next-intl";
 import { ApiError, api } from "@/lib/client/api";
 import { useApiErrorMessage } from "@/lib/client/use-api-error-message";
-import type { CommandResult } from "@/lib/tournament/commands";
+import type { CommandResult } from "@/lib/tournament/command-context";
 import { clockOffsetMs } from "@/lib/tournament/clock";
 import {
   browserStorage,
