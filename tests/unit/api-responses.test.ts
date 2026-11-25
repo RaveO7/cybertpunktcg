@@ -29,7 +29,8 @@ import type { Place } from "../../src/lib/geo/location";
 import type { PortfolioPurchase, loadReferencePrices } from "../../src/lib/investment-history";
 import type { PortfolioHistoryPoint, buildPrintingHistory } from "../../src/lib/price-history";
 import type { AdminShop, OwnedShop, ShopDetail, ShopSummary, listAttachedTournaments } from "../../src/lib/shops/shops";
-import type { CommandResult, listTournaments } from "../../src/lib/tournament/commands";
+import type { CommandResult } from "../../src/lib/tournament/command-context";
+import type { listTournaments } from "../../src/lib/tournament/commands";
 import type { DirectoryFacets, DirectoryResult } from "../../src/lib/tournament/directory";
 import type { TournamentView } from "../../src/lib/tournament/view";
 
