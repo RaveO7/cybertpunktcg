@@ -300,7 +300,7 @@ export function CardsExplorer({
             aria-label={t("common.search")}
             type="search"
             enterKeyHint="search"
-            className="h-10 min-w-0 flex-1 basis-[calc(100%-3rem)] border border-line bg-panel px-3 text-sm outline-none focus:border-cyan sm:basis-40"
+            className="h-10 min-w-0 flex-1 basis-[calc(100%-3rem)] border border-line-field bg-panel px-3 text-sm outline-none focus:border-cyan sm:basis-40"
           />
           <SortControl sort={activeFilters.sort} onChange={(sort) => update({ sort, page: 1 })} />
           {!readOnly ? (

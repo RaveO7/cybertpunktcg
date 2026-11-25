@@ -64,7 +64,7 @@ export function WishlistPanel({ printingId, marketPrice }: { printingId: string;
       >
         <label className="w-32">
           <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t("wishlist.targetPrice")}</span>
-          <span className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
+          <span className="flex h-10 border border-line-field bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
             <input
               className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
               inputMode="decimal"
