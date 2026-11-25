@@ -257,6 +257,30 @@ describe("limites", () => {
     }
   });
 
+  it("les connexions réussies ne comptent pas dans la limite par e-mail", async () => {
+    const email = `ok.${stamp}@example.com`;
+    const user = await registerAccount({ email, password, displayName: "Fidèle", localUserId: null });
+    cleanupIds.push(user.id);
+    const previousTrust = process.env.TRUST_PROXY;
+    process.env.TRUST_PROXY = "1";
+    try {
+      // Une IP par essai : seule la limite par e-mail pourrait refuser.
+      for (let i = 0; i < 12; i += 1) {
+        const response = await login(
+          new Request("http://127.0.0.1/api/auth/login", {
+            method: "POST",
+            headers: { "content-type": "application/json", "x-forwarded-for": `192.0.2.${i}-ok-${stamp}` },
+            body: JSON.stringify({ email, password }),
+          }),
+        );
+        assert.equal(response.status, 200, `connexion réussie n° ${i + 1}`);
+      }
+    } finally {
+      if (previousTrust === undefined) delete process.env.TRUST_PROXY;
+      else process.env.TRUST_PROXY = previousTrust;
+    }
+  });
+
   it("sans IP lisible (clé « local »), les échecs d'un e-mail ne bloquent pas un autre compte", async () => {
     const wrong = `local.wrong.${stamp}@example.com`;
     const right = `local.right.${stamp}@example.com`;
