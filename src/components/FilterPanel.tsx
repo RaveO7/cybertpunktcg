@@ -14,7 +14,7 @@ import {
 import type { ConditionDTO, Facets, Filters } from "@/lib/types";
 
 const fieldClass =
-  "h-10 w-full border border-line bg-panel-2 px-3 text-sm outline-none focus:border-cyan";
+  "h-10 w-full border border-line-field bg-panel-2 px-3 text-sm outline-none focus:border-cyan";
 
 export function FilterPanel({
   filters,
@@ -589,6 +589,7 @@ function Chips({
             <button
               key={option || "empty"}
               type="button"
+              aria-pressed={on}
               className={`border px-2 py-1 text-xs ${on ? "border-yellow bg-yellow/10 text-yellow" : "border-line text-muted"}`}
               onClick={() => onChange(on ? selected.filter((value) => value !== option) : [...selected, option])}
             >
@@ -626,6 +627,7 @@ function TagList({
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
+        aria-label={`${label} — ${filterPlaceholder}`}
         placeholder={filterPlaceholder}
         className={`${fieldClass} mb-2`}
       />
