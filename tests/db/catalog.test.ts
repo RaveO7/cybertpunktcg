@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
-import { GUIDE_DETAIL_KINDS, type GuideDetailKind } from "../../src/lib/cardmarket";
+import { GUIDE_DETAIL_KINDS, type GuideDetailKind } from "../../src/lib/cardmarket/parse";
 import { loadCatalog, loadCollection } from "../../src/lib/catalog";
 import { deleteCollectionLine, saveCollectionLine } from "../../src/lib/collection-mutate";
 import { aggregateCollection, computeProgress } from "../../src/lib/cards/collection-stats";

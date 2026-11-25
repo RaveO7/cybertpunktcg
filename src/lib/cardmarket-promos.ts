@@ -5,7 +5,8 @@
 // produit, comme les produits scellés. Une carte déjà connue sous le même nom reçoit l'impression ; sinon une
 // carte est créée.
 import type { PrismaClient } from "@prisma/client";
-import { EXPANSION_SET_BY_ID, expansionKey, productNameKey, type CardmarketProduct } from "./cardmarket";
+import { EXPANSION_SET_BY_ID, expansionKey, productNameKey } from "./cardmarket/keys";
+import type { CardmarketProduct } from "./cardmarket/types";
 import { sealedExternalId, slugifySealed } from "./cardmarket-sealed";
 import { PROMO_DETAILS } from "./promo-details";
 
