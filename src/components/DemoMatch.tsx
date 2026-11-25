@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, type CSSProperties } from "react";
+import { useMemo, useRef, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
+import { useModal } from "@/components/use-modal";
 import { CoachCallout } from "@/components/CoachCallout";
 import { GameCard } from "@/components/GameCard";
 import { ActionButtons } from "@/components/demo-match/ActionButtons";
@@ -28,6 +30,11 @@ export function DemoMatch({
   const { copy, steps, stepIndex, step, expect, done, state, toast, fxSeq, round, fx, tableRef, tryAction, restart } =
     useDemoMatch(onProgress);
   const compact = useCompact();
+  const tutorial = useTranslations("rules.tutorial");
+  // Sur téléphone, le parcours passe en plein écran par-dessus la page : il se comporte en fenêtre modale
+  // (focus gardé dedans, Échap = la croix de sortie, qui demande confirmation si le parcours est commencé).
+  const compactRef = useRef<HTMLDivElement>(null);
+  useModal(compactRef, { open: compact, onClose: onOpenRules });
 
   const densityStyle = useMemo(() => demoDensityVars(state, compact), [state, compact]);
 
@@ -97,6 +104,10 @@ export function DemoMatch({
   if (compact) {
     return createPortal(
       <div
+        ref={compactRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={tutorial("learnTab")}
         // Portail hors de la page : ses balayages ne doivent pas changer d'onglet (voir HowToPlayScreen).
         data-swipe-zone=""
         className="demo-match demo-match--compact pt-safe px-safe pb-safe fixed inset-0 z-[60] grid bg-background portrait:grid-rows-[minmax(0,1fr)_auto] landscape:grid-cols-[minmax(0,1fr)_clamp(11.5rem,32vw,18rem)]"

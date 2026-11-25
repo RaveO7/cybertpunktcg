@@ -124,7 +124,7 @@ export function QuickAddSheet({
     }
   }
 
-  const fieldClass = "h-12 w-full min-w-0 border border-line bg-panel-2 px-3 text-base outline-none focus:border-cyan";
+  const fieldClass = "h-12 w-full min-w-0 border border-line-field bg-panel-2 px-3 text-base outline-none focus:border-cyan";
   const labelClass = "mb-1.5 block text-sm font-semibold";
 
   return (

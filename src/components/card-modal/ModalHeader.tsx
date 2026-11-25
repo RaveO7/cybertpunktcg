@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { CardDTO, PrintingDTO } from "@/lib/types";
 
 const headerBtnClass =
-  "grid h-11 w-11 place-items-center border border-line text-foreground transition hover:border-yellow/50 hover:text-yellow disabled:cursor-default disabled:opacity-30 disabled:hover:border-line disabled:hover:text-foreground focus-visible:border-yellow/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow/70";
+  "grid h-11 w-11 place-items-center border border-line text-foreground transition hover:border-yellow/50 hover:text-yellow disabled:cursor-default disabled:opacity-30 disabled:hover:border-line disabled:hover:text-foreground focus-visible:border-yellow/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow";
 
 /** En-tête de la fiche : nom de la carte, carte précédente / suivante et fermeture. */
 export function ModalHeader({
