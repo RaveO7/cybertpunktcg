@@ -1,16 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { LOCALES, type Locale } from "../../src/i18n/config";
+import { cardOf, matchesExpect } from "../../src/lib/rules/demo-match";
 import {
-  cardOf,
   initialMatchState,
-  matchesExpect,
   type BoardCard,
   type CardRef,
-  type ExpectAction,
-  type InteractiveStep,
   type MatchState,
-} from "../../src/lib/rules/demo-match";
+} from "../../src/lib/rules/demo-match-state";
+import type { ExpectAction, InteractiveStep } from "../../src/lib/rules/demo-match-steps";
 import { EXAMPLE_CARDS } from "../../src/lib/rules/examples";
 import { howtoFor, stepsFor, tableFor } from "../helpers/rules-content";
 
