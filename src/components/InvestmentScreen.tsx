@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { intlLocale } from "@/i18n/config";
 import { Link } from "@/i18n/navigation";
 import { useNumberFormat } from "@/i18n/number-format";
-import type { ChartPurchase } from "@/components/PriceChart";
+import type { ChartPurchase } from "@/components/price-chart/types";
 import { useCollection } from "@/components/CollectionProvider";
 import { usePreloadAfterLoad } from "@/components/use-preload-after-load";
 import { attachPurchases, chartRangeStart, filterChartRange, type ChartRange } from "@/components/investment/chart-range";
