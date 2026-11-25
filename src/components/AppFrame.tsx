@@ -1,6 +1,7 @@
 "use client";
 
 import { useSelectedLayoutSegments } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCollection } from "@/components/CollectionProvider";
 import { BottomNav, Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -18,6 +19,7 @@ const PAGES_GUARDING_THEMSELVES = ["/decks", "/tournois", "/parametres", "/inves
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   // Chemin interne (segments français, sans préfixe de langue) : mêmes règles dans toutes les langues.
+  const t = useTranslations();
   const pathname = useInternalPathname();
   const { session, error } = useCollection();
   const isSharedView = pathname.startsWith("/classeur/");
@@ -47,11 +49,17 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const content = isPublicPage || guardsItself ? children : <RequireUser>{children}</RequireUser>;
   return (
     <div className="relative flex h-dvh flex-col overflow-clip">
+      <a
+        href="#contenu"
+        className="sr-only bg-yellow px-3 py-2 text-sm font-semibold text-black focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100]"
+      >
+        {t("common.skipToContent")}
+      </a>
       <Header privatePage={privatePage} />
       <OfflineBanner />
       <LegacyLocalePreference />
       <PreferredLanguageRedirect />
-      <main className="app-main @container/main px-safe relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain [container-type:size]">
+      <main id="contenu" tabIndex={-1} className="outline-none app-main @container/main px-safe relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain [container-type:size]">
         {content}
         {showFooter ? <Footer /> : null}
       </main>

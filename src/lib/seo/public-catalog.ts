@@ -167,11 +167,14 @@ export function cardWithNeighbours(cards: PublicCard[], slug: string) {
   const index = cards.findIndex((card) => card.slug === slug);
   if (index === -1) return null;
   const card = cards[index];
+  // Cartes de la même couleur les plus proches dans l'ordre du catalogue (distance calculée une fois, pas d'indexOf dans le tri).
   const sameColor = card.color
-    ? cards.filter((other, position) => other.color === card.color && other.slug !== card.slug && Math.abs(position - index) > 1)
+    ? cards
+        .map((other, position) => ({ other, distance: Math.abs(position - index) }))
+        .filter(({ other, distance }) => other.color === card.color && other.slug !== card.slug && distance > 1)
+        .sort((a, b) => a.distance - b.distance)
+        .map(({ other }) => other)
     : [];
-  // Cartes de la même couleur les plus proches dans l'ordre du catalogue.
-  sameColor.sort((a, b) => Math.abs(cards.indexOf(a) - index) - Math.abs(cards.indexOf(b) - index));
   return {
     card,
     previous: index > 0 ? cards[index - 1] : null,

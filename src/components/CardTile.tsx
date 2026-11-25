@@ -124,7 +124,7 @@ export function CardTile({
         onContextMenu={onContextMenu}
         className={`no-touch-callout relative z-0 flex h-full flex-col overflow-hidden hud-panel ${accent}`}
       >
-        <button type="button" onClick={onClick} tabIndex={tabIndex} aria-pressed={pressed} className="flex flex-1 flex-col text-left">
+        <button type="button" onClick={onClick} tabIndex={tabIndex} aria-pressed={pressed} className="flex flex-1 flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan">
           <div
             className={`relative aspect-card overflow-hidden bg-overlay scanlines scanbeam ${
               ownedQty > 0 || queued > 0 ? "" : "opacity-80"
@@ -148,7 +148,8 @@ export function CardTile({
             )}
           </div>
           <div className="flex flex-1 flex-col p-2.5 sm:p-3 md:p-4">
-            <p className="truncate text-sm font-bold text-white md:text-base">{name}</p>
+            <p className="truncate text-sm font-bold text-foreground md:text-base">{name}</p>
+            {ownedQty > 0 ? <span className="sr-only">{t("cards.ownedCount", { n: ownedQty })}</span> : null}
             {subname ? <p className="mt-0.5 truncate text-xs text-muted md:text-sm">{subname}</p> : null}
             {card?.cardType ? (
               <div className="mt-2 flex items-center gap-1.5 md:mt-3">

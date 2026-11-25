@@ -140,7 +140,7 @@ export function HowToPlayScreen() {
           {showTop ? (
             <button
               type="button"
-              onClick={() => rulesScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+              onClick={() => rulesScrollRef.current?.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })}
               className="fixed right-4 bottom-[calc(var(--app-bottom-nav)+1rem)] z-30 flex h-11 w-11 items-center justify-center border border-yellow bg-panel text-lg text-yellow shadow-lg hover:bg-yellow hover:text-black"
               aria-label={backToTopLabel}
               title={backToTopLabel}

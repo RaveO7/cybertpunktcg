@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { splitLocale } from "@/i18n/match";
 import de from "@/i18n/messages/de/errors.json";
@@ -32,6 +32,10 @@ type Props =
 
 export function GlobalFallback(props: Props) {
   const locale = useUrlLocale();
+  // Le <html> rendu côté serveur est en français : on le met à la langue de l'URL une fois connue.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
   const copy = { ...fr, ...COPY[locale] };
 
   if (props.kind === "notFound") {

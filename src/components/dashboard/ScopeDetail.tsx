@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { Link } from "@/i18n/navigation";
 import {
@@ -241,6 +241,7 @@ function PickRow({
 function SealedProducts({ extension, items }: { extension: Scope; items: { printingId: string; quantity: number }[] }) {
   const fmt = useNumberFormat();
   const t = useTranslations();
+  const locale = useLocale();
   return (
     <DataTable minWidth="520px">
       <thead>
@@ -256,7 +257,7 @@ function SealedProducts({ extension, items }: { extension: Scope; items: { print
       <tbody>
         {extension.printings
           .slice()
-          .sort((a, b) => (a.localizedName ?? a.setName).localeCompare(b.localizedName ?? b.setName, "fr"))
+          .sort((a, b) => (a.localizedName ?? a.setName).localeCompare(b.localizedName ?? b.setName, locale))
           .map((printing) => {
             const owned = items
               .filter((item) => item.printingId === printing.id)
