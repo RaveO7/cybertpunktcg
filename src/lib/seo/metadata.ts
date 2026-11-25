@@ -105,7 +105,8 @@ export async function pageMetadata(options: {
       type: options.type ?? "website",
       images: [image],
     },
-    twitter: { card: "summary_large_image", title: fullTitle, description, images: [image.url] },
+    // Image portrait (carte à jouer) : la vignette carrée « summary » évite qu'elle soit rognée en bandeau 1,91:1.
+    twitter: { card: image.height > image.width ? "summary" : "summary_large_image", title: fullTitle, description, images: [image.url] },
     ...(options.noindex ? { robots: { index: false, follow: true } } : {}),
   };
 }

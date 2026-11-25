@@ -16,6 +16,14 @@ describe("seo : métadonnées", () => {
     assert.ok(long.startsWith(result.slice(0, -1)));
   });
 
+  it("image portrait (carte) : vignette Twitter « summary », image large par défaut sinon", async () => {
+    const base = { locale: "fr", page: { key: "card", params: { slug: "v" } }, title: "V", description: "Carte." } as const;
+    const portrait = await pageMetadata({ ...base, image: { url: "/card-images/v.webp", width: 733, height: 1024, alt: "V" } });
+    assert.equal((portrait.twitter as { card?: string }).card, "summary");
+    const fallback = await pageMetadata(base);
+    assert.equal((fallback.twitter as { card?: string }).card, "summary_large_image");
+  });
+
   it("canonique sans query et versions linguistiques d'une page publique", async () => {
     const meta = await pageMetadata({ locale: "en", page: { key: "shop", params: { slug: "night" } }, title: "Night", description: "A store." });
     assert.equal(meta.alternates?.canonical, "/en/shops/night");

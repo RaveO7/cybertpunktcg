@@ -138,6 +138,10 @@ describe("sitemap", () => {
     for (const path of ["/fr", "/en", "/de", "/es", "/it", "/fr/cartes", "/en/cards", "/de/karten", "/es/cartas", "/it/carte"]) {
       assert.ok(byUrl.has(`${SITE}${path}`), path);
     }
+    // Accueil et catalogue datés par la carte la plus récemment modifiée.
+    const newestCard = Math.max(...entries.filter((entry) => entry.url.includes("/fr/cartes/")).map((entry) => (entry.lastModified as Date).getTime()));
+    assert.equal((byUrl.get(`${SITE}/fr`)?.lastModified as Date).getTime(), newestCard);
+    assert.equal((byUrl.get(`${SITE}/en/cards`)?.lastModified as Date).getTime(), newestCard);
     // Plus d'autres pages de liste publiques (la liste des cartes reste) : tout est sur l'accueil.
     for (const path of ["/fr/comment-jouer", "/en/how-to-play", "/fr/tournois/publics", "/fr/boutiques"]) {
       assert.ok(!byUrl.has(`${SITE}${path}`), path);
