@@ -162,7 +162,7 @@ export function CardAnatomy() {
       {/* Desktop / tablet: official-style diagram with leader lines */}
       <div
         ref={rootRef}
-        className="relative hidden overflow-hidden border border-line bg-[#05060a] p-4 md:block lg:p-6"
+        className="relative hidden overflow-hidden border border-line bg-background p-4 md:block lg:p-6"
       >
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.35]"
@@ -239,7 +239,7 @@ export function CardAnatomy() {
       </div>
 
       {/* Mobile: stacked list (leader lines don't fit) */}
-      <div className="space-y-4 border border-line bg-[#05060a] p-4 md:hidden">
+      <div className="space-y-4 border border-line bg-background p-4 md:hidden">
         <figure className="mx-auto w-full max-w-[16rem]">
           <div className="relative overflow-hidden rounded-[4.5%/3.2%] border border-yellow/50 bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}

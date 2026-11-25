@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 const TOKEN_RE =
   /\{\{sym:([0-9a-z][0-9a-z-]{1,39})\}\}|\{([^{}]+)\}|\[([A-Za-z][A-Za-z0-9 .,:'/-]*?)\]|€\$/gi;
@@ -43,10 +44,11 @@ function lookupSymbol(raw: string): SymbolMeta | null {
 }
 
 function EddiesMark() {
+  const t = useTranslations();
   return (
     <span
       className="mx-0.5 inline-flex translate-y-[-0.05em] items-center rounded-[2px] border border-yellow/70 bg-yellow/15 px-1 font-mono text-[0.78em] font-semibold leading-none text-yellow"
-      title="Eddies"
+      title={t("filters.eddies")}
     >
       €$
     </span>
@@ -181,7 +183,7 @@ export function RulesText({
   return (
     <section className={`hud-panel ${compact ? "p-3" : "p-4 sm:p-5"}`} aria-label={label}>
       <h3 className="hud-label">{label}</h3>
-      <div className={`space-y-1 text-sm leading-relaxed text-[#c4cede] ${compact ? "mt-2" : "mt-3"}`}>
+      <div className={`space-y-1 text-sm leading-relaxed text-foreground/85 ${compact ? "mt-2" : "mt-3"}`}>
         {renderRulesBody(trimmed)}
       </div>
     </section>
