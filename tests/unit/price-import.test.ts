@@ -12,7 +12,7 @@ import path from "node:path";
 import { gzipSync } from "node:zlib";
 import type { PrismaClient } from "@prisma/client";
 import { afterAll, afterEach, beforeEach, describe, it, vi } from "vitest";
-import { importPrices } from "../../src/lib/price-import";
+import { importPrices } from "../../src/lib/price-import/import-prices";
 
 const root = mkdtempSync(path.join(os.tmpdir(), "cptcg-price-unit-"));
 let dirCount = 0;

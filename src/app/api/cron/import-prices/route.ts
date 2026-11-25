@@ -7,7 +7,7 @@ import { purgeOldClientErrors } from "@/lib/client-errors";
 import { purgeGeocodeCache } from "@/lib/geo/server";
 import { checkPriceGuideFreshness, recordJobFailure, recordJobSuccess } from "@/lib/job-status";
 import { reportError } from "@/lib/monitoring";
-import { importPrices } from "@/lib/price-import";
+import { importPrices } from "@/lib/price-import/import-prices";
 import { prisma } from "@/lib/prisma";
 import { purgeExpiredRateLimits } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-response";

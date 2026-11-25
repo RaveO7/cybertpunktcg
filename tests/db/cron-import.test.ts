@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   revalidateTag: vi.fn(),
 }));
 
-vi.mock("@/lib/price-import", () => ({ importPrices: mocks.importPrices }));
+vi.mock("@/lib/price-import/import-prices", () => ({ importPrices: mocks.importPrices }));
 vi.mock("next/cache", () => ({
   revalidateTag: mocks.revalidateTag,
   unstable_cache: <T>(fn: T) => fn,

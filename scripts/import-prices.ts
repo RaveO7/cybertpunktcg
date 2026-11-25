@@ -1,11 +1,11 @@
 // Import local du guide de prix Cardmarket dans la base pointée par DATABASE_URL.
-// La logique est dans src/lib/price-import.ts (partagée avec le cron Vercel).
+// La logique est dans src/lib/price-import/ (partagée avec le cron Vercel).
 // Options : --offline, --force, --products <f> --prices <f> [--nonsingles <f>]
 // À lancer avec `tsx --env-file=.env` (npm run import:prices) : src/lib/prisma.ts, importé par price-import,
 // crée un client dès son chargement ; .env doit être lu avant (même base que scripts/prisma.mjs).
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
-import { importPrices } from "../src/lib/price-import";
+import { importPrices } from "../src/lib/price-import/import-prices";
 
 const prisma = new PrismaClient();
 
