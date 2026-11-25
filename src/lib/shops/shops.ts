@@ -12,6 +12,7 @@ import { fail } from "@/lib/tournament/errors";
 export const MAX_SHOPS_PER_OWNER = 5;
 export const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 export const LOGO_SIZE = 256;
+const LOGO_MAX_INPUT_PIXELS = 16_000_000;
 
 /** Adresses de page qui entreraient en conflit avec des routes ou prêteraient à confusion. */
 export const RESERVED_SLUGS = new Set(["nouveau", "nouvelle", "admin", "api", "carte", "boutique", "boutiques", "edit", "compte", "new", "mine"]);
@@ -297,18 +298,25 @@ const LOGO_FORMATS = new Set(["png", "jpeg", "webp"]);
 export async function processLogo(bytes: Uint8Array) {
   if (bytes.byteLength > LOGO_MAX_BYTES) fail("shops.logoTooLarge", 413);
   const sharp = (await import("sharp")).default;
+  // Plafond de pixels explicite (bombe de décompression) : 16 Mpx, largement assez pour un logo.
+  const options = { limitInputPixels: LOGO_MAX_INPUT_PIXELS };
   let format: string | undefined;
   try {
-    format = (await sharp(bytes).metadata()).format;
+    format = (await sharp(bytes, options).metadata()).format;
   } catch {
     fail("shops.unreadableImage", 415);
   }
   if (!format || !LOGO_FORMATS.has(format)) fail("shops.unsupportedFormat", 415);
-  return sharp(bytes)
-    .rotate()
-    .resize(LOGO_SIZE, LOGO_SIZE, { fit: "cover", position: "centre" })
-    .webp({ quality: 85 })
-    .toBuffer();
+  try {
+    return await sharp(bytes, options)
+      .rotate()
+      .resize(LOGO_SIZE, LOGO_SIZE, { fit: "cover", position: "centre" })
+      .webp({ quality: 85 })
+      .toBuffer();
+  } catch {
+    // Au-delà du plafond de pixels (ou image corrompue), sharp refuse de décoder.
+    return fail("shops.unreadableImage", 415);
+  }
 }
 
 export async function setShopLogo(slug: string, user: { id: string; role: string }, bytes: Uint8Array | null, now = new Date()) {
