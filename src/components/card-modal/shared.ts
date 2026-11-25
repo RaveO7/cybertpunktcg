@@ -1,7 +1,7 @@
 // Classes et utilitaires partagés par les blocs de la fiche carte.
 
 export const fieldClass =
-  "h-10 w-full border border-line bg-background px-2.5 text-sm outline-none transition focus:border-cyan focus-visible:ring-1 focus-visible:ring-cyan/70";
+  "h-10 w-full border border-line-field bg-background px-2.5 text-sm outline-none transition focus:border-cyan focus-visible:ring-1 focus-visible:ring-cyan";
 
 export const iconBtnClass =
   "w-9 text-muted transition hover:bg-panel-2 hover:text-cyan focus-visible:bg-panel-2 focus-visible:text-cyan focus-visible:outline-none";

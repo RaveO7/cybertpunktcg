@@ -34,12 +34,14 @@ export function SelectionBar({
         }`}
       >
         <div>
-          <p className="font-medium">
+          <p className="font-medium" role="status">
             {draftCopies === 0
               ? t("cards.noneSelected")
               : t("cards.selectionSummary", { copies: fmt.int(draftCopies), copyNoun: t("common.copies", { n: draftCopies }), cards: fmt.int(draftCards), cardNoun: t("common.cards", { n: draftCards }) })}
           </p>
-          {addError ? <p className="text-sm text-danger">{addError}</p> : null}
+          <p className="text-sm text-danger empty:hidden" role="alert">
+            {addError}
+          </p>
         </div>
         <div className="flex gap-2">
           <button

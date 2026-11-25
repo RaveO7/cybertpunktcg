@@ -56,7 +56,7 @@ export function PrintingsStrip({
             <li key={entry.id} className="w-[66px] shrink-0 md:w-[74px]">
               <button
                 type="button"
-                className={`group relative block w-full border text-left transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70 ${
+                className={`group relative block w-full border text-left transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan ${
                   current
                     ? "border-yellow bg-yellow/5 ring-1 ring-yellow"
                     : "border-line/80 hover:border-cyan/60"

@@ -195,7 +195,7 @@ export function CardTile({
                 type="button"
                 disabled={!favoriteReady}
                 aria-pressed={favorite}
-                className={`grid h-11 w-11 place-items-center sm:h-12 sm:w-12 md:h-14 md:w-14 border bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/70 disabled:opacity-50 ${
+                className={`grid h-11 w-11 place-items-center sm:h-12 sm:w-12 md:h-14 md:w-14 border bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger disabled:opacity-50 ${
                   favorite ? "border-danger text-danger" : "border-line text-muted hover:border-danger hover:text-danger"
                 }`}
                 aria-label={t(favorite ? "cards.removeFavorite" : "cards.addFavorite", { title })}
@@ -217,7 +217,7 @@ export function CardTile({
             ) : null}
             <button
               type="button"
-              className="grid h-11 w-11 place-items-center sm:h-12 sm:w-12 md:h-14 md:w-14 border border-line bg-background/80 text-muted transition hover:border-yellow hover:text-yellow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow/80"
+              className="grid h-11 w-11 place-items-center sm:h-12 sm:w-12 md:h-14 md:w-14 border border-line bg-background/80 text-muted transition hover:border-yellow hover:text-yellow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow"
               aria-label={t("cards.queueCopy", { title })}
               title={t("cards.queueCopy", { title })}
               onClick={onQueue}
@@ -239,7 +239,10 @@ export function CardTile({
             >
               −
             </button>
-            <span className="min-w-6 text-center font-mono text-sm">{queued}</span>
+            <span className="min-w-6 text-center font-mono text-sm">
+              <span aria-hidden="true">{queued}</span>
+              <span className="sr-only">{t("cards.queuedCount", { n: queued })}</span>
+            </span>
             <button
               type="button"
               className="h-11 w-11 text-lg"
@@ -300,7 +303,7 @@ function PriceHint({ printing, title, tabIndex }: { printing: PrintingDTO; title
         aria-expanded={open}
         aria-controls={id}
         // Petite icône, zone de toucher de 44 px (pseudo-élément).
-        className={`peer/price pointer-events-auto relative grid h-8 w-8 place-items-center border bg-background/85 transition before:absolute before:-inset-1.5 before:content-[''] hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/70 md:h-9 md:w-9 ${
+        className={`peer/price pointer-events-auto relative grid h-8 w-8 place-items-center border bg-background/85 transition before:absolute before:-inset-1.5 before:content-[''] hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan md:h-9 md:w-9 ${
           open ? "border-cyan text-cyan" : "border-line text-foreground/80"
         }`}
         onClick={() => setOpen((value) => !value)}

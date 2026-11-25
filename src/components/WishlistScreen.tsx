@@ -244,7 +244,7 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
         </div>
         <label className="w-28">
           <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t("wishlist.targetPrice")}</span>
-          <span className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan/70">
+          <span className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
             <input
               className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
               inputMode="decimal"
@@ -264,7 +264,7 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
           type="button"
           disabled={pending}
           onClick={() => void run(() => remove(row.item.id))}
-          className="grid h-10 w-10 shrink-0 place-items-center border border-line text-muted transition hover:border-danger hover:text-danger focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/70 disabled:opacity-50"
+          className="grid h-10 w-10 shrink-0 place-items-center border border-line text-muted transition hover:border-danger hover:text-danger focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger disabled:opacity-50"
           aria-label={t("wishlist.removeCard", { name: row.title })}
           title={t("wishlist.remove")}
         >
@@ -281,7 +281,7 @@ function WishRow({ row, fresh, since }: { row: Row; fresh: boolean; since: strin
             href={link.href}
             target="_blank"
             rel={link.sponsored ? "sponsored noopener noreferrer" : "noopener noreferrer"}
-            className="inline-flex h-8 items-center border border-line px-2.5 text-xs text-muted transition hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
+            className="inline-flex h-8 items-center border border-line px-2.5 text-xs text-muted transition hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan"
           >
             {link.label}
           </a>

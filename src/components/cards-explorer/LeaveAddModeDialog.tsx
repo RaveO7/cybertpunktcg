@@ -33,7 +33,7 @@ export function LeaveAddModeDialog({
           {t("cards.leaveTitle")}
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          {t("cards.leaveBody", { count: fmt.int(cardCount), noun: t("common.cards", { n: cardCount }) })}
+          {t("cards.leaveBody", { count: fmt.int(cardCount), noun: t("common.cards", { n: cardCount }), n: cardCount })}
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <button ref={stayRef} type="button" className="h-10 border border-line px-4 text-sm" onClick={onStay}>

@@ -12,7 +12,7 @@ import { fetchCached } from "@/components/data-cache";
 const LOCAL_USER_KEY = "cptcg-user-id";
 
 const fieldClass =
-  "h-12 w-full border border-line bg-background px-3 text-base outline-none focus:border-cyan";
+  "h-12 w-full border border-line-field bg-background px-3 text-base outline-none focus:border-cyan";
 
 const oauthButtonClass =
   "flex h-12 w-full items-center justify-center gap-2 border border-line bg-panel text-sm text-foreground transition-colors hover:border-cyan disabled:opacity-60";

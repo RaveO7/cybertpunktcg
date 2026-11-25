@@ -42,7 +42,7 @@
   --yellow-fill: #b89200;
   --cyan-fill: #0b8fa8;
   --cyan: #08748a;
-  --danger: #d63b4c;
+  --danger: #b8293a;
   --cp-red: #d1103f;
   --gain: #157a4b;
   --body-glow: rgba(11, 143, 168, 0.14);
@@ -255,24 +255,26 @@ html {
   --cp-card-yellow: #fcee0a;
 }
 
-/* Raretés : palette tirée des cartes (gris du cadre, 4 couleurs de cartes, chrome des Iconic Secret). */
+/* Raretés : palette tirée des cartes (gris du cadre, 4 couleurs de cartes, chrome des Iconic Secret).
+   Rare et Epic éclaircies en sombre, toutes foncées en clair : texte des pastilles (teinte 12 % sur
+   --panel) à 4,5:1 au moins. */
 :root,
 [data-theme="dark"] {
   --rarity-common: #8b95a5;
   --rarity-uncommon: var(--cp-card-green);
-  --rarity-rare: var(--cp-card-blue);
-  --rarity-epic: var(--cp-card-red);
+  --rarity-rare: #60a5fa;
+  --rarity-epic: #f87171;
   --rarity-nova: var(--cp-card-yellow);
   --rarity-chrome: #c9d1dc;
 }
 
 [data-theme="light"] {
   --rarity-common: #5a6a7e;
-  --rarity-uncommon: #0f8f63;
-  --rarity-rare: #2563eb;
-  --rarity-epic: #dc2626;
-  --rarity-nova: #a88600;
-  --rarity-chrome: #6b7585;
+  --rarity-uncommon: #08704d;
+  --rarity-rare: #1d4ed8;
+  --rarity-epic: #b91c1c;
+  --rarity-nova: #7a6200;
+  --rarity-chrome: #545e6d;
 }
 
 .hud-panel {

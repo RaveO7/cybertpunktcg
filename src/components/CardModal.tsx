@@ -368,7 +368,7 @@ export function CardModal({
                   {onFilterArtist ? (
                     <button
                       type="button"
-                      className="text-cyan underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
+                      className="text-cyan underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan"
                       onClick={() => onFilterArtist(printing.artist!)}
                       aria-label={t("modal.viewArtist", { artist: printing.artist })}
                     >
@@ -390,7 +390,7 @@ export function CardModal({
                   {onFilterSet ? (
                     <button
                       type="button"
-                      className="text-cyan underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70"
+                      className="text-cyan underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan"
                       onClick={() => onFilterSet(printing.setCode)}
                       aria-label={t("modal.viewSet", { set: printing.setName })}
                     >

@@ -9,7 +9,7 @@ import type { CardDTO, Filters, PrintingDTO } from "@/lib/types";
 const chipClass = "inline-flex h-6 items-center gap-1 border border-line/80 px-1.5 text-[12px]";
 
 const chipButtonClass =
-  "transition hover:border-cyan/60 hover:bg-cyan/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70";
+  "transition hover:border-cyan/60 hover:bg-cyan/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan";
 
 /** Pastille de détail : un bouton qui filtre le catalogue quand `onClick` est fourni, sinon un simple libellé. */
 function DetailChip({

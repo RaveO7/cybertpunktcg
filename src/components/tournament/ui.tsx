@@ -8,7 +8,7 @@ import type { Standing } from "@/lib/tournament/standings";
 import type { MatchView, PlayerView, RoundView, TournamentView } from "@/lib/tournament/view";
 
 export const buttonClass =
-  "inline-flex h-10 items-center justify-center gap-1.5 border border-line px-3 text-sm text-muted transition hover:border-cyan hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan/70 disabled:opacity-50";
+  "inline-flex h-10 items-center justify-center gap-1.5 border border-line px-3 text-sm text-muted transition hover:border-cyan hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan disabled:opacity-50";
 export const primaryClass =
   "inline-flex h-10 items-center justify-center bg-yellow px-4 text-sm font-semibold text-black hover:brightness-110 disabled:opacity-50";
 export const dangerClass =
