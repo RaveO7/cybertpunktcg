@@ -18,7 +18,7 @@ import { PricePanel } from "@/components/card-modal/PricePanel";
 import { isTypingTarget, toAmount } from "@/components/card-modal/shared";
 import type { CardDTO, CollectionItemDTO, ConditionDTO, Filters, PrintingDTO } from "@/lib/types";
 import { thumbnailPath } from "@/lib/card-image";
-import { printingTitle, resolveRulesText } from "@/lib/logic";
+import { printingTitle, resolveRulesText } from "@/lib/cards/printings";
 import { WISHLIST_ENABLED } from "@/lib/site";
 import { useModal } from "@/components/use-modal";
 

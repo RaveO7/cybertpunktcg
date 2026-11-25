@@ -1,7 +1,8 @@
 // Tri des tableaux de la page Investissement (par extension et par ligne).
 
 import type { Translator } from "@/i18n/translator";
-import { amountSign, type InvestmentLine, type InvestmentPosition, type SetInvestment } from "@/lib/logic";
+import { amountSign } from "@/lib/cards/pricing";
+import { type InvestmentLine, type InvestmentPosition, type SetInvestment } from "@/lib/investment/portfolio";
 
 export type SortDir = "asc" | "desc";
 

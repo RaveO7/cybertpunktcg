@@ -4,7 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from "
 import { useLocale, useTranslations } from "next-intl";
 import { useNumberFormat } from "@/i18n/number-format";
 import { intlLocale } from "@/i18n/config";
-import { amountSign } from "@/lib/logic";
+import { amountSign } from "@/lib/cards/pricing";
 
 /** Achat placé sur la courbe (le jour du point, ou le premier jour d'historique qui suit). */
 export type ChartPurchase = {

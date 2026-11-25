@@ -9,7 +9,7 @@ import type { useDeckCatalog } from "@/components/decks/hooks";
 import { Stepper, primaryClass } from "@/components/decks/ui";
 import { useModal } from "@/components/use-modal";
 import { cardLabel, cheapestPrinting, isLegal, isLegend, ramAllowed, type DeckAnalysis } from "@/lib/deck-rules";
-import { resolveRulesText } from "@/lib/logic";
+import { resolveRulesText } from "@/lib/cards/printings";
 import type { CardDTO } from "@/lib/types";
 
 /**

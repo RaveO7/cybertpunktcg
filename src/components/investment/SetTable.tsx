@@ -15,7 +15,7 @@ import {
 } from "@/components/investment/sorting";
 import { MarketChange, MobileStat, ProfitValue, profitClass } from "@/components/investment/ui";
 import { useIsDesktop } from "@/components/use-is-desktop";
-import type { SetInvestment } from "@/lib/logic";
+import type { SetInvestment } from "@/lib/investment/portfolio";
 import { CARDS_GROUP_FILTER, SEALED_GROUP_FILTER } from "@/lib/reference-data";
 
 /**

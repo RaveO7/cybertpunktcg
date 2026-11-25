@@ -17,25 +17,11 @@ import { useMarqueeSelection } from "@/components/cards-explorer/use-marquee-sel
 import { useKeyboardSelection } from "@/components/cards-explorer/use-keyboard-selection";
 import { useModal } from "@/components/use-modal";
 
-import {
-  aggregateCollection,
-  alignReleasedFilters,
-  browseChecklist,
-  languageOptions,
-  setForLanguage,
-  buildFacets,
-  collectorRangeIds,
-  defaultFilters,
-  filterPrintings,
-  ownershipOf,
-  printingsPriceTotal,
-  selectionPriceTotal,
-  parseFilters,
-  sealedBrowseFilters,
-  serializeFilters,
-  siblingPrintings,
-  sortPrintings,
-} from "@/lib/logic";
+import { aggregateCollection, ownershipOf } from "@/lib/cards/collection-stats";
+import { alignReleasedFilters, buildFacets, defaultFilters, filterPrintings, parseFilters, sealedBrowseFilters, serializeFilters } from "@/lib/cards/filters";
+import { browseChecklist, languageOptions, setForLanguage, siblingPrintings } from "@/lib/cards/printings";
+import { collectorRangeIds, sortPrintings } from "@/lib/cards/sort";
+import { printingsPriceTotal, selectionPriceTotal } from "@/lib/cards/pricing";
 import {
   ALL_SETS_ID,
   BETA_SET_CODE,

@@ -1,7 +1,7 @@
 // Liste de souhaits et alertes de prix. Le prix cible (EUR) est comparé au prix tendance
 // Cardmarket ; l'évaluation tourne après chaque import des prix (cron quotidien).
 import type { PrismaClient } from "@prisma/client";
-import { wishlistTargetReached } from "./logic";
+import { wishlistTargetReached } from "./cards/pricing";
 import { prisma } from "./prisma";
 import type { WishlistItemDTO } from "./types";
 import { fail } from "./app-error";
