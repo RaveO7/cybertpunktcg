@@ -26,8 +26,6 @@
   "buyOn": "Acheter {name} en ligne",
   "failed": "Action impossible.",
   "pushPrompt": "Être prévenu par notification sur cet appareil quand un prix cible est atteint ?",
-  "pushPromptEnable": "Activer les notifications",
-  "pushPromptDismiss": "Plus tard",
   "push": {
     "title": "Prix cible atteint",
     "one": "{name} est à {price}.",

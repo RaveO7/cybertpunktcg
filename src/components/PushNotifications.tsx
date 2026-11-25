@@ -5,11 +5,10 @@ import { useLocale, useTranslations } from "next-intl";
 import { disablePush, enablePush, readPushState, VAPID_PUBLIC_KEY, type PushState } from "@/lib/push-client";
 import { WISHLIST_ENABLED } from "@/lib/site";
 
-const PROMPT_DISMISSED_KEY = "cptcg-push-prompt-dismissed";
-/** Option proposée seulement avec une clé publique VAPID et la liste de souhaits publiée. */
-const PUSH_AVAILABLE = !!VAPID_PUBLIC_KEY && WISHLIST_ENABLED;
+/** Option proposée seulement avec une clé publique VAPID. */
+const PUSH_AVAILABLE = !!VAPID_PUBLIC_KEY;
 
-/** Notifications d'alerte de prix sur cet appareil. `hidden` : option masquée (voir PUSH_AVAILABLE). */
+/** Notifications (tournois, alertes de prix) sur cet appareil. `hidden` : option masquée (voir PUSH_AVAILABLE). */
 function usePushNotifications() {
   const locale = useLocale();
   const [state, setState] = useState<PushState | "loading" | "hidden">(PUSH_AVAILABLE ? "loading" : "hidden");
@@ -87,7 +86,10 @@ export function PushSettingsSection() {
       <h2 id="push-title" className="text-xs uppercase tracking-[0.14em] text-muted">
         {t("pushTitle")}
       </h2>
-      <p className="mt-2 text-sm text-muted">{t("pushHint")}</p>
+      <p className="mt-2 text-sm text-muted">
+        {t("pushHint")}
+        {WISHLIST_ENABLED ? ` ${t("pushHintWishlist")}` : null}
+      </p>
       {explanation ? (
         <p className="mt-4 border border-line p-3 text-sm text-foreground">{explanation}</p>
       ) : null}
@@ -119,20 +121,20 @@ export function PushSettingsSection() {
   );
 }
 
-function readDismissed() {
+function readDismissed(storageKey: string) {
   try {
-    return window.localStorage.getItem(PROMPT_DISMISSED_KEY) === "1";
+    return window.localStorage.getItem(storageKey) === "1";
   } catch {
     return false;
   }
 }
 
 /**
- * Proposition d'activer les notifications, dans la liste de souhaits, dès qu'une cible est définie.
- * Affichée seulement si l'appareil peut s'abonner et ne l'est pas, jusqu'à ce que l'utilisateur la ferme.
+ * Proposition d'activer les notifications à l'endroit où elles servent (liste de souhaits, écran joueur
+ * d'un tournoi). Affichée seulement si l'appareil peut s'abonner et ne l'est pas, jusqu'à ce que
+ * l'utilisateur la ferme (`storageKey` : un refus par endroit).
  */
-export function WishlistPushPrompt({ hasTarget }: { hasTarget: boolean }) {
-  const t = useTranslations("wishlist");
+export function PushPrompt({ prompt, storageKey }: { prompt: string; storageKey: string }) {
   const settings = useTranslations("settings");
   const push = usePushNotifications();
   const [dismissed, setDismissed] = useState(true);
@@ -140,15 +142,15 @@ export function WishlistPushPrompt({ hasTarget }: { hasTarget: boolean }) {
   useEffect(() => {
     // Lecture après le montage : le rendu serveur ne connaît pas le stockage local.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDismissed(readDismissed());
-  }, []);
+    setDismissed(readDismissed(storageKey));
+  }, [storageKey]);
 
-  if (!hasTarget || dismissed || (push.state !== "off" && !push.notice && !push.failed)) return null;
+  if (dismissed || (push.state !== "off" && !push.notice && !push.failed)) return null;
 
   function dismiss() {
     setDismissed(true);
     try {
-      window.localStorage.setItem(PROMPT_DISMISSED_KEY, "1");
+      window.localStorage.setItem(storageKey, "1");
     } catch {
       // Stockage indisponible : la proposition reviendra à la prochaine visite.
     }
@@ -166,7 +168,7 @@ export function WishlistPushPrompt({ hasTarget }: { hasTarget: boolean }) {
   return (
     <div className="flex flex-col gap-3 border border-cyan/50 bg-cyan/5 p-4 sm:flex-row sm:items-center" role="region" aria-label={settings("pushTitle")}>
       <p className="flex-1 text-sm text-foreground" role={message ? "status" : undefined}>
-        {message ?? t("pushPrompt")}
+        {message ?? prompt}
       </p>
       <div className="flex gap-2">
         {push.state === "off" ? (
@@ -176,7 +178,7 @@ export function WishlistPushPrompt({ hasTarget }: { hasTarget: boolean }) {
             onClick={() => void push.enable()}
             className="h-10 border border-cyan px-3 text-sm text-cyan hover:bg-cyan/10 disabled:opacity-60"
           >
-            {push.busy ? settings("pushBusy") : t("pushPromptEnable")}
+            {push.busy ? settings("pushBusy") : settings("pushPromptEnable")}
           </button>
         ) : null}
         <button
@@ -184,7 +186,7 @@ export function WishlistPushPrompt({ hasTarget }: { hasTarget: boolean }) {
           onClick={dismiss}
           className="h-10 border border-line px-3 text-sm text-muted hover:border-cyan hover:text-cyan"
         >
-          {t("pushPromptDismiss")}
+          {settings("pushPromptDismiss")}
         </button>
       </div>
     </div>

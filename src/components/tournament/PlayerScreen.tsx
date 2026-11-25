@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useCollection } from "@/components/CollectionProvider";
 import { fetchCached } from "@/components/data-cache";
+import { PushPrompt } from "@/components/PushNotifications";
 import { ApiError, api } from "@/lib/client/api";
 import type { MatchResult } from "@/lib/tournament/scores";
 import type { MatchView, RoundView, TournamentView } from "@/lib/tournament/view";
@@ -187,6 +188,9 @@ function PlayerHome({ view, now, refresh }: { view: TournamentView; now: Date; r
         <p role="alert" className="text-sm text-danger">
           {message}
         </p>
+      ) : null}
+      {me.isAccount && !finished ? (
+        <PushPrompt prompt={t("tournaments.pushPrompt")} storageKey="cptcg-push-prompt-dismissed-tournament" />
       ) : null}
       {me.status === "pending" ? <p className="text-sm text-yellow">{t("tournaments.waitingApproval")}</p> : null}
       {me.status === "waitlist" ? (

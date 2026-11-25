@@ -6,7 +6,7 @@ import { useNumberFormat } from "@/i18n/number-format";
 import { Link } from "@/i18n/navigation";
 import { CardImage } from "@/components/CardImage";
 import { useCollection } from "@/components/CollectionProvider";
-import { WishlistPushPrompt } from "@/components/PushNotifications";
+import { PushPrompt } from "@/components/PushNotifications";
 import { TrendBadge } from "@/components/TrendBadge";
 import { useWishlist } from "@/components/WishlistProvider";
 import { ScreenError, ScreenSkeleton, SkeletonBlock, SkeletonRows } from "@/components/site/ScreenSkeleton";
@@ -111,7 +111,9 @@ export function WishlistScreen() {
         <p className="mt-1 max-w-2xl text-sm text-muted">{t("wishlist.subtitle")}</p>
       </div>
 
-      <WishlistPushPrompt hasTarget={rows.some((row) => row.target != null)} />
+      {rows.some((row) => row.target != null) ? (
+        <PushPrompt prompt={t("wishlist.pushPrompt")} storageKey="cptcg-push-prompt-dismissed" />
+      ) : null}
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-3 border border-line bg-panel p-5">
