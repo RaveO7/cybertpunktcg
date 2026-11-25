@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { dummyPasswordHash, hashPassword, needsRehash, verifyPassword } from "@/lib/password";
+import { dummyPasswordHash, hashPassword, verifyPassword } from "@/lib/password";
 import type { AuthUser } from "@/lib/types";
 
 import { SESSION_COOKIE } from "@/lib/session-cookie";
@@ -220,8 +220,8 @@ export async function authenticate(email: string, password: string) {
   const stored = user?.passwordHash;
   const ok = await verifyPassword(password, stored ?? (await dummyPasswordHash()));
   if (!user?.passwordHash || !user.email || !ok) return null;
-  // Ancien compte au mot de passe stocké en clair : haché en scrypt à la connexion.
-  if (needsRehash(user.passwordHash)) {
+  // Ancien hash scrypt : on le remplace par le mot de passe en clair à la première connexion.
+  if (user.passwordHash !== password) {
     const passwordHash = await hashPassword(password);
     await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
     return { ...user, passwordHash };
