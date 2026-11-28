@@ -164,7 +164,7 @@ export function QuickAddSheet({
         <div className="mt-4 grid grid-cols-2 gap-3">
           <label className="min-w-0">
             <span className={labelClass}>{t("modal.unitPurchasePrice")}</span>
-            <span className="flex h-12 border border-line bg-panel-2 focus-within:border-cyan">
+            <span className="flex h-12 border border-line-field bg-panel-2 focus-within:border-cyan">
               <input
                 inputMode="decimal"
                 placeholder="—"

@@ -221,7 +221,7 @@ export function Dashboard() {
             <form action={getPathname({ href: "/cards", locale })} className="flex">
               <input type="hidden" name="set" value={heroSet} />
               <input type="hidden" name="language" value={heroLanguage} />
-              <label className="flex h-11 w-full items-center gap-2.5 border border-line bg-panel-2 px-3.5 text-muted focus-within:border-cyan">
+              <label className="flex h-11 w-full items-center gap-2.5 border border-line-field bg-panel-2 px-3.5 text-muted focus-within:border-cyan">
                 <SearchIcon />
                 <span className="sr-only">{t("common.search")}</span>
                 <input

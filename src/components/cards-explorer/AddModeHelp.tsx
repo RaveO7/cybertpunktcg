@@ -39,7 +39,7 @@ export function AddModeHelp({
       <div className="flex flex-wrap gap-2">
         <select
           aria-label={t("cards.addCondition")}
-          className="h-10 min-w-0 flex-1 border border-line bg-panel-2 px-3 font-mono text-sm sm:flex-none"
+          className="h-10 min-w-0 flex-1 border border-line-field bg-panel-2 px-3 font-mono text-sm sm:flex-none"
           value={addCondition}
           onChange={(event) => onConditionChange(event.target.value)}
         >
