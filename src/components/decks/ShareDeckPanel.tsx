@@ -56,7 +56,7 @@ export function ShareDeckPanel({ deckId, onClose }: { deckId: string; onClose: (
             <input
               readOnly
               value={share.url}
-              className="h-10 w-full border border-line bg-background px-2 font-mono text-xs text-foreground outline-none focus:border-cyan"
+              className="h-10 w-full border border-line-field bg-background px-2 font-mono text-xs text-foreground outline-none focus:border-cyan"
               onFocus={(event) => event.currentTarget.select()}
             />
           </label>

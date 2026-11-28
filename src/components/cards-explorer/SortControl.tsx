@@ -48,7 +48,7 @@ export function SortControl({ sort, onChange }: { sort: Filters["sort"]; onChang
     <div className="flex h-10 min-w-0 flex-1 sm:flex-none">
       <select
         aria-label={t("cards.sort")}
-        className="h-10 min-w-0 flex-1 border border-line bg-panel px-3 text-sm"
+        className="h-10 min-w-0 flex-1 border border-line-field bg-panel px-3 text-sm"
         value={field.id}
         onChange={(event) => {
           const next = fields.find((item) => item.id === event.target.value) ?? fields[0];

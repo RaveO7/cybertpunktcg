@@ -14,7 +14,7 @@ export const primaryClass =
 export const dangerClass =
   "inline-flex h-10 items-center justify-center gap-1.5 border border-danger/60 px-3 text-sm text-danger transition hover:bg-danger/10 disabled:opacity-50";
 export const inputClass =
-  "h-10 w-full min-w-0 border border-line bg-background px-3 text-sm outline-none focus:border-cyan";
+  "h-10 w-full min-w-0 border border-line-field bg-background px-3 text-sm outline-none focus:border-cyan";
 export const panelClass = "border border-line bg-panel p-3 sm:p-4";
 
 export function absoluteUrl(path: string) {

@@ -216,7 +216,7 @@ export function DeckEditor({
         </div>
         <label className="flex max-w-2xl flex-col gap-1.5">
           <span className="hud-label">{t("decks.name")}</span>
-          <span className="flex items-center gap-2 border border-line bg-panel px-3 transition hover:border-muted focus-within:border-cyan">
+          <span className="flex items-center gap-2 border border-line-field bg-panel px-3 transition hover:border-muted focus-within:border-cyan">
             <input
               className="h-12 min-w-0 flex-1 bg-transparent text-xl text-yellow outline-none sm:text-2xl"
               value={name}

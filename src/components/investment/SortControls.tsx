@@ -100,7 +100,7 @@ export function MobileSort<K extends string>({
       <label className="flex min-w-0 flex-1 items-center gap-2">
         <span className="shrink-0 text-muted">{t("investment.sortLabel")}</span>
         <select
-          className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
+          className="h-10 w-full min-w-0 border border-line-field bg-background px-3 outline-none focus:border-cyan"
           value={sort.key}
           onChange={(event) => {
             const key = event.target.value as K;

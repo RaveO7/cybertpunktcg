@@ -96,4 +96,6 @@ Seuils : 4,5:1 pour le texte, 3:1 pour le grand texte et les éléments d'interf
 
 - Champs écrits à la main hors `fieldClass` passés sur `--line-field` : état, quantité et prix de `AddCopyForm` (ordinateur et téléphone) et `CollectionLines`, prix cible des listes de souhaits (`WishlistScreen`, `WishlistPanel`), recherche du catalogue (`CardsExplorer`). Contraste de la bordure sur les fonds de ces champs : en sombre 4,33 (`--background`), 3,99 (`--panel`), 3,66:1 (`--panel-2`) ; en clair 3,14, 3,67, 3,35:1. Les séparateurs internes (filet entre le prix et la devise) restent sur `--line`.
 
-Reste ouvert : rien pour cet audit. D'autres champs écrits à la main (decks, investissement, réglages, tournois) sont encore sur `--line` ; hors périmètre de l'audit.
+- Tous les autres champs de saisie passés sur `--line-field` : `inputClass` de `tournament/ui.tsx` (tournois, boutiques, annuaire public, adresses), recherche du tableau de bord, tri et état du mode ajout du catalogue, recherche, extension, nom, partage et import/export des decks, filtres et tri de l'investissement, prix de l'ajout rapide, réglages et partage du classeur. `--line` reste réservé aux bordures décoratives (cadres, séparateurs, boutons).
+
+Reste ouvert : rien.
