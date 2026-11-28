@@ -30,7 +30,7 @@ export default async function RootLayout({ children, preload, params }: LayoutPr
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   return (
-    <SiteShell lang={locale} head={preload}>
+    <SiteShell lang={locale} preload={preload}>
       {children}
     </SiteShell>
   );

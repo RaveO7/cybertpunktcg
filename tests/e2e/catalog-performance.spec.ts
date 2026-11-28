@@ -40,3 +40,20 @@ test("catalogue : toutes les cartes dans le HTML, images affichées par paquets"
   await last.click();
   await expect(page).toHaveURL(new RegExp(`${href}$`));
 });
+
+test("collection : premières images préchargées, jamais depuis le <body>", async ({ request }) => {
+  // preload() de la route parallèle @preload. Build de production : en-tête Link (priorité haute) et <head> ;
+  // serveur de dev : indications du flux RSC (:HL[…]). L'emplacement n'est plus rendu dans le <head> : il y
+  // faisait échouer l'hydratation par intermittence.
+  const response = await request.get("/fr/cards");
+  const html = await response.text();
+  const cardImageLinks = (text: string) =>
+    (text.match(/<link[^>]*>/g) ?? []).filter((tag) => tag.includes("/card-images/") && tag.includes('as="image"'));
+  const inHeader = (response.headers()["link"] ?? "")
+    .split(", <")
+    .filter((entry) => entry.includes("/card-images/") && entry.includes('as="image"'));
+  const inHead = cardImageLinks(html.slice(0, html.indexOf("</head>")));
+  const hints = html.match(/:HL\[\\"\/card-images\/[^\\]+\\",\\"image\\"/g) ?? [];
+  expect(inHeader.length + inHead.length + hints.length).toBeGreaterThanOrEqual(2);
+  expect(cardImageLinks(html.slice(html.indexOf("<body")))).toHaveLength(0);
+});
