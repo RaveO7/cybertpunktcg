@@ -16,7 +16,7 @@ export function ExportPanel({ lines, onClose }: { lines: DeckLine[]; onClose: ()
         readOnly
         value={text}
         rows={Math.min(12, Math.max(3, lines.length))}
-        className="w-full resize-y border border-line bg-background p-2 font-mono text-xs outline-none focus:border-cyan"
+        className="w-full resize-y border border-line-field bg-background p-2 font-mono text-xs outline-none focus:border-cyan"
         onFocus={(event) => event.currentTarget.select()}
       />
       <div className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export function ImportPanel({ cards, onApply, onClose }: { cards: CardDTO[]; onA
         rows={8}
         placeholder={"3 V: Streetkid\n3 Japantown Jonin"}
         onChange={(event) => setText(event.target.value)}
-        className="w-full resize-y border border-line bg-background p-2 font-mono text-xs outline-none focus:border-cyan"
+        className="w-full resize-y border border-line-field bg-background p-2 font-mono text-xs outline-none focus:border-cyan"
       />
       {parsed && parsed.unmatched.length > 0 ? (
         <div className="text-xs text-danger" role="status">

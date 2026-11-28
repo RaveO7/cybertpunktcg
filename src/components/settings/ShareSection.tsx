@@ -17,7 +17,7 @@ export function ShareSection() {
             <span className="text-xs uppercase tracking-[0.14em] text-muted">{t("settings.shareLink")}</span>
             <input
               readOnly
-              className="mt-2 h-12 w-full border border-line bg-background px-3 text-sm text-foreground outline-none"
+              className="mt-2 h-12 w-full border border-line-field bg-background px-3 text-sm text-foreground outline-none"
               value={share.url}
               onFocus={(event) => event.currentTarget.select()}
             />

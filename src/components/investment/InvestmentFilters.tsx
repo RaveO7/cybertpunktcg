@@ -60,7 +60,7 @@ export function InvestmentFilters({
       aria-label={t("investment.search")}
       type="search"
       enterKeyHint="search"
-      className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
+      className="h-10 w-full min-w-0 border border-line-field bg-background px-3 outline-none focus:border-cyan"
     />
   );
 
@@ -93,7 +93,7 @@ export function InvestmentFilters({
         <label className="text-sm">
           <span className="mb-1 block text-muted">{t("investment.set")}</span>
           <select
-            className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
+            className="h-10 w-full min-w-0 border border-line-field bg-background px-3 outline-none focus:border-cyan"
             value={setFilter}
             onChange={(event) => setSetFilter(event.target.value)}
           >
@@ -129,7 +129,7 @@ export function InvestmentFilters({
         <label className="text-sm">
           <span className="mb-1 block text-muted">{t("investment.language")}</span>
           <select
-            className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
+            className="h-10 w-full min-w-0 border border-line-field bg-background px-3 outline-none focus:border-cyan"
             value={language}
             onChange={(event) => setLanguage(event.target.value)}
           >
@@ -141,7 +141,7 @@ export function InvestmentFilters({
         <label className="text-sm">
           <span className="mb-1 block text-muted">{t("investment.performance")}</span>
           <select
-            className="h-10 w-full min-w-0 border border-line bg-background px-3 outline-none focus:border-cyan"
+            className="h-10 w-full min-w-0 border border-line-field bg-background px-3 outline-none focus:border-cyan"
             value={performance}
             onChange={(event) => setPerformance(event.target.value as InvestmentPerformance)}
           >

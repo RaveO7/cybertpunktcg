@@ -83,13 +83,13 @@ export function DeckBrowser({
           </h2>
           <input
             type="search"
-            className="h-11 min-w-0 flex-1 basis-56 border border-line bg-panel px-3 text-sm outline-none focus:border-cyan"
+            className="h-11 min-w-0 flex-1 basis-56 border border-line-field bg-panel px-3 text-sm outline-none focus:border-cyan"
             placeholder={t("decks.searchPlaceholder")}
             aria-label={t("common.search")}
             value={filters.query}
             onChange={(event) => update({ query: event.target.value })}
           />
-          <label className="flex h-11 min-w-0 flex-1 basis-48 items-center border border-line bg-panel focus-within:border-cyan sm:flex-none">
+          <label className="flex h-11 min-w-0 flex-1 basis-48 items-center border border-line-field bg-panel focus-within:border-cyan sm:flex-none">
             <span className="shrink-0 pl-3 font-mono text-[10px] tracking-[0.12em] text-muted uppercase">{t("decks.extension")}</span>
             <select
               className="h-full min-w-0 flex-1 cursor-pointer bg-transparent px-2 text-sm outline-none"

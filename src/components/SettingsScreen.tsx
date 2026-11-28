@@ -60,7 +60,7 @@ export function SettingsScreen() {
         <label className="mt-4 block text-sm">
           <span className="sr-only">{t("settings.language")}</span>
           <select
-            className="h-12 w-full border border-line bg-background px-3 text-base outline-none focus:border-cyan"
+            className="h-12 w-full border border-line-field bg-background px-3 text-base outline-none focus:border-cyan"
             value={locale}
             aria-label={t("settings.language")}
             onChange={(event) => chooseLocale(event.target.value as Locale)}
