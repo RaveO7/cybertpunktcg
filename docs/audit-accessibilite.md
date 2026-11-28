@@ -94,4 +94,6 @@ Seuils : 4,5:1 pour le texte, 3:1 pour le grand texte et les éléments d'interf
 - Anneaux de focus : plus aucun `ring-*/70` ni `ring-yellow/80`, couleur pleine (en clair, cyan 2,80 → 4,64:1, jaune 2,81 → 4,83:1, danger 2,69 → 5,27:1 sur `--background`).
 - Raretés (texte des pastilles, teinte 12 % sur `--panel`) : en sombre Rare `#60a5fa` (4,37 → 6,04) et Epic `#f87171` (4,40 → 5,70) ; en clair Uncommon `#08704d` (5,13), Rare `#1d4ed8` (5,56), Epic `#b91c1c` (5,28), Nova `#7a6200` (4,97), Secret `#545e6d` (5,53), Common inchangé (4,72).
 
-Reste ouvert : bordures des champs écrits à la main hors `fieldClass` (prix et quantité de `AddCopyForm` / `CollectionLines`, recherche des listes de souhaits, recherche du catalogue), encore sur `--line`.
+- Champs écrits à la main hors `fieldClass` passés sur `--line-field` : état, quantité et prix de `AddCopyForm` (ordinateur et téléphone) et `CollectionLines`, prix cible des listes de souhaits (`WishlistScreen`, `WishlistPanel`), recherche du catalogue (`CardsExplorer`). Contraste de la bordure sur les fonds de ces champs : en sombre 4,33 (`--background`), 3,99 (`--panel`), 3,66:1 (`--panel-2`) ; en clair 3,14, 3,67, 3,35:1. Les séparateurs internes (filet entre le prix et la devise) restent sur `--line`.
+
+Reste ouvert : rien pour cet audit. D'autres champs écrits à la main (decks, investissement, réglages, tournois) sont encore sur `--line` ; hors périmètre de l'audit.

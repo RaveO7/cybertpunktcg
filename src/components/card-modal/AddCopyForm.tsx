@@ -166,7 +166,7 @@ export function DesktopAddForm({
         <span className="relative flex h-10 items-center">
           <span className={`pointer-events-none absolute left-2 top-1/2 z-10 h-2 w-2 -translate-y-1/2 ${conditionDot(conditionCode)}`} aria-hidden="true" />
           <select
-            className="h-full w-full min-w-0 border border-line bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan"
+            className="h-full w-full min-w-0 border border-line-field bg-background pl-6 pr-1 font-mono text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan"
             value={conditionCode}
             onChange={(event) => setConditionCode(event.target.value)}
             aria-label={t("modal.condition")}
@@ -178,7 +178,7 @@ export function DesktopAddForm({
             ))}
           </select>
         </span>
-        <div className="inline-flex h-10 w-full items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
+        <div className="inline-flex h-10 w-full items-stretch border border-line-field bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <button
             type="button"
             className={iconBtnClass}
@@ -203,7 +203,7 @@ export function DesktopAddForm({
             +
           </button>
         </div>
-        <div className="flex h-10 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
+        <div className="flex h-10 border border-line-field bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <input
             className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none"
             inputMode="decimal"
@@ -329,7 +329,7 @@ export function MobileAddForm({
       </div>
       {showMoreFields ? (
         <div className="grid grid-cols-2 gap-2.5">
-          <div className="flex h-11 border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
+          <div className="flex h-11 border border-line-field bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
             <input
               className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-[15px] outline-none"
               inputMode="decimal"
@@ -371,7 +371,7 @@ export function MobileAddForm({
         </div>
       ) : null}
       <div className="flex gap-2.5">
-        <div className="flex h-12 items-stretch border border-line bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
+        <div className="flex h-12 items-stretch border border-line-field bg-background focus-within:border-cyan focus-within:ring-1 focus-within:ring-cyan">
           <button
             type="button"
             className={`${iconBtnClass} w-11 text-lg`}
